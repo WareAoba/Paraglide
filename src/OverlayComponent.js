@@ -63,7 +63,6 @@ function OverlayComponent() {
         height: '100vh',
         display: 'flex',
         flexDirection: 'column',
-        gap: '10px',
         overflow: 'hidden'
       }}
     >
@@ -83,7 +82,8 @@ function OverlayComponent() {
             fontWeight: 'bold',
             padding: '4px 8px',
             backgroundColor: 'rgba(255,68,68,0.1)',
-            borderRadius: '4px'
+            borderRadius: '4px',
+            fontSize: '0.95em'
           }}>
             일시정지
           </span>
@@ -95,8 +95,9 @@ function OverlayComponent() {
         flex: 1,
         display: 'flex',
         flexDirection: 'column',
-        gap: '10px',
-        overflow: 'hidden'
+        gap: '15px',
+        overflow: 'hidden',
+        justifyContent: 'center',  // Center vertically
       }}>
         {/* 이전 단락 */}
         <div style={{
@@ -104,7 +105,6 @@ function OverlayComponent() {
           whiteSpace: 'nowrap',
           overflow: 'hidden',
           textOverflow: 'ellipsis',
-          padding: '5px'
         }}>
           {state.prev || ''}
         </div>
@@ -127,7 +127,7 @@ function OverlayComponent() {
           whiteSpace: 'nowrap',
           overflow: 'hidden',
           textOverflow: 'ellipsis',
-          padding: '5px'
+          padding: '0px 0px 20px 0px'
         }}>
           {state.next || ''}
         </div>
