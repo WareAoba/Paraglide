@@ -94,7 +94,7 @@ async function loadLog() {
   }
 }
 
-// 파일 해시 계산 함수
+// 파일 해시 계산 함수 - 원본 파일 내용 그대로 해시
 function getFileHash(content) {
   return crypto.createHash('sha256').update(content).digest('hex');
 }
@@ -120,8 +120,8 @@ let globalState = {
   timestamp: Date.now(),
   visibleRanges: {
     overlay: {
-      before: 1,
-      after: 1
+      before: 5,  // 5개로 증가
+      after: 5    // 5개로 증가
     }
   }
 };
@@ -174,18 +174,14 @@ async function saveCurrentPositionToLog() {
       return;
     }
 
-    const fileHash = getFileHash(globalState.paragraphs.join('\n\n'));
+    // 원본 파일 내용 읽기
+    const fileContent = await fs.readFile(currentFilePath, 'utf8');
+    const fileHash = getFileHash(fileContent);
     
-    // 로그 데이터 구조 확인
-    console.log('[로그 저장]', {
-      filePath: currentFilePath,
-      currentParagraph: globalState.currentParagraph,
-      fileHash: fileHash
-    });
-
     log[currentFilePath] = {
       fileHash,
       filePath: currentFilePath,
+      fileName: path.basename(currentFilePath),
       currentParagraph: globalState.currentParagraph,
       lastAccessed: Date.now()
     };
@@ -201,32 +197,30 @@ async function updateOverlayContent() {
   try {
     if (!overlayWindow) return;
     
-    console.log('[오버레이 업데이트]', {
-      current: globalState.currentParagraph,
-      pageNumber: globalState.currentNumber
-    });
-
-    const { paragraphs, currentParagraph, visibleRanges } = globalState;
-    const { before, after } = visibleRanges.overlay;
-
+    // 이전/다음 단락 배열 생성
     const prevParagraphs = [];
     const nextParagraphs = [];
+    const { before, after } = globalState.visibleRanges.overlay;
 
+    // 이전 단락 수집
     for (let i = 1; i <= before; i++) {
-      const prev = getParagraphByOffset(currentParagraph, -i);
-      if (prev) prevParagraphs.unshift(prev);  // 순서 유지를 위해 unshift 사용
+      const prev = getParagraphByOffset(globalState.currentParagraph, -i);
+      if (prev) prevParagraphs.unshift(prev);
     }
 
+    // 다음 단락 수집
     for (let i = 1; i <= after; i++) {
-      const next = getParagraphByOffset(currentParagraph, i);
+      const next = getParagraphByOffset(globalState.currentParagraph, i);
       if (next) nextParagraphs.push(next);
     }
 
+    // 오버레이로 데이터 전송
     await overlayWindow.webContents.send('paragraphs-updated', {
       previous: prevParagraphs,
-      current: paragraphs[currentParagraph],
+      current: globalState.paragraphs[globalState.currentParagraph],
       next: nextParagraphs,
-      currentNumber: globalState.currentNumber,
+      currentParagraph: globalState.currentParagraph,
+      currentNumber: globalState.currentNumber,  // 페이지 번호 추가
       isDarkMode: globalState.isDarkMode,
       isPaused: globalState.isPaused
     });
@@ -301,13 +295,21 @@ const updateGlobalState = (() => {
 
 // 프로그램 종료 로직을 담당하는 함수
 async function handleExitProgram() {
-  if (mainWindow) mainWindow.hide();
-  if (overlayWindow) overlayWindow.hide();
-
   try {
+    // 저장 작업 먼저 수행
     await saveCurrentPositionToLog();
     await saveLog(globalState);
     await saveConfig(globalState);
+
+    // 창 숨기기
+    if (overlayWindow) {
+      overlayWindow.destroy();
+      overlayWindow = null;
+    }
+    if (mainWindow) {
+      mainWindow.destroy();
+      mainWindow = null;
+    }
   } catch (error) {
     console.error('종료 시 백엔드 작업 중 에러 발생:', error);
   } finally {
@@ -315,7 +317,7 @@ async function handleExitProgram() {
   }
 }
 
-// 앱 초기화 및 윈도우 생성
+// 앱 초기화 및 메인 윈도우 생성
 function createMainWindow() {
   const minWidth = 600;
   const minHeight = 660;
@@ -349,28 +351,33 @@ function createMainWindow() {
   mainWindow.loadURL('http://localhost:3000');
 
   mainWindow.once('ready-to-show', () => {
-    mainWindow.webContents.send('theme-changed', globalState.isDarkMode);
+    mainWindow.webContents.send('theme-updated', globalState.isDarkMode);
     mainWindow.show();
   });
 
   mainWindow.on('closed', () => {
-    mainWindow = null;
-    if (overlayWindow) {
-      overlayWindow.close();
-      overlayWindow = null;
-    }
     handleExitProgram();
   });
 
-  mainWindow.webContents.send('theme-changed', nativeTheme.shouldUseDarkColors);
+  // 테마 변경 감지 및 렌더러로 전달
+  nativeTheme.on('updated', () => {
+    globalState.isDarkMode = nativeTheme.shouldUseDarkColors;
+    mainWindow.webContents.send('theme-updated', globalState.isDarkMode);
+    overlayWindow?.webContents.send('theme-updated', globalState.isDarkMode);
+  });
+
+  // 초기 테마 상태 전달
+  mainWindow.webContents.on('did-finish-load', () => {
+    mainWindow.webContents.send('theme-updated', globalState.isDarkMode);
+  });
 }
 
 // 오버레이 창 생성 함수
 function createOverlayWindow() {
   const minHeight = 240;
-  const minWidth = 400;
+  const minWidth = 300;
   const maxHeight = 600;
-  const maxWidth = 400;
+  const maxWidth = 500;
 
   overlayWindow = new BrowserWindow({
     width: globalState.overlayBounds?.width || minWidth,
@@ -383,25 +390,46 @@ function createOverlayWindow() {
     maxWidth,
     frame: false,
     transparent: true,
-    focusable: false,
+    focusable: true,  // 포커스 가능하도록 설정
     alwaysOnTop: true,
     resizable: true,
     movable: true,
     hasShadow: false,
     skipTaskbar: true,
-    show: false, // 초기에는 숨김 상태
+    show: false,  // 초기에는 숨김 상태
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false
     }
   });
 
-  overlayWindow.loadURL('http://localhost:3000/overlay');
+  // 올바른 URL 또는 파일 경로로 오버레이 콘텐츠 로드
+  overlayWindow.loadURL('http://localhost:3000/overlay'); // 또는 파일 경로 사용
 
+  // 오버레이 창이 준비되면 표시
   overlayWindow.once('ready-to-show', () => {
-    overlayWindow.webContents.send('theme-changed', globalState.isDarkMode);
     if (globalState.isOverlayVisible) {
       overlayWindow.show();
+      console.log('[오버레이 창 표시]');
+    }
+  });
+
+  // 오버레이 콘텐츠 내에서 마우스 이벤트 처리
+  overlayWindow.webContents.on('dom-ready', () => {
+    // 추가적인 마우스 이벤트 처리가 필요하지 않다면 이 부분을 제거하거나 유지 가능
+    overlayWindow.webContents.executeJavaScript(`
+      document.addEventListener('click', (e) => {
+        // 특정 로직이 필요하다면 여기에 추가
+      });
+    `);
+  });
+
+  // 이벤트 핸들러 등록 (필요 시 유지)
+  ipcMain.on('overlay-mouse-event', (event, type) => {
+    if (type === 'enter') {
+      overlayWindow.setIgnoreMouseEvents(false);
+    } else if (type === 'leave') {
+      overlayWindow.setIgnoreMouseEvents(true, { forward: true });
     }
   });
 
@@ -413,11 +441,25 @@ function createOverlayWindow() {
   overlayWindow.on('move', saveOverlayBounds);
   overlayWindow.on('resize', saveOverlayBounds);
 
-  // 오버레이 창 이벤트 핸들러 추가
-  overlayWindow.on('focus', () => {
-    if (mainWindow) {
-      mainWindow.focus();
-    }
+  // 창이 닫히지 않도록 방지
+  overlayWindow.on('close', (e) => {
+    e.preventDefault();
+    overlayWindow.hide();
+    console.log('[오버레이 창 숨김]');
+  });
+
+  // 디버깅을 위한 추가 로그
+  overlayWindow.on('show', () => {
+    console.log('[오버레이 창이 표시되었습니다.]');
+  });
+
+  overlayWindow.on('hide', () => {
+    console.log('[오버레이 창이 숨겨졌습니다.]');
+  });
+
+  overlayWindow.on('closed', () => {
+    console.log('[오버레이 창이 닫혔습니다.]');
+    overlayWindow = null;
   });
 }
 
@@ -527,11 +569,10 @@ function setupIpcHandlers() {
     try {
       if (!fileContent || !filePath) return { success: false };
 
+      // 원본 파일 내용으로 해시 생성
       const fileHash = getFileHash(fileContent);
       const log = await loadLog() || {};
-      const fileName = path.basename(filePath);
       
-      // 로그 복원
       let currentParagraph = 0;
       const previousLogEntry = log[filePath];
 
@@ -542,16 +583,14 @@ function setupIpcHandlers() {
       const result = processParagraphs(fileContent);
       if (!result?.paragraphsToDisplay) return { success: false };
 
-      // 유효성 검사
       currentParagraph = Math.min(currentParagraph, result.paragraphsToDisplay.length - 1);
 
-      // 상태 순차 업데이트
       await updateGlobalState({
         paragraphs: result.paragraphsToDisplay,
         paragraphsMetadata: result.paragraphsMetadata,
         currentFilePath: filePath,
         currentParagraph,
-        isOverlayVisible: true  // 오버레이 자동 표시
+        isOverlayVisible: true
       });
 
       return { success: true };
@@ -585,17 +624,26 @@ function setupIpcHandlers() {
       return { success: false };
     }
   });
+
+  // set-current-paragraph 이벤트 핸들러 수정
+  ipcMain.on('set-current-paragraph', (event, index) => {
+    updateGlobalState({
+      currentParagraph: index,
+      timestamp: Date.now()
+    });
+  });
 }
 
-// 앱 초기화 시점에서 테마 설정
+// 앱 초기화 시점에 테마 설정
 app.whenReady().then(async () => {
   try {
     globalState.isDarkMode = nativeTheme.shouldUseDarkColors;
 
+    // 테마 변경 감지 및 렌더러로 전달
     nativeTheme.on('updated', () => {
       globalState.isDarkMode = nativeTheme.shouldUseDarkColors;
-      mainWindow?.webContents.send('theme-changed', globalState.isDarkMode);
-      overlayWindow?.webContents.send('theme-changed', globalState.isDarkMode);
+      mainWindow?.webContents.send('theme-updated', globalState.isDarkMode);
+      overlayWindow?.webContents.send('theme-updated', globalState.isDarkMode);
     });
 
     const savedConfig = await loadConfig();
@@ -613,7 +661,14 @@ app.whenReady().then(async () => {
   }
 });
 
-// 3. 텍스트 처리 유틸리티 함수
+// 앱 종료 처리
+app.on('window-all-closed', () => {
+  if (process.platform !== 'darwin') {
+    app.quit();
+  }
+});
+
+// 텍스트 처리 유틸리티 함수...
 const pagePatterns = {
   numberOnly: /^(\d+)$/,               // "127", "128" 등 숫자로만 이루어진 페이지 번호
   koreanStyle: /^(\d+)(페이지|페)$/,   // "127페이지", "127페" 등 한글이 들어간 페이지 번호
@@ -621,7 +676,7 @@ const pagePatterns = {
 };
 
 const skipPatterns = {
-  separator: /^[=\-]{3,}/, // === 또� --- 로 시작하는 단락
+  separator: /^[=\-]{3,}/, // === 또는 --- 로 시작하는 단락
   comment: /^[\/\/#]/,       // //, # 으로 시작하는 단락
 };
 

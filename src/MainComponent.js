@@ -13,9 +13,8 @@ function MainComponent() {
     logoPath: null
   });
 
-  const [logoScale, setLogoScale] = useState(1);
-  const MIN_SCALE = 2; // 최소 2배
-  const MAX_SCALE = 4; // 최대 4배
+  const setLogoScale = useState(1);
+  const [hoveredSection, setHoveredSection] = useState(null);
 
   useEffect(() => {
     // 로고 로드 함수 수정
@@ -52,13 +51,13 @@ function MainComponent() {
 
     // 테마 변경 핸들러
     const handleThemeUpdate = (event, isDarkMode) => {
-      setState(prev => ({ ...prev, isDarkMode }));
+      setState(prevState => ({ ...prevState, isDarkMode }));
       loadLogo();
     };
 
     // 이벤트 리스너 등록
     ipcRenderer.on('state-update', handleStateUpdate);
-    ipcRenderer.on('theme-update', handleThemeUpdate);
+    ipcRenderer.on('theme-updated', handleThemeUpdate);
     
     // 초기화
     initializeState();
@@ -66,7 +65,7 @@ function MainComponent() {
     // 클린업
     return () => {
       ipcRenderer.removeListener('state-update', handleStateUpdate);
-      ipcRenderer.removeListener('theme-update', handleThemeUpdate);
+      ipcRenderer.removeListener('theme-updated', handleThemeUpdate);
     };
   }, []);
 
@@ -173,6 +172,37 @@ function MainComponent() {
       return newScale;
     });
   };
+
+  const handleParagraphClick = (type) => {
+    if (type === 'prev') {
+      handlePrev();
+    } else if (type === 'next') {
+      handleNext();
+    } else {
+      // 현재 단락 재복사 및 재개
+      const currentContent = state.paragraphs[state.currentParagraph];
+      if (currentContent) {
+        ipcRenderer.send('copy-to-clipboard', currentContent);
+      }
+      if (state.isPaused) {
+        handleTogglePause();
+      }
+    }
+  };
+
+  const getParagraphStyle = (type) => ({
+    flex: type === 'current' ? 1.5 : 1,
+    opacity: type === 'current' ? 1 : 0.7,
+    padding: '15px',
+    textAlign: 'center',
+    position: 'relative',
+    overflow: 'hidden',
+    cursor: 'pointer',
+    transition: 'background-color 0.2s',
+    backgroundColor: hoveredSection === type ?
+      (state.isDarkMode ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.15)') :
+      (state.isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)')
+  });
 
   // 파일이 로드되지 않은 상태일 때 표시할 대기 화면
   if (state.paragraphs.length === 0) {
@@ -367,33 +397,26 @@ function MainComponent() {
                 flex: 1,
                 minHeight: 0  // flex child 오버플로우 허용
               }}>
-                <div style={{
-                  flex: 1,
-                  opacity: 0.7,
-                  padding: '15px',
-                  textAlign: 'center',
-                  position: 'relative',
-                  overflow: 'hidden'
-                }}>
+                <div 
+                  style={getParagraphStyle('prev')}
+                  onClick={() => handleParagraphClick('prev')}
+                  onMouseEnter={() => setHoveredSection('prev')}
+                  onMouseLeave={() => setHoveredSection(null)}
+                >
                   <div style={{
                     whiteSpace: 'pre-wrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
-                    height: '100%'
+                    height: '80%'
                   }}>
                     {state.paragraphs[state.currentParagraph - 1] || ''}
                   </div>
                 </div>
 
-                <div style={{
-                  flex: 1.5,
-                  padding: '15px',
-                  borderLeft: `3px solid ${state.isDarkMode ? '#fff' : '#000'}`,
-                  backgroundColor: state.isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
-                  textAlign: 'center',
-                  position: 'relative',
-                  overflow: 'hidden'
-                }}>
+                <div 
+                  style={getParagraphStyle('current')}
+                  onClick={() => handleParagraphClick('current')}
+                >
                   <div style={{
                     whiteSpace: 'pre-wrap',
                     overflow: 'hidden',
@@ -404,19 +427,17 @@ function MainComponent() {
                   </div>
                 </div>
 
-                <div style={{
-                  flex: 1,
-                  opacity: 0.7,
-                  padding: '15px',
-                  textAlign: 'center',
-                  position: 'relative',
-                  overflow: 'hidden'
-                }}>
+                <div 
+                  style={getParagraphStyle('next')}
+                  onClick={() => handleParagraphClick('next')}
+                  onMouseEnter={() => setHoveredSection('next')}
+                  onMouseLeave={() => setHoveredSection(null)}
+                >
                   <div style={{
                     whiteSpace: 'pre-wrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
-                    height: '100%'
+                    height: '80%'
                   }}>
                     {state.paragraphs[state.currentParagraph + 1] || ''}
                   </div>

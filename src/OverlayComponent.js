@@ -8,54 +8,94 @@ function OverlayComponent() {
     current: null,
     next: [],
     currentNumber: null,
+    currentParagraph: null,
     isDarkMode: false,
     isPaused: false
   });
+  const [hoveredIndex, setHoveredIndex] = useState(null);
   const containerRef = useRef(null);
+
+  // 상수 정의
+  const MAX_ITEMS = 5;  // 최대 표시 단락 수 추가
+  const CONTAINER_WIDTH = '96%';  // 너비 축소
+  const CONTAINER_HEIGHT = 50;
+  const CONTAINER_MARGIN = 0;
+  const CONTAINER_TOTAL = CONTAINER_HEIGHT + CONTAINER_MARGIN;
+  const CONTAINER_LEFT = '2%';    // 좌측 여백 증가
+
+  // 단락 번호 스타일 정의
+  const paragraphNumberStyle = {
+    opacity: 0.5,
+    marginLeft: '10px',
+    fontSize: '0.9em',
+    minWidth: '30px',
+    textAlign: 'right'
+  };
+
+  // 공통 단락 컨테이너 스타일
+  const paragraphContainerStyle = {
+    minHeight: `${CONTAINER_HEIGHT}px`,
+    width: CONTAINER_WIDTH,
+    left: CONTAINER_LEFT,
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    whiteSpace: 'nowrap',        // 줄바꿈 방지
+    overflow: 'hidden',          // 오버플로우 숨김
+    textOverflow: 'ellipsis'     // 말줄임표 처리
+  };
+
 
   useEffect(() => {
     const handleParagraphsUpdate = (event, updatedParagraphs) => {
-      console.log('[오버레이] 단락 업데이트:', updatedParagraphs);
       setState({
-        previous: updatedParagraphs.previous || [],
-        current: updatedParagraphs.current || null,
-        next: updatedParagraphs.next || [],
+        previous: updatedParagraphs.previous?.map(p => ({
+          text: p.text,
+          index: p.index
+        })) || [],
+        current: updatedParagraphs.current,
+        next: updatedParagraphs.next?.map(p => ({
+          text: p.text,
+          index: p.index
+        })) || [],
         currentNumber: updatedParagraphs.currentNumber,
+        currentParagraph: updatedParagraphs.currentParagraph,
         isDarkMode: updatedParagraphs.isDarkMode,
         isPaused: updatedParagraphs.isPaused
       });
     };
 
-    // 단락 업데이트 구독
+    const handleThemeUpdate = (event, isDarkMode) => {
+      setState(prevState => ({ ...prevState, isDarkMode }));
+    };
+
     ipcRenderer.on('paragraphs-updated', handleParagraphsUpdate);
+    ipcRenderer.on('theme-updated', handleThemeUpdate);
 
     // 초기 상태 요청 및 설정
     ipcRenderer.invoke('get-state').then(initialState => {
-      const { paragraphs, currentParagraph, currentNumber, isDarkMode, isPaused, visibleRanges, paragraphsMetadata, isOverlayVisible } = initialState;
+      const { paragraphs, currentParagraph, isDarkMode, isPaused, isOverlayVisible } = initialState;
 
       if (isOverlayVisible) {
-        const before = visibleRanges.overlay.before;
-        const after = visibleRanges.overlay.after;
 
         const prevParagraphs = [];
         const nextParagraphs = [];
 
-        for (let i = 1; i <= before; i++) {
-          const index = currentParagraph - i;
-          if (index >= 0) {
-            prevParagraphs.push({
-              text: paragraphs[index],
-              metadata: paragraphsMetadata[index]
+        for (let i = 1; i <= 5; i++) {
+          const prevIndex = currentParagraph - i;
+          const nextIndex = currentParagraph + i;
+
+          if (prevIndex >= 0) {
+            prevParagraphs.unshift({
+              text: paragraphs[prevIndex],
+              index: prevIndex
             });
           }
-        }
 
-        for (let i = 1; i <= after; i++) {
-          const index = currentParagraph + i;
-          if (index < paragraphs.length) {
+          if (nextIndex < paragraphs.length) {
             nextParagraphs.push({
-              text: paragraphs[index],
-              metadata: paragraphsMetadata[index]
+              text: paragraphs[nextIndex],
+              index: nextIndex
             });
           }
         }
@@ -66,7 +106,7 @@ function OverlayComponent() {
           previous: prevParagraphs,
           current: current,
           next: nextParagraphs,
-          currentNumber: currentNumber,
+          currentNumber: currentParagraph,
           isDarkMode: isDarkMode,
           isPaused: isPaused
         });
@@ -75,6 +115,7 @@ function OverlayComponent() {
 
     return () => {
       ipcRenderer.removeAllListeners('paragraphs-updated');
+      ipcRenderer.removeListener('theme-updated', handleThemeUpdate);
     };
   }, []);
 
@@ -84,10 +125,96 @@ function OverlayComponent() {
     return text.replace(/\n/g, ' ');
   };
 
-  // 프로그램 종료 버튼 핸들러 (필요 시 편집)
-  const handleExit = () => {
-    ipcRenderer.send('exit-program');
+
+  const handleParagraphClick = (index) => {
+    if (index !== undefined) {
+      ipcRenderer.send('set-current-paragraph', index);
+    }
   };
+
+
+  // 단락 렌더링 수정
+  const renderParagraphs = () => (
+    <>
+      {/* 이전 단락들 */}
+      {state.previous.slice(0, 5).map((para, idx) => (
+        <div
+          key={`prev-${idx}`}
+          style={{
+            position: 'absolute',
+            width: CONTAINER_WIDTH,
+            left: CONTAINER_LEFT,
+            top: `calc(50% - ${CONTAINER_TOTAL * (state.previous.length - idx)}px - ${CONTAINER_HEIGHT}px)`,
+            height: CONTAINER_HEIGHT,
+            ...paragraphContainerStyle,
+            opacity: 0.7,
+            backgroundColor: hoveredIndex === `prev-${idx}` ?
+              (state.isDarkMode ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.15)') :
+              'transparent'
+          }}
+          onClick={() => handleParagraphClick(para.index)}
+          onMouseEnter={() => setHoveredIndex(`prev-${idx}`)}
+          onMouseLeave={() => setHoveredIndex(null)}
+        >
+          <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {formatText(para.text) || ' '}
+          </span>
+          <span style={{ marginRight: 10, ...paragraphNumberStyle}}>
+            {Number(state.currentParagraph) - (MAX_ITEMS - idx)}</span>
+        </div>
+      ))}
+
+      {/* 현재 단락 (고정) */}
+      <div style={{
+        position: 'absolute',
+        width: CONTAINER_WIDTH,
+        left: CONTAINER_LEFT,
+        top: '50%',
+        transform: 'translateY(-50%)',
+        height: CONTAINER_HEIGHT,
+        ...paragraphContainerStyle,
+        borderLeft: `4px solid ${state.isDarkMode ? '#fff' : '#000'}`,
+        backgroundColor: state.isDarkMode ? 'rgba(255,255,255,0.2)' : 'rgba(128,128,128,0.4)',
+        fontSize: '1.1em',
+        fontWeight: 'bold'
+      }}>
+        <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis' , marginLeft: 5, marginRight: 10}}>
+          {formatText(state.current) || ' '}
+        </span>
+        <span style={{ marginRight: 10, ...paragraphNumberStyle }}>
+          {Number(state.currentParagraph) + 1}
+        </span>
+      </div>
+
+      {/* 다음 단락들 */}
+      {state.next.slice(0, 5).map((para, idx) => (
+        <div
+          key={`next-${idx}`}
+          style={{
+            position: 'absolute',
+            width: CONTAINER_WIDTH,
+            left: CONTAINER_LEFT,
+            top: `calc(50% + ${CONTAINER_TOTAL * (idx + 1)}px)`,
+            height: CONTAINER_HEIGHT,
+            ...paragraphContainerStyle,
+            opacity: 0.7,
+            backgroundColor: hoveredIndex === `next-${idx}` ?
+              (state.isDarkMode ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.15)') :
+              'transparent'
+          }}
+          onClick={() => handleParagraphClick(para.index)}
+          onMouseEnter={() => setHoveredIndex(`next-${idx}`)}
+          onMouseLeave={() => setHoveredIndex(null)}
+        >
+          <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {formatText(para.text) || ' '}
+          </span>
+          <span style={{ marginRight: 10, ...paragraphNumberStyle }}>
+            {Number(state.currentParagraph) + Number(idx) + 2}</span>
+        </div>
+      ))}
+    </>
+  );
 
   return (
     <div ref={containerRef} style={{
@@ -183,69 +310,10 @@ function OverlayComponent() {
         flexDirection: 'column',
         justifyContent: 'center',
         alignItems: 'center',
-        padding: '10px 0'
+        overflow: 'hidden',
+        position: 'relative'
       }}>
-        {/* 이전 단락들 */}
-        <div style={{
-          marginBottom: '25px',
-          display: 'flex',
-          flexDirection: 'column',
-          marginRight: 'auto',
-        }}>
-          {state.previous.map((para, idx) => (
-            <div key={`prev${idx}`} style={{
-              opacity: 0.7,
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              maxWidth: '100%',
-              padding: '0px 10px',
-              fontSize: '1em'
-            }}>
-              {formatText(para.text)}
-            </div>
-          ))}
-        </div>
-
-        {/* 현재 단락 */}
-        <div style={{
-          width: '92%',
-          height: '27px',
-          padding: '12px 15px',
-          borderLeft: `4px solid ${state.isDarkMode ? '#fff' : '#000'}`,
-          backgroundColor: state.isDarkMode ? 'rgba(255,255,255,0.2)' : 'rgba(128,128,128,0.4)',
-          whiteSpace: 'nowrap',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          fontSize: '1.1em',
-          fontWeight: 'bold',
-          display: 'flex',
-          alignItems: 'center'
-        }}>
-          {formatText(state.current) || ''}
-        </div>
-
-        {/* 다음 단락들 */}
-        <div style={{
-          marginTop: '25px',
-          display: 'flex',
-          flexDirection: 'column',
-          marginRight: 'auto',
-        }}>
-          {state.next.map((para, idx) => (
-            <div key={`next${idx}`} style={{
-              opacity: 0.7,
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              maxWidth: '100%',
-              padding: '0px 10px',
-              fontSize: '1em'
-            }}>
-              {formatText(para.text)}
-            </div>
-          ))}
-        </div>
+        {renderParagraphs()}
       </div>
     </div>
   );
