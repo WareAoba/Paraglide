@@ -1,4 +1,5 @@
-<img width="1265" alt="GithubLogoDark" src="https://github.com/user-attachments/assets/3d1abc21-04f5-41a2-bd34-dffc3d0c7a55">
+<img width="1265" alt="GithubLogoDark" src="https://github.com/user-attachments/assets/3d1abc21-04f5-41a2-bd34-dffc3d0c7a55#gh-dark-mode-only">
+<img width="1265" alt="GithubLogoLight" src="https://github.com/user-attachments/assets/e208528d-be48-410b-ba17-7be99ca22889#gh-light-mode-only">
 
 # Paraglide - 텍스트 단락 처리기
 
