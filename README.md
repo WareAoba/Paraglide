@@ -1,6 +1,6 @@
 <img width="1265" alt="GithubLogoDark" src="https://github.com/user-attachments/assets/3d1abc21-04f5-41a2-bd34-dffc3d0c7a55">
 
-# Paraglide - 텍스트 단락 처리기
+# Paraglide - 텍스트 단락 처리기
 
 .TXT 파일을 로드하여 **각 단락별로 순차적으로** 복사하고, Ctrl[Cmd] + C를 감지하면 **다음 단락으로 이동하여 복사**하는 기능을 자동화한 프로그램입니다.
 
