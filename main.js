@@ -116,7 +116,6 @@ let globalState = {
   isDarkMode: nativeTheme.shouldUseDarkColors,
   paragraphsMetadata: [],
   isPaused: false,
-  isOverlayVisible: false,
   timestamp: Date.now(),
   visibleRanges: {
     overlay: {
@@ -163,32 +162,31 @@ const debounceSaveAndCopy = debounce(async () => {
   }
 }, 500);
 
-// 로그 저장 함수 수정 (예외 처리 포함)
+// 로그 저장 함수 수정 - 필수 항목만 저장
 async function saveCurrentPositionToLog() {
   try {
     const log = await loadLog();
     const currentFilePath = globalState.currentFilePath;
     
-    if (!currentFilePath) {
-      console.error('현재 파일 경로가 없음');
-      return;
-    }
+    if (!currentFilePath) return;
 
-    // 원본 파일 내용 읽기
+    // 파일 해시 계산
     const fileContent = await fs.readFile(currentFilePath, 'utf8');
     const fileHash = getFileHash(fileContent);
     
+    // 로그에 저장할 필수 정보만 추출
     log[currentFilePath] = {
-      fileHash,
-      filePath: currentFilePath,
-      fileName: path.basename(currentFilePath),
-      currentParagraph: globalState.currentParagraph,
-      lastAccessed: Date.now()
+      fileName: path.basename(currentFilePath),          // 파일명
+      filePath: currentFilePath,                         // 파일 경로
+      fileHash: fileHash,                                // 파일 해시
+      currentParagraph: globalState.currentParagraph,    // 현재 단락 번호
+      pageNumber: globalState.currentNumber,             // 현재 페이지 번호
+      lastAccessed: Date.now()                           // 마지막 접근 시간
     };
 
     await saveLog(log);
   } catch (error) {
-    console.error('로그 저장 중 에러 발생:', error);
+    console.error('로그 저장 중 에러:', error);
   }
 }
 
@@ -214,13 +212,17 @@ async function updateOverlayContent() {
       if (next) nextParagraphs.push(next);
     }
 
+        // 현재 단락의 페이지 번호 가져오기
+    const currentMetadata = globalState.paragraphsMetadata[globalState.currentParagraph];
+    const currentPageNumber = currentMetadata ? currentMetadata.pageNumber : null;
+
     // 오버레이로 데이터 전송
     await overlayWindow.webContents.send('paragraphs-updated', {
       previous: prevParagraphs,
       current: globalState.paragraphs[globalState.currentParagraph],
       next: nextParagraphs,
       currentParagraph: globalState.currentParagraph,
-      currentNumber: globalState.currentNumber,  // 페이지 번호 추가
+      currentNumber: currentPageNumber,  // 페이지 번호 추가
       isDarkMode: globalState.isDarkMode,
       isPaused: globalState.isPaused
     });
@@ -232,56 +234,97 @@ async function updateOverlayContent() {
 // 상태 업데이트 함수 최적화
 const updateGlobalState = (() => {
   let updatePromise = Promise.resolve();
+  let isInitialLoad = true;
 
   return async (newState, source = 'other') => {
     updatePromise = updatePromise.then(async () => {
       try {
         const prevState = { ...globalState };
-        
-        // 순차적 상태 업데이트
+
+        // 파일 로드 시 로직
+        if ('currentFilePath' in newState) {
+          const log = await loadLog();
+          const fileHash = getFileHash(newState.paragraphs.join('\n'));
+          const previousLogEntry = log[newState.currentFilePath];
+
+          ipcMain.handle('ready-to-show', () => {globalState.isOverlayVisible = true;});
+
+          const isSameHash = previousLogEntry?.fileHash === fileHash;
+          const isSamePath =
+            previousLogEntry?.filePath === newState.currentFilePath &&
+            previousLogEntry?.fileName === path.basename(newState.currentFilePath);
+          
+          if (previousLogEntry && (isSameHash || isSamePath)) {
+            // 기존 파일 로드
+            newState.currentParagraph = previousLogEntry.currentParagraph;
+            newState.currentNumber = previousLogEntry.pageNumber;
+
+          } else {
+            // 새 파일 첫 로드
+            log[newState.currentFilePath] = {
+              fileName: path.basename(newState.currentFilePath),
+              filePath: newState.currentFilePath,
+              fileHash: fileHash,
+              currentParagraph: 0,
+              pageNumber: null,
+              lastAccessed: Date.now()
+            };
+            await saveLog(log);
+            // 새 파일 로드 시 복사
+            debounceSaveAndCopy();
+          }
+          // **여기에서 isInitialLoad를 false로 설정**
+          isInitialLoad = false;
+        }
+
+        // 상태 업데이트
         if ('paragraphs' in newState) {
           globalState.paragraphs = newState.paragraphs;
           globalState.paragraphsMetadata = newState.paragraphsMetadata;
         }
 
+        // 현재 단락 및 페이지 번호 업데이트
         if ('currentParagraph' in newState) {
           globalState.currentParagraph = newState.currentParagraph;
           const metadata = globalState.paragraphsMetadata[globalState.currentParagraph];
           if (metadata) {
-            globalState.currentNumber = metadata.pageNumber;
+           globalState.currentNumber = metadata.pageNumber;
+          } else {
+           globalState.currentNumber = null;
           }
-        }
+         }
 
-        // 나머지 상태 업데이트
         globalState = { ...globalState, ...newState };
 
-        // 상태 변경 시 필요한 작업 수행
-        if ('currentParagraph' in newState && prevState.currentParagraph !== globalState.currentParagraph) {
-          await saveCurrentPositionToLog();
-          
-          const currentParagraphContent = globalState.paragraphs[globalState.currentParagraph];
-          if (currentParagraphContent) {
-            clipboard.writeText(currentParagraphContent);
-          }
-        }
-
-        // 오버레이 상태 동기화
         if ('isOverlayVisible' in newState) {
-          if (globalState.isOverlayVisible && overlayWindow) {
-            overlayWindow.show();
+          if (globalState.isOverlayVisible) {
+            overlayWindow?.show();
             await updateOverlayContent();
-          } else if (overlayWindow) {
-            overlayWindow.hide();
+          } else {
+            overlayWindow?.hide();
           }
         }
 
-        // 창 업데이트
-        if (JSON.stringify(prevState) !== JSON.stringify(globalState)) {
-          mainWindow?.webContents.send('state-update', globalState);
-          
-          if (globalState.isOverlayVisible && overlayWindow) {
-            await updateOverlayContent();
+        // **단락 변경 시 로깅 및 복사**
+        if ('currentParagraph' in newState &&
+            prevState.currentParagraph !== newState.currentParagraph) {
+          const metadata = globalState.paragraphsMetadata[globalState.currentParagraph];
+          if (metadata) {
+            globalState.currentNumber = metadata.pageNumber;
           }
+          debounceSaveAndCopy();
+        }
+
+        // 일시정지 해제 시 복사
+        if ('isPaused' in newState &&
+            prevState.isPaused && !newState.isPaused) {
+          debounceSaveAndCopy();
+        }
+
+        // UI 업데이트
+        mainWindow?.webContents.send('state-update', globalState);
+        if (globalState.isOverlayVisible && overlayWindow) {
+          await updateOverlayContent();
         }
 
       } catch (error) {
@@ -298,7 +341,6 @@ async function handleExitProgram() {
   try {
     // 저장 작업 먼저 수행
     await saveCurrentPositionToLog();
-    await saveLog(globalState);
     await saveConfig(globalState);
 
     // 창 숨기기
@@ -612,13 +654,45 @@ function setupIpcHandlers() {
 
   ipcMain.handle('load-file', async () => {
     try {
-      const filePath = await ipcMain.handle('open-file-dialog');
-      if (!filePath) return { success: false };
-
-      const content = await ipcMain.handle('read-file', null, filePath);
-      if (!content) return { success: false };
-
-      return await ipcMain.handle('process-file-content', null, content, filePath);
+      // 파일 열기 대화상자 표시
+      const result = await dialog.showOpenDialog(mainWindow, {
+        properties: ['openFile'],
+        filters: [{ name: 'Text Files', extensions: ['txt'] }]
+      });
+  
+      if (result.canceled || result.filePaths.length === 0) {
+        return { success: false };
+      }
+  
+      const filePath = result.filePaths[0];
+  
+      // 파일 읽기
+      const content = await fs.readFile(filePath, 'utf8');
+  
+      // 파일 내용 처리
+      const processResult = await processParagraphs(content);
+  
+      // 파일 해시 계산
+      const fileHash = getFileHash(content);
+      const log = await loadLog();
+  
+      let currentParagraph = 0;
+      const previousLogEntry = log[filePath];
+  
+      if (previousLogEntry?.fileHash === fileHash) {
+        currentParagraph = previousLogEntry.currentParagraph;
+      }
+  
+      // 전역 상태 업데이트
+      await updateGlobalState({
+        paragraphs: processResult.paragraphsToDisplay,
+        paragraphsMetadata: processResult.paragraphsMetadata,
+        currentFilePath: filePath,
+        currentParagraph,
+        isOverlayVisible: true
+      });
+  
+      return { success: true };
     } catch (error) {
       console.error('파일 로드 실패:', error);
       return { success: false };
@@ -721,7 +795,7 @@ const processParagraphs = (fileContent) => {
       currentNumber = pageNum;
       previousWasPageNumber = true;
     } else if (!shouldSkipParagraph(p)) {
-      // 실제 내용 단락만 추가
+      // 실제 내용 단락만 추출
       paragraphsToDisplay.push(p);
       paragraphsMetadata.push({
         isPageChange: previousWasPageNumber,
