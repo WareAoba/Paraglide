@@ -1,5 +1,32 @@
+@import url('https://fonts.googleapis.com/css?family=Rubik:500');
+
+html, 
+body, 
+#root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color: #333; /* Dark text for light mode */
+  transition: background-color 0.3s, color 0.3s;
+}
+
+body.dark-mode {
+  color: #f5f5f5;
+}
+
 .App {
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
 }
 
 .App-logo {
@@ -37,6 +64,26 @@
   }
 }
 
+button{
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.1s;
+}
+button:hover {
+  background-color: #005eb8; /* Darker shade on hover */
+  transform: scale(1.02); /* Slight scale effect */
+}
+
+/* Button styling for dark mode */
+body.dark-mode button {
+  background-color: #3399ff;
+}
+body.dark-mode button:hover {
+  background-color: #007acc;
+}
+
+
+
 body {
   overflow: hidden;
   -ms-overflow-style: none;
@@ -60,4 +107,46 @@ html, body, #root {
 * {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+.button {
+  padding: 16px 42px;
+  border-radius: 3px;
+  box-shadow: 0px 0px 12px -2px rgba(0,0,0,0.5);
+  line-height: 1.25;
+  background: #FC6E51;
+  text-decoration: none;
+  user-select: none;
+  color: white;
+  font-size: 16px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  position: relative;
+  transition: background-color .6s ease;
+  overflow: hidden;
+  &:after {
+    content: "";
+    position: absolute;
+    width: 0;
+    height: 0;
+    top: 50%;
+    left: 50%;
+    top: var(--mouse-y);
+    left: var(--mouse-x);
+    transform-style: flat;
+    transform: translate3d(-50%,-50%,0);
+    background: rgba(white,.1);
+    border-radius: 100%;
+    transition: width .3s ease, height .3s ease;
+  }
+  &:focus,
+  &:hover {
+      background: darken(#FC6E51,7%);
+  }
+  &:active {
+    &:after {
+      width: 300px;
+      height: 300px;
+    }
+  }
 }

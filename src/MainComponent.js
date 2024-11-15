@@ -1,5 +1,6 @@
 // src/MainComponent.js
 import React, { useState, useEffect } from 'react';
+import './App.css';
 const { ipcRenderer } = window.require('electron');
 
 function MainComponent() {

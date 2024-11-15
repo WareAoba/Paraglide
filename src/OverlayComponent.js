@@ -1,8 +1,10 @@
 // OverlayComponent.js
+import './App.css';
 import React, { useState, useEffect, useRef } from 'react';
 const { ipcRenderer } = window.require('electron');
 
-function OverlayComponent() {
+function OverlayComponent({isOverlayVisible, toggleOverlay}) {
+  
   const [state, setState] = useState({
     previous: [],
     current: null,
