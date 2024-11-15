@@ -33,18 +33,63 @@ const logPath = path.join(os.homedir(), '.ParaglideParaLog.json');
 // 로그 저장 함수
 async function saveLog(log) {
   try {
-    await fs.writeFile(logPath, JSON.stringify(log, null, 2));
+    const jsonString = JSON.stringify(log, null, 2);
+    
+    // 저장 전 유효성 검사
+    try {
+      JSON.parse(jsonString);
+    } catch {
+      throw new Error('유효하지 않은 JSON 데이터');
+    }
+
+    console.log('[로그 저장 시도]', { path: logPath });
+    await fs.writeFile(logPath, jsonString);
+    console.log('[로그 저장 완료]');
   } catch (error) {
     console.error('로그 저장 실패:', error);
+    throw error;
   }
 }
 
 // 로그 불러오기 함수
 async function loadLog() {
   try {
+    console.log('[로그 불러오기 시도]', { path: logPath });
+    
+    // 파일 존재 여부 확인
+    try {
+      await fs.access(logPath);
+    } catch {
+      console.log('[로그 파일 없음] 새 로그 파일 생성');
+      await saveLog({});
+      return {};
+    }
+
+    // 파일 읽기 및 검증
     const data = await fs.readFile(logPath, 'utf8');
-    return JSON.parse(data);
+    if (!data || data.trim().length === 0) {
+      console.log('[빈 로그 파일] 초기화');
+      await saveLog({});
+      return {};
+    }
+
+    try {
+      const parsedLog = JSON.parse(data);
+      console.log('[로그 불러오기 완료]', { entries: Object.keys(parsedLog).length });
+      return parsedLog;
+    } catch (parseError) {
+      console.error('[손상된 로그 파일] 백업 후 초기화');
+      
+      // 손상된 파일 백업
+      const backupPath = `${logPath}.backup.${Date.now()}`;
+      await fs.writeFile(backupPath, data);
+      
+      // 새 로그 파일 생성
+      await saveLog({});
+      return {};
+    }
   } catch (error) {
+    console.error('[로그 불러오기 실패]:', error);
     return {};
   }
 }
@@ -56,6 +101,12 @@ function getFileHash(content) {
 
 let mainWindow;
 let overlayWindow;
+
+// 로고 이미지 경로 설정 수정
+const logoConfig = {
+  light: path.join(__dirname, 'public', 'logo-light.png'),
+  dark: path.join(__dirname, 'public', 'logo-dark.png')
+};
 
 // 전역 상태 관리
 let globalState = {
@@ -116,18 +167,30 @@ const debounceSaveAndCopy = debounce(async () => {
 async function saveCurrentPositionToLog() {
   try {
     const log = await loadLog();
-
     const currentFilePath = globalState.currentFilePath;
-    const fileHash = getFileHash(globalState.paragraphs.join('\n\n'));
-
-    if (currentFilePath) {
-      log[currentFilePath] = {
-        fileHash,
-        filePath: currentFilePath,
-        currentParagraph: globalState.currentParagraph
-      };
-      await saveLog(log);
+    
+    if (!currentFilePath) {
+      console.error('현재 파일 경로가 없음');
+      return;
     }
+
+    const fileHash = getFileHash(globalState.paragraphs.join('\n\n'));
+    
+    // 로그 데이터 구조 확인
+    console.log('[로그 저장]', {
+      filePath: currentFilePath,
+      currentParagraph: globalState.currentParagraph,
+      fileHash: fileHash
+    });
+
+    log[currentFilePath] = {
+      fileHash,
+      filePath: currentFilePath,
+      currentParagraph: globalState.currentParagraph,
+      lastAccessed: Date.now()
+    };
+
+    await saveLog(log);
   } catch (error) {
     console.error('로그 저장 중 에러 발생:', error);
   }
@@ -138,7 +201,12 @@ async function updateOverlayContent() {
   try {
     if (!overlayWindow) return;
     
-    const { paragraphs, currentParagraph, currentNumber, visibleRanges } = globalState;
+    console.log('[오버레이 업데이트]', {
+      current: globalState.currentParagraph,
+      pageNumber: globalState.currentNumber
+    });
+
+    const { paragraphs, currentParagraph, visibleRanges } = globalState;
     const { before, after } = visibleRanges.overlay;
 
     const prevParagraphs = [];
@@ -146,7 +214,7 @@ async function updateOverlayContent() {
 
     for (let i = 1; i <= before; i++) {
       const prev = getParagraphByOffset(currentParagraph, -i);
-      if (prev) prevParagraphs.push(prev);
+      if (prev) prevParagraphs.unshift(prev);  // 순서 유지를 위해 unshift 사용
     }
 
     for (let i = 1; i <= after; i++) {
@@ -158,7 +226,7 @@ async function updateOverlayContent() {
       previous: prevParagraphs,
       current: paragraphs[currentParagraph],
       next: nextParagraphs,
-      currentNumber,
+      currentNumber: globalState.currentNumber,
       isDarkMode: globalState.isDarkMode,
       isPaused: globalState.isPaused
     });
@@ -171,58 +239,60 @@ async function updateOverlayContent() {
 const updateGlobalState = (() => {
   let updatePromise = Promise.resolve();
 
-  return (newState, source = 'other') => {
+  return async (newState, source = 'other') => {
     updatePromise = updatePromise.then(async () => {
       try {
         const prevState = { ...globalState };
-        globalState = { ...globalState, ...newState };
+        
+        // 순차적 상태 업데이트
+        if ('paragraphs' in newState) {
+          globalState.paragraphs = newState.paragraphs;
+          globalState.paragraphsMetadata = newState.paragraphsMetadata;
+        }
 
         if ('currentParagraph' in newState) {
+          globalState.currentParagraph = newState.currentParagraph;
           const metadata = globalState.paragraphsMetadata[globalState.currentParagraph];
           if (metadata) {
             globalState.currentNumber = metadata.pageNumber;
           }
         }
 
-        if ('isPaused' in newState && prevState.isPaused !== newState.isPaused) {
-          console.log(`[상태 변경] 프로그램 ${newState.isPaused ? '일시정지' : '재개'}`);
-        }
+        // 나머지 상태 업데이트
+        globalState = { ...globalState, ...newState };
 
+        // 상태 변경 시 필요한 작업 수행
         if ('currentParagraph' in newState && prevState.currentParagraph !== globalState.currentParagraph) {
-          if (source === 'move') {
-            debounceSaveAndCopy();
-          } else {
-            await saveCurrentPositionToLog();
-
-            const currentParagraphContent = globalState.paragraphs[globalState.currentParagraph];
-            if (currentParagraphContent) {
-              clipboard.writeText(currentParagraphContent);
-            }
+          await saveCurrentPositionToLog();
+          
+          const currentParagraphContent = globalState.paragraphs[globalState.currentParagraph];
+          if (currentParagraphContent) {
+            clipboard.writeText(currentParagraphContent);
           }
         }
 
-        if ('isOverlayVisible' in newState && prevState.isOverlayVisible !== globalState.isOverlayVisible) {
+        // 오버레이 상태 동기화
+        if ('isOverlayVisible' in newState) {
           if (globalState.isOverlayVisible && overlayWindow) {
             overlayWindow.show();
+            await updateOverlayContent();
           } else if (overlayWindow) {
             overlayWindow.hide();
           }
         }
 
+        // 창 업데이트
         if (JSON.stringify(prevState) !== JSON.stringify(globalState)) {
-          const { currentParagraph, isOverlayVisible } = globalState;
-
-          if (isOverlayVisible && overlayWindow) {
+          mainWindow?.webContents.send('state-update', globalState);
+          
+          if (globalState.isOverlayVisible && overlayWindow) {
             await updateOverlayContent();
           }
-
-          mainWindow?.webContents.send('state-updated', globalState);
         }
+
       } catch (error) {
-        console.error('updateGlobalState 중 에러 발생:', error);
+        console.error('상태 업데이트 중 에러:', error);
       }
-    }).catch(error => {
-      console.error('updateGlobalState Promise 체인에서 에러 발생:', error);
     });
 
     return updatePromise;
@@ -254,6 +324,12 @@ function createMainWindow() {
 
   globalState.isDarkMode = nativeTheme.shouldUseDarkColors;
 
+  const iconPath = process.platform === 'win32'
+    ? path.join(__dirname, 'public/icons/win/icon.ico')
+    : process.platform === 'darwin'
+      ? path.join(__dirname, 'public/icons/mac/icon.icns')
+      : path.join(__dirname, 'public/icons/png/512x512.png');
+
   mainWindow = new BrowserWindow({
     width: minWidth,
     height: minHeight,
@@ -263,6 +339,7 @@ function createMainWindow() {
     maxHeight,
     show: false,
     title: 'Paraglide',
+    icon: iconPath,
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false
@@ -306,6 +383,7 @@ function createOverlayWindow() {
     maxWidth,
     frame: false,
     transparent: true,
+    focusable: false,
     alwaysOnTop: true,
     resizable: true,
     movable: true,
@@ -334,6 +412,13 @@ function createOverlayWindow() {
 
   overlayWindow.on('move', saveOverlayBounds);
   overlayWindow.on('resize', saveOverlayBounds);
+
+  // 오버레이 창 이벤트 핸들러 추가
+  overlayWindow.on('focus', () => {
+    if (mainWindow) {
+      mainWindow.focus();
+    }
+  });
 }
 
 // IPC 핸들러 설정
@@ -344,11 +429,30 @@ function setupIpcHandlers() {
     updateGlobalState(newState);
   });
 
+  // get-logo-path 이벤트 핸들러 수정
+  ipcMain.handle('get-logo-path', async () => {
+    try {
+      const logoPath = nativeTheme.shouldUseDarkColors ? logoConfig.dark : logoConfig.light;
+      const imageBuffer = await fs.readFile(logoPath);
+      return `data:image/png;base64,${imageBuffer.toString('base64')}`;
+    } catch (error) {
+      console.error('로고 로드 실패:', error);
+      return null;
+    }
+  });
+  
+  ipcMain.on('return-to-welcome', () => {
+    if (mainWindow) {
+      mainWindow.webContents.send('show-welcome-screen');
+    }
+  });
+
   ipcMain.on('toggle-overlay', () => {
     if (overlayWindow) {
       globalState.isOverlayVisible = !globalState.isOverlayVisible;
       if (globalState.isOverlayVisible) {
         overlayWindow.show();
+        mainWindow.focus();  // 메인 창에 포커스 유지
       } else {
         overlayWindow.hide();
       }
@@ -420,49 +524,41 @@ function setupIpcHandlers() {
   });
 
   ipcMain.handle('process-file-content', async (event, fileContent, filePath) => {
-    const result = processParagraphs(fileContent);
-    
-    const fileHash = getFileHash(fileContent);
-    
-    const log = await loadLog();
-    
-    let previousLogEntry = null;
+    try {
+      if (!fileContent || !filePath) return { success: false };
 
-    for (const [key, entry] of Object.entries(log)) {
-      if (entry.fileHash === fileHash || entry.filePath === filePath) {
-        previousLogEntry = entry;
-        break;
+      const fileHash = getFileHash(fileContent);
+      const log = await loadLog() || {};
+      const fileName = path.basename(filePath);
+      
+      // 로그 복원
+      let currentParagraph = 0;
+      const previousLogEntry = log[filePath];
+
+      if (previousLogEntry?.fileHash === fileHash) {
+        currentParagraph = previousLogEntry.currentParagraph;
       }
-    }
-    
-    let currentParagraph = 0;
-    
-    if (previousLogEntry) {
-      currentParagraph = previousLogEntry.currentParagraph || 0;
-    }
-    
-    await updateGlobalState({
-      paragraphs: result.paragraphsToDisplay,
-      paragraphsMetadata: result.paragraphsMetadata,
-      currentNumber: result.currentNumber,
-      currentParagraph,
-      currentFilePath: filePath,
-      timestamp: Date.now(),
-      isOverlayVisible: true // 오버레이 표시 상태 설정
-    });
 
-    if (overlayWindow) {
-      overlayWindow.show();
+      const result = processParagraphs(fileContent);
+      if (!result?.paragraphsToDisplay) return { success: false };
+
+      // 유효성 검사
+      currentParagraph = Math.min(currentParagraph, result.paragraphsToDisplay.length - 1);
+
+      // 상태 순차 업데이트
+      await updateGlobalState({
+        paragraphs: result.paragraphsToDisplay,
+        paragraphsMetadata: result.paragraphsMetadata,
+        currentFilePath: filePath,
+        currentParagraph,
+        isOverlayVisible: true  // 오버레이 자동 표시
+      });
+
+      return { success: true };
+    } catch (error) {
+      console.error('파일 처리 중 오류:', error);
+      return { success: false };
     }
-    
-    log[filePath] = {
-      fileHash,
-      filePath,
-      currentParagraph: globalState.currentParagraph
-    };
-    await saveLog(log);
-    
-    return { success: true };
   });
 
   ipcMain.handle('get-window-position', () => {
@@ -473,6 +569,21 @@ function setupIpcHandlers() {
 
   ipcMain.on('exit-program', async () => {
     await handleExitProgram();
+  });
+
+  ipcMain.handle('load-file', async () => {
+    try {
+      const filePath = await ipcMain.handle('open-file-dialog');
+      if (!filePath) return { success: false };
+
+      const content = await ipcMain.handle('read-file', null, filePath);
+      if (!content) return { success: false };
+
+      return await ipcMain.handle('process-file-content', null, content, filePath);
+    } catch (error) {
+      console.error('파일 로드 실패:', error);
+      return { success: false };
+    }
   });
 }
 
@@ -510,7 +621,7 @@ const pagePatterns = {
 };
 
 const skipPatterns = {
-  separator: /^[=\-]{3,}/, // === 또는 --- 로 시작하는 단락
+  separator: /^[=\-]{3,}/, // === 또� --- 로 시작하는 단락
   comment: /^[\/\/#]/,       // //, # 으로 시작하는 단락
 };
 

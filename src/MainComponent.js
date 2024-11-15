@@ -9,16 +9,28 @@ function MainComponent() {
     currentNumber: null,
     isDarkMode: false,
     isPaused: false,
-    isOverlayVisible: false
+    isOverlayVisible: false,
+    logoPath: null
   });
 
+  const [logoScale, setLogoScale] = useState(1);
+  const MIN_SCALE = 2; // 최소 2배
+  const MAX_SCALE = 4; // 최대 4배
+
   useEffect(() => {
-    // 상태 업데이트 핸들러 정의
-    const handleStateUpdate = (event, updatedState) => {
-      setState(prev => ({ ...prev, ...updatedState }));
+    // 로고 로드 함수 수정
+    const loadLogo = async () => {
+      try {
+        const logoData = await ipcRenderer.invoke('get-logo-path');
+        if (logoData) {
+          setState(prev => ({ ...prev, logoPath: logoData }));
+        }
+      } catch (error) {
+        console.error('로고 로드 실패:', error);
+      }
     };
 
-    // 초기 테마 상태 요청
+    // 초기 상태 로드
     const initializeState = async () => {
       try {
         const initialState = await ipcRenderer.invoke('get-state');
@@ -27,23 +39,34 @@ function MainComponent() {
           isDarkMode: initialState.isDarkMode,
           isOverlayVisible: initialState.isOverlayVisible
         }));
+        loadLogo();
       } catch (error) {
         console.error('초기 상태 로드 실패:', error);
       }
     };
+
+    // 상태 업데이트 핸들러
+    const handleStateUpdate = (event, updatedState) => {
+      setState(prev => ({ ...prev, ...updatedState }));
+    };
+
+    // 테마 변경 핸들러
+    const handleThemeUpdate = (event, isDarkMode) => {
+      setState(prev => ({ ...prev, isDarkMode }));
+      loadLogo();
+    };
+
+    // 이벤트 리스너 등록
+    ipcRenderer.on('state-update', handleStateUpdate);
+    ipcRenderer.on('theme-update', handleThemeUpdate);
     
+    // 초기화
     initializeState();
 
-    // 상태 업데이트 이벤트 구독
-    ipcRenderer.on('state-updated', handleStateUpdate);
-    ipcRenderer.on('theme-changed', (event, isDark) => {
-      setState(prev => ({ ...prev, isDarkMode: isDark }));
-    });
-
-    // 클린업: 이벤트 리스너 제거
+    // 클린업
     return () => {
-      ipcRenderer.removeAllListeners('state-updated');
-      ipcRenderer.removeAllListeners('theme-changed');
+      ipcRenderer.removeListener('state-update', handleStateUpdate);
+      ipcRenderer.removeListener('theme-update', handleThemeUpdate);
     };
   }, []);
 
@@ -71,19 +94,115 @@ function MainComponent() {
     ipcRenderer.send('toggle-overlay');
   };
 
+  // 파일 로드 핸들러 수정
   const handleLoadFile = async () => {
     try {
       const filePath = await ipcRenderer.invoke('open-file-dialog');
-      if (filePath) {
-        const content = await ipcRenderer.invoke('read-file', filePath);
-        if (content) {
-          await ipcRenderer.invoke('process-file-content', content, filePath);
-        }
+      if (!filePath) return;
+
+      const content = await ipcRenderer.invoke('read-file', filePath);
+      if (!content) return;
+
+      const result = await ipcRenderer.invoke('process-file-content', content, filePath);
+      if (result.success) {
+        const newState = await ipcRenderer.invoke('get-state');
+        setState(prev => ({ ...prev, ...newState }));
       }
     } catch (error) {
       console.error('파일 로드 실패:', error);
     }
   };
+
+  const getThemeStyles = () => ({
+    container: {
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      height: '100vh',
+      width: '100vw',
+      backgroundColor: state.isDarkMode ? '#1e1e1e' : '#ffffff',
+      color: state.isDarkMode ? '#ffffff' : '#000000',
+      transition: 'background-color 0.3s, color 0.3s'
+    },
+    content: {
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '20px',
+      maxWidth: '90vw', // 뷰포트 너비의 90%로 제한
+      padding: '20px'
+    },
+    logo: {
+      width: 'auto',
+      height: 'auto',
+      maxWidth: '80vw', // 뷰포트 너비의 80%로 제한
+      maxHeight: '50vh', // 뷰포트 높이의 50%로 제한
+      objectFit: 'contain',
+      marginBottom: '20px',
+      cursor: 'zoom-in',
+      transition: 'transform 0.3s ease'
+    },
+    title: {
+      fontSize: '28px',
+      fontWeight: 'bold',
+      marginBottom: '20px',
+      color: 'inherit',
+      textAlign: 'center'
+    },
+    button: {
+      padding: '12px 24px',
+      fontSize: '16px',
+      borderRadius: '8px',
+      border: 'none',
+      cursor: 'pointer',
+      backgroundColor: state.isDarkMode ? '#0066cc' : '#007AFF', // 파란색으로 변경
+      color: '#ffffff', // 텍스트는 항상 흰색
+      transition: 'background-color 0.3s, transform 0.1s',
+      '&:hover': {
+        backgroundColor: state.isDarkMode ? '#0052a3' : '#0066cc',
+        transform: 'scale(1.02)'
+      }
+    }
+  });
+
+  const handleLogoClick = () => {
+    setLogoScale(prev => {
+      const newScale = prev >= 2 ? 1 : prev + 0.5;
+      return newScale;
+    });
+  };
+
+  // 파일이 로드되지 않은 상태일 때 표시할 대기 화면
+  if (state.paragraphs.length === 0) {
+    const styles = getThemeStyles();
+    return (
+      <div style={styles.container}>
+        <div style={styles.content}>
+          {state.logoPath && (
+            <img
+              src={state.logoPath}
+              alt="Paraglide Logo"
+              style={styles.logo}
+              onClick={handleLogoClick}
+              onError={(e) => {
+                console.error('로고 렌더링 실패:', e);
+                e.target.style.display = 'none';
+              }}
+            />
+          )}
+          <h1 style={styles.title}>Paraglide</h1>
+          <button 
+            onClick={handleLoadFile}
+            style={styles.button}
+          >
+            파일 불러오기
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{
