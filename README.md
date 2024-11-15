@@ -44,9 +44,9 @@
 
 ## 실행
 
- 1. 먼저 Clone해줍니다.
+ 1. 먼저 Clone해줍니다.
  
-    `git clone https://github.com/WareAoba/Paraglide`
+    `git clone https://github.com/WareAoba/Paraglide`
 
  2. 프로그램 루트 디렉토리에 NPM을 설치해주세요.
  
