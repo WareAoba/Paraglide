@@ -3,6 +3,64 @@ import React, { useState, useEffect } from 'react';
 import './App.css';
 const { ipcRenderer } = window.require('electron');
 
+// 스타일 상수
+const STYLES = {
+  container: (isDarkMode) => ({
+    backgroundColor: isDarkMode ? '#262626' : '#fff',
+    color: isDarkMode ? '#fff' : '#000',
+    padding: '20px',
+    height: '100vh',
+    display: 'flex',
+    flexDirection: 'column'
+  }),
+  button: {
+    default: (isDarkMode) => ({
+      padding: '10px 20px',
+      backgroundColor: '#007bff',
+      color: '#fff',
+      border: 'none',
+      borderRadius: '4px',
+      cursor: 'pointer'
+    }),
+    control: (isDarkMode, isActive) => ({
+      padding: '10px 20px',
+      minWidth: '100px',
+      backgroundColor: isActive ? 'rgba(108, 117, 125, 0.8)' : 'rgba(108, 117, 125, 0.3)',
+      color: '#fff',
+      border: 'none',
+      borderRadius: '4px',
+      cursor: 'pointer',
+      transition: 'background-color 0.2s'
+    })
+  },
+  paragraph: {
+    container: (isDarkMode) => ({
+      width: '80%',
+      height: '50vh',
+      margin: '0 auto',
+      backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
+      borderRadius: '8px',
+      padding: '20px',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '20px'
+    }),
+    section: (type, isDarkMode, isHovered) => ({
+      flex: type === 'current' ? 1.5 : 1,
+      opacity: type === 'current' ? 1 : 0.7,
+      padding: '15px',
+      textAlign: 'center',
+      position: 'relative',
+      overflow: 'hidden',
+      cursor: 'pointer',
+      transition: 'background-color 0.2s',
+      backgroundColor: isHovered ?
+        (isDarkMode ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.15)') :
+        (isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)')
+    })
+  }
+};
+
 function MainComponent() {
   const [state, setState] = useState({
     paragraphs: [],
@@ -174,7 +232,14 @@ function MainComponent() {
     });
   };
 
+  // MainComponent.js에서 복사 함수
   const handleParagraphClick = (type) => {
+    if (type === 'current') {
+      const currentContent = state.paragraphs[state.currentParagraph];
+      if (currentContent) {
+        ipcRenderer.send('copy-content', currentContent);  // 이 부분이 제대로 호출되는지 확인
+      }
+    }
     if (type === 'prev') {
       handlePrev();
     } else if (type === 'next') {
