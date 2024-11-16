@@ -40,15 +40,15 @@ const STYLES = {
       margin: '0 auto',
       backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
       borderRadius: '8px',
-      padding: '20px',
+      padding: '10px',
       display: 'flex',
       flexDirection: 'column',
-      gap: '20px'
+      gap: '0px'
     }),
     section: (type, isDarkMode, isHovered) => ({
       flex: type === 'current' ? 1.5 : 1,
       opacity: type === 'current' ? 1 : 0.7,
-      padding: '15px',
+      padding: '10px',
       textAlign: 'center',
       position: 'relative',
       overflow: 'hidden',
