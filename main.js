@@ -4,6 +4,7 @@ const path = require('path');
 const fs = require('fs').promises;
 const os = require('os');
 const crypto = require('crypto');
+const systemListener = require('./src/SystemListener.js');
 
 // main.js 최상단 (상수 정의 전)
 const debounce = (func, wait) => {
@@ -25,6 +26,10 @@ const ProgramStatus = {
   LOADING: 'Loading' 
 };
 
+// 상수 정의
+const DEBOUNCE_TIME = 250;
+
+// ContentManager 수정
 const ContentManager = {
   debounceTime: 250,  // 디바운스 시간 설정
 
@@ -33,12 +38,16 @@ const ContentManager = {
     try {
       if (!content) return;
       
-      // 1. 복사 수행
+      // 클립보드 변경 전 내부 변경 알림
+      mainWindow?.webContents.send('notify-clipboard-change');
+      
+      // 클립보드 변경 전에 내부 복사 플래그 설정
+      systemListener.notifyInternalClipboardChange();
       clipboard.writeText(content);
       console.log('복사됨:', content.substring(0, 20) + '...');
 
       // 2. 로깅 수행 (skipLog가 true일 경우 건너뜀)
-      if (!skipLog) {
+      if (!skipLog && globalState.currentFilePath) {
         await FileManager.saveCurrentPositionToLog();
         console.log('로그 저장됨');
       }
@@ -48,6 +57,7 @@ const ContentManager = {
   }, 250),  // 250ms 디바운스
 };
 
+// 상태 업데이트 함수 개선
 const updateGlobalState = async (newState, source = 'other') => {
   try {
     const previousParagraph = globalState.currentParagraph;
@@ -65,6 +75,8 @@ const updateGlobalState = async (newState, source = 'other') => {
       if (previousParagraph !== globalState.currentParagraph) {
         const content = globalState.paragraphs[globalState.currentParagraph];
         if (content) {
+          // 내부 클립보드 변경 알림 추가
+          mainWindow?.webContents.send('notify-clipboard-change');
           // source가 'existingFile'일 경우 로깅 스킵
           ContentManager.copyAndLogDebouncer(content, source === 'existingFile');
         }
@@ -100,7 +112,9 @@ const FILE_PATHS = {
   },
   icon: process.platform === 'win32' ? path.join(__dirname, 'public/icons/win/icon.ico')
     : process.platform === 'darwin' ? path.join(__dirname, 'public/icons/mac/icon.icns')
-    : path.join(__dirname, 'public/icons/png/512x512.png')
+    : path.join(__dirname, 'public/icons/png/512x512.png'),
+
+  ui_icons: path.join(__dirname, 'public', 'UI_icons')
 };
 
 // 2. 전역 상태
@@ -140,7 +154,7 @@ const StatusManager = {
   }
 };
 
-// 4. 파일 관리 시스템
+// FileManager 수정
 const FileManager = {
   async saveConfig(config) {
     try {
@@ -207,28 +221,128 @@ const FileManager = {
     }
   },
 
-  async checkExistingFile(filePath, fileContent) {
+  async checkExistingFile(filePath) {
     try {
-      const log = await this.loadLog();
-      const fileName = path.basename(filePath);
-      const fileHash = this.getFileHash(fileContent);
+      const logPath = FILE_PATHS.log;
+      const exists = await fs.access(logPath).then(() => true).catch(() => false);
+      
+      if (!exists) return { isExisting: false };
+      
+      const logContent = await fs.readFile(logPath, 'utf8');
+      const logData = JSON.parse(logContent);
+      
+      return {
+        isExisting: logData.hasOwnProperty(filePath),
+        lastPosition: logData[filePath]?.currentParagraph || 0,  // 필드명 수정
+        currentNumber: logData[filePath]?.currentPageNumber      // 필드명 수정
+      };
+    } catch (error) {
+      console.error('파일 확인 실패:', error);
+      return { isExisting: false };
+    }
+  },
 
-      for (const [loggedPath, entry] of Object.entries(log)) {
-        // 파일명과 경로가 모두 일치하거나 해시가 일치하는 ���우
-        if ((entry.fileName === fileName && entry.filePath === filePath) || 
-            entry.fileHash === fileHash) {
-          return {
-            isExisting: true,
-            lastPosition: entry.currentParagraph,
-            lastPage: entry.currentPageNumber
-          };
-        }
+  async getFileHistory() {
+    try {
+      const logPath = FILE_PATHS.log;
+      const exists = await fs.access(logPath).then(() => true).catch(() => false);
+      if (!exists) return [];
+
+      const logContent = await fs.readFile(logPath, 'utf8');
+      const logData = JSON.parse(logContent);
+      
+      // 현재 파일 제외하고 반환
+      return Object.entries(logData)
+        .filter(([path]) => path !== globalState.currentFilePath)
+        .map(([path, data]) => ({
+          path,
+          lastPosition: data.lastPosition,
+          currentNumber: data.metadata?.currentNumber,
+          lastAccessed: data.timestamp,
+          metadata: data.metadata
+        }))
+        .sort((a, b) => b.lastAccessed - a.lastAccessed);
+    } catch (error) {
+      console.error('파일 기록 로드 실패:', error);
+      return [];
+    }
+  },
+
+  // main.js 수정 - 통합된 파일 열기 함수
+  async openFile(filePath, source = 'normal') {
+    try {
+      // 1. 파일 내용 읽기
+      const content = await fs.readFile(filePath, 'utf8');
+      if (!content) {
+        console.error('파일 내용 없음:', filePath);
+        return { success: false };
       }
 
-      return { isExisting: false };
+      // 2. 로그에서 이전 위치 정보 읽기
+      const logData = await this.checkExistingFile(filePath);
+      const startPosition = logData.isExisting ? logData.lastPosition : 0;
+      const savedPageNumber = logData.currentNumber;
+
+      // 3. 파일 처리
+      const result = TextProcessor.processParagraphs(content);
+      if (!result?.paragraphsToDisplay) {
+        console.error('단락 처리 실패');
+        return { success: false };
+      }
+
+      // 4. 상태 업데이트
+      await updateGlobalState({
+        paragraphs: result.paragraphsToDisplay,
+        paragraphsMetadata: result.paragraphsMetadata,
+        currentFilePath: filePath,
+        currentParagraph: startPosition,
+        currentNumber: savedPageNumber,
+        programStatus: ProgramStatus.PROCESS
+      }, source);
+
+      console.log('파일 로드 완료:', {
+        path: filePath,
+        paragraphs: result.paragraphsToDisplay.length,
+        position: startPosition,
+        pageNumber: savedPageNumber
+      });
+
+      return { success: true };
     } catch (error) {
-      console.error('파일 확인 중 오류:', error);
-      return { isExisting: false };
+      console.error('파일 열기 실패:', error);
+      return { success: false };
+    }
+  },
+
+  // openHistoryFile은 openFile을 호출하도록 수정
+  async openHistoryFile(filePath) {
+    return await this.openFile(filePath, 'history');
+  },
+
+  async removeFromHistory(filePath) {
+    try {
+      const log = await this.loadLog(); // 기존의 loadLog 메소드 활용
+      
+      if (log[filePath]) {
+        delete log[filePath];
+        await this.saveLog(log); // 기존의 saveLog 메소드 활용
+        
+        // 현재 열린 파일이 삭제된 파일인 경우 처리
+        if (globalState.currentFilePath === filePath) {
+          updateGlobalState({
+            currentFilePath: null,
+            paragraphs: [],
+            currentParagraph: 0,
+            programStatus: ProgramStatus.READY
+          });
+        }
+        
+        return { success: true };
+      }
+      return { success: false, reason: 'File not found in history' };
+    } catch (error) {
+      console.error('히스토리 삭제 실패:', error);
+      return { success: false, reason: error.message };
     }
   }
 };
@@ -426,7 +540,15 @@ const IPCManager = {
     this.setupWindowHandlers();
     this.setupFileHandlers();
     this.setupNavigationHandlers();
-    // setupCopyHandlers 제거
+    this.setupClipboardHandlers();  // 추가
+  },
+
+  setupClipboardHandlers() {
+    ipcMain.on('copy-to-clipboard', (event, content) => {
+      mainWindow?.webContents.send('notify-clipboard-change');
+      systemListener.notifyInternalClipboardChange();
+      clipboard.writeText(content);
+    });
   },
 
   // setupCopyHandlers 메서드 제거
@@ -448,6 +570,27 @@ const IPCManager = {
         console.error('로고 로드 실패:', error);
         return null;
       }
+    });
+
+    ipcMain.handle('remove-history-file', async (event, filePath) => {
+      try {
+        return await FileManager.removeFromHistory(filePath);
+      } catch (error) {
+        console.error('히스토리 삭제 처리 실패:', error);
+        return { success: false, reason: error.message };
+      }
+    });
+
+    ipcMain.on('toggle-pause', () => {
+      // 일시정지/재개 토글
+      const newStatus = globalState.programStatus === ProgramStatus.PROCESS ? 
+        ProgramStatus.PAUSE : 
+        ProgramStatus.PROCESS;
+      
+      updateGlobalState({
+        programStatus: newStatus,
+        timestamp: Date.now()
+      });
     });
   },
 
@@ -482,14 +625,13 @@ const IPCManager = {
     ipcMain.handle('open-file-dialog', async () => {
       const result = await dialog.showOpenDialog(mainWindow, {
         properties: ['openFile'],
-        filters: [
-          { name: 'Text Files', extensions: ['txt'] },
-          { name: 'All Files', extensions: ['*'] }
-        ]
+        filters: [{ name: 'Text Files', extensions: ['txt'] }]
       });
 
       if (!result.canceled && result.filePaths.length > 0) {
-        return result.filePaths[0];
+        const filePath = result.filePaths[0];
+        const openResult = await FileManager.openFile(filePath, 'dialog');
+        return openResult.success ? filePath : null;
       }
       return null;
     });
@@ -504,6 +646,17 @@ const IPCManager = {
       }
     });
 
+    ipcMain.handle('get-icon-path', async (event, iconName) => {
+      try {
+        const iconPath = path.join(FILE_PATHS.ui_icons, iconName);
+        const svgContent = await fs.readFile(iconPath, 'utf8');
+        return `data:image/svg+xml;base64,${Buffer.from(svgContent).toString('base64')}`;
+      } catch (error) {
+        console.error('아이콘 로드 실패:', error);
+        return null;
+      }
+    });
+
     ipcMain.handle('process-file-content', async (event, fileContent, filePath) => {
       try {
         if (!fileContent || !filePath) return { success: false };
@@ -514,22 +667,80 @@ const IPCManager = {
         if (!result?.paragraphsToDisplay) return { success: false };
 
         const startPosition = fileStatus.isExisting ? fileStatus.lastPosition : 0;
+        const currentMetadata = result.paragraphsMetadata[startPosition];
+        
+        // 상태 업데이트 전 디버깅
+        console.log('파일 처리 결과:', {
+          position: startPosition,
+          pageNumber: currentMetadata?.pageNumber,
+          totalParagraphs: result.paragraphsToDisplay.length
+        });
 
-        // 기존 파일일 경우 'existingFile' 소스로 표시
+        // 오버레이 창 생성/표시
+        if (!overlayWindow || overlayWindow.isDestroyed()) {
+          createOverlayWindow();
+        } else {
+          overlayWindow.show();
+        }
+
+        // 상태 업데이트
         await updateGlobalState({
           paragraphs: result.paragraphsToDisplay,
           paragraphsMetadata: result.paragraphsMetadata,
           currentFilePath: filePath,
           currentParagraph: startPosition,
-          isOverlayVisible: true,
-          programStatus: ProgramStatus.PROCESS
-        }, fileStatus.isExisting ? 'existingFile' : 'newFile');
+          currentNumber: currentMetadata?.pageNumber,
+          programStatus: ProgramStatus.PROCESS,
+          isOverlayVisible: true
+        });
 
         return { success: true };
       } catch (error) {
         console.error('파일 처리 중 오류:', error);
         return { success: false };
       }
+    });
+
+    // main.js에 추가할 IPC 핸들러
+    ipcMain.handle('get-file-history', async () => {
+      try {
+        const logPath = FILE_PATHS.log;
+        const exists = await fs.access(logPath).then(() => true).catch(() => false);
+        if (!exists) return {};
+        
+        const logContent = await fs.readFile(logPath, 'utf8');
+        return {
+          logData: JSON.parse(logContent),
+          currentFile: {
+            path: globalState.currentFilePath,
+            hash: globalState.fileHash
+          }
+        };
+      } catch (error) {
+        console.error('로그 파일 읽기 실패:', error);
+        return {};
+      }
+    });
+
+    ipcMain.handle('remove-file-history', async (event, filePath) => {
+      try {
+        const logPath = FILE_PATHS.log;
+        const logContent = await fs.readFile(logPath, 'utf8');
+        const logData = JSON.parse(logContent);
+        
+        delete logData[filePath];
+        
+        await fs.writeFile(logPath, JSON.stringify(logData, null, 2));
+        return true;
+      } catch (error) {
+        console.error('파일 기록 삭제 실패:', error);
+        return false;
+      }
+    });
+
+    // IPC 핸들러 수정
+    ipcMain.handle('open-history-file', async (event, filePath) => {
+      return await FileManager.openFile(filePath, 'history');
     });
   },
 
@@ -541,6 +752,9 @@ const IPCManager = {
         globalState.currentParagraph > 0;
       
       if (canMove) {
+        // 클립보드 변경 전에 내부 변경 알림
+        mainWindow?.webContents.send('notify-clipboard-change');
+        
         updateGlobalState({
           currentParagraph: globalState.currentParagraph + (isNext ? 1 : -1),
           timestamp: Date.now()
@@ -608,4 +822,52 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     ApplicationManager.exit();
   }
+});
+
+// 오버레이 창 생성 함수 수정
+function createOverlayWindow() {
+  overlayWindow = new BrowserWindow({
+    width: 400,
+    height: 600,
+    frame: false,
+    transparent: true,
+    alwaysOnTop: true,
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false
+    }
+  });
+
+  overlayWindow.loadURL(
+    process.env.NODE_ENV === 'development'
+      ? 'http://localhost:3000/overlay'
+      : `file://${path.join(__dirname, 'build/index.html')}/overlay`
+  );
+
+  // 로드 완료 시 현재 상태 전송
+  overlayWindow.webContents.on('did-finish-load', () => {
+    console.log('오버레이 창 로드 완료');
+    overlayWindow.webContents.send('state-update', {
+      ...globalState,
+      timestamp: Date.now()
+    });
+  });
+
+  // 디버깅 로그 추가
+  overlayWindow.webContents.on('did-finish-load', () => {
+    console.log('오버레이 창 상태:', {
+      windowExists: !!overlayWindow,
+      isDestroyed: overlayWindow?.isDestroyed(),
+      currentState: globalState
+    });
+  });
+}
+
+// 예외 처리기 (디버깅용)
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
 });

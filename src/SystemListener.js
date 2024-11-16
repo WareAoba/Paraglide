@@ -1,132 +1,167 @@
 // SystemListener.js
+const { clipboard, dialog, BrowserWindow, systemPreferences } = require('electron');
 const { GlobalKeyboardListener } = require("node-global-key-listener");
-const ClipboardWatcher = require('electron-clipboard-watcher');
-const { ipcMain, app, BrowserWindow } = require('electron');
-const path = require('path');
-const { execSync } = require('child_process');
 
 class SystemListener {
   constructor() {
+    this.isInternalClipboardChange = false;
+    this.mainWindow = null;
     this.programStatus = 'READY';
-    this.initialize();
+    this.lastClipboardText = clipboard.readText();
+    this.lastInternalChangeTime = 0; // 마지막 내부 변경 시간
+    this.initializeAsync();
   }
 
-  async initialize() {
-    if (process.platform === 'darwin') {
-      await this.setupMacPermissions();
-    }
+  // 메인 윈도우 설정
+  setMainWindow(win) {
+    this.mainWindow = win;
+    console.log('[SystemListener] 메인 윈도우가 설정되었습니다.');
+  }
 
+  // 내부 클립보드 변경 알림
+  notifyInternalClipboardChange() {
+    this.isInternalClipboardChange = true;
+    this.lastInternalChangeTime = Date.now();
+    console.log('[SystemListener] 내부 클립보드 변경 알림 호출됨.');
+  }
+
+  // 초기화 함수
+  async initializeAsync() {
     try {
-      this.keyboardListener = new GlobalKeyboardListener();
-      this.setupListeners();
-      console.log('[시스템] 키보드 리스너 초기화 완료');
+      console.log('[SystemListener] 초기화 시작.');
+      if (process.platform === 'darwin') {
+        await this.setupMacPermissions();
+      }
+      await this.setupKeyboardListener();
+      this.startClipboardWatcher();
+      console.log('[SystemListener] 초기화 완료.');
     } catch (error) {
-      console.error('[시스템] 키보드 리스너 초기화 실패:', error);
+      console.error('[시스템] 초기화 실패:', error);
+      this.showErrorDialog(error);
     }
   }
 
+  // 클립보드 변경 감시 시작
+  startClipboardWatcher() {
+    console.log('[SystemListener] 클립보드 감시 시작.');
+    setInterval(() => {
+      const currentText = clipboard.readText();
+      if (currentText !== this.lastClipboardText) {
+        console.log('[SystemListener] 클립보드 변경 감지:', currentText);
+        this.onClipboardChange(currentText);
+        this.lastClipboardText = currentText;
+      }
+    }, 100); // 100ms 간격으로 클립보드 확인
+  }
+
+  // 클립보드 변경 시 호출
+  onClipboardChange(text) {
+    const now = Date.now();
+    // 내부 복사 변경이 최근 500ms 이내에 발생했는지 확인
+    if (this.isInternalClipboardChange && (now - this.lastInternalChangeTime) < 500) {
+      console.log('[클립보드] 내부 복사 감지.');
+      this.isInternalClipboardChange = false;
+      return;
+    }
+
+    console.log('[클립보드] 외부 복사 감지:', text);
+    // 외부 복사에 대한 처리
+    if (this.mainWindow && !this.mainWindow.isDestroyed()) {
+      this.mainWindow.webContents.send('external-copy', text);
+      console.log('[SystemListener] 외부 복사 이벤트 전송됨.');
+    }
+  }
+
+  // 키보드 리스너 설정
+  async setupKeyboardListener() {
+    console.log('[SystemListener] 키보드 리스너 설정 시작.');
+    const keyboard = new GlobalKeyboardListener();
+
+    keyboard.addListener((e, down) => {
+      console.log(`[SystemListener] 키 이벤트 발생 - 상태: ${e.state}, 키: ${e.name}, 다운: ${down}`);
+      if (e.state === 'DOWN') {
+        // Cmd+V 또는 Ctrl+V 감지
+        const isCtrlOrCmd = e.meta || e.control;
+        if (e.name === 'V' && isCtrlOrCmd) {
+          console.log('[단축키] 다음 단락으로 이동 (Cmd+V 또는 Ctrl+V) 감지됨.');
+          this.moveToNext();
+          return;
+        }
+
+        const isAlt = e.alt;
+        const keyName = e.name;
+
+        if (isAlt && keyName === 'Right') {
+          console.log('[단축키] Alt+Right 감지됨.');
+          this.moveToNext();
+        } else if (isAlt && keyName === 'Left') {
+          console.log('[단축키] Alt+Left 감지됨.');
+          this.moveToPrev();
+        } else if (isAlt && keyName === 'Up') {
+          console.log('[단축키] Alt+Up 감지됨.');
+          this.toggleOverlay();
+        } else if (isAlt && keyName === 'Down') {
+          console.log('[단축키] Alt+Down 감지됨.');
+          this.togglePause();
+        }
+      }
+    });
+
+    console.log('[SystemListener] 키보드 리스너 설정 완료.');
+  }
+
+  // 다음 단락으로 이동
+  moveToNext() {
+    if (this.mainWindow && !this.mainWindow.isDestroyed()) {
+      // 내부 클립보드 변경 알림
+      this.notifyInternalClipboardChange();
+      this.mainWindow.webContents.send('move-to-next');
+      console.log('[SystemListener] 다음 단락으로 이동 이벤트 전송됨.');
+    }
+  }
+
+  // 이전 단락으로 이동
+  moveToPrev() {
+    if (this.mainWindow && !this.mainWindow.isDestroyed()) {
+      // 내부 클립보드 변경 알림
+      this.notifyInternalClipboardChange();
+      this.mainWindow.webContents.send('move-to-prev');
+      console.log('[SystemListener] 이전 단락으로 이동 이벤트 전송됨.');
+    }
+  }
+
+  // 오버레이 토글
+  toggleOverlay() {
+    if (this.mainWindow && !this.mainWindow.isDestroyed()) {
+      this.mainWindow.webContents.send('toggle-overlay');
+      console.log('[SystemListener] 오버레이 토글 이벤트 전송됨.');
+    }
+  }
+
+  // 일시정지 토글
+  togglePause() {
+    if (this.mainWindow && !this.mainWindow.isDestroyed()) {
+      this.mainWindow.webContents.send('toggle-pause');
+      console.log('[SystemListener] 일시정지 토글 이벤트 전송됨.');
+    }
+  }
+
+  // macOS 권한 설정
   async setupMacPermissions() {
-    const serverPath = path.join(__dirname, 'node_modules/node-global-key-listener/bin/MacKeyServer');
-    
-    try {
-      // 실행 권한 부여
-      execSync(`chmod +x "${serverPath}"`);
-      
-      // 코드 서명 확인
-      const isSigned = execSync(`codesign -v "${serverPath}" 2>&1 || true`).toString();
-      if (isSigned.includes('not signed')) {
-        console.log('[시스템] MacKeyServer에 코드 서명이 필요합니다.');
-        // 자체 서명 시도
-        execSync(`codesign --force --deep --sign - "${serverPath}"`);
-      }
-
-      if (!app.isAccessibilitySupportEnabled()) {
-        // 권한 요청 다이얼로그 표시
-        const { dialog } = require('electron');
-        dialog.showMessageBox({
-          type: 'info',
-          message: '접근성 권한이 필요합니다',
-          detail: '시스템 환경설정 > 개인정보 보호 및 보안 > 입력 모니터링에서 앱을 허용해주세요.',
-          buttons: ['확인']
-        });
-        
-        // 시스템 설정 열기
-        execSync('open "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"');
-      }
-    } catch (error) {
-      console.error('[시스템] 권한 설정 중 오류:', error);
+    console.log('[SystemListener] macOS 접근성 권한 확인 중.');
+    const isTrusted = systemPreferences.isTrustedAccessibilityClient(true);
+    if (!isTrusted) {
+      console.error('[시스템] 접근성 권한이 필요합니다.');
+      this.showErrorDialog('앱을 사용하려면 접근성 권한이 필요합니다.');
+      throw new Error('접근성 권한이 허용되지 않았습니다.');
     }
+    console.log('[SystemListener] 접근성 권한이 허용되었습니다.');
   }
 
-  setupListeners() {
-    ipcMain.on('state-update', (_, newState) => {
-      this.programStatus = newState.programStatus;
-    });
-
-    this.setupKeyboardListeners();
-    this.setupClipboardWatcher();
-  }
-
-  setupKeyboardListeners() {
-    this.keyboardListener.addListener((e, down) => {
-      // 프로그램이 일시정지 상태일 때는 특정 키만 허용
-      if (this.programStatus === 'PAUSE' && e.name === "V") {
-        return;
-      }
-
-      if (e.state === "DOWN") {
-        // Cmd+V 또는 Ctrl+V
-        if (e.name === "V" && (down["LEFT CTRL"] || down["RIGHT CTRL"] || 
-           down["LEFT META"] || down["RIGHT META"])) {
-          this.emitEvent('move-to-next');
-          console.log('[단축키] 다음 단락으로 이동 (Ctrl+V)');
-        }
-
-        // Alt/Option + 방향키
-        if (down["LEFT ALT"] || down["RIGHT ALT"]) {
-          switch (e.name) {
-            case "LEFT":
-              this.emitEvent('move-to-prev');
-              console.log('[단축키] 이전 단락으로 이동 (Alt+←)');
-              break;
-            case "RIGHT":
-              this.emitEvent('move-to-next');
-              console.log('[단축키] 다음 단락으로 이동 (Alt+→)');
-              break;
-            case "UP":
-              if (this.programStatus === 'PAUSE') {
-                this.emitEvent('toggle-pause');
-                console.log('[단축키] 재생 (Alt+↑)');
-              }
-              break;
-            case "DOWN":
-              if (this.programStatus === 'PROCESS') {
-                this.emitEvent('toggle-pause');
-                console.log('[단축키] 일시정지 (Alt+↓)');
-              }
-              break;
-          }
-        }
-      }
-    });
-  }
-
-  setupClipboardWatcher() {
-    ClipboardWatcher({
-      watchDelay: 250,
-      onTextChange: (text) => {
-        this.emitEvent('external-clipboard-change', text);
-      }
-    });
-  }
-
-  emitEvent(channel, ...args) {
-    const mainWindow = BrowserWindow.getAllWindows().find(w => !w.isDestroyed());
-    if (mainWindow) {
-      mainWindow.webContents.send(channel, ...args);
-    }
+  // 오류 대화상자 표시
+  showErrorDialog(message) {
+    dialog.showErrorBox('오류', message.toString());
   }
 }
 
-const listener = new SystemListener();
-module.exports = listener;
+module.exports = new SystemListener();

@@ -1,66 +1,10 @@
 // src/MainComponent.js
 import React, { useState, useEffect } from 'react';
 import './App.css';
+import Sidebar from './components/Sidebar';
 const { ipcRenderer } = window.require('electron');
 
-// 스타일 상수
-const STYLES = {
-  container: (isDarkMode) => ({
-    backgroundColor: isDarkMode ? '#262626' : '#fff',
-    color: isDarkMode ? '#fff' : '#000',
-    padding: '20px',
-    height: '100vh',
-    display: 'flex',
-    flexDirection: 'column'
-  }),
-  button: {
-    default: (isDarkMode) => ({
-      padding: '10px 20px',
-      backgroundColor: '#007bff',
-      color: '#fff',
-      border: 'none',
-      borderRadius: '4px',
-      cursor: 'pointer'
-    }),
-    control: (isDarkMode, isActive) => ({
-      padding: '10px 20px',
-      minWidth: '100px',
-      backgroundColor: isActive ? 'rgba(108, 117, 125, 0.8)' : 'rgba(108, 117, 125, 0.3)',
-      color: '#fff',
-      border: 'none',
-      borderRadius: '4px',
-      cursor: 'pointer',
-      transition: 'background-color 0.2s'
-    })
-  },
-  paragraph: {
-    container: (isDarkMode) => ({
-      width: '80%',
-      height: '50vh',
-      margin: '0 auto',
-      backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
-      borderRadius: '8px',
-      padding: '10px',
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '0px'
-    }),
-    section: (type, isDarkMode, isHovered) => ({
-      flex: type === 'current' ? 1.5 : 1,
-      opacity: type === 'current' ? 1 : 0.7,
-      padding: '10px',
-      textAlign: 'center',
-      position: 'relative',
-      overflow: 'hidden',
-      cursor: 'pointer',
-      transition: 'background-color 0.2s',
-      backgroundColor: isHovered ?
-        (isDarkMode ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.15)') :
-        (isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)')
-    })
-  }
-};
-
+// MainComponent.js 수정
 function MainComponent() {
   const [state, setState] = useState({
     paragraphs: [],
@@ -69,11 +13,14 @@ function MainComponent() {
     isDarkMode: false,
     isPaused: false,
     isOverlayVisible: false,
-    logoPath: null
+    logoPath: null,
+    isSidebarVisible: false, // 추가
   });
 
   const setLogoScale = useState(1);
   const [hoveredSection, setHoveredSection] = useState(null);
+  const [playIcon, setPlayIcon] = useState(null);
+  const [pauseIcon, setPauseIcon] = useState(null);
 
   useEffect(() => {
     // 로고 로드 함수 수정
@@ -126,6 +73,21 @@ function MainComponent() {
       ipcRenderer.removeListener('state-update', handleStateUpdate);
       ipcRenderer.removeListener('theme-updated', handleThemeUpdate);
     };
+  }, []);
+
+  useEffect(() => {
+    const loadIcons = async () => {
+      try {
+        const playIconPath = await ipcRenderer.invoke('get-icon-path', 'play-solid.svg');
+        const pauseIconPath = await ipcRenderer.invoke('get-icon-path', 'pause-solid.svg');
+        setPlayIcon(playIconPath);
+        setPauseIcon(pauseIconPath);
+      } catch (error) {
+        console.error('아이콘 로드 실패:', error);
+      }
+    };
+    
+    loadIcons();
   }, []);
 
   const handleNext = () => {
@@ -270,11 +232,54 @@ function MainComponent() {
       (state.isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)')
   });
 
+  // 사이드바 토글 함수
+  const handleToggleSidebar = () => {
+    setState(prev => ({
+      ...prev,
+      isSidebarVisible: !prev.isSidebarVisible
+    }));
+  };
+
+  // 사이드바 닫기 함수
+  const handleCloseSidebar = () => {
+    setState(prev => ({
+      ...prev,
+      isSidebarVisible: false
+    }));
+  };
+
+  // 파일 선택 핸들러 수정
+  const handleSidebarFileSelect = async (filePath, lastPosition) => {
+    try {
+      const content = await ipcRenderer.invoke('read-file', filePath);
+      if (!content) return;
+
+      const result = await ipcRenderer.invoke('process-file-content', content, filePath);
+      if (result.success) {
+        // 파일 로드 후 저장된 위치로 이동
+        ipcRenderer.send('move-to-position', lastPosition);
+        setState(prev => ({ 
+          ...prev,
+          isSidebarVisible: false
+        }));
+      }
+    } catch (error) {
+      console.error('파일 로드 실패:', error);
+    }
+  };
+
   // 파일이 로드되지 않은 상태일 때 표시할 대기 화면
   if (state.paragraphs.length === 0) {
     const styles = getThemeStyles();
     return (
       <div style={styles.container}>
+        <Sidebar 
+          isVisible={state.isSidebarVisible}
+          onFileSelect={handleSidebarFileSelect}
+          isDarkMode={state.isDarkMode}
+          onClose={handleCloseSidebar}
+          currentFilePath={null}
+        />
         <div style={styles.content}>
           {state.logoPath && (
             <img
@@ -290,6 +295,12 @@ function MainComponent() {
           )}
           <h1 style={styles.title}>Paraglide</h1>
           <button 
+            className="btn btn-icon"
+            onClick={handleToggleSidebar}
+          >
+            {state.isSidebarVisible ? '사이드바 숨기기' : '사이드바 표시'}
+          </button>
+          <button 
             onClick={handleLoadFile}
             style={styles.button}
           >
@@ -302,83 +313,107 @@ function MainComponent() {
 
   // MainComponent.js의 return문 부분 수정
   return (
-    <div className={`app-container ${state.isDarkMode ? 'dark-mode' : ''}`} data-theme={state.isDarkMode ? 'dark' : 'light'}>
-      {state.paragraphs.length === 0 ? (
-        <div className="welcome-screen">
-          <button className="btn btn-primary" onClick={handleLoadFile}>
-            파일 불러오기
-          </button>
-        </div>
-      ) : (
-        <div className="main-container">
-          <div className="control-panel">
+    <div className="app-container">
+      <Sidebar 
+        isVisible={state.isSidebarVisible}
+        onFileSelect={handleSidebarFileSelect}
+        isDarkMode={state.isDarkMode}
+        onClose={handleCloseSidebar}
+      />
+      <div className={`app-container ${state.isDarkMode ? 'dark-mode' : ''}`} data-theme={state.isDarkMode ? 'dark' : 'light'}>
+        {state.paragraphs.length === 0 ? (
+          <div className="welcome-screen">
             <button className="btn btn-primary" onClick={handleLoadFile}>
               파일 불러오기
             </button>
-            
-            <div className="button-group">
-              <button 
-                className={`btn ${state.isPaused ? 'btn-danger' : 'btn-success'}`}
-                onClick={handleTogglePause}
-              >
-                {state.isPaused ? '재개' : '일시정지'}
-              </button>
-              <button 
-                className={`btn ${state.isOverlayVisible ? 'btn-active' : 'btn-outline'}`}
-                onClick={handleToggleOverlay}
-              >
-                {state.isOverlayVisible ? '오버레이 숨김' : '오버레이 표시'}
-              </button>
-            </div>
           </div>
-
-          <div className="page-number">
-            {state.currentNumber ? `${state.currentNumber} 페이지` : ''}
-          </div>
-
-          <div className="paragraph-section">
-            <div className="paragraph-container">
-              <div className="paragraph-header">
-                <div>이전 단락</div>
-                <div className="current">현재 단락</div>
-                <div>다음 단락</div>
-              </div>
+        ) : (
+          <div className="main-container">
+            <div className="control-panel">
+              <button 
+                className="btn btn-icon"
+                onClick={handleToggleSidebar}
+              >
+                {state.isSidebarVisible ? '사이드바 숨기기' : '사이드바 표시'}
+              </button>
+              <button className="btn btn-primary" onClick={handleLoadFile}>
+                파일 불러오기
+              </button>
               
-              <div className="paragraph-content">
-                <div 
-                  className={`paragraph prev ${hoveredSection === 'prev' ? 'hovered' : ''}`}
-                  onClick={() => handleParagraphClick('prev')}
-                  onMouseEnter={() => setHoveredSection('prev')}
-                  onMouseLeave={() => setHoveredSection(null)}
+              <div className="button-group">
+                <button 
+                  className={`btn btn-icon ${state.isPaused ? 'btn-danger' : 'btn-success'}`}
+                  onClick={handleTogglePause}
                 >
-                  {state.paragraphs[state.currentParagraph - 1] || ''}
-                </div>
-
-                <div 
-                  className="paragraph current"
-                  onClick={() => handleParagraphClick('current')}
+                  {state.isPaused ? (
+                    <>
+                      {playIcon && <img src={playIcon} alt="" className="icon" />}
+                      <span>재개</span>
+                    </>
+                  ) : (
+                    <>
+                      {pauseIcon && <img src={pauseIcon} alt="" className="icon" />}
+                      <span>일시정지</span>
+                    </>
+                  )}
+                </button>
+                <button 
+                  className={`btn ${state.isOverlayVisible ? 'btn-active' : 'btn-outline'}`}
+                  onClick={handleToggleOverlay}
                 >
-                  {state.paragraphs[state.currentParagraph] || ''}
-                </div>
-
-                <div 
-                  className={`paragraph next ${hoveredSection === 'next' ? 'hovered' : ''}`}
-                  onClick={() => handleParagraphClick('next')}
-                  onMouseEnter={() => setHoveredSection('next')}
-                  onMouseLeave={() => setHoveredSection(null)}
-                >
-                  {state.paragraphs[state.currentParagraph + 1] || ''}
-                </div>
+                  {state.isOverlayVisible ? '오버레이 숨김' : '오버레이 표시'}
+                </button>
               </div>
             </div>
 
-            <div className="navigation-buttons">
-              <button className="btn btn-outline" onClick={handlePrev}>◀ 이전</button>
-              <button className="btn btn-outline" onClick={handleNext}>다음 ▶</button>
+            <div className="page-number">
+              {state.currentNumber ? `${state.currentNumber} 페이지` : ''}
+            </div>
+
+            <div className="paragraph-section">
+              <div className="paragraph-container">
+                <div className="paragraph-header">
+                  <div>이전 단락</div>
+                  <div className="current">현재 단락</div>
+                  <div>다음 단락</div>
+                </div>
+                
+                <div className="paragraph-content">
+                  <div 
+                    className={`paragraph prev ${hoveredSection === 'prev' ? 'hovered' : ''}`}
+                    onClick={() => handleParagraphClick('prev')}
+                    onMouseEnter={() => setHoveredSection('prev')}
+                    onMouseLeave={() => setHoveredSection(null)}
+                  >
+                    {state.paragraphs[state.currentParagraph - 1] || ''}
+                  </div>
+
+                  <div 
+                    className="paragraph current"
+                    onClick={() => handleParagraphClick('current')}
+                  >
+                    {state.paragraphs[state.currentParagraph] || ''}
+                  </div>
+
+                  <div 
+                    className={`paragraph next ${hoveredSection === 'next' ? 'hovered' : ''}`}
+                    onClick={() => handleParagraphClick('next')}
+                    onMouseEnter={() => setHoveredSection('next')}
+                    onMouseLeave={() => setHoveredSection(null)}
+                  >
+                    {state.paragraphs[state.currentParagraph + 1] || ''}
+                  </div>
+                </div>
+              </div>
+
+              <div className="navigation-buttons">
+                <button className="btn btn-outline" onClick={handlePrev}>◀ 이전</button>
+                <button className="btn btn-outline" onClick={handleNext}>다음 ▶</button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
