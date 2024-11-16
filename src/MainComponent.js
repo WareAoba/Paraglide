@@ -300,248 +300,84 @@ function MainComponent() {
     );
   }
 
+  // MainComponent.js의 return문 부분 수정
   return (
-    <div style={{
-      backgroundColor: state.isDarkMode ? '#262626' : '#fff',
-      color: state.isDarkMode ? '#fff' : '#000',
-      padding: '20px',
-      height: '100vh',
-      display: 'flex',
-      flexDirection: 'column',
-      justifyContent: state.paragraphs.length === 0 ? 'center' : 'flex-start',
-      alignItems: state.paragraphs.length === 0 ? 'center' : 'stretch',
-      gap: '20px'
-    }}>
+    <div className={`app-container ${state.isDarkMode ? 'dark-mode' : ''}`} data-theme={state.isDarkMode ? 'dark' : 'light'}>
       {state.paragraphs.length === 0 ? (
-        // 파일이 로드되지 않은 상태
-        <button 
-          onClick={handleLoadFile} 
-          style={{
-            padding: '15px 30px',
-            backgroundColor: '#007bff',
-            color: '#fff',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            fontSize: '1.2em'
-          }}
-        >
-          파일 불러오기
-        </button>
+        <div className="welcome-screen">
+          <button className="btn btn-primary" onClick={handleLoadFile}>
+            파일 불러오기
+          </button>
+        </div>
       ) : (
-        // 파일이 로드된 상태
-        <>
-          {/* 상단 컨트롤 */}
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            height: '60px',  // 고정 높이
-            padding: '0 20px'
-          }}>
-            <button 
-              onClick={handleLoadFile} 
-              style={{
-                padding: '10px 20px',
-                backgroundColor: '#007bff',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer'
-              }}
-            >
+        <div className="main-container">
+          <div className="control-panel">
+            <button className="btn btn-primary" onClick={handleLoadFile}>
               파일 불러오기
             </button>
-
-            <div style={{ display: 'flex', gap: '10px' }}>
+            
+            <div className="button-group">
               <button 
+                className={`btn ${state.isPaused ? 'btn-danger' : 'btn-success'}`}
                 onClick={handleTogglePause}
-                style={{
-                  padding: '10px 20px',
-                  minWidth: '100px',  // 최소 너비 설정
-                  backgroundColor: state.isPaused ? '#dc3545' : '#28a745',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  transition: 'background-color 0.2s'  // 부드러운 색상 전환
-                }}
               >
                 {state.isPaused ? '재개' : '일시정지'}
               </button>
-
               <button 
+                className={`btn ${state.isOverlayVisible ? 'btn-active' : 'btn-outline'}`}
                 onClick={handleToggleOverlay}
-                style={{
-                  padding: '10px 20px',
-                  minWidth: '100px',  // 최소 너비 설정
-                  backgroundColor: state.isOverlayVisible ? 'rgba(108, 117, 125, 0.8)' : 'rgba(108, 117, 125, 0.3)',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  transition: 'background-color 0.2s'
-                }}
               >
                 {state.isOverlayVisible ? '오버레이 숨김' : '오버레이 표시'}
               </button>
             </div>
           </div>
 
-          {/* 페이지 번호 */}
-          <div style={{
-            fontSize: '1.5em',
-            fontWeight: 'bold',
-            textAlign: 'center',
-            borderBottom: `1px solid ${state.isDarkMode ? '#ffffff33' : '#00000033'}`,
-            paddingBottom: '10px'
-          }}>
+          <div className="page-number">
             {state.currentNumber ? `${state.currentNumber} 페이지` : ''}
           </div>
 
-          {/* 단락 섹션 */}
-          <div style={{
-            flex: 1,
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            minHeight: '400px',  // 최소 높이 설정
-            margin: 'auto 0'     // 상하 자동 여백
-          }}>
-            {/* 단락 컨테이너 */}
-            <div style={{
-              width: '80%',
-              height: '50vh',  // 뷰포트 높이의 50%
-              margin: '0 auto',
-              backgroundColor: state.isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
-              borderRadius: '8px',
-              padding: '20px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '20px'
-            }}>
-              {/* 단락 헤더 */}
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                gap: '10px',
-                borderBottom: `1px solid ${state.isDarkMode ? '#ffffff33' : '#00000033'}`,
-                paddingBottom: '10px'
-              }}>
-                <div style={{
-                  flex: 1,
-                  padding: '10px',
-                  textAlign: 'center',
-                  opacity: 0.7
-                }}>
-                  이전 단락
-                </div>
-                <div style={{
-                  flex: 1,
-                  padding: '10px',
-                  textAlign: 'center',
-                  fontWeight: 'bold',
-                  borderBottom: `2px solid ${state.isDarkMode ? '#fff' : '#000'}`
-                }}>
-                  현재 단락
-                </div>
-                <div style={{
-                  flex: 1,
-                  padding: '10px',
-                  textAlign: 'center',
-                  opacity: 0.7
-                }}>
-                  다음 단락
-                </div>
+          <div className="paragraph-section">
+            <div className="paragraph-container">
+              <div className="paragraph-header">
+                <div>이전 단락</div>
+                <div className="current">현재 단락</div>
+                <div>다음 단락</div>
               </div>
-
-              {/* 단락 내용 */}
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                gap: '20px',
-                flex: 1,
-                minHeight: 0  // flex child 오버플로우 허용
-              }}>
+              
+              <div className="paragraph-content">
                 <div 
-                  style={getParagraphStyle('prev')}
+                  className={`paragraph prev ${hoveredSection === 'prev' ? 'hovered' : ''}`}
                   onClick={() => handleParagraphClick('prev')}
                   onMouseEnter={() => setHoveredSection('prev')}
                   onMouseLeave={() => setHoveredSection(null)}
                 >
-                  <div style={{
-                    whiteSpace: 'pre-wrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    height: '80%'
-                  }}>
-                    {state.paragraphs[state.currentParagraph - 1] || ''}
-                  </div>
+                  {state.paragraphs[state.currentParagraph - 1] || ''}
                 </div>
 
                 <div 
-                  style={getParagraphStyle('current')}
+                  className="paragraph current"
                   onClick={() => handleParagraphClick('current')}
                 >
-                  <div style={{
-                    whiteSpace: 'pre-wrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    height: '100%'
-                  }}>
-                    {state.paragraphs[state.currentParagraph] || ''}
-                  </div>
+                  {state.paragraphs[state.currentParagraph] || ''}
                 </div>
 
                 <div 
-                  style={getParagraphStyle('next')}
+                  className={`paragraph next ${hoveredSection === 'next' ? 'hovered' : ''}`}
                   onClick={() => handleParagraphClick('next')}
                   onMouseEnter={() => setHoveredSection('next')}
                   onMouseLeave={() => setHoveredSection(null)}
                 >
-                  <div style={{
-                    whiteSpace: 'pre-wrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    height: '80%'
-                  }}>
-                    {state.paragraphs[state.currentParagraph + 1] || ''}
-                  </div>
+                  {state.paragraphs[state.currentParagraph + 1] || ''}
                 </div>
               </div>
             </div>
 
-            {/* 이전/다음 버튼 */}
-            <div style={{
-              display: 'flex',
-              justifyContent: 'center',
-              gap: '10px',
-              marginTop: '20px',
-              height: '50px'  // 버튼 영역 고정 높이
-            }}>
-              <button onClick={handlePrev} style={{
-                padding: '10px 20px',
-                backgroundColor: 'transparent',
-                border: `1px solid ${state.isDarkMode ? '#ffffff33' : '#00000033'}`,
-                color: state.isDarkMode ? '#fff' : '#000',
-                borderRadius: '4px',
-                cursor: 'pointer'
-              }}>
-                ◀ 이전
-              </button>
-              <button onClick={handleNext} style={{
-                padding: '10px 20px',
-                backgroundColor: 'transparent',
-                border: `1px solid ${state.isDarkMode ? '#ffffff33' : '#00000033'}`,
-                color: state.isDarkMode ? '#fff' : '#000',
-                borderRadius: '4px',
-                cursor: 'pointer'
-              }}>
-                다음 ▶
-              </button>
+            <div className="navigation-buttons">
+              <button className="btn btn-outline" onClick={handlePrev}>◀ 이전</button>
+              <button className="btn btn-outline" onClick={handleNext}>다음 ▶</button>
             </div>
           </div>
-        </>
+        </div>
       )}
     </div>
   );

@@ -150,3 +150,292 @@ html, body, #root {
     }
   }
 }
+
+/* 다크모드 변수 정의 */
+:root {
+  --primary-color: #007bff;
+  --text-color: #000;
+  --bg-color: #fff;
+  --border-color: rgba(0, 0, 0, 0.2);
+  --section-bg: rgba(0, 0, 0, 0.05);
+  --hover-bg: rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="dark"] {
+  --primary-color: #0066cc;
+  --text-color: #fff;
+  --bg-color: #262626;
+  --border-color: rgba(255, 255, 255, 0.2);
+  --section-bg: rgba(255, 255, 255, 0.05);
+  --hover-bg: rgba(255, 255, 255, 0.15);
+}
+
+/* 컨테이너 스타일 */
+.app-container {
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  margin: 0;
+  padding: 20px;
+  width: 100%;
+  height: 100vh;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif;
+  transition: background-color 0.3s, color 0.3s;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px 40px;
+  width: calc(100% - 80px);
+  height: 100vh;
+}
+
+.main-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 20px;
+  border-radius: 8px;
+  background-color: var(--section-bg);
+}
+
+/* 컨트롤 패널 */
+.control-panel {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 60px;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+/* 단락 섹션 */
+.paragraph-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.paragraph-container {
+  width: 80%;
+  margin: 0 auto;
+  padding: 20px;
+  border-radius: 8px;
+  background-color: var(--section-bg);
+  border: 1px solid var(--border-color);
+}
+
+.paragraph {
+  padding: 15px;
+  margin: 10px 0;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  border: 1px solid var(--border-color);
+  flex: 1;
+  min-width: 0; /* 텍스트 오버플로우 방지 */
+  padding: 15px;
+  border-radius: 4px;
+  background-color: var(--section-bg);
+  border: 1px solid var(--border-color);
+}
+
+.paragraph.current {
+  background-color: var(--section-bg);
+  border-left: 4px solid var(--primary-color);
+}
+
+.paragraph:hover,
+.paragraph.hovered {
+  background-color: var(--hover-bg);
+}
+
+.paragraph-content {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  margin-top: 10px;
+}
+
+.paragraph-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 0 15px;
+}
+
+.paragraph-header > div {
+  flex: 1;
+  text-align: center;
+  font-weight: bold;
+}
+
+/* 버튼 스타일 */
+.btn {
+  padding: 10px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  border: 1px solid var(--border-color);
+  min-width: 100px; /* 버튼 최소 너비 통일 */
+  height: 36px; /* 버튼 높이 통일 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-outline {
+  background-color: transparent;
+  color: var(--text-color);
+}
+
+.btn-outline:hover {
+  background-color: var(--section-bg);
+}
+
+.btn-primary {
+  background-color: var(--primary-color);
+  color: #fff;
+  border: none;
+}
+
+.btn-primary:hover {
+  filter: brightness(1.1);
+}
+
+.btn-danger {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+}
+
+.btn-success {
+  background-color: #28a745;
+  color: white;
+  border: none;
+}
+
+.btn-danger:hover {
+  background-color: #c82333;
+}
+
+.btn-success:hover {
+  background-color: #218838;
+}
+
+/* 네비게이션 버튼 */
+.navigation-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+/* 공통 스타일 */
+.app-container {
+  margin: 0;
+  padding: 20px;
+  width: 100%;
+  height: 100vh;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+/* 메인 창 스타일 */
+.main-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.control-panel {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 60px;
+  padding: 0 20px;
+}
+
+.paragraph-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 400px;
+  margin: auto 0;
+}
+
+.paragraph-container {
+  width: 80%;
+  height: 50vh;
+  margin: 0 auto;
+  border-radius: 8px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  backdrop-filter: blur(10px);
+}
+
+/* 버튼 스타일 */
+.btn {
+  padding: 10px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-primary {
+  background-color: var(--primary-color);
+  color: #fff;
+  border: none;
+}
+
+.btn-outline {
+  background-color: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
+}
+
+/* 오버레이 창 스타일 */
+.overlay-container {
+  background-color: var(--overlay-bg);
+  color: var(--text-color);
+  padding: 15px;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  -webkit-app-region: drag;
+  -webkit-user-select: none;
+}
+
+.overlay-header {
+  height: 36px;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 15px;
+}
+
+/* 다크모드 변수 */
+:root {
+  --primary-color: #007bff;
+  --text-color: #000;
+  --bg-color: #fff;
+  --border-color: rgba(0, 0, 0, 0.2);
+  --overlay-bg: rgba(255, 255, 255, 0.8);
+}
+
+[data-theme="dark"] {
+  --primary-color: #0066cc;
+  --text-color: #fff;
+  --bg-color: #262626;
+  --border-color: rgba(255, 255, 255, 0.2);
+  --overlay-bg: rgba(32, 32, 32, 0.8);
+}
+
+.button-group {
+  display: flex;
+  gap: 10px; /* 버튼 사이 간격 */
+  align-items: center;
+}
