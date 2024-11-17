@@ -47,15 +47,21 @@
 
  1. 먼저 Clone해줍니다.
  
-    `git clone https://github.com/WareAoba/Paraglide`
+   ```bash
+   git clone https://github.com/WareAoba/Paraglide
+```
 
  2. 프로그램 루트 디렉토리에 NPM을 설치해주세요.
  
-    `npm install`
+    ```bash
+    npm install
+    ```
 
- 3. 다음 명령어로 실행합니다.
+ 4. 다음 명령어로 실행합니다.
  
-    `npm run dev`
+    ```bash
+    npm run dev
+    ```
 
 컴파일된 프로그램은 추후 업로드하도록 하겠습니다.
 
@@ -101,3 +107,5 @@ AI들고 삽질하면 하도 멀쩡한 기능을 고장내는 경우가 많아 �
 해당 프로그램의 대부분의 코드는 **Github Copilot Chat**으로 작성되었습니다.
 
 해당 프로그램과 코드는 **MIT License**를 통해 배포됩니다.
+
+
