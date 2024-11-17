@@ -787,23 +787,25 @@ const ApplicationManager = {
   async initialize() {
     try {
       await StatusManager.transition(ProgramStatus.LOADING);
-      
-      // 1. 윈도우 먼저 생성
-      WindowManager.createMainWindow();
-      WindowManager.createOverlayWindow();
 
-      // 2. SystemListener 초기화
-      systemListener = new SystemListener(mainWindow);
-      await systemListener.initialize();
-
-      // 3. 나머지 초기화
-      globalState.isDarkMode = nativeTheme.shouldUseDarkColors;
+      // 설정 로드
       const savedConfig = await FileManager.loadConfig();
       if (savedConfig.overlayBounds) {
         globalState.overlayBounds = savedConfig.overlayBounds;
       }
+      
+      // 윈도우 생성
+      WindowManager.createMainWindow();
+      WindowManager.createOverlayWindow();
 
-      // 4. IPC 핸들러 설정
+      // SystemListener 초기화
+      systemListener = new SystemListener(mainWindow);
+      await systemListener.initialize();
+
+      // 나머지 초기화
+      globalState.isDarkMode = nativeTheme.shouldUseDarkColors;
+
+      // IPC 핸들러 설정
       IPCManager.setupHandlers();
 
       await StatusManager.transition(ProgramStatus.READY);

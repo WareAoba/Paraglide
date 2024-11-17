@@ -79,7 +79,7 @@ Feel free to suggest improvements or highlight areas that need refinement!
  3. The new Sidebar’s design is subpar—scheduled for improvement.
  4. Issues with real-time theme switching; handlers seem to be missing.
  5. Files load in a paused state—reason unknown.
- 6. Logging functionality is broken again 😭.
+ 6. Logging functionality is broken again lmao 😭
  7. The ribbon menu is visible in the Windows build and needs to be removed.
  8. Files occasionally unload randomly, with the cause still unidentified.
 
