@@ -159,20 +159,6 @@ function MainComponent() {
     }
   };
 
-  const getParagraphStyle = (type) => ({
-    flex: type === 'current' ? 1.5 : 1,
-    opacity: type === 'current' ? 1 : 0.7,
-    padding: 'var(--spacing-md)',
-    textAlign: 'center',
-    position: 'relative',
-    overflow: 'hidden',
-    cursor: 'pointer',
-    transition: 'var(--transition-default)',
-    backgroundColor: hoveredSection === type ?
-      (state.isDarkMode ? 'var(--hover-bg)' : 'var(--hover-bg)') :
-      (state.isDarkMode ? 'var(--bg-color)' : 'var(--bg-color)')
-  });
-
   const handleToggleSidebar = () => {
     setState(prev => ({
       ...prev,
