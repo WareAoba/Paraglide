@@ -81,7 +81,7 @@ body,
   min-height: 100vh;
 }
 
-/* 컨테이너 */
+/* 메인 컨테이너 래퍼 */
 .container {
   width: var(--container-width);
   background-color: var(--bg-color);
@@ -90,6 +90,7 @@ body,
               color var(--transition-default);
 }
 
+/* 컨텐츠 영역 중앙 정렬 래퍼 */
 .content {
   display: flex;
   flex-direction: column;
@@ -130,6 +131,7 @@ body,
   min-width: 90px;
 }
 
+/* 기본 버튼 호버 상태 */
 .btn:hover {
   background-color: var(--hover-bg);
 }
@@ -141,12 +143,14 @@ body,
   border: none;
 }
 
+/* 성공 상태 버튼 */
 .btn-success {
   background-color: var(--success-color);
   color: #fff;
   border: none;
 }
 
+/* 경고/위험 상태 버튼 */
 .btn-danger {
   background-color: var(--danger-color);
   color: #fff;
@@ -168,11 +172,13 @@ body,
   margin: 0; /* Remove any default margin */
 }
 
+/* 아이콘 버튼 SVG 요소 */
 .btn-icon svg {
   width: 100%;
   height: 100%;
 }
 
+/* 아이콘 버튼 상호작용 상태 */
 .btn-icon:hover,
 .btn-icon:focus,
 .btn-icon:active {
@@ -199,11 +205,13 @@ body,
   margin: 0; /* Remove any default margin */
 }
 
+/* 사이드바 토글 버튼 SVG */
 .btn-sidebar svg {
   width: 100%;
   height: 100%;
 }
 
+/* 사이드바 버튼 상호작용 상태 */
 .btn-sidebar:hover,
 .btn-sidebar:focus,
 .btn-sidebar:active {
@@ -212,6 +220,7 @@ body,
   color: inherit;
 }
 
+/* 닫기 버튼 */
 .btn-close {
   background: none;
   border: none;
@@ -226,6 +235,7 @@ body,
   margin: 0; /* Remove any default margin */
 }
 
+/* 닫기 버튼 상호작용 상태 */
 .btn-close:hover,
 .btn-close:focus,
 .btn-close:active {
@@ -249,6 +259,7 @@ body,
   overflow-y: auto;
 }
 
+/* 사이드바 활성화 상태 */
 .sidebar.visible {
   transform: translateX(300px);
 }
@@ -278,4 +289,137 @@ body,
     transition: none !important;
     animation: none !important;
   }
+}
+
+/* 메인 컨테이너 레이아웃 */
+.main-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  padding: 20px;
+  gap: var(--spacing-md);
+}
+
+/* 컨트롤 패널 */
+.control-panel {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--spacing-md);
+}
+
+/* 버튼 그룹 컨테이너 */
+.button-group {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+/* 페이지 번호 */
+.page-number {
+  text-align: center;
+  font-size: 1.1em;
+  color: var(--text-secondary);
+  margin: var(--spacing-sm) 0;
+}
+
+/* 단락 섹션 */
+.paragraph-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  padding: 0 var(--spacing-lg);
+}
+
+.paragraph-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.paragraph-header {
+  display: flex;
+  background-color: var(--bg-color);
+  border-bottom: 1px solid var(--border-color);
+  padding: var(--spacing-sm) 0;
+}
+/* 단락 헤더 개별 셀 */
+.paragraph-header > div {
+  flex: 1;
+  padding: var(--spacing-sm);
+  text-align: center;
+}
+
+/* 현재 단락 헤더 스타일 */
+.paragraph-header .current {
+  flex: 1.5;
+  font-weight: bold;
+}
+
+/* 단락 컨텐츠 컨테이너 */
+.paragraph-content {
+  display: flex;
+  flex: 1;
+  min-height: 200px;
+}
+
+.paragraph {
+  padding: var(--spacing-lg);
+  text-align: left;
+  cursor: pointer;
+  transition: var(--transition-default);
+  overflow-y: auto;
+  line-height: 1.6;
+  border-right: 1px solid var(--border-color);
+}
+
+.paragraph:last-child {
+  border-right: none;
+}
+
+/* 이전/다음 단락 스타일 */
+.paragraph.prev,
+.paragraph.next {
+  flex: 1;
+  opacity: 0.7;
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+/* 현재 단락 스타일 */
+.paragraph.current {
+  flex: 1.5;
+  opacity: 1;
+  background-color: var(--bg-color);
+}
+
+/* 단락 호버 효과 */
+.paragraph:hover {
+  background-color: var(--hover-bg);
+}
+
+/* 네비게이션 버튼 */
+.navigation-buttons {
+  display: flex;
+  justify-content: center;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+}
+
+/* 스크롤바 스타일링 */
+.paragraph::-webkit-scrollbar {
+  display: block;
+  width: 6px;
+}
+
+.paragraph::-webkit-scrollbar-thumb {
+  background-color: var(--border-color);
+  border-radius: 3px;
+}
+
+/* 스크롤바 트랙 스타일 */
+.paragraph::-webkit-scrollbar-track {
+  background: transparent;
 }
