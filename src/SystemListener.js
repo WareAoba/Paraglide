@@ -1,5 +1,5 @@
 // SystemListener.js
-const { dialog, clipboard, systemPreferences, } = require('electron');
+const { dialog, clipboard, systemPreferences, ipcMain } = require('electron');
 const { GlobalKeyboardListener } = require('node-global-key-listener');
 
 class SystemListener {
@@ -100,7 +100,14 @@ class SystemListener {
   sendEvent(eventName) {
     if (!this.mainWindow?.isDestroyed()) {
       this.notifyInternalClipboardChange();
+
+
+      // 근데 이거는 다른거에도 쓰는지 몰라서 일단 두긴 할게
       this.mainWindow.webContents.send(eventName);
+
+      // ipcMain.on이니까
+      // ipcMain.emit으로 쏴줘야 받을 수 있음
+      ipcMain.emit(eventName)
     }
   }
 
