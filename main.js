@@ -4,7 +4,7 @@ const path = require('path');
 const fs = require('fs').promises;
 const os = require('os');
 const crypto = require('crypto');
-const systemListener = require('./src/SystemListener.js');
+const SystemListener = require('./src/SystemListener.js');  // 클래스로 import
 
 // 디바운스 함수 정의
 const debounce = (func, wait) => {
@@ -37,6 +37,12 @@ const ContentManager = {
   copyAndLogDebouncer: debounce(async (content, skipLog = false) => {
     try {
       if (!content) return;
+
+      // systemListener 인스턴스 확인
+      if (!systemListener) {
+        console.error('systemListener가 초기화되지 않았습니다');
+        return;
+      }
 
       // 클립보드 변경 전 내부 변경 알림
       mainWindow?.webContents.send('notify-clipboard-change');
@@ -74,6 +80,7 @@ const FILE_PATHS = {
 // 전역 상태
 let mainWindow;
 let overlayWindow;
+let systemListener;
 let globalState = {
   programStatus: ProgramStatus.READY,
   paragraphs: [],
@@ -553,8 +560,8 @@ const IPCManager = {
     });
 
     // 네비게이션 핸들러
-    ipcMain.on('move-to-next', () => this.handleMove('next'));
-    ipcMain.on('move-to-prev', () => this.handleMove('prev'));
+    ipcMain.on('move-to-next', () => IPCManager.handleMove('next'));
+    ipcMain.on('move-to-prev', () => IPCManager.handleMove('prev'));
     ipcMain.on('move-to-position', (event, position) => this.handleMoveToPosition(position));
 
     // 윈도우 관련 핸들러
@@ -741,29 +748,27 @@ const IPCManager = {
 const ApplicationManager = {
   async initialize() {
     try {
-      // 상태 초기화
       await StatusManager.transition(ProgramStatus.LOADING);
+      
+      // 1. 윈도우 먼저 생성
+      WindowManager.createMainWindow();
+      WindowManager.createOverlayWindow();
 
-      // 설정 로드
+      // 2. SystemListener 초기화
+      systemListener = new SystemListener(mainWindow);
+      await systemListener.initialize();
+
+      // 3. 나머지 초기화
       globalState.isDarkMode = nativeTheme.shouldUseDarkColors;
       const savedConfig = await FileManager.loadConfig();
       if (savedConfig.overlayBounds) {
         globalState.overlayBounds = savedConfig.overlayBounds;
       }
 
-      // IPC 핸들러 설정 (윈도우 생성 전에)
+      // 4. IPC 핸들러 설정
       IPCManager.setupHandlers();
 
-      // 시스템 리스너 초기화
-      require('./src/SystemListener.js');
-
-      // 윈도우 생성
-      WindowManager.createMainWindow();
-      WindowManager.createOverlayWindow();
-
-      // 준비 완료
       await StatusManager.transition(ProgramStatus.READY);
-
       console.log('Application initialized successfully');
     } catch (error) {
       console.error('Application initialization failed:', error);
