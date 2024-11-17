@@ -57,43 +57,32 @@ const ContentManager = {
   }, 250),  // 250ms 디바운스
 };
 
-// 상태 업데이트 함수 개선
+// 상태 업데이트 함수 수정
 const updateGlobalState = async (newState, source = 'other') => {
   try {
-    const previousParagraph = globalState.currentParagraph;
-
-    if ('paragraphs' in newState) {
-      globalState.paragraphs = newState.paragraphs;
-      globalState.paragraphsMetadata = newState.paragraphsMetadata;
-    }
-
-    if ('currentParagraph' in newState) {
-      globalState.currentParagraph = newState.currentParagraph;
-      const metadata = globalState.paragraphsMetadata[globalState.currentParagraph];
-      globalState.currentNumber = metadata?.pageNumber ?? null;
-
-      if (previousParagraph !== globalState.currentParagraph) {
-        const content = globalState.paragraphs[globalState.currentParagraph];
-        if (content) {
-          // 내부 클립보드 변경 알림 추가
-          mainWindow?.webContents.send('notify-clipboard-change');
-          // source가 'existingFile'일 경우 로깅 스킵
-          ContentManager.copyAndLogDebouncer(content, source === 'existingFile');
-        }
+    // READY 상태로 전환 시 특별 처리
+    if (newState.programStatus === 'READY') {
+      globalState = {
+        ...globalState,
+        programStatus: 'READY',
+        paragraphs: [],
+        currentParagraph: 0,
+        currentNumber: null,
+        isPaused: false,
+        isOverlayVisible: false,
+        currentFilePath: null  // 파일 경로도 초기화
+      };
+      
+      // 오버레이 창 숨기기
+      if (overlayWindow && !overlayWindow.isDestroyed()) {
+        overlayWindow.hide();
       }
+    } else {
+      // 일반적인 상태 업데이트
+      globalState = { ...globalState, ...newState };
     }
 
-    globalState = { ...globalState, ...newState };
-
-    if ('isOverlayVisible' in newState) {
-      if (globalState.isOverlayVisible) {
-        overlayWindow?.show();
-        await WindowManager.updateOverlayContent();
-      } else {
-        overlayWindow?.hide();
-      }
-    }
-
+    // UI 업데이트
     mainWindow?.webContents.send('state-update', globalState);
     if (globalState.isOverlayVisible && overlayWindow) {
       await WindowManager.updateOverlayContent();

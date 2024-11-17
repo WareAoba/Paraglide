@@ -15,6 +15,7 @@ function MainComponent() {
     isOverlayVisible: false,
     logoPath: null,
     isSidebarVisible: false, // 추가
+    programStatus: 'READY' // 추가
   });
 
   const setLogoScale = useState(1);
@@ -268,6 +269,30 @@ function MainComponent() {
     }
   };
 
+  // handleCompleteWork 함수 수정
+  const handleCompleteWork = () => {
+    // 상태 초기화
+    setState(prevState => ({
+      ...prevState,
+      paragraphs: [],
+      currentParagraph: 0,
+      currentNumber: null,
+      isPaused: false,
+      isOverlayVisible: false,
+      programStatus: 'READY'
+    }));
+
+    // 메인 프로세스에 상태 변경 알림
+    ipcRenderer.send('update-state', {
+      programStatus: 'READY',
+      paragraphs: [],
+      currentParagraph: 0,
+      currentNumber: null,
+      isPaused: false,
+      isOverlayVisible: false
+    });
+  };
+
   // 파일이 로드되지 않은 상태일 때 표시할 대기 화면
   if (state.paragraphs.length === 0) {
     const styles = getThemeStyles();
@@ -321,7 +346,7 @@ function MainComponent() {
         onClose={handleCloseSidebar}
       />
       <div className={`app-container ${state.isDarkMode ? 'dark-mode' : ''}`} data-theme={state.isDarkMode ? 'dark' : 'light'}>
-        {state.paragraphs.length === 0 ? (
+        {state.programStatus === 'READY' ? (
           <div className="welcome-screen">
             <button className="btn btn-primary" onClick={handleLoadFile}>
               파일 불러오기
@@ -410,6 +435,12 @@ function MainComponent() {
                 <button className="btn btn-outline" onClick={handlePrev}>◀ 이전</button>
                 <button className="btn btn-outline" onClick={handleNext}>다음 ▶</button>
               </div>
+              <button 
+                className="btn btn-primary"
+                onClick={handleCompleteWork}
+              >
+                작업 완료
+              </button>
             </div>
           </div>
         )}

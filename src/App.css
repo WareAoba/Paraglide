@@ -355,17 +355,6 @@ html, body, #root {
   filter: brightness(0) invert(1);
 }
 
-/* 기본 버튼 호버 효과 */
-.btn:hover {
-  background-color: var(--hover-bg);
-}
-
-/* 버튼 그룹 간격 */
-.button-group {
-  display: flex;
-  gap: 8px;
-}
-
 /* 아이콘 버튼 스타일 */
 .btn-icon {
   position: relative;
@@ -965,4 +954,13 @@ html, body, #root {
 .nav-button {
   padding: 4px 8px;
   background-color: transparent;
+}
+
+/* App.css - 로고와 타이틀 사이 간격 조정 */
+.container .logo {
+  margin-bottom: 20px; /* 기존 값이 더 컸다면 줄임 */
+}
+
+.container .title {
+  margin-top: 0; /* 상단 여백 제거 */
 }
