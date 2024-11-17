@@ -22,6 +22,7 @@ function MainComponent() {
   const [hoveredSection, setHoveredSection] = useState(null);
   const [playIcon, setPlayIcon] = useState(null);
   const [pauseIcon, setPauseIcon] = useState(null);
+  const [terminalIcon, setTerminalIcon] = useState(null);
 
   useEffect(() => {
     // 로고 로드 함수 수정
@@ -79,10 +80,14 @@ function MainComponent() {
   useEffect(() => {
     const loadIcons = async () => {
       try {
-        const playIconPath = await ipcRenderer.invoke('get-icon-path', 'play-solid.svg');
-        const pauseIconPath = await ipcRenderer.invoke('get-icon-path', 'pause-solid.svg');
+        const [playIconPath, pauseIconPath, terminalIconPath] = await Promise.all([
+          ipcRenderer.invoke('get-icon-path', 'play-solid.svg'),
+          ipcRenderer.invoke('get-icon-path', 'pause-solid.svg'),
+          ipcRenderer.invoke('get-icon-path', 'terminal-tag.svg')
+        ]);
         setPlayIcon(playIconPath);
         setPauseIcon(pauseIconPath);
+        setTerminalIcon(terminalIconPath);
       } catch (error) {
         console.error('아이콘 로드 실패:', error);
       }
@@ -200,7 +205,7 @@ function MainComponent() {
     if (type === 'current') {
       const currentContent = state.paragraphs[state.currentParagraph];
       if (currentContent) {
-        ipcRenderer.send('copy-content', currentContent);  // 이 부분이 제대로 호출되는지 확인
+        ipcRenderer.send('copy-to-clipboard', currentContent);  // 이 부분이 제대로 호출되는지 확인
       }
     }
     if (type === 'prev') {
@@ -271,7 +276,17 @@ function MainComponent() {
 
   // handleCompleteWork 함수 수정
   const handleCompleteWork = () => {
-    // 상태 초기화
+    // 먼저 메인 프로세스에 상태 변경을 알림
+    ipcRenderer.send('update-state', {
+      programStatus: 'READY',
+      paragraphs: [],
+      currentParagraph: 0,
+      currentNumber: null,
+      isPaused: false,
+      isOverlayVisible: false
+    });
+
+    // 그 다음 로컬 상태 업데이트
     setState(prevState => ({
       ...prevState,
       paragraphs: [],
@@ -281,16 +296,11 @@ function MainComponent() {
       isOverlayVisible: false,
       programStatus: 'READY'
     }));
+  };
 
-    // 메인 프로세스에 상태 변경 알림
-    ipcRenderer.send('update-state', {
-      programStatus: 'READY',
-      paragraphs: [],
-      currentParagraph: 0,
-      currentNumber: null,
-      isPaused: false,
-      isOverlayVisible: false
-    });
+  // 디버그 콘솔 표시 핸들러 추가
+  const handleShowDebugConsole = () => {
+    ipcRenderer.send('show-debug-console');
   };
 
   // 파일이 로드되지 않은 상태일 때 표시할 대기 화면
@@ -319,18 +329,28 @@ function MainComponent() {
             />
           )}
           <h1 style={styles.title}>Paraglide</h1>
-          <button 
-            className="btn btn-icon"
-            onClick={handleToggleSidebar}
-          >
-            {state.isSidebarVisible ? '사이드바 숨기기' : '사이드바 표시'}
-          </button>
-          <button 
-            onClick={handleLoadFile}
-            style={styles.button}
-          >
-            파일 불러오기
-          </button>
+          <div className="button-container">
+            <button 
+              className="btn btn-icon"
+              onClick={handleToggleSidebar}
+            >
+              {state.isSidebarVisible ? '사이드바 숨기기' : '사이드바 표시'}
+            </button>
+            <button 
+              onClick={handleLoadFile}
+              style={styles.button}
+            >
+              파일 불러오기
+            </button>
+            {/* 디버그 콘솔 버튼 추가 */}
+            <button
+              className="btn btn-icon"
+              onClick={handleShowDebugConsole}
+            >
+              {terminalIcon && <img src={terminalIcon} alt="" className="icon" />}
+              <span>디버그 콘솔</span>
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -355,16 +375,25 @@ function MainComponent() {
         ) : (
           <div className="main-container">
             <div className="control-panel">
-              <button 
-                className="btn btn-icon"
-                onClick={handleToggleSidebar}
-              >
-                {state.isSidebarVisible ? '사이드바 숨기기' : '사이드바 표시'}
-              </button>
-              <button className="btn btn-primary" onClick={handleLoadFile}>
-                파일 불러오기
-              </button>
-              
+              <div className="button-group">
+                <button 
+                  className="btn btn-icon"
+                  onClick={handleToggleSidebar}
+                >
+                  {state.isSidebarVisible ? '사이드바 숨기기' : '사이드바 표시'}
+                </button>
+                <button className="btn btn-primary" onClick={handleLoadFile}>
+                  파일 불러오기
+                </button>
+                {/* 디버그 콘솔 버튼 추가 */}
+                <button
+                  className="btn btn-icon"
+                  onClick={handleShowDebugConsole}
+                >
+                  {terminalIcon && <img src={terminalIcon} alt="" className="icon" />}
+                  <span>디버그 콘솔</span>
+                </button>
+              </div>
               <div className="button-group">
                 <button 
                   className={`btn btn-icon ${state.isPaused ? 'btn-danger' : 'btn-success'}`}
