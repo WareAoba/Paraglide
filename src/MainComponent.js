@@ -1,10 +1,9 @@
-// src/MainComponent.js
+// MainComponent.js
 import React, { useState, useEffect } from 'react';
 import './App.css';
 import Sidebar from './components/Sidebar';
 const { ipcRenderer } = window.require('electron');
 
-// MainComponent.js 수정
 function MainComponent() {
   const [state, setState] = useState({
     paragraphs: [],
@@ -14,8 +13,8 @@ function MainComponent() {
     isPaused: false,
     isOverlayVisible: false,
     logoPath: null,
-    isSidebarVisible: false, // 추가
-    programStatus: 'READY' // 추가
+    isSidebarVisible: false,
+    programStatus: 'READY'
   });
 
   const [logoScale, setLogoScale] = useState(1);
@@ -25,7 +24,6 @@ function MainComponent() {
   const [terminalIcon, setTerminalIcon] = useState(null);
 
   useEffect(() => {
-    // 로고 로드 함수 수정
     const loadLogo = async () => {
       try {
         const logoData = await ipcRenderer.invoke('get-logo-path');
@@ -37,7 +35,6 @@ function MainComponent() {
       }
     };
 
-    // 초기 상태 로드
     const initializeState = async () => {
       try {
         const initialState = await ipcRenderer.invoke('get-state');
@@ -52,25 +49,20 @@ function MainComponent() {
       }
     };
 
-    // 상태 업데이트 핸들러
     const handleStateUpdate = (event, updatedState) => {
       setState(prev => ({ ...prev, ...updatedState }));
     };
 
-    // 테마 변경 핸들러
     const handleThemeUpdate = (event, isDarkMode) => {
       setState(prevState => ({ ...prevState, isDarkMode }));
       loadLogo();
     };
 
-    // 이벤트 리스너 등록
     ipcRenderer.on('state-update', handleStateUpdate);
     ipcRenderer.on('theme-updated', handleThemeUpdate);
     
-    // 초기화
     initializeState();
 
-    // 클린업
     return () => {
       ipcRenderer.removeListener('state-update', handleStateUpdate);
       ipcRenderer.removeListener('theme-updated', handleThemeUpdate);
@@ -120,7 +112,6 @@ function MainComponent() {
     ipcRenderer.send('toggle-overlay');
   };
 
-  // 파일 로드 핸들러 수정
   const handleLoadFile = async () => {
     try {
       const filePath = await ipcRenderer.invoke('open-file-dialog');
@@ -146,12 +137,11 @@ function MainComponent() {
     });
   };
 
-  // MainComponent.js에서 복사 함수
   const handleParagraphClick = (type) => {
     if (type === 'current') {
       const currentContent = state.paragraphs[state.currentParagraph];
       if (currentContent) {
-        ipcRenderer.send('copy-to-clipboard', currentContent);  // 이 부분이 제대로 호출되는지 확인
+        ipcRenderer.send('copy-to-clipboard', currentContent);
       }
     }
     if (type === 'prev') {
@@ -159,7 +149,6 @@ function MainComponent() {
     } else if (type === 'next') {
       handleNext();
     } else {
-      // 현재 단락 재복사 및 재개
       const currentContent = state.paragraphs[state.currentParagraph];
       if (currentContent) {
         ipcRenderer.send('copy-to-clipboard', currentContent);
@@ -170,21 +159,6 @@ function MainComponent() {
     }
   };
 
-  const getParagraphStyle = (type) => ({
-    flex: type === 'current' ? 1.5 : 1,
-    opacity: type === 'current' ? 1 : 0.7,
-    padding: '15px',
-    textAlign: 'center',
-    position: 'relative',
-    overflow: 'hidden',
-    cursor: 'pointer',
-    transition: 'background-color 0.2s',
-    backgroundColor: hoveredSection === type ?
-      (state.isDarkMode ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.15)') :
-      (state.isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)')
-  });
-
-  // 사이드바 토글 함수
   const handleToggleSidebar = () => {
     setState(prev => ({
       ...prev,
@@ -192,7 +166,6 @@ function MainComponent() {
     }));
   };
 
-  // 사이드바 닫기 함수
   const handleCloseSidebar = () => {
     setState(prev => ({
       ...prev,
@@ -200,7 +173,6 @@ function MainComponent() {
     }));
   };
 
-  // 파일 선택 핸들러 수정
   const handleSidebarFileSelect = async (filePath, lastPosition) => {
     try {
       const content = await ipcRenderer.invoke('read-file', filePath);
@@ -208,7 +180,6 @@ function MainComponent() {
 
       const result = await ipcRenderer.invoke('process-file-content', content, filePath);
       if (result.success) {
-        // 파일 로드 후 저장된 위치로 이동
         ipcRenderer.send('move-to-position', lastPosition);
         setState(prev => ({ 
           ...prev,
@@ -220,9 +191,7 @@ function MainComponent() {
     }
   };
 
-  // handleCompleteWork 함수 수정
   const handleCompleteWork = () => {
-    // 먼저 메인 프로세스에 상태 변경을 알림
     ipcRenderer.send('update-state', {
       programStatus: 'READY',
       paragraphs: [],
@@ -232,7 +201,6 @@ function MainComponent() {
       isOverlayVisible: false
     });
 
-    // 그 다음 로컬 상태 업데이트
     setState(prevState => ({
       ...prevState,
       paragraphs: [],
@@ -244,15 +212,13 @@ function MainComponent() {
     }));
   };
 
-  // 디버그 콘솔 표시 핸들러 추가
   const handleShowDebugConsole = () => {
     ipcRenderer.send('show-debug-console');
   };
 
-  // 파일이 로드되지 않은 상태일 때 표시할 대기 화면
   if (state.paragraphs.length === 0) {
     return (
-      <div className={`container ${state.isDarkMode ? 'dark-mode' : ''}`}>
+      <div className="container" data-theme={state.isDarkMode ? 'dark' : 'light'}>
         <Sidebar 
           isVisible={state.isSidebarVisible}
           onFileSelect={handleSidebarFileSelect}
@@ -262,11 +228,11 @@ function MainComponent() {
         />
         <button className="btn-sidebar" onClick={handleToggleSidebar}>
           <svg
-            width="100%" // Use 100% to make the SVG take up 100% of the button size
-            height="100%" // Use 100% to make the SVG take up 100% of the button size
+            width="100%"
+            height="100%"
             fill="currentColor"
             xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24" // Set the viewBox to match the natural dimensions of the icon
+            viewBox="0 0 24 24"
           >
             <path d="M3 5H21" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"></path>
             <path d="M3 12H21" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"></path>
@@ -292,29 +258,18 @@ function MainComponent() {
           <div className="button-container">
             <button 
               onClick={handleLoadFile}
-              className="button"
+              className="btn btn-primary"
             >
               파일 불러오기
             </button>
-            {/* 디버그 콘솔 버튼 추가 */}
-            {/* <button
-              className="btn btn-icon"
-              onClick={handleShowDebugConsole}
-            >
-              {terminalIcon && <img src={terminalIcon} alt="" className="icon" />}
-              <span>디버그 콘솔</span>
-            </button> */}
           </div>
         </div>
       </div>
     );
   }
 
-  // MainComponent.js의 return문 부분 수정
   return (
     <div className="app-container">
-      
-
       <Sidebar 
         isVisible={state.isSidebarVisible}
         onFileSelect={handleSidebarFileSelect}
@@ -322,8 +277,7 @@ function MainComponent() {
         onClose={handleCloseSidebar}
       />
 
-
-      <div className={`app-container ${state.isDarkMode ? 'dark-mode' : ''}`} data-theme={state.isDarkMode ? 'dark' : 'light'}>
+      <div className="container" data-theme={state.isDarkMode ? 'dark' : 'light'}>
         {state.programStatus === 'READY' ? (
           <div className="welcome-screen">
             <button className="btn btn-primary" onClick={handleLoadFile}>
@@ -336,9 +290,9 @@ function MainComponent() {
               <svg 
                 fill="currentColor"
                 xmlns="http://www.w3.org/2000/svg"
-                width="100%" // Use 100% to make the SVG take up 100% of the button size
-                height="100%" // Use 100% to make the SVG take up 100% of the button size
-                viewBox="0 0 24 24" // Set the viewBox to match the natural dimensions of the icon
+                width="100%"
+                height="100%"
+                viewBox="0 0 24 24"
               >
                 <path d="M3 5H21" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"></path>
                 <path d="M3 12H21" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"></path>
@@ -347,23 +301,9 @@ function MainComponent() {
             </button>
             <div className="control-panel">
               <div className="button-group">
-                {/* <button 
-                  className="btn btn-icon"
-                  onClick={handleToggleSidebar}
-                >
-                  {state.isSidebarVisible ? '사이드바 숨기기' : '사이드바 표시'}
-                </button> */}
                 <button className="btn btn-primary" onClick={handleLoadFile}>
                   파일 불러오기
                 </button>
-                {/* 디버그 콘솔 버튼 추가 */}
-                {/* <button
-                  className="btn btn-icon"
-                  onClick={handleShowDebugConsole}
-                >
-                  {terminalIcon && <img src={terminalIcon} alt="" className="icon" />}
-                  <span>디버그 콘솔</span>
-                </button> */}
               </div>
               <div className="button-group">
                 <button 
@@ -376,21 +316,19 @@ function MainComponent() {
                       <svg
                         width="30px"
                         height="30px"
-                        stroke-width="1.3"
+                        strokeWidth="1.3"
                         viewBox="0 0 24 24"
                         fill="none"
                         xmlns="http://www.w3.org/2000/svg"
                         color="#000000"
                       >
-                        <path d="M6.90588 4.53682C6.50592 4.2998 6 4.58808 6 5.05299V18.947C6 19.4119 6.50592 19.7002 6.90588 19.4632L18.629 12.5162C19.0211 12.2838 19.0211 11.7162 18.629 11.4838L6.90588 4.53682Z" stroke="#000000" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M6.90588 4.53682C6.50592 4.2998 6 4.58808 6 5.05299V18.947C6 19.4119 6.50592 19.7002 6.90588 19.4632L18.629 12.5162C19.0211 12.2838 19.0211 11.7162 18.629 11.4838L6.90588 4.53682Z" stroke="#000000" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
                         </path>
                       </svg>
-                      {/* <span>재개</span> */}
                     </>
                   ) : (
                     <>
                       {pauseIcon && <img src={pauseIcon} alt="" className="icon" />}
-                      {/* <span>일시정지</span> */}
                     </>
                   )}
                 </button>
