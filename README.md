@@ -1,5 +1,5 @@
-<img width="1265" alt="GithubLogoDark" src="https://github.com/user-attachments/assets/3d1abc21-04f5-41a2-bd34-dffc3d0c7a55#gh-dark-mode-only">
-<img width="1265" alt="GithubLogoLight" src="https://github.com/user-attachments/assets/e208528d-be48-410b-ba17-7be99ca22889#gh-light-mode-only">
+<img width="1093" alt="LogoDarkReady" src="https://github.com/user-attachments/assets/d9c3df89-3937-4ba7-b278-c76bb44f14e9#gh-Dark-mode-only">
+<img width="1093" alt="LogoLightReady" src="https://github.com/user-attachments/assets/7c2e239b-3684-436e-a23c-5ebf85db1ab9gh-Light-mode-only">
 
 # Paraglide - 텍스트 단락 처리기
 
@@ -87,6 +87,7 @@
 5. 파일을 로드하면 자꾸 일시정지 상태에서 시작하는 크나큰 문제가 있음. 왤까요 대체...?
 6. 로그가 또 다시 고장 ㅠㅠ
 7. 윈도우용으로 컴파일하면 리본 메뉴가 보이는데, 이걸 없애야 합니다.
+8. 간헐적으로 파일 로드가 해제되어 버리는데, 진짜 원인 불명......
 
 ## 베타 릴리즈?
 
