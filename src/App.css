@@ -964,3 +964,68 @@ html, body, #root {
 .container .title {
   margin-top: 0; /* 상단 여백 제거 */
 }
+
+.container {
+  width: 100vw;
+  background-color: #ffffff;
+  color: #000000;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.dark-mode {
+  background-color: #1e1e1e;
+  color: #ffffff;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  max-width: 90vw;
+  padding: 20px;
+}
+
+.logo {
+  width: auto;
+  height: auto;
+  max-width: 80vw;
+  max-height: 50vh;
+  object-fit: contain;
+  margin-bottom: 20px;
+  cursor: zoom-in;
+  transition: transform 0.3s ease;
+}
+
+.title {
+  font-size: 28px;
+  font-weight: bold;
+  margin-bottom: 20px;
+  color: inherit;
+  text-align: center;
+}
+
+.button {
+  padding: 12px 24px;
+  font-size: 16px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  background-color: #007AFF;
+  color: #ffffff;
+  transition: background-color 0.3s, transform 0.1s;
+}
+
+.button:hover {
+  background-color: #0066cc;
+  transform: scale(1.02);
+}
+
+.dark-mode .button {
+  background-color: #0066cc;
+}
+
+.dark-mode .button:hover {
+  background-color: #0052a3;
+}

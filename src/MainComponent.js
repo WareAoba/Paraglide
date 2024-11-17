@@ -18,7 +18,7 @@ function MainComponent() {
     programStatus: 'READY' // 추가
   });
 
-  const setLogoScale = useState(1);
+  const [logoScale, setLogoScale] = useState(1);
   const [hoveredSection, setHoveredSection] = useState(null);
   const [playIcon, setPlayIcon] = useState(null);
   const [pauseIcon, setPauseIcon] = useState(null);
@@ -139,60 +139,6 @@ function MainComponent() {
     }
   };
 
-  const getThemeStyles = () => ({
-    container: {
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      height: '100vh',
-      width: '100vw',
-      backgroundColor: state.isDarkMode ? '#1e1e1e' : '#ffffff',
-      color: state.isDarkMode ? '#ffffff' : '#000000',
-      transition: 'background-color 0.3s, color 0.3s'
-    },
-    content: {
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: '20px',
-      maxWidth: '90vw', // 뷰포트 너비의 90%로 제한
-      padding: '20px'
-    },
-    logo: {
-      width: 'auto',
-      height: 'auto',
-      maxWidth: '80vw', // 뷰포트 너비의 80%로 제한
-      maxHeight: '50vh', // 뷰포트 높이의 50%로 제한
-      objectFit: 'contain',
-      marginBottom: '20px',
-      cursor: 'zoom-in',
-      transition: 'transform 0.3s ease'
-    },
-    title: {
-      fontSize: '28px',
-      fontWeight: 'bold',
-      marginBottom: '20px',
-      color: 'inherit',
-      textAlign: 'center'
-    },
-    button: {
-      padding: '12px 24px',
-      fontSize: '16px',
-      borderRadius: '8px',
-      border: 'none',
-      cursor: 'pointer',
-      backgroundColor: state.isDarkMode ? '#0066cc' : '#007AFF', // 파란색으로 변경
-      color: '#ffffff', // 텍스트는 항상 흰색
-      transition: 'background-color 0.3s, transform 0.1s',
-      '&:hover': {
-        backgroundColor: state.isDarkMode ? '#0052a3' : '#0066cc',
-        transform: 'scale(1.02)'
-      }
-    }
-  });
-
   const handleLogoClick = () => {
     setLogoScale(prev => {
       const newScale = prev >= 2 ? 1 : prev + 0.5;
@@ -305,9 +251,8 @@ function MainComponent() {
 
   // 파일이 로드되지 않은 상태일 때 표시할 대기 화면
   if (state.paragraphs.length === 0) {
-    const styles = getThemeStyles();
     return (
-      <div style={styles.container}>
+      <div className={`container ${state.isDarkMode ? 'dark-mode' : ''}`}>
         <Sidebar 
           isVisible={state.isSidebarVisible}
           onFileSelect={handleSidebarFileSelect}
@@ -315,12 +260,13 @@ function MainComponent() {
           onClose={handleCloseSidebar}
           currentFilePath={null}
         />
-        <div style={styles.content}>
+        <div className="content">
           {state.logoPath && (
             <img
               src={state.logoPath}
               alt="Paraglide Logo"
-              style={styles.logo}
+              className="logo"
+              style={{ transform: `scale(${logoScale})` }}
               onClick={handleLogoClick}
               onError={(e) => {
                 console.error('로고 렌더링 실패:', e);
@@ -328,7 +274,7 @@ function MainComponent() {
               }}
             />
           )}
-          <h1 style={styles.title}>Paraglide</h1>
+          <h1 className="title">Paraglide</h1>
           <div className="button-container">
             <button 
               className="btn btn-icon"
@@ -338,7 +284,7 @@ function MainComponent() {
             </button>
             <button 
               onClick={handleLoadFile}
-              style={styles.button}
+              className="button"
             >
               파일 불러오기
             </button>
