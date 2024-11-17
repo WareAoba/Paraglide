@@ -170,19 +170,6 @@ function MainComponent() {
     }
   };
 
-  const getParagraphStyle = (type) => ({
-    flex: type === 'current' ? 1.5 : 1,
-    opacity: type === 'current' ? 1 : 0.7,
-    padding: '15px',
-    textAlign: 'center',
-    position: 'relative',
-    overflow: 'hidden',
-    cursor: 'pointer',
-    transition: 'background-color 0.2s',
-    backgroundColor: hoveredSection === type ?
-      (state.isDarkMode ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.15)') :
-      (state.isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)')
-  });
 
   // 사이드바 토글 함수
   const handleToggleSidebar = () => {
