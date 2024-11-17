@@ -260,6 +260,20 @@ function MainComponent() {
           onClose={handleCloseSidebar}
           currentFilePath={null}
         />
+        <button className="btn-sidebar" onClick={handleToggleSidebar}>
+          <svg
+            width="100%" // Use 100% to make the SVG take up 100% of the button size
+            height="100%" // Use 100% to make the SVG take up 100% of the button size
+            fill="currentColor"
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24" // Set the viewBox to match the natural dimensions of the icon
+          >
+            <path d="M3 5H21" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"></path>
+            <path d="M3 12H21" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"></path>
+            <path d="M3 19H21" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"></path>
+          </svg>
+        </button>
+
         <div className="content">
           {state.logoPath && (
             <img
@@ -277,25 +291,19 @@ function MainComponent() {
           <h1 className="title">Paraglide</h1>
           <div className="button-container">
             <button 
-              className="btn btn-icon"
-              onClick={handleToggleSidebar}
-            >
-              {state.isSidebarVisible ? '사이드바 숨기기' : '사이드바 표시'}
-            </button>
-            <button 
               onClick={handleLoadFile}
               className="button"
             >
               파일 불러오기
             </button>
             {/* 디버그 콘솔 버튼 추가 */}
-            <button
+            {/* <button
               className="btn btn-icon"
               onClick={handleShowDebugConsole}
             >
               {terminalIcon && <img src={terminalIcon} alt="" className="icon" />}
               <span>디버그 콘솔</span>
-            </button>
+            </button> */}
           </div>
         </div>
       </div>
@@ -305,12 +313,16 @@ function MainComponent() {
   // MainComponent.js의 return문 부분 수정
   return (
     <div className="app-container">
+      
+
       <Sidebar 
         isVisible={state.isSidebarVisible}
         onFileSelect={handleSidebarFileSelect}
         isDarkMode={state.isDarkMode}
         onClose={handleCloseSidebar}
       />
+
+
       <div className={`app-container ${state.isDarkMode ? 'dark-mode' : ''}`} data-theme={state.isDarkMode ? 'dark' : 'light'}>
         {state.programStatus === 'READY' ? (
           <div className="welcome-screen">
@@ -320,40 +332,65 @@ function MainComponent() {
           </div>
         ) : (
           <div className="main-container">
+            <button className="btn-sidebar" onClick={handleToggleSidebar}>
+              <svg 
+                fill="currentColor"
+                xmlns="http://www.w3.org/2000/svg"
+                width="100%" // Use 100% to make the SVG take up 100% of the button size
+                height="100%" // Use 100% to make the SVG take up 100% of the button size
+                viewBox="0 0 24 24" // Set the viewBox to match the natural dimensions of the icon
+              >
+                <path d="M3 5H21" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"></path>
+                <path d="M3 12H21" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"></path>
+                <path d="M3 19H21" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"></path>
+              </svg>
+            </button>
             <div className="control-panel">
               <div className="button-group">
-                <button 
+                {/* <button 
                   className="btn btn-icon"
                   onClick={handleToggleSidebar}
                 >
                   {state.isSidebarVisible ? '사이드바 숨기기' : '사이드바 표시'}
-                </button>
+                </button> */}
                 <button className="btn btn-primary" onClick={handleLoadFile}>
                   파일 불러오기
                 </button>
                 {/* 디버그 콘솔 버튼 추가 */}
-                <button
+                {/* <button
                   className="btn btn-icon"
                   onClick={handleShowDebugConsole}
                 >
                   {terminalIcon && <img src={terminalIcon} alt="" className="icon" />}
                   <span>디버그 콘솔</span>
-                </button>
+                </button> */}
               </div>
               <div className="button-group">
                 <button 
-                  className={`btn btn-icon ${state.isPaused ? 'btn-danger' : 'btn-success'}`}
+                  className={`btn-icon ${state.isPaused ? 'btn-danger' : 'btn-success'}`}
                   onClick={handleTogglePause}
                 >
                   {state.isPaused ? (
                     <>
                       {playIcon && <img src={playIcon} alt="" className="icon" />}
-                      <span>재개</span>
+                      <svg
+                        width="30px"
+                        height="30px"
+                        stroke-width="1.3"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                        color="#000000"
+                      >
+                        <path d="M6.90588 4.53682C6.50592 4.2998 6 4.58808 6 5.05299V18.947C6 19.4119 6.50592 19.7002 6.90588 19.4632L18.629 12.5162C19.0211 12.2838 19.0211 11.7162 18.629 11.4838L6.90588 4.53682Z" stroke="#000000" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+                        </path>
+                      </svg>
+                      {/* <span>재개</span> */}
                     </>
                   ) : (
                     <>
                       {pauseIcon && <img src={pauseIcon} alt="" className="icon" />}
-                      <span>일시정지</span>
+                      {/* <span>일시정지</span> */}
                     </>
                   )}
                 </button>

@@ -301,22 +301,6 @@ html, body, #root {
   color: #e9ecef;
 }
 
-/* 아이콘 버튼 스타일 */
-.btn-icon {
-  position: relative;
-  display: flex;
-  align-items: center;
-  width: 90px;
-  padding: 0 16px 0 36px;
-}
-
-.icon {
-  position: absolute;
-  left: 12px;
-  width: 16px;
-  height: 16px;
-}
-
 /* 일시정지/재생 버튼 스타일 */
 .btn-success {
   background-color: transparent;
@@ -353,42 +337,6 @@ html, body, #root {
 .btn-success:hover .icon,
 .btn-danger:hover .icon {
   filter: brightness(0) invert(1);
-}
-
-/* 아이콘 버튼 스타일 */
-.btn-icon {
-  position: relative;
-  display: flex;
-  align-items: center;
-  width: 90px;
-  padding: 0 16px 0 36px; /* 왼쪽 패딩 증가 */
-}
-
-.icon {
-  position: absolute;
-  left: 12px;
-  width: 16px;
-  height: 16px;
-  filter: brightness(0) invert(1);
-}
-
-.btn-icon span {
-  flex: 1;
-  text-align: center;
-  padding-left: 16px; /* 아이콘 공간 확보 */
-}
-
-.btn-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-
-.icon {
-  width: 14px;
-  height: 14px;
-  fill: currentColor;
 }
 
 /* 기본 버튼 호버 효과 */
@@ -478,6 +426,87 @@ html, body, #root {
 
 [data-theme="dark"] .btn-danger:hover {
   background-color: #d93d4a;
+}
+
+
+.btn-icon {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  outline: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px; /* Set the width to match the icon */
+  height: 28px; /* Set the height to match the icon */
+  margin: 0; /* Remove any default margin */
+}
+
+.btn-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.btn-icon:hover,
+.btn-icon:focus,
+.btn-icon:active {
+  background: none;
+  outline: none;
+  color: inherit;
+}
+
+
+.btn-sidebar {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  outline: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute; /* Position it absolutely */
+  top: 20px;
+  left: 20px;
+  width: 28px; /* Set the width to match the icon */
+  height: 28px; /* Set the height to match the icon */
+  margin: 0; /* Remove any default margin */
+}
+
+.btn-sidebar svg {
+  width: 100%;
+  height: 100%;
+}
+
+.btn-sidebar:hover,
+.btn-sidebar:focus,
+.btn-sidebar:active {
+  background: none;
+  outline: none;
+  color: inherit;
+}
+
+.btn-close {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  outline: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 25px; /* Set the width to match the icon */
+  height: 25px; /* Set the height to match the icon */
+  margin: 0; /* Remove any default margin */
+}
+
+.btn-close:hover,
+.btn-close:focus,
+.btn-close:active {
+  background: none;
+  outline: none;
+  color: inherit;
 }
 
 /* 네비게이션 버튼 */
@@ -573,21 +602,6 @@ html, body, #root {
   background-color: var(--hover-bg);
 }
 
-/* 아이콘 버튼 스타일 */
-.btn-icon {
-  position: relative;
-  display: flex;
-  align-items: center;
-  padding: 0 16px 0 36px; /* 왼쪽 패딩 증가 */
-}
-
-.icon {
-  position: absolute;
-  left: 12px;
-  width: 16px;
-  height: 16px;
-}
-
 /* 일시정지/재생 버튼 아이콘 색상 */
 .btn-success .icon {
   filter: invert(48%) sepia(79%) saturate(2476%) hue-rotate(86deg) brightness(90%) contrast(85%);
@@ -681,43 +695,6 @@ html, body, #root {
   display: flex;
   gap: 10px; /* 버튼 사이 간격 */
   align-items: center;
-}
-
-/* 버튼 내 아이콘 스타일 */
-.btn-icon {
-  position: relative;
-  display: flex;
-  align-items: center;
-  width: 90px; /* 너비 축소 */
-  height: 36px;
-  padding: 0 16px;
-}
-
-.icon {
-  position: absolute;
-  left: 12px; /* 왼쪽에 고정 */
-  width: 16px; /* ��기 증가 */
-  height: 16px;
-  filter: brightness(0) invert(1);
-}
-
-.btn-icon span {
-  flex: 1;
-  text-align: center;
-  padding-left: 16px; /* 아이콘 공간 확보 */
-}
-
-.btn-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-
-.icon {
-  width: 14px;
-  height: 14px;
-  fill: currentColor;
 }
 
 .sidebar {
