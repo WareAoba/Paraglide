@@ -581,8 +581,26 @@ const IPCManager = {
     // 디버그 콘솔 핸들러
     ipcMain.on('show-debug-console', () => this.handleShowDebugConsole());
 
+    // 테마 관련 핸들러
+    ipcMain.handle('get-theme', () => {
+      return nativeTheme.shouldUseDarkColors ? 'dark' : 'light';
+    });
+
+    // 테마 변경 감지
+    nativeTheme.on('updated', () => {
+      const isDark = nativeTheme.shouldUseDarkColors;
+      const newTheme = isDark ? 'dark' : 'light';
+      BrowserWindow.getAllWindows().forEach(window => {
+        window.webContents.send('theme-changed', newTheme);
+      });
+      updateGlobalState({ ...globalState, theme: newTheme });
+    });
+
+    // 초기 테마 상태 설정
+    const initialTheme = nativeTheme.shouldUseDarkColors ? 'dark' : 'light';
+    updateGlobalState({ ...globalState, theme: initialTheme });
+
     handlersInitialized = true;
-    console.log('IPC 핸들러 초기화 완료');
   },
 
   // 파일 관련 메서드
