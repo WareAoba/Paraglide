@@ -2,13 +2,14 @@
 const { dialog, clipboard, systemPreferences, ipcMain } = require('electron');
 const { GlobalKeyboardListener } = require('node-global-key-listener');
 
+
 class SystemListener {
   constructor(mainWindow) {
     this.mainWindow = mainWindow;
     this.isInternalClipboardChange = false;
     this.lastInternalChangeTime = 0;
     this.lastClipboardText = '';
-  }
+  };
 
   // 초기화
   async initialize() {
@@ -18,6 +19,10 @@ class SystemListener {
     this.setupKeyboardListener();
     this.setupClipboardMonitor();
     console.log('[SystemListener] 초기화 완료');
+    ipcMain.on('program-status-update', (event, status) => {
+      this.programStatus = status;
+      console.log('[SystemListener] 프로그램 상태 업데이트:', status);
+    });
   }
 
   // 클립보드 모니터링 설정
@@ -35,6 +40,10 @@ class SystemListener {
   // 클립보드 변경 처리
   onClipboardChange(text) {
     const now = Date.now();
+    if (this.programStatus?.isPaused){
+      return;
+    }
+
     if (this.isInternalClipboardChange && (now - this.lastInternalChangeTime) < 500) {
       console.log('[클립보드] 내부 복사 감지.');
       this.isInternalClipboardChange = false;
@@ -42,7 +51,8 @@ class SystemListener {
     }
 
     if (this.mainWindow?.isDestroyed()) return;
-    this.mainWindow?.webContents.send('external-copy', text);
+    ipcMain.emit('toggle-pause');
+    console.log('[클립보드] 외부 복사 감지.');
   }
 
   // 내부 클립보드 변경 알림
@@ -59,19 +69,22 @@ class SystemListener {
     keyboard.addListener((e, down) => {
       // only handle key down events
       if (e.state === 'UP') return; 
-      console.log(`[SystemListener] 키 이벤트 발생 - 상태: ${e.state}, 키: ${e.name}, 같이 눌러진 키: ${down}`);
 
       const isCtrlOrCmd = (down["LEFT CTRL"] || down["RIGHT CTRL"] || 
-        down["LEFT META"] || down["RIGHT META"])
+        down["LEFT META"] || down["RIGHT META"]);
+      
       if (e.name === 'V' && isCtrlOrCmd) {
+        if (!this.programStatus || this.programStatus.isPaused) {
+          console.log('[단축키] 일시정지 상태: 명령 무시');
+          return;
+        }
+        
         console.log('[단축키] 다음 단락으로 이동 (Cmd+V 또는 Ctrl+V) 감지됨.');
         this.moveToNext();
-        return;
       }
 
       const isAlt = down["LEFT ALT"] || down["RIGHT ALT"]
       const keyName = e.name;
-      console.log(isAlt, keyName);
       
       if(isAlt) {
         switch(keyName) {
@@ -85,7 +98,7 @@ class SystemListener {
             break;
           case 'UP ARROW':
             console.log('[단축키] Alt+Up 감지됨.');
-            this.toggleOverlay();
+            this.toggleResume();
             break;
           case 'DOWN ARROW':
             console.log('[단축키] Alt+Down 감지됨.');
@@ -113,19 +126,19 @@ class SystemListener {
 
   // 네비게이션 메서드
   moveToNext() {
-    this.sendEvent('move-to-next');
+    ipcMain.emit('move-to-next');
   }
 
   moveToPrev() {
-    this.sendEvent('move-to-prev');
+    ipcMain.emit('move-to-prev');
   }
 
-  toggleOverlay() {
-    this.sendEvent('toggle-overlay');
+  toggleResume() {
+    ipcMain.emit('toggle-resume');
   }
 
   togglePause() {
-    this.sendEvent('toggle-pause');
+    ipcMain.emit('toggle-pause');
   }
 
   // macOS 권한 설정

@@ -90,6 +90,7 @@ let globalState = {
   paragraphsMetadata: [],
   isPaused: false,
   timestamp: Date.now(),
+  isOverlayVisible: false,
   visibleRanges: {
     overlay: { before: 5, after: 5 }
   }
@@ -128,8 +129,15 @@ const updateGlobalState = async (newState, source = 'other') => {
     // UI 업데이트
     mainWindow?.webContents.send('state-update', globalState);
     if (globalState.isOverlayVisible && overlayWindow) {
+      overlayWindow.show();
       await WindowManager.updateOverlayContent();
     }
+
+    ipcMain.emit('program-status-update', 'event', {
+      isPaused: globalState.isPaused,
+      programStatus: globalState.programStatus
+    });
+
   } catch (error) {
     console.error('상태 업데이트 중 에러:', error);
   }
@@ -152,6 +160,7 @@ const StatusManager = {
       [ProgramStatus.PAUSE]: [ProgramStatus.PROCESS, ProgramStatus.READY]
     };
     return allowedTransitions[fromStatus]?.includes(toStatus);
+    
   }
 };
 
@@ -566,7 +575,8 @@ const IPCManager = {
 
     // 윈도우 관련 핸들러
     ipcMain.on('toggle-overlay', () => this.handleToggleOverlay());
-    ipcMain.on('toggle-pause', () => this.handleTogglePause());
+    ipcMain.on('toggle-pause', () => this.handlePause());
+    ipcMain.on('toggle-resume', () => this.handleResume());
 
     // 디버그 콘솔 핸들러
     ipcMain.on('show-debug-console', () => this.handleShowDebugConsole());
@@ -647,9 +657,10 @@ const IPCManager = {
 
     if (canMove) {
       mainWindow?.webContents.send('notify-clipboard-change');
+      this.handleResume();
       updateGlobalState({
         currentParagraph: globalState.currentParagraph + (isNext ? 1 : -1),
-        timestamp: Date.now()
+        timestamp: Date.now(),
       }, 'move');
     }
   },
@@ -678,9 +689,18 @@ const IPCManager = {
     updateGlobalState({ isOverlayVisible: globalState.isOverlayVisible });
   },
 
-  handleTogglePause() {
-    globalState.isPaused = !globalState.isPaused;
-    updateGlobalState({ isPaused: globalState.isPaused });
+  handlePause() {
+    if (!globalState.isPaused) {
+      globalState.isPaused = true;
+      updateGlobalState({ isPaused: true });
+    }
+  },
+  
+  handleResume() {
+    if (globalState.isPaused) {
+      globalState.isPaused = false;
+      updateGlobalState({ isPaused: false });
+    }
   },
 
   // 디버그 콘솔 메서드
