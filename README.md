@@ -1,6 +1,8 @@
 <img width="1093" alt="LogoDarkReady" src="https://github.com/user-attachments/assets/d9c3df89-3937-4ba7-b278-c76bb44f14e9#gh-Dark-mode-only"><br>
 <img width="1093" alt="LogoLightReady" src="https://github.com/user-attachments/assets/7c2e239b-3684-436e-a23c-5ebf85db1ab9#gh-Light-mode-only">
 
+### [한국어](https://github.com/WareAoba/Paraglide/blob/main/README-KR.md)
+
 # Paraglide - Paragraph Processor
 
 A program designed to automate the process of **sequentially copying each paragraph** from a loaded .TXT file and moving to the **next paragraph upon detecting Ctrl[Cmd] + V input**.
