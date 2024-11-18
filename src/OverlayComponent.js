@@ -63,7 +63,7 @@ function OverlayComponent() {
     <div className="overlay-wrapper">
       <div ref={containerRef} className="overlay-window" data-theme={state.isDarkMode ? 'dark' : 'light'}>
         <div className="overlay-header">
-          <span className="page-number">
+          <span className="overlay-page-number">
             {state.currentNumber ? `${state.currentNumber} 페이지` : ''}
           </span>
           <div className="header-controls">
@@ -72,13 +72,13 @@ function OverlayComponent() {
             )}
             <button 
               onClick={() => ipcRenderer.send('move-to-prev')} 
-              className="nav-button"
+              className="overlay-nav-button"
             >
               ◀
             </button>
             <button 
               onClick={() => ipcRenderer.send('move-to-next')}
-              className="nav-button"
+              className="overlay-nav-button"
             >
               ▶
             </button>
@@ -88,7 +88,7 @@ function OverlayComponent() {
           {state.previous.slice(0, 5).map((para, idx) => (
             <div
               key={`prev-${idx}`}
-              className={`paragraph paragraph-previous ${hoveredIndex === `prev-${idx}` ? 'hovered' : ''}`}
+              className={`overlay-paragraph overlay-paragraph-previous ${hoveredIndex === `prev-${idx}` ? 'hovered' : ''}`}
               style={{
                 top: `calc(50% - ${(state.previous.length - idx + 1) * 50}px)`
               }}
@@ -96,7 +96,7 @@ function OverlayComponent() {
               onMouseEnter={() => setHoveredIndex(`prev-${idx}`)}
               onMouseLeave={() => setHoveredIndex(null)}
             >
-              <span className="paragraph-text">
+              <span className="overlay-paragraph-text">
                 {para.text?.replace(/\n/g, ' ') || ' '}
               </span>
               <span className="paragraph-number">
@@ -105,8 +105,8 @@ function OverlayComponent() {
             </div>
           ))}
 
-          <div className="paragraph paragraph-current">
-            <span className="paragraph-text">
+          <div className="overlay-paragraph overlay-paragraph-current">
+            <span className="overlay-paragraph-text">
               {state.current?.replace(/\n/g, ' ') || ' '}
             </span>
             <span className="paragraph-number">
@@ -117,7 +117,7 @@ function OverlayComponent() {
           {state.next.slice(0, 5).map((para, idx) => (
             <div
               key={`next-${idx}`}
-              className={`paragraph paragraph-next ${hoveredIndex === `next-${idx}` ? 'hovered' : ''}`}
+              className={`overlay-paragraph overlay-paragraph-next ${hoveredIndex === `next-${idx}` ? 'hovered' : ''}`}
               style={{
                 top: `calc(50% + ${(idx + 1) * 50}px)`
               }}
@@ -125,7 +125,7 @@ function OverlayComponent() {
               onMouseEnter={() => setHoveredIndex(`next-${idx}`)}
               onMouseLeave={() => setHoveredIndex(null)}
             >
-              <span className="paragraph-text">
+              <span className="overlay-paragraph-text">
                 {para.text?.replace(/\n/g, ' ') || ' '}
               </span>
               <span className="paragraph-number">

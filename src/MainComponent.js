@@ -377,7 +377,7 @@ function MainComponent() {
 
               <div className="navigation-buttons">
                 <button className="btn btn-outline" onClick={handlePrev}>◀ 이전</button>
-                <button className="btn btn-outline" onClick={handleNext}>음 ▶</button>
+                <button className="btn btn-outline" onClick={handleNext}>다음 ▶</button>
               </div>
               
               <div className="button-group">
@@ -407,10 +407,10 @@ function MainComponent() {
                     )}
                   </button>
                   <button 
-                    className={`btn ${state.isOverlayVisible ? 'btn-active' : 'btn-outline'}`}
+                    className={`toggle-button ${state.isOverlayVisible ? 'btn-active' : 'btn-outline'}`}
                     onClick={handleToggleOverlay}
                   >
-                    {state.isOverlayVisible ? '오버레이 숨김' : '오버레이 표시'}
+                    {state.isOverlayVisible ? '오버레이' : '오버레이'}
                   </button>
                 </div>
               </div>
