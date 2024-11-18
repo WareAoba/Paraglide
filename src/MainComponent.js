@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 import Sidebar from './components/Sidebar';
+import Settings from './components/Settings';
 const { ipcRenderer } = window.require('electron');
 
 // MainComponent.js 수정
@@ -23,6 +24,8 @@ function MainComponent() {
   const [playIcon, setPlayIcon] = useState(null);
   const [pauseIcon, setPauseIcon] = useState(null);
   const [terminalIcon, setTerminalIcon] = useState(null);
+  const [settingsIcon, setSettingsIcon] = useState(null);
+  const [isSettingsVisible, setIsSettingsVisible] = useState(false);
 
   useEffect(() => {
     // 로고 로드 함수 수정
@@ -80,14 +83,16 @@ function MainComponent() {
   useEffect(() => {
     const loadIcons = async () => {
       try {
-        const [playIconPath, pauseIconPath, terminalIconPath] = await Promise.all([
+        const [playIconPath, pauseIconPath, terminalIconPath, settingsIcon ] = await Promise.all([
           ipcRenderer.invoke('get-icon-path', 'play-solid.svg'),
           ipcRenderer.invoke('get-icon-path', 'pause-solid.svg'),
-          ipcRenderer.invoke('get-icon-path', 'terminal-tag.svg')
+          ipcRenderer.invoke('get-icon-path', 'terminal-tag.svg'),
+          ipcRenderer.invoke('get-icon-path', 'settings.svg')
         ]);
         setPlayIcon(playIconPath);
         setPauseIcon(pauseIconPath);
         setTerminalIcon(terminalIconPath);
+        setSettingsIcon(settingsIcon);
       } catch (error) {
         console.error('아이콘 로드 실패:', error);
       }
@@ -351,7 +356,15 @@ function MainComponent() {
                   {terminalIcon && <img src={terminalIcon} alt="" className="icon" />}
                   <span>디버그 콘솔</span>
                 </button> */}
+               <button 
+              className="btn-icon"
+              onClick={() => setIsSettingsVisible(true)}
+              title="설정"
+            >
+              <img src={settingsIcon} alt="설정" />
+            </button>
               </div>
+              
               <div className="button-group">
                 <button 
                   className={`btn-icon ${state.isPaused ? 'btn-danger' : 'btn-success'}`}
@@ -444,6 +457,11 @@ function MainComponent() {
           </div>
         )}
       </div>
+      <Settings 
+        isVisible={isSettingsVisible}
+        onClose={() => setIsSettingsVisible(false)}
+        isDarkMode={state.isDarkMode}
+      />
     </div>
   );
 }

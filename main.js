@@ -77,6 +77,29 @@ const FILE_PATHS = {
   ui_icons: path.join(__dirname, 'public', 'UI_icons')
 };
 
+
+// 설정할 값 정의
+
+const DEFAULT_CONFIG = {
+  overlayBounds: { width: 300, height: 240 },
+  overlayOpacity: 0.8,
+  overlayFixed: false,
+  loadLastOverlayBounds: true,
+  accentColor: '#007bff'
+};
+
+const ConfigManager = {
+  extractConfig(config = {}) {
+    return {
+      overlayBounds: config.overlayBounds || globalState.overlayBounds || DEFAULT_CONFIG.overlayBounds,
+      overlayOpacity: config.overlayOpacity || globalState.overlayOpacity || DEFAULT_CONFIG.overlayOpacity,
+      overlayFixed: typeof config.overlayFixed !== 'undefined' ? config.overlayFixed : globalState.overlayFixed,
+      loadLastOverlayBounds: typeof config.loadLastOverlayBounds !== 'undefined' ? config.loadLastOverlayBounds : DEFAULT_CONFIG.loadLastOverlayBounds,
+      accentColor: config.accentColor || globalState.accentColor || DEFAULT_CONFIG.accentColor
+    };
+  }
+};
+
 // 전역 상태
 let mainWindow;
 let overlayWindow;
@@ -88,12 +111,19 @@ let globalState = {
   currentNumber: null,
   isDarkMode: nativeTheme.shouldUseDarkColors,
   paragraphsMetadata: [],
-  isPaused: false,
+  isPaused: true,
   timestamp: Date.now(),
   isOverlayVisible: false,
   visibleRanges: {
     overlay: { before: 5, after: 5 }
-  }
+  },
+
+  // Settings.json
+  overlayBounds: { width: 300, height: 240 },
+  overlayOpacity: 0.8,
+  overlayFixed: false,
+  accentColor: '#007bff',
+  loadLastOverlayBounds: true
 };
 
 // 상태 업데이트 함수
@@ -168,7 +198,8 @@ const StatusManager = {
 const FileManager = {
   async saveConfig(config) {
     try {
-      await fs.writeFile(FILE_PATHS.config, JSON.stringify(config, null, 2));
+      const configToSave = ConfigManager.extractConfig(config);
+      await fs.writeFile(FILE_PATHS.config, JSON.stringify(configToSave, null, 2));
     } catch (error) {
       console.error('설정 저장 실패:', error);
     }
@@ -199,6 +230,17 @@ const FileManager = {
       return data ? JSON.parse(data) : {};
     } catch (error) {
       return {};
+    }
+  },
+
+  async clearLogs() {
+    try {
+      await this.saveLog({});
+      console.log('로그 파일이 정리되었습니다.');
+      return { success: true };
+    } catch (error) {
+      console.error('로그 파일 정리 실패:', error);
+      return { success: false };
     }
   },
 
@@ -367,15 +409,28 @@ const WindowManager = {
   },
 
   createOverlayWindow() {
+
+    const defaultBounds = {
+      width: 300,
+      height: 240,
+      x: undefined,
+      y: undefined
+    };
+
+    const bounds = globalState.loadLastOverlayBounds ? 
+    globalState.overlayBounds : 
+    { width: 300, height: 240, x: undefined, y: undefined };
+
     overlayWindow = new BrowserWindow({
-      width: globalState.overlayBounds?.width || 300,
-      height: globalState.overlayBounds?.height || 240,
-      x: globalState.overlayBounds?.x,
-      y: globalState.overlayBounds?.y,
+      width: globalState.loadLastOverlayBounds ? bounds.width : defaultBounds.width,
+      height: globalState.loadLastOverlayBounds ? bounds.height : defaultBounds.height,
+      x: globalState.loadLastOverlayBounds ? bounds.x : undefined,
+      y: globalState.loadLastOverlayBounds ? bounds.y : undefined,
       minHeight: 240,
       minWidth: 300,
       maxHeight: 600,
       maxWidth: 500,
+      opacity: 1.0,
       frame: false,
       transparent: true,
       focusable: true,
@@ -415,8 +470,12 @@ const WindowManager = {
 
   saveOverlayBounds() {
     if (!overlayWindow) return;
-    globalState.overlayBounds = overlayWindow.getBounds();
-    FileManager.saveConfig({ overlayBounds: globalState.overlayBounds });
+    const overlayBounds = overlayWindow.getBounds();
+    globalState.overlayBounds = overlayBounds;
+    FileManager.saveConfig({
+      ...globalState,
+      overlayBounds
+    });
   },
 
   async updateOverlayContent() {
@@ -578,6 +637,11 @@ const IPCManager = {
     ipcMain.on('toggle-pause', () => this.handlePause());
     ipcMain.on('toggle-resume', () => this.handleResume());
 
+    // 설정 관련 핸들러
+    ipcMain.handle('load-settings', () => FileManager.loadConfig());
+    ipcMain.handle('apply-settings', (_, settings) => this.handleApplySettings(settings));
+    ipcMain.handle('clear-log-files', () => FileManager.clearLogs());
+
     // 디버그 콘솔 핸들러
     ipcMain.on('show-debug-console', () => this.handleShowDebugConsole());
 
@@ -636,7 +700,8 @@ const IPCManager = {
       currentParagraph: startPosition,
       currentNumber: currentMetadata?.pageNumber,
       programStatus: ProgramStatus.PROCESS,
-      isOverlayVisible: true
+      isOverlayVisible: true,
+      isPaused: false
     });
 
     return { success: true };
@@ -665,6 +730,41 @@ const IPCManager = {
       return null;
     }
   },
+
+    async handleApplySettings(settings) {
+      try {
+        if (!settings) throw new Error('설정값이 없습니다');
+      
+        // 오버레이 설정 적용
+        if (overlayWindow) {
+          if (typeof settings.overlayOpacity === 'number') { // 투명도
+            overlayWindow.setOpacity(settings.overlayOpacity);
+            globalState.overlayOpacity = settings.overlayOpacity; // 전역 상태 업데이트
+          }
+          if (typeof settings.overlayFixed === 'boolean') { // 고정 여부
+            overlayWindow.setIgnoreMouseEvents(settings.overlayFixed);
+            globalState.overlayFixed = settings.overlayFixed; // 전역 상태 업데이트
+          }
+          if (typeof settings.loadLastOverlayBounds === 'boolean') { // 이전 위치 로드 여부
+            globalState.loadLastOverlayBounds = settings.loadLastOverlayBounds;
+          }
+        }
+      
+        // 강조색 적용
+        if (settings.accentColor && mainWindow) {
+          mainWindow.webContents.send('update-accent-color', settings.accentColor);
+          globalState.accentColor = settings.accentColor; // 전역 상태 업데이트
+        }
+        
+        const currentConfig = ConfigManager.extractConfig(globalState);
+        await FileManager.saveConfig(currentConfig);
+        
+        return true;
+      } catch (error) {
+        console.error('설정 적용 중 오류:', error);
+        return false;
+      }
+    },
 
   // 네비게이션 관련 메서드
   handleMove(direction) {
@@ -790,8 +890,26 @@ const ApplicationManager = {
 
       // 설정 로드
       const savedConfig = await FileManager.loadConfig();
-      if (savedConfig.overlayBounds) {
-        globalState.overlayBounds = savedConfig.overlayBounds;
+      if (savedConfig) {
+        // 오버레이 윈도우 크기 / 위치
+        if (savedConfig.overlayBounds) {
+          globalState.overlayBounds = savedConfig.overlayBounds;
+        }
+        
+        // 오버레이 투명도
+        if (savedConfig.overlayOpacity) {
+          globalState.overlayOpacity = savedConfig.overlayOpacity;
+        }
+
+        // 오버레이 고정 여부
+        if (typeof savedConfig.overlayFixed !== 'undefined') {
+          globalState.overlayFixed = savedConfig.overlayFixed;
+        }
+
+        // 앱 강조색
+        if (savedConfig.accentColor) {
+          globalState.accentColor = savedConfig.accentColor;
+        }
       }
       
       // 윈도우 생성
@@ -818,19 +936,24 @@ const ApplicationManager = {
 
   async exit() {
     try {
+      // 1. 현재 작업 위치 저장
       await FileManager.saveCurrentPositionToLog();
-      await FileManager.saveConfig(globalState);
 
-      if (overlayWindow) {
+      // 2. 현재 설정값 추출 및 저장
+      const currentConfig = ConfigManager.extractConfig(globalState);
+      await FileManager.saveConfig(currentConfig);
+
+      // 3. 윈도우 정리
+      if (overlayWindow && !overlayWindow.isDestroyed()) {
         overlayWindow.destroy();
         overlayWindow = null;
       }
-      if (mainWindow) {
+      if (mainWindow && !mainWindow.isDestroyed()) {
         mainWindow.destroy();
         mainWindow = null;
       }
     } catch (error) {
-      console.error('종료 시 백엔드 작업 중 에러 발생:', error);
+      console.error('종료 처리 중 오류 발생:', error);
     } finally {
       app.quit();
     }
