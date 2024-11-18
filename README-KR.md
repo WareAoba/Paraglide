@@ -33,6 +33,7 @@
  이번 달 내로 Release가 가능할 것 같습니다.
 
 ## 프로젝트 구조
+```
 📦 Paraglide
 ├── 📂 public/                # 정적 리소스
 │   ├── 📂 icons/            # 앱 아이콘
@@ -61,6 +62,7 @@
 ├── 📄 .gitignore           # Git 제외 파일 
 ├── 📄 README.md            # 프로젝트 문서
 └── 📄 README-KR.md            # 프로젝트 문서(Korean)
+```
 
 
 ## 기여

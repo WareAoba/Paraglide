@@ -26,6 +26,7 @@
  Although the beta version is still under development, the current pace suggests that a release might be possible within this month.
 
 ## Project Overview
+```
  📦 Paraglide
  ├── 📂 public/                # Static resources
  │   ├── 📂 icons/            # App icons
@@ -54,6 +55,7 @@
  ├── 📄 .gitignore           # Git exclude files
  ├── 📄 README.md            # Project documentation
  └── 📄 README-KR.md            # Project documentation(Korean)
+ ```
 
 ## Contribution
 
