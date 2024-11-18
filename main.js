@@ -401,7 +401,8 @@ const WindowManager = {
       webPreferences: {
         nodeIntegration: true,
         contextIsolation: false
-      }
+      },
+      autoHideMenuBar: true
     });
 
     mainWindow.loadURL('http://localhost:3000');
