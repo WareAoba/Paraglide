@@ -1,184 +1,189 @@
 /* src/components/Settings.css */
-
 .settings-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
-    display: none;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-  }
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 32px;
+}
 
-  [data-theme="dark"] .settings-modal {
-    background-color: rgba(0, 0, 0, 0.7);
-  }
-  
-  .settings-modal.visible {
-    display: flex;
-  }
-  
-  .settings-content {
-    background-color: var(--bg-color);
-    border-radius: 8px;
-    padding: 20px;
-    width: 400px;
-    max-height: 80vh;
-    overflow-y: auto;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  }
-  
-  [data-theme="dark"] .settings-content {
-    background-color: var(--dark-bg);
-    color: var(--dark-text);
-    border: 1px solid var(--border-color);
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-  }
-  
-  /* 제목 */
-  .settings-content h2 {
-    margin: 0 0 20px 0;
-    color: var(--text-color);
-    font-size: 1.5em;
-  }
+.settings-modal.visible {
+  display: flex;
+}
 
-  .settings-group h3 {
-    margin: 0 0 16px 0;
-    color: var(--text-color);
-    font-size: 1.2em;
-  }
+.settings-content {
+  width: min(90%, 480px);      /* 반응형 너비 */
+  height: min(90%, 700px);     /* 반응형 높이 */
+  background-color: var(--bg-color);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
+  position: relative;          /* 버튼 컨테이너 기준점 */
+}
 
-  [data-theme="dark"] .settings-content h2,
-[data-theme="dark"] .settings-group h3 {
+.settings-scroll-area {
+  flex: 1;
+  overflow-y: auto;         /* 스크롤 활성화 */
+  padding: 40px;              /* 여백 증가 */
+  padding-bottom: 100px;      /* 버튼 영역 확보 */
+  margin-bottom: 80px;      /* 버튼 그룹 공간 확보 */
+}
+
+.settings-content h2 {
+  margin: 0 0 32px 0;
+  color: var(--text-color);
+  font-size: 1.5em;
+  font-weight: 600;
+}
+
+.settings-group {
+  margin-bottom: 36px;
+  padding-bottom: 28px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.settings-group:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.settings-group h3 {
+  margin: 0 0 24px 0;
+  color: var(--text-color);
+  font-size: 1.2em;
+  font-weight: 500;
+}
+
+.settings-group label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  color: var(--text-color);
+  font-size: 0.95em;
+}
+
+.settings-group label.checkbox-label {
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.settings-group input[type="range"] {
+  width: 160px;
+  margin-left: 16px;
+  background: transparent;
+}
+
+.settings-group input[type="range"]::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 4px;
+  background: var(--primary-color);
+  border-radius: 2px;
+}
+
+.settings-group input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  height: 16px;
+  width: 16px;
+  border-radius: 50%;
+  background: var(--primary-color);
+  margin-top: -6px;
+  cursor: pointer;
+}
+
+.settings-group input[type="checkbox"] {
+  margin-left: 16px;
+  width: 16px;
+  height: 16px;
+}
+
+.settings-group input[type="color"] {
+  width: 60px;
+  height: 30px;
+  padding: 0;
+  margin-left: 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+}
+
+.button-group {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 20px 40px;       /* 좌우 여백 증가 */
+  background-color: var(--bg-color);
+  border-top: 1px solid var(--border-color);
+  border-radius: 0 0 12px 12px;
+  z-index: 1;                /* 스크롤 컨텐츠 위에 표시 */
+}
+
+.button-group button {
+  padding: 8px 20px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  font-size: 0.95em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.button-group button.btn-primary {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+}
+
+.button-group button:hover {
+  background-color: var(--hover-bg);
+}
+
+.button-group button.btn-primary:hover {
+  filter: brightness(1.1);
+}
+
+/* 다크모드 */
+[data-theme="dark"] .settings-modal {
+  background-color: rgba(0, 0, 0, 0.7);
+}
+
+[data-theme="dark"] .settings-content {
+  background-color: var(--dark-bg);
+  border: 1px solid var(--border-color);
+}
+
+[data-theme="dark"] .button-group {
+  background-color: var(--dark-bg);
+  border-top-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .settings-content h2,
+[data-theme="dark"] .settings-group h3,
+[data-theme="dark"] .settings-group label {
   color: var(--dark-text);
 }
-  
-  .settings-group {
-    margin-bottom: 24px;
-    padding-bottom: 16px;
-    border-bottom: 1px solid var(--border-color);
-  }
 
-  [data-theme="dark"] .settings-group {
-    border-bottom-color: rgba(255, 255, 255, 0.1);
-  }
-  
-  
-  .settings-group label {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 12px;
-    color: var(--text-color);
-  }
+[data-theme="dark"] .button-group button {
+  background-color: var(--dark-bg);
+  color: var(--dark-text);
+  border-color: rgba(255, 255, 255, 0.1);
+}
 
-  [data-theme="dark"] .settings-group {
-    border-bottom-color: rgba(255, 255, 255, 0.1);
-  }
-  
-  .settings-group input[type="range"] {
-    width: 150px;
-    margin-left: 10px;
-    background: transparent;
-  }
-
-  .settings-group input[type="range"]::-webkit-slider-runnable-track {
-    width: 100%;
-    height: 4px;
-    background: var(--primary-color);
-    border-radius: 2px;
-  }
-
-  [data-theme="dark"] .settings-group input[type="range"]::-webkit-slider-runnable-track {
-    background: var(--primary-color);
-  }
-
-  .settings-group input[type="range"]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    height: 16px;
-    width: 16px;
-    border-radius: 50%;
-    background: var(--primary-color);
-    margin-top: -6px;
-    cursor: pointer;
-  }
-
-  [data-theme="dark"] .settings-group input[type="range"]::-webkit-slider-thumb {
-    background: var(--primary-color);
-    border: 2px solid var(--dark-text);
-  }
-  
-  .settings-group input[type="checkbox"] {
-    margin-left: 10px;
-  }
-
-  /* 레이블 수정 - 체크박스를 오른쪽으로 */
-.settings-group label.checkbox-label {
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 12px;
-    color: var(--text-color);
-  }
-  
-  .settings-group input[type="color"] {
-    width: 50px;
-    height: 25px;
-    padding: 0;
-    margin-left: 10px;
-    border: 1px solid var(--border-color);
-  }
-  
-  .button-group {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    margin-top: 20px;
-  }
-
-  .button-group button {
-    padding: 8px 16px;
-    border-radius: 4px;
-    border: 1px solid var(--border-color);
-    background-color: var(--bg-color);
-    color: var(--text-color);
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-
-  [data-theme="dark"] .button-group button {
-    background-color: var(--dark-bg);
-    color: var(--dark-text);
-    border-color: rgba(255, 255, 255, 0.1);
-  }
-  
-  .button-group button.primary {
-    background-color: var(--primary-color);
-    color: white;
-    border: none;
-  }
-
-  [data-theme="dark"] .button-group button.primary {
-    background-color: var(--primary-color);
-    color: var(--dark-text);
-  }
-
-  .button-group button:hover {
-    background-color: rgba(0, 0, 0, 0.05);
-  }
-
-  [data-theme="dark"] .button-group button.primary {
-    background-color: var(--primary-color);
-    color: var(--dark-text);
-  }
-
-  .button-group button.primary:hover {
-    filter: brightness(1.1);
-  }
-
-  [data-theme="dark"] .button-group button.primary:hover {
-    filter: brightness(1.2);
-  }
+[data-theme="dark"] .button-group button.btn-primary {
+  background-color: var(--primary-color);
+  color: var(--dark-text);
+}

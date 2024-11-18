@@ -82,7 +82,8 @@ const FILE_PATHS = {
 
 const DEFAULT_CONFIG = {
   overlayBounds: { width: 300, height: 240 },
-  overlayOpacity: 0.8,
+  windowOpacity: 1.0,
+  contentOpacity: 0.8,
   overlayFixed: false,
   loadLastOverlayBounds: true,
   accentColor: '#007bff'
@@ -92,7 +93,8 @@ const ConfigManager = {
   extractConfig(config = {}) {
     return {
       overlayBounds: config.overlayBounds || globalState.overlayBounds || DEFAULT_CONFIG.overlayBounds,
-      overlayOpacity: config.overlayOpacity || globalState.overlayOpacity || DEFAULT_CONFIG.overlayOpacity,
+      windowOpacity: config.windowOpacity ?? globalState.windowOpacity ?? DEFAULT_CONFIG.windowOpacity,
+      contentOpacity: config.contentOpacity ?? globalState.contentOpacity ?? DEFAULT_CONFIG.contentOpacity,
       overlayFixed: typeof config.overlayFixed !== 'undefined' ? config.overlayFixed : globalState.overlayFixed,
       loadLastOverlayBounds: typeof config.loadLastOverlayBounds !== 'undefined' ? config.loadLastOverlayBounds : DEFAULT_CONFIG.loadLastOverlayBounds,
       accentColor: config.accentColor || globalState.accentColor || DEFAULT_CONFIG.accentColor
@@ -120,7 +122,8 @@ let globalState = {
 
   // Settings.json
   overlayBounds: { width: 300, height: 240 },
-  overlayOpacity: 0.8,
+  windowOpacity: 1.0,
+  contentOpacity: 0.8,
   overlayFixed: false,
   accentColor: '#007bff',
   loadLastOverlayBounds: true
@@ -431,7 +434,7 @@ const WindowManager = {
       minWidth: 300,
       maxHeight: 600,
       maxWidth: 500,
-      opacity: 1.0,
+      opacity: globalState.windowOpacity,
       frame: false,
       transparent: true,
       focusable: true,
@@ -732,40 +735,44 @@ const IPCManager = {
     }
   },
 
-    async handleApplySettings(settings) {
-      try {
-        if (!settings) throw new Error('설정값이 없습니다');
-      
-        // 오버레이 설정 적용
-        if (overlayWindow) {
-          if (typeof settings.overlayOpacity === 'number') { // 투명도
-            overlayWindow.setOpacity(settings.overlayOpacity);
-            globalState.overlayOpacity = settings.overlayOpacity; // 전역 상태 업데이트
-          }
-          if (typeof settings.overlayFixed === 'boolean') { // 고정 여부
-            overlayWindow.setIgnoreMouseEvents(settings.overlayFixed);
-            globalState.overlayFixed = settings.overlayFixed; // 전역 상태 업데이트
-          }
-          if (typeof settings.loadLastOverlayBounds === 'boolean') { // 이전 위치 로드 여부
-            globalState.loadLastOverlayBounds = settings.loadLastOverlayBounds;
-          }
-        }
-      
-        // 강조색 적용
-        if (settings.accentColor && mainWindow) {
-          mainWindow.webContents.send('update-accent-color', settings.accentColor);
-          globalState.accentColor = settings.accentColor; // 전역 상태 업데이트
+  async handleApplySettings(settings) {
+    try {
+      if (!settings) throw new Error('설정값이 없습니다');
+    
+      if (overlayWindow) {
+        // 창 전체 투명도
+        if (typeof settings.windowOpacity === 'number') {
+          overlayWindow.setOpacity(settings.windowOpacity);
+          globalState.windowOpacity = settings.windowOpacity;
         }
         
-        const currentConfig = ConfigManager.extractConfig(globalState);
-        await FileManager.saveConfig(currentConfig);
+        // 배경 투명도
+        if (typeof settings.contentOpacity === 'number') {
+          overlayWindow.webContents.send('update-content-opacity', settings.contentOpacity);
+          globalState.contentOpacity = settings.contentOpacity;
+        }
+
+        // 기존 설정들...
+        if (typeof settings.overlayFixed === 'boolean') {
+          overlayWindow.setIgnoreMouseEvents(settings.overlayFixed);
+          globalState.overlayFixed = settings.overlayFixed;
+        }
         
-        return true;
-      } catch (error) {
-        console.error('설정 적용 중 오류:', error);
-        return false;
+        if (typeof settings.loadLastOverlayBounds === 'boolean') {
+          globalState.loadLastOverlayBounds = settings.loadLastOverlayBounds;
+        }
       }
-    },
+      
+      // 설정 저장
+      const currentConfig = ConfigManager.extractConfig(globalState);
+      await FileManager.saveConfig(currentConfig);
+      
+      return true;
+    } catch (error) {
+      console.error('설정 적용 중 오류:', error);
+      return false;
+    }
+  },
 
   // 네비게이션 관련 메서드
   handleMove(direction) {

@@ -1,0 +1,47 @@
+  /* 사이드바 */
+  .sidebar {
+    position: fixed;
+    left: -300px;
+    top: 0;
+    width: 300px;
+    height: 100vh;
+    background-color: var(--bg-color);
+    border-right: 1px solid var(--border-color);
+    transition: transform var(--transition-default);
+    z-index: 1000;
+    overflow-y: auto;
+  }
+
+    /* 사이드바 버튼 상호작용 상태 */
+    .btn-sidebar:hover,
+    .btn-sidebar:focus,
+    .btn-sidebar:active {
+      background: none;
+      outline: none;
+      color: inherit;
+    }
+    
+    /* 닫기 버튼 */
+    .btn-close {
+      background: none;
+      color: var(--text-color);
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      outline: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 25px; /* Set the width to match the icon */
+      height: 25px; /* Set the height to match the icon */
+      margin: 0; /* Remove any default margin */
+    }
+    
+    /* 닫기 버튼 상호작용 상태 */
+    .btn-close:hover,
+    .btn-close:focus,
+    .btn-close:active {
+      background: none;
+      outline: none;
+      color: inherit;
+    }

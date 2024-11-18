@@ -5,7 +5,8 @@ const { ipcRenderer } = window.require('electron');
 
 function Settings({ isVisible, onClose, isDarkMode }) {
   const [settings, setSettings] = useState({
-    overlayOpacity: 0.8,
+    windowOpacity: 1.0,      // 창 전체 투명도
+    contentOpacity: 0.8,     // 배경 투명도
     overlayFixed: false,
     loadLastOverlayBounds: true,
     accentColor: '#007bff'
@@ -35,7 +36,8 @@ function Settings({ isVisible, onClose, isDarkMode }) {
   
       // 설정 적용 요청
       const result = await ipcRenderer.invoke('apply-settings', {
-        overlayOpacity: newSettings.overlayOpacity,
+        windowOpacity: newSettings.windowOpacity,
+        contentOpacity: newSettings.contentOpacity,
         overlayFixed: newSettings.overlayFixed,
         loadLastOverlayBounds: newSettings.loadLastOverlayBounds,
         accentColor: newSettings.accentColor,
@@ -67,16 +69,30 @@ function Settings({ isVisible, onClose, isDarkMode }) {
         <div className="settings-group">
           <h3>오버레이</h3>
           <label>
-            투명도
+            전체 투명도
             <input 
               type="range" 
               min="0"
               max="100"
               step="1"
-              value={settings.overlayOpacity * 100}
+              value={settings.windowOpacity * 100}
               onChange={e => handleSettingChange({
                 ...settings, 
-                overlayOpacity: parseFloat(e.target.value) / 100
+                windowOpacity: parseFloat(e.target.value) / 100
+              })}
+            />
+          </label>
+          <label>
+            배경 투명도
+            <input 
+              type="range" 
+              min="0"
+              max="100"
+              step="1"
+              value={settings.contentOpacity * 100}
+              onChange={e => handleSettingChange({
+                ...settings, 
+                contentOpacity: parseFloat(e.target.value) / 100
               })}
             />
           </label>

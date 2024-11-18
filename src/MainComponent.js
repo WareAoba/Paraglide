@@ -1,6 +1,6 @@
 // src/MainComponent.js
 import React, { useState, useEffect } from 'react';
-import './CSS/App.css';
+import './CSS/MainComponent.css';
 import Sidebar from './components/Sidebar';
 import Settings from './components/Settings';
 const { ipcRenderer } = window.require('electron');
@@ -305,15 +305,12 @@ function MainComponent() {
   // MainComponent.js의 return문 부분 수정
   return (
     <div className="app-container">
-      
-
       <Sidebar 
         isVisible={state.isSidebarVisible}
         onFileSelect={handleSidebarFileSelect}
         isDarkMode={state.isDarkMode}
         onClose={handleCloseSidebar}
       />
-
 
       <div className={`app-container ${state.isDarkMode ? 'dark-mode' : ''}`} data-theme={state.isDarkMode ? 'dark' : 'light'}>
         {state.programStatus === 'READY' ? (
@@ -337,71 +334,6 @@ function MainComponent() {
                 <path d="M3 19H21" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"></path>
               </svg>
             </button>
-            <div className="control-panel">
-              <div className="button-group">
-                {/* <button 
-                  className="btn btn-icon"
-                  onClick={handleToggleSidebar}
-                >
-                  {state.isSidebarVisible ? '사이드바 숨기기' : '사이드바 표시'}
-                </button> */}
-                <button className="btn btn-primary" onClick={handleLoadFile}>
-                  파일 불러오기
-                </button>
-                {/* 디버그 콘솔 버튼 추가 */}
-                {/* <button
-                  className="btn btn-icon"
-                  onClick={handleShowDebugConsole}
-                >
-                  {terminalIcon && <img src={terminalIcon} alt="" className="icon" />}
-                  <span>디버그 콘솔</span>
-                </button> */}
-               <button 
-              className="btn-icon"
-              onClick={() => setIsSettingsVisible(true)}
-              title="설정"
-            >
-              <img src={settingsIcon} alt="설정" />
-            </button>
-              </div>
-              
-              <div className="button-group">
-                <button 
-                  className={`btn-icon ${state.isPaused ? 'btn-danger' : 'btn-success'}`}
-                  onClick={handleTogglePause}
-                >
-                  {state.isPaused ? (
-                    <>
-                      {playIcon && <img src={playIcon} alt="" className="icon" />}
-                      <svg
-                        width="30px"
-                        height="30px"
-                        stroke-width="1.3"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                        color="#000000"
-                      >
-                        <path d="M6.90588 4.53682C6.50592 4.2998 6 4.58808 6 5.05299V18.947C6 19.4119 6.50592 19.7002 6.90588 19.4632L18.629 12.5162C19.0211 12.2838 19.0211 11.7162 18.629 11.4838L6.90588 4.53682Z" stroke="#000000" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
-                        </path>
-                      </svg>
-                      {/* <span>재개</span> */}
-                    </>
-                  ) : (
-                    <>
-                      {pauseIcon && <img src={pauseIcon} alt="" className="icon" />}
-                      {/* <span>일시정지</span> */}
-                    </>
-                  )}
-                </button>
-                <button 
-                  className={`btn ${state.isOverlayVisible ? 'btn-active' : 'btn-outline'}`}
-                  onClick={handleToggleOverlay}
-                >
-                  {state.isOverlayVisible ? '오버레이 숨김' : '오버레이 표시'}
-                </button>
-              </div>
-            </div>
 
             <div className="page-number">
               {state.currentNumber ? `${state.currentNumber} 페이지` : ''}
@@ -417,7 +349,7 @@ function MainComponent() {
                 
                 <div className="paragraph-content">
                   <div 
-                    className={`paragraph prev ${hoveredSection === 'prev' ? 'hovered' : ''}`}
+                    className={`paragraph-prev ${hoveredSection === 'prev' ? 'hovered' : ''}`}
                     onClick={() => handleParagraphClick('prev')}
                     onMouseEnter={() => setHoveredSection('prev')}
                     onMouseLeave={() => setHoveredSection(null)}
@@ -426,14 +358,14 @@ function MainComponent() {
                   </div>
 
                   <div 
-                    className="paragraph current"
+                    className="paragraph-current"
                     onClick={() => handleParagraphClick('current')}
                   >
                     {state.paragraphs[state.currentParagraph] || ''}
                   </div>
 
                   <div 
-                    className={`paragraph next ${hoveredSection === 'next' ? 'hovered' : ''}`}
+                    className={`paragraph-next ${hoveredSection === 'next' ? 'hovered' : ''}`}
                     onClick={() => handleParagraphClick('next')}
                     onMouseEnter={() => setHoveredSection('next')}
                     onMouseLeave={() => setHoveredSection(null)}
@@ -445,14 +377,43 @@ function MainComponent() {
 
               <div className="navigation-buttons">
                 <button className="btn btn-outline" onClick={handlePrev}>◀ 이전</button>
-                <button className="btn btn-outline" onClick={handleNext}>다음 ▶</button>
+                <button className="btn btn-outline" onClick={handleNext}>음 ▶</button>
               </div>
-              <button 
-                className="btn btn-primary"
-                onClick={handleCompleteWork}
-              >
-                작업 완료
-              </button>
+              
+              <div className="button-group">
+                <button 
+                  className="btn-icon btn-settings"
+                  onClick={() => setIsSettingsVisible(true)}
+                >
+                  <img src={settingsIcon} alt="설정" className="icon" />
+                </button>
+                
+                <button 
+                  className="btn btn-complete"
+                  onClick={handleCompleteWork}
+                >
+                  작업 완료
+                </button>
+                
+                <div className="toggle-buttons">
+                  <button 
+                    className={`btn-icon ${state.isPaused ? 'btn-danger' : 'btn-success'}`}
+                    onClick={handleTogglePause}
+                  >
+                    {state.isPaused ? (
+                      <img src={playIcon} alt="재생" className="icon" />
+                    ) : (
+                      <img src={pauseIcon} alt="일시정지" className="icon" />
+                    )}
+                  </button>
+                  <button 
+                    className={`btn ${state.isOverlayVisible ? 'btn-active' : 'btn-outline'}`}
+                    onClick={handleToggleOverlay}
+                  >
+                    {state.isOverlayVisible ? '오버레이 숨김' : '오버레이 표시'}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )}

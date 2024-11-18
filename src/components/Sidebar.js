@@ -1,5 +1,8 @@
 // src/components/Sidebar.js
+
 import React from 'react';
+import '../CSS/App.css';
+import '../CSS/Sidebar.css';
 const { ipcRenderer } = window.require('electron');
 const path = window.require('path');
 

@@ -1,102 +1,150 @@
-/* src/OverlayComponent.css */
-.overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  z-index: 1000;
-  transition: opacity 0.3s ease-in-out;
-  overflow: hidden;
+/* 기본 컨테이너 구조 */
+
+.overlay-wrapper {
+  opacity: var(--window-opacity);
+  height: 100vh;
+  width: 100vw;
+  transition: opacity var(--transition-default);
 }
 
+.overlay-window {
+  background-color: rgba(var(--bg-rgb), var(--bg-opacity));
+  color: var(--text-color);
+  padding: 15px 15px 50px 15px;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  -webkit-app-region: drag;
+  -webkit-user-select: none;
+  transition: background-color var(--transition-default),
+              color var(--transition-default);
+}
+
+[data-theme="dark"] .overlay-window {
+  background-color: rgba(var(--dark-bg-rgb), var(--bg-opacity));
+}
+
+
+/* 헤더 영역 */
 .overlay-header {
   height: 36px;
-  position: relative;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.2);
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 0 15px;
-  flex-shrink: 0;
-}
-
-.overlay-controls {
-  position: absolute;
-  top: -2.5px;
-  left: 15px;
-  right: 15px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
 }
 
 .page-number {
   font-size: 1.2em;
   font-weight: bold;
+  color: var(--text-color);
+  opacity: 0.9;
 }
 
-.overlay-actions {
+.header-controls {
   display: flex;
-  align-items: center;
   gap: 10px;
+  align-items: center;
 }
 
+/* 일시정지 표시 */
+.pause-indicator {
+  color: var(--danger-color);
+  font-weight: bold;
+  padding: 4px 8px;
+  background-color: rgba(220, 53, 69, 0.1);
+  border-radius: 4px;
+}
+
+/* 내비게이션 버튼 */
 .nav-button {
   padding: 4px 8px;
   background-color: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  color: white;
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
   border-radius: 4px;
   cursor: pointer;
-  WebkitAppRegion: no-drag;
+  -webkit-app-region: no-drag;
+  transition: background-color var(--transition-default);
 }
 
-.paused-status {
-  color: #ff4444;
-  font-weight: bold;
-  padding: 4px 8px;
-  background-color: rgba(255, 68, 68, 0.1);
-  border-radius: 4px;
+.nav-button:hover {
+  background-color: var(--hover-bg);
 }
 
-.overlay-content {
+[data-theme="dark"] .nav-button {
+  border-color: var(--btn-border);
+}
+
+/* 단락 컨테이너 */
+.paragraphs-view {
   flex: 1;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  padding: 10px 0;
   overflow: hidden;
+  position: relative;
 }
 
-.paragraphs {
-  margin-bottom: 25px;
-  display: flex;
-  flex-direction: column;
-  margin-right: auto;
-}
-
+/* 단락 공통 스타일 */
 .paragraph {
-  opacity: 0.7;
+  min-height: 40px; /* 크기 축소 */
+  width: 96%;
+  left: 2%;
+  position: absolute;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 10px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 100%;
-  padding: 0px 10px;
-  font-size: 1em;
+  border-radius: 4px;
+  transition: background-color var(--transition-default);
 }
 
-.current {
-  width: 92%;
-  height: 27px;
-  padding: 12px 15px;
-  border-left: 4px solid white;
-  background-color: rgba(255, 255, 255, 0.2);
-  font-size: 1.1em;
+.paragraph-text {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 0 10px;
+}
+
+.paragraph-number {
+  opacity: 0.5;
+  margin-left: 10px;
+  font-size: 0.9em;
+  min-width: 30px;
+  text-align: right;
+  margin-right: 20px;
+}
+
+/* 이전/다음 단락 */
+.paragraph-previous,
+.paragraph-next {
+  opacity: 0.7;
+}
+
+/* 현재 단락 */
+.paragraph-current {
+  background-color: var(--paragraph-bg);
+  border-left: 3px solid var(--primary-color);
   font-weight: bold;
-  display: flex;
-  align-items: center;
+}
+
+/* 호버 효과 */
+.paragraph-previous:hover,
+.paragraph-next:hover {
+  background-color: rgba(0, 0, 0, 0.15);
+}
+
+/* 다크모드 대응 */
+[data-theme="dark"] .overlay-window {
+  background-color: rgba(var(--dark-bg-rgb), var(--bg-opacity));
+}
+
+[data-theme="dark"] .paragraph-current {
+  background-color: var(--paragraph-bg);
 }
