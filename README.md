@@ -25,6 +25,36 @@
 
  Although the beta version is still under development, the current pace suggests that a release might be possible within this month.
 
+## Project Overview
+ 📦 Paraglide
+ ├── 📂 public/                # Static resources
+ │   ├── 📂 icons/            # App icons
+ │   ├── 📂 UI_icons/         # UI icons (SVG)
+ │   ├── 🖼️ logo-dark.png     # Dark mode logo 
+ │   └── 🖼️ logo-light.png    # Light mode logo
+ │
+ ├── 📂 src/                   # Source code
+ │   ├── 📂 components/       # React components
+ │   │   ├── 📄 Settings.js   # Settings component
+ │   │   └── 📄 Sidebar.js    # Sidebar component
+ │   │
+ │   ├── 📂 CSS/              # CSS styles  collection
+ │   │   ├── 📄 App.css           # Main styles
+ │   │   ├── 📄 OverlayComponent.css # Overlay component styles
+ │   │   └── 📄 Settings.css  # Settings styles
+ │   │
+ │   ├── 📄 App.js            # Main React  component
+ │   ├── 📄 index.js          # React entry point
+ │   └── 📄 MainComponent.js    # Main component
+ │   └── 📄 OverlayComponent.js    # Overlay component
+ │   └── 📄 SystemListener.js  # System event listener
+ │
+ ├── 📄 main.js               # Electron main process
+ ├── 📄 package.json          # Project config/dependencies
+ ├── 📄 .gitignore           # Git exclude files
+ ├── 📄 README.md            # Project documentation
+ └── 📄 README-KR.md            # Project documentation(Korean)
+
 ## Contribution
 
  ***Your contributions can enhance the quality of this program!***  

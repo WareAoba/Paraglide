@@ -1,6 +1,6 @@
 // OverlayComponent.js
 import React, { useState, useEffect, useRef } from 'react';
-import './App.css';
+import './CSS/App.css';
 const { ipcRenderer } = window.require('electron');
 
 // 스타일 상수

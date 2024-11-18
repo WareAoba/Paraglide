@@ -1,6 +1,6 @@
 // src/components/Settings.js
 import React, { useState, useEffect } from 'react';
-import './Settings.css';
+import '../CSS/Settings.css';
 const { ipcRenderer } = window.require('electron');
 
 function Settings({ isVisible, onClose, isDarkMode }) {

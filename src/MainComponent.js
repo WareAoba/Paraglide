@@ -1,6 +1,6 @@
 // src/MainComponent.js
 import React, { useState, useEffect } from 'react';
-import './App.css';
+import './CSS/App.css';
 import Sidebar from './components/Sidebar';
 import Settings from './components/Settings';
 const { ipcRenderer } = window.require('electron');
