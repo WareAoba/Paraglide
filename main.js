@@ -1,5 +1,5 @@
 // main.js
-const { app, BrowserWindow, dialog, ipcMain, nativeTheme, clipboard } = require('electron');
+const { app, BrowserWindow, dialog, ipcMain, nativeTheme, clipboard, screen } = require('electron');
 const path = require('path');
 const fs = require('fs').promises;
 const os = require('os');
@@ -80,24 +80,37 @@ const FILE_PATHS = {
 
 // 설정할 값 정의
 
-const DEFAULT_CONFIG = {
-  overlayBounds: { width: 300, height: 240 },
+const getDefaultConfig = () => ({
+  overlayBounds: { 
+    width: 300, 
+    height: 240,
+    get x() { return Math.floor(screen.getPrimaryDisplay().workAreaSize.width * 0.02) },
+    get y() { return Math.floor(screen.getPrimaryDisplay().workAreaSize.height * 0.05) }
+  },
   windowOpacity: 1.0,
   contentOpacity: 0.8,
   overlayFixed: false,
   loadLastOverlayBounds: true,
   accentColor: '#007bff'
-};
+});
 
 const ConfigManager = {
   extractConfig(config = {}) {
+
+    const defaultConfig = getDefaultConfig();
+    const loadLastOverlayBounds = typeof config.loadLastOverlayBounds !== 'undefined' 
+    ? config.loadLastOverlayBounds 
+    : defaultConfig.loadLastOverlayBounds;
+
     return {
-      overlayBounds: config.overlayBounds || globalState.overlayBounds || DEFAULT_CONFIG.overlayBounds,
-      windowOpacity: config.windowOpacity ?? globalState.windowOpacity ?? DEFAULT_CONFIG.windowOpacity,
-      contentOpacity: config.contentOpacity ?? globalState.contentOpacity ?? DEFAULT_CONFIG.contentOpacity,
-      overlayFixed: typeof config.overlayFixed !== 'undefined' ? config.overlayFixed : globalState.overlayFixed,
-      loadLastOverlayBounds: typeof config.loadLastOverlayBounds !== 'undefined' ? config.loadLastOverlayBounds : DEFAULT_CONFIG.loadLastOverlayBounds,
-      accentColor: config.accentColor || globalState.accentColor || DEFAULT_CONFIG.accentColor
+      overlayBounds: loadLastOverlayBounds
+        ? (config.overlayBounds || defaultConfig.overlayBounds)
+        : defaultConfig.overlayBounds,
+      windowOpacity: config.windowOpacity ?? defaultConfig.windowOpacity,
+      contentOpacity: config.contentOpacity ?? defaultConfig.contentOpacity,
+      overlayFixed: typeof config.overlayFixed !== 'undefined' ? config.overlayFixed : defaultConfig.overlayFixed,
+      loadLastOverlayBounds,
+      accentColor: config.accentColor || defaultConfig.accentColor
     };
   }
 };
@@ -222,28 +235,91 @@ const FileManager = {
 
   async loadConfig() {
     try {
+
+     try{
+      await fs.access(FILE_PATHS.config);
+    } catch {
+      // 파일이 없으면 기본 설정으로 새로 생성
+      const defaultConfig = getDefaultConfig();
+      await this.saveConfig(defaultConfig);
+      return defaultConfig;
+    }
+
       const data = await fs.readFile(FILE_PATHS.config, 'utf8');
+
+        // 내용이 비어있거나 유효하지 않은 JSON인 경우
+        if (!data.trim()) {
+          const defaultConfig = getDefaultConfig();
+          await this.saveConfig(defaultConfig);
+          return defaultConfig;
+        }
+
       return JSON.parse(data);
     } catch (error) {
-      return {};
+      console.error('설정 로드 실패, 기본값 사용:', error);
+      return getDefaultConfig();
     }
   },
 
   async saveLog(log) {
     try {
-      const jsonString = JSON.stringify(log, null, 2);
-      await fs.writeFile(FILE_PATHS.log, jsonString);
+      // 1. 데이터 유효성 검증
+      const validLog = typeof log === 'object' ? log : {};
+      
+      // 2. JSON 문자열로 변환
+      const jsonString = JSON.stringify(validLog, null, 2);
+      
+      // 3. 파일 저장
+      await fs.writeFile(FILE_PATHS.log, jsonString, 'utf8');
+      
+      console.log('로그 저장 완료');
+      return true;
     } catch (error) {
       console.error('로그 저장 실패:', error);
-      throw error;
+      return false;
     }
   },
 
   async loadLog() {
     try {
+      // 1. 파일 존재 여부 확인
+      try {
+        await fs.access(FILE_PATHS.log);
+      } catch {
+        // 파일이 없으면 빈 로그로 새로 생성
+        await this.saveLog({});
+        return {};
+      }
+
+      // 2. 파일 읽기
       const data = await fs.readFile(FILE_PATHS.log, 'utf8');
-      return data ? JSON.parse(data) : {};
+
+      // 3. 내용 검증
+      if (!data.trim()) {
+        // 빈 파일이면 초기화
+        await this.saveLog({});
+        return {};
+      }
+
+      try {
+        // JSON 파싱 시도
+        const parsed = JSON.parse(data);
+        
+        // 객체가 아니면 초기화
+        if (!parsed || typeof parsed !== 'object') {
+          await this.saveLog({});
+          return {};
+        }
+
+        return parsed;
+      } catch (parseError) {
+        // JSON 파싱 실패시 파일 복구
+        console.error('로그 파일 손상, 초기화됨:', parseError);
+        await this.saveLog({});
+        return {};
+      }
     } catch (error) {
+      console.error('로그 파일 로드 실패:', error);
       return {};
     }
   },
@@ -431,8 +507,8 @@ const WindowManager = {
     };
 
     const bounds = globalState.loadLastOverlayBounds ? 
-    globalState.overlayBounds : 
-    { width: 300, height: 240, x: undefined, y: undefined };
+      { ...globalState.overlayBounds } : 
+      { ...defaultBounds };
 
     overlayWindow = new BrowserWindow({
       width: globalState.loadLastOverlayBounds ? bounds.width : defaultBounds.width,
@@ -481,14 +557,21 @@ const WindowManager = {
     });
   },
 
-  saveOverlayBounds() {
+  async saveOverlayBounds() {
     if (!overlayWindow) return;
-    const overlayBounds = overlayWindow.getBounds();
-    globalState.overlayBounds = overlayBounds;
-    FileManager.saveConfig({
-      ...globalState,
-      overlayBounds
-    });
+  
+    // 1. 현재 설정 로드
+    const currentConfig = await FileManager.loadConfig();
+    
+    // 2. 바운드 정보만 업데이트
+    const newConfig = {
+      ...currentConfig,
+      overlayBounds: overlayWindow.getBounds()
+    };
+    
+    // 3. 상태 및 파일 업데이트
+    globalState.overlayBounds = newConfig.overlayBounds;
+    await FileManager.saveConfig(newConfig);
   },
 
   async updateOverlayContent() {
@@ -953,14 +1036,7 @@ const ApplicationManager = {
 
   async exit() {
     try {
-      // 1. 현재 작업 위치 저장
-      await FileManager.saveCurrentPositionToLog();
 
-      // 2. 현재 설정값 추출 및 저장
-      const currentConfig = ConfigManager.extractConfig(globalState);
-      await FileManager.saveConfig(currentConfig);
-
-      // 3. 윈도우 정리
       if (overlayWindow && !overlayWindow.isDestroyed()) {
         overlayWindow.destroy();
         overlayWindow = null;
