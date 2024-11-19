@@ -154,6 +154,13 @@ const updateGlobalState = async (newState, source = 'other') => {
       globalState = { ...globalState, ...newState };
     }
 
+      // 일시정지 해제 시 현재 단락 복사
+      if ('isPaused' in newState && 
+        newState.isPaused === false && 
+        globalState.paragraphs?.[globalState.currentParagraph]) {
+        ContentManager.copyAndLogDebouncer(globalState.paragraphs[globalState.currentParagraph]);
+    }
+
     // 여기에 단락 변경 시 디바운스된 복사 로직 추가
     if ('currentParagraph' in newState && globalState.paragraphs?.[globalState.currentParagraph]) {
       ContentManager.copyAndLogDebouncer(globalState.paragraphs[globalState.currentParagraph]);
@@ -161,9 +168,14 @@ const updateGlobalState = async (newState, source = 'other') => {
 
     // UI 업데이트
     mainWindow?.webContents.send('state-update', globalState);
-    if (globalState.isOverlayVisible && overlayWindow) {
-      overlayWindow.show();
-      await WindowManager.updateOverlayContent();
+
+    if (overlayWindow && !overlayWindow.isDestroyed()) {
+      if (globalState.isOverlayVisible) {
+        overlayWindow.showInactive();
+        await WindowManager.updateOverlayContent();
+      } else {
+        overlayWindow.hide();
+      }
     }
 
     ipcMain.emit('program-status-update', 'event', {
