@@ -155,41 +155,58 @@
   margin-bottom: var(--spacing-md); /* 하단 여백 추가 */
 }
 
-/* 버튼 그룹 컨테이너 */
+/* 버튼 그룹 컨테이너 기본 레이아웃 */
 .button-group {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  height: 56px;
+  padding: 0 var(--spacing-xxl);
+  background-color: var(--bg-color);
+  border-top: 1px solid var(--border-color);
+  z-index: 100;
+}
+
+/* 좌측 영역 - 설정 버튼 */
+.button-group .left,
+.button-group .right {
+  position: relative;
+  z-index: 2;
+  flex: 0 0 auto;
+}
+
+/* 중앙 영역 - 작업 완료 버튼 */
+.button-group .center {
+  justify-self: center;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: var(--spacing-md) var(--spacing-xl);
-  border-top: 1px solid var(--border-color);
-  background-color: var(--bg-color);
-  height: 56px;
-  position: relative; /* 상대 위치 설정 */
+  margin: 0 auto;  /* 추가 */
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
-.button-group .left {
-  display: flex;
-  gap: var(--spacing-sm);
-}
-
-.button-group .center {
-  flex: 1;
-  display: flex;
-  justify-content: center;
-}
-
+/* 우측 영역 - 토글 버튼들 */
 .button-group .right {
+  justify-self: end;
   display: flex;
-  gap: var(--spacing-sm);
+  align-items: center;
+  gap: var(--spacing-md);
 }
 
 /* 페이지 번호 */
 .page-number {
-  font-size: 1.5em;
+  font-size: 2em;  /* 폰트 크기 증가 */
   text-align: center;
-  font-weight: 600;
+  font-weight: 700;  /* 더 굵게 */
   color: var(--text-color);
-  margin: var(--spacing-xl) 0;
+  margin: var(--spacing-xl) 0 var(--spacing-lg);  /* 상단 여백 증가 */
+  padding: var(--spacing-md);
 }
 
 /* 단락 섹션 */
@@ -198,9 +215,9 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-md);
-  padding: 0 var(--spacing-lg);
-  margin: var(--spacing-lg) 0;
-  min-height: calc(100vh - 400px);
+  padding: 0 var(--spacing-xxl);  /* 좌우 패딩 증가 */
+  margin: 0;  /* 마진 제거 */
+  min-height: calc(100vh - 450px);  /* 높이 감소 */
 }
 
 /* 단락 컨테이너 */
@@ -208,30 +225,37 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
+  border: none;
+  border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  max-height: calc(100vh - 300px); /* 높이 제한 추가 */
-  margin-bottom: var(--spacing-xl); /* 하단 여백 추가 */
+  max-height: calc(100vh - 350px);
+  margin-bottom: var(--spacing-lg);
+  gap: var(--spacing-lg);  /* 단락 간 간격 증가 */
+  background-color: rgba(0, 0, 0, 0.12);
+  padding: var(--spacing-lg);  /* 내부 패딩 증가 */
 }
 
 /* 단락 헤더 */
 .paragraph-header {
-  display: flex;
-  background-color: var(--bg-color);
-  border-bottom: 1px solid var(--border-color);
-  padding: var(--spacing-sm) 0;
+  display: grid;
+  grid-template-columns: 1fr 1.2fr 1fr;
+  background-color: transparent;
+  border: none;
+  padding: var(--spacing-xs) var(--spacing-md);  /* 패딩 감소 */
+  margin-bottom: var(--spacing-sm);  /* 마진 감소 */
 }
 
 /* 단락 헤더 개별 셀 */
 .paragraph-header > div {
   flex: 1;
-  padding: var(--spacing-sm);
+  padding: var(--spacing-xs);  /* 패딩 감소 */
   text-align: center;
+  font-size: 1.1rem;  /* 폰트 크기 증가 */
+  font-weight: 500;  /* 약간의 강조 */
+  color: var(--text-color);
 }
 
-/* 현재 단락 헤더 스타일 */
+/* 현재 단락 헤더 스타�� */
 .paragraph-header .current {
   flex: 1.5;
   font-weight: bold;
@@ -240,47 +264,50 @@
 /* 단락 컨텐츠 컨테이너 */
 .paragraph-content {
   display: flex;
-  flex-direction: row; /* 가로 방향으로 배치 */
+  flex-direction: row;
   flex: 1;
   min-height: 200px;
   width: 100%;
-  gap: 1px; /* 단락 사이 간격 */
+  gap: var(--spacing-lg);  /* 단락 간 간격 확대 */
 }
 
-.paragraph {
-  position: static;
-  flex: 1;
-  flex-shrink: 1;
-  min-width: 0;
-  padding: var(--spacing-lg);
-  text-align: left;
-  border-right: 1px solid var(--border-color);
-  font-size: 1.1rem;
-  color: var(--text-color);
-  -webkit-font-smoothing: antialiased;
-}
 
 /* 현재 단락은 더 넓게 */
-.paragraph-current {
-  flex: 1;
-  background-color: var(--bg-color);
-}
-
-/* 이전/다음 단락 */
+.paragraph-current,
 .paragraph-prev,
 .paragraph-next {
   flex: 1;
+  padding: var(--spacing-lg);
   background-color: var(--bg-secondary);
-  opacity: 0.8;
+  border-radius: 8px;  /* 단락별 라운드 처리 */
+  white-space: pre-wrap;  /* 개행 보존 */
+  overflow-y: auto;  /* 내용이 넘칠 경우 스크롤 */
+  font-size: 1rem;
+  line-height: 1.6;  /* 행간 조정 */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);  /* 미묘한 그림자 */
+}
+
+/* 현재 단락 강조 */
+.paragraph-current {
+  background-color: var(--bg-color);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);  /* 더 강한 그림자로 강조 */
+}
+
+/* 이전/다음 단락 투명도 */
+.paragraph-prev,
+.paragraph-next {
+  opacity: 0.75;
 }
 
 /* 단락 호버 효과 */
-.paragraph:hover,
 .paragraph-prev:hover,
 .paragraph-next:hover,
 .paragraph-current:hover {
+  opacity: 1;
   background-color: var(--hover-bg);
-  transition: background-color 0.2s ease;
+  transform: translateY(-2px);  /* 살짝 띄우기 효과 */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);  /* 그림자 강화 */
+  transition: all 0.3s ease;  /* 부드러운 전환 */
 }
 
 /* 네비게이션 버튼 */
@@ -294,25 +321,16 @@
 
 /* 설정 버튼 스타일 수정 */
 .btn-settings {
-  position: fixed;
-  left: var(--spacing-lg);
-  bottom: var(--spacing-lg);
-  width: 36px;
   height: 36px;
   padding: 6px;
   background-color: transparent;
   border: none;
-  color: var(--text-color);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  margin-left: var(--spacing-xxl);
 }
 
 .btn-settings:hover {
   transform: rotate(30deg);
+  transition: transform 0.3s;
   background-color: var(--hover-bg);
 }
 
@@ -325,18 +343,23 @@
 
 /* 작업 완료 버튼 스타일 수정 */
 .btn-complete {
-  position: absolute; /* 절대 위치 설정 */
-  left: 50%; /* 왼쪽에서 50% 위치 */
-  transform: translateX(-50%); /* 자신의 너비의 절반만큼 왼쪽으로 이동 */
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
   height: 36px;
   min-width: 160px;
   padding: 0 var(--spacing-xl);
-  background-color: var(--success-color);
-  color: white;
+  background-color: var(--primary-color);
+  color: var(--text-color);
   border: none;
   border-radius: 4px;
   font-weight: 500;
-  transition: box-shadow 0.2s ease;  /* transform 제거, box-shadow만 transition */
+  transition: box-shadow 0.2s ease;
+  pointer-events: auto;
+  z-index: 1;
+  position: relative;
+  transform: none;
+  left: auto;
 }
 
 .btn-complete:hover {
@@ -379,6 +402,19 @@
 }
 
 .btn,
+.btn-icon,
+.btn-settings,
+.btn-sidebar,
+.btn-complete,
+.toggle-buttons button{
+  border: none !important;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn,
 .btn-icon {
   height: 36px;
 }
@@ -411,7 +447,11 @@
 /* 토글 버튼 */
 .toggle-buttons {
   display: flex;
+  align-items: center;  /* 수직 중앙 정렬 */
   gap: var(--spacing-sm);
+  background-color: transparent;
+  margin-right: var(--spacing-xxl);
+  margin-right: 0;
 }
 
 .toggle-buttons button {
@@ -419,7 +459,6 @@
   min-width: 120px;
   height: 36px;
   border-radius: 4px;
-  border: 1px solid var(--border-color);
   font-size: 0.9rem;
   transition: background-color 0.2s ease;
 }
@@ -448,7 +487,6 @@
   height: 36px;
   min-width: unset;  /* 최소 너비 제거 */
   padding: 6px;
-  border: none;
   background: transparent;
   display: flex;
   align-items: center;
@@ -471,7 +509,6 @@
 }
 
 .toggle-buttons .btn-icon {
-  border: none;  /* 테두리 제거 */
   background: transparent;
   padding: 6px;
   width: 36px;

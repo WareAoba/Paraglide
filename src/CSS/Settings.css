@@ -118,7 +118,7 @@
   border-radius: 4px;
 }
 
-.button-group {
+.settings-button-group {
   position: absolute;
   bottom: 0;
   left: 0;
@@ -133,7 +133,7 @@
   z-index: 1;                /* 스크롤 컨텐츠 위에 표시 */
 }
 
-.button-group button {
+.settings-button-group button {
   padding: 8px 20px;
   border-radius: 6px;
   border: 1px solid var(--border-color);
@@ -144,17 +144,17 @@
   transition: all 0.2s ease;
 }
 
-.button-group button.btn-primary {
+.settings-button-group button.btn-primary {
   background-color: var(--primary-color);
   color: white;
   border: none;
 }
 
-.button-group button:hover {
+.settings-button-group button:hover {
   background-color: var(--hover-bg);
 }
 
-.button-group button.btn-primary:hover {
+.settings-button-group button.btn-primary:hover {
   filter: brightness(1.1);
 }
 
@@ -168,7 +168,7 @@
   border: 1px solid var(--border-color);
 }
 
-[data-theme="dark"] .button-group {
+[data-theme="dark"] .settings-button-group {
   background-color: var(--dark-bg);
   border-top-color: rgba(255, 255, 255, 0.1);
 }
@@ -179,13 +179,13 @@
   color: var(--dark-text);
 }
 
-[data-theme="dark"] .button-group button {
+[data-theme="dark"] .settings-button-group button {
   background-color: var(--dark-bg);
   color: var(--dark-text);
   border-color: rgba(255, 255, 255, 0.1);
 }
 
-[data-theme="dark"] .button-group button.btn-primary {
+[data-theme="dark"] .settings-button-group button.btn-primary {
   background-color: var(--primary-color);
   color: var(--dark-text);
 }

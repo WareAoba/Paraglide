@@ -144,7 +144,7 @@ function Settings({ isVisible, onClose, isDarkMode }) {
           </div>
         </div>
         
-        <div className="button-group">
+        <div className="settings-button-group">
           <button className="btn" onClick={handleCancel}>취소</button>
           <button className="btn btn-primary" onClick={onClose}>확인</button>
         </div>
