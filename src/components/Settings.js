@@ -66,83 +66,82 @@ function Settings({ isVisible, onClose, isDarkMode }) {
       <div className="settings-content">
         <h2>설정</h2>
         
-        <div className="settings-group">
-          <h3>오버레이</h3>
-          <label>
-            전체 투명도
-            <input 
-              type="range" 
-              min="0"
-              max="100"
-              step="1"
-              value={settings.windowOpacity * 100}
-              onChange={e => handleSettingChange({
-                ...settings, 
-                windowOpacity: parseFloat(e.target.value) / 100
-              })}
-            />
-          </label>
-          <label>
-            배경 투명도
-            <input 
-              type="range" 
-              min="0"
-              max="100"
-              step="1"
-              value={settings.contentOpacity * 100}
-              onChange={e => handleSettingChange({
-                ...settings, 
-                contentOpacity: parseFloat(e.target.value) / 100
-              })}
-            />
-          </label>
-          <label className="checkbox-label">
-            오버레이 고정
-            <input 
-              type="checkbox"
-              checked={settings.overlayFixed}
-              onChange={e => handleSettingChange({
-                ...settings, 
-                overlayFixed: e.target.checked
-              })}
-            />
-          </label>
-          <label className="checkbox-label">
-            마지막 오버레이 위치/크기 가져오기
-            <input 
-              type="checkbox"
-              checked={settings.loadLastOverlayBounds}
-              onChange={e => handleSettingChange({
-                ...settings, 
-                loadLastOverlayBounds: e.target.checked
-              })}
-            />
-          </label>
-        </div>
+        <div className="settings-scroll-area">
+          <div className="settings-group">
+            <h3>오버레이</h3>
+            <label>
+              전체 투명도
+              <input 
+                type="range" 
+                min="0"
+                max="100"
+                step="1"
+                value={settings.windowOpacity * 100}
+                onChange={e => handleSettingChange({
+                  ...settings, 
+                  windowOpacity: parseFloat(e.target.value) / 100
+                })}
+              />
+            </label>
+            <label>
+              배경 투명도
+              <input 
+                type="range" 
+                min="0"
+                max="100"
+                step="1"
+                value={settings.contentOpacity * 100}
+                onChange={e => handleSettingChange({
+                  ...settings, 
+                  contentOpacity: parseFloat(e.target.value) / 100
+                })}
+              />
+            </label>
+            <label className="checkbox-label">
+              오버레이 고정
+              <input 
+                type="checkbox"
+                checked={settings.overlayFixed}
+                onChange={e => handleSettingChange({
+                  ...settings, 
+                  overlayFixed: e.target.checked
+                })}
+              />
+            </label>
+            <label className="checkbox-label">
+              마지막 오버레이 위치/크기 가져오기
+              <input 
+                type="checkbox"
+                checked={settings.loadLastOverlayBounds}
+                onChange={e => handleSettingChange({
+                  ...settings, 
+                  loadLastOverlayBounds: e.target.checked
+                })}
+              />
+            </label>
+          </div>
 
-        <div className="settings-group">
-          <h3>앱 설정</h3>
-          <label>
-            강조색
-            <input 
-              type="color"
-              value={settings.accentColor}
-              onChange={e => handleSettingChange({
-                ...settings, 
-                accentColor: e.target.value
-              })}
-            />
-          </label>
-        </div>
+          <div className="settings-group">
+            <h3>앱 설정</h3>
+            <label>
+              강조색
+              <input 
+                type="color"
+                value={settings.accentColor}
+                onChange={e => handleSettingChange({
+                  ...settings, 
+                  accentColor: e.target.value
+                })}
+              />
+            </label>
+          </div>
 
-        <div className="settings-group">
-          <h3>데이터 관리</h3>
-          <button 
-            className="btn btn-danger" 
-            onClick={handleClearLogs}
-          >
-            로그 파일 정리
-          </button>
+          <div className="settings-group danger-zone">
+            <h3>데이터 관리</h3>
+            <button onClick={handleClearLogs}>
+              로그 파일 정리
+            </button>
+          </div>
         </div>
         
         <div className="button-group">

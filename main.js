@@ -293,18 +293,15 @@ const FileManager = {
   async getFileHistory() {
     try {
       const logData = await this.loadLog();
-
-      // 현재 파일 제외하고 반환
-      return Object.entries(logData)
-        .filter(([path]) => path !== globalState.currentFilePath)
-        .map(([path, data]) => ({
-          path,
-          lastPosition: data.currentParagraph,
-          currentNumber: data.currentPageNumber,
-          lastAccessed: data.timestamp,
-          metadata: data.metadata
-        }))
-        .sort((a, b) => b.lastAccessed - a.lastAccessed);
+      const currentFile = globalState.currentFilePath ? {
+        path: globalState.currentFilePath,
+        hash: this.getFileHash(globalState.paragraphs.join('\n'))
+      } : null;
+  
+      return {
+        logData,  // 원본 로그 데이터 그대로 전달
+        currentFile
+      };
     } catch (error) {
       console.error('파일 기록 로드 실패:', error);
       return [];

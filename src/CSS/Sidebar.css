@@ -1,4 +1,4 @@
-  /* 사이드바 */
+/* 사이드바 */
   .sidebar {
     position: fixed;
     left: -300px;
@@ -45,3 +45,131 @@
       outline: none;
       color: inherit;
     }
+
+    /* 오버레이 */
+.sidebar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+}
+
+/* 사이드바 표시 상태 */
+.sidebar.visible {
+  transform: translateX(300px);
+}
+
+/* 사이드바 헤더 */
+.sidebar-header {
+  padding: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.sidebar-header h3 {
+  color: var(--text-color);
+  margin: 0;
+  font-size: 1.1em;
+}
+
+/* 사이드바 컨텐츠 */
+.sidebar-content {
+  padding: 15px;
+}
+
+/* 파일 목록 */
+.file-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* 파일 항목 */
+.file-item {
+  padding: 12px;
+  border-radius: 6px;
+  background-color: var(--bg-secondary, var(--bg-color));
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  transition: all var(--transition-default);
+  margin-bottom: 8px;
+}
+
+.file-item:hover {
+  background-color: var(--hover-bg);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* 파일 메인 정보 */
+.file-main-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+/* 파일명 */
+.file-name {
+  color: var(--text-color);
+  font-weight: 500;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 페이지 번호 */
+.file-page {
+  font-size: 0.9em;
+  color: var(--text-secondary);
+}
+
+/* 삭제 버튼 */
+.btn-remove {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  padding: 4px 8px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.file-item:hover .btn-remove {
+  opacity: 1;
+}
+
+/* 파일 부가 정보 */
+.file-sub-info {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85em;
+  color: var(--text-secondary);
+}
+
+/* 파일 경로 */
+.file-path {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 70%;
+}
+
+/* 파일 날짜 */
+.file-date {
+  white-space: nowrap;
+}
+
+/* 빈 메시지 */
+.empty-message {
+  text-align: center;
+  color: var(--text-secondary);
+  padding: var(--spacing-md);
+  font-size: 0.9em;
+}

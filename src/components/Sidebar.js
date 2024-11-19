@@ -87,7 +87,8 @@ function Sidebar({ isVisible, onClose, isDarkMode, currentFilePath }) {
   // 파일 선택 핸들러 - 단순히 열기 요청만
   const handleFileSelect = async (filePath) => {
     try {
-      const result = await ipcRenderer.invoke('open-history-file', filePath);
+      const content = await ipcRenderer.invoke('read-file', filePath);
+      const result = await ipcRenderer.invoke('process-file-content', content, filePath);
       if (result.success) {
         onClose();
       }
