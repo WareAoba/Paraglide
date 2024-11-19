@@ -98,7 +98,7 @@ function Settings({ isVisible, onClose, isDarkMode }) {
               />
             </label>
             <label className="checkbox-label">
-              오버레이 고정
+              오버레이 위치 고정
               <input 
                 type="checkbox"
                 checked={settings.overlayFixed}

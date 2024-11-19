@@ -69,7 +69,7 @@ function Sidebar({ isVisible, onClose, isDarkMode, currentFilePath }) {
   const formatPath = (fullPath) => {
     const parts = fullPath.split(path.sep);
     const fileName = parts.pop(); // 파일명 제거
-    const truncatedPath = parts.slice(-2).join(path.sep); // 상위 2개 폴더만
+    const truncatedPath = parts.slice(-3).join(path.sep); // 상위 3개 폴더만
     return truncatedPath;
   };
 
@@ -99,9 +99,6 @@ function Sidebar({ isVisible, onClose, isDarkMode, currentFilePath }) {
 
   return (
     <>
-      {isVisible && (
-        <div className="sidebar-overlay" onClick={onClose} />
-      )}
       <div 
         className={`sidebar ${isVisible ? 'visible' : ''}`}
         data-theme={isDarkMode ? 'dark' : 'light'}
@@ -143,7 +140,8 @@ function Sidebar({ isVisible, onClose, isDarkMode, currentFilePath }) {
           </div>
         </div>
       </div>
-    </>
+      {isVisible && <div className="sidebar-overlay" onClick={onClose} />}
+      </>
   );
 }
 
