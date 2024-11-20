@@ -30,7 +30,7 @@ class SystemListener {
     setInterval(() => {
       const currentText = clipboard.readText();
       if (currentText !== this.lastClipboardText) {
-        console.log('[SystemListener] 클립보드 변경 감지');
+        console.log('[SystemListener] 클립보드 변경 감지:', currentText);
         this.onClipboardChange(currentText);
         this.lastClipboardText = currentText;
       }
@@ -45,13 +45,14 @@ class SystemListener {
     }
 
     if (this.isInternalClipboardChange && (now - this.lastInternalChangeTime) < 500) {
+      console.log('[클립보드] 내부 복사 감지.');
       this.isInternalClipboardChange = false;
       return;
     }
 
     if (this.mainWindow?.isDestroyed()) return;
     ipcMain.emit('toggle-pause');
-    console.log('[클립보드] 외부 복사 감지');
+    console.log('[클립보드] 외부 복사 감지.');
   }
 
   // 내부 클립보드 변경 알림
@@ -63,7 +64,7 @@ class SystemListener {
   // setupKeyboardListener는 수정하지 않음 (사람이 작성한 코드)
   // Important: 절대로 건들지 마세요.
   setupKeyboardListener() {
-    console.log('[SystemListener] 키보드 리스너 설정');
+    console.log('[SystemListener] 키보드 리스너 설정 시작.');
     const keyboard = new GlobalKeyboardListener();
     keyboard.addListener((e, down) => {
       // only handle key down events
@@ -74,10 +75,11 @@ class SystemListener {
       
       if (e.name === 'V' && isCtrlOrCmd) {
         if (!this.programStatus || this.programStatus.isPaused) {
+          console.log('[단축키] 일시정지 상태: 명령 무시');
           return;
         }
         
-        console.log('[단축키] Cmd+V 또는 Ctrl+V');
+        console.log('[단축키] 다음 단락으로 이동 (Cmd+V 또는 Ctrl+V) 감지됨.');
         this.moveToNext();
       }
 
@@ -87,19 +89,19 @@ class SystemListener {
       if(isAlt) {
         switch(keyName) {
           case 'RIGHT ARROW':
-            console.log('[단축키] Alt+Right');
+            console.log('[단축키] Alt+Right 감지됨.');
             this.moveToNext();
             break;
           case 'LEFT ARROW':
-            console.log('[단축키] Alt+Left');
+            console.log('[단축키] Alt+Left 감지됨.');
             this.moveToPrev();
             break;
           case 'UP ARROW':
-            console.log('[단축키] Alt+Up');
+            console.log('[단축키] Alt+Up 감지됨.');
             this.toggleResume();
             break;
           case 'DOWN ARROW':
-            console.log('[단축키] Alt+Down');
+            console.log('[단축키] Alt+Down 감지됨.');
             this.togglePause();
             break;
         }

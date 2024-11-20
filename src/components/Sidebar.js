@@ -1,35 +1,14 @@
 // src/components/Sidebar.js
-
 import React from 'react';
-import '../CSS/App.css';
-import '../CSS/Sidebar.css';
 const { ipcRenderer } = window.require('electron');
 const path = window.require('path');
 
-function Sidebar({ isVisible, onClose, currentFilePath }) {
+function Sidebar({ isVisible, onClose, isDarkMode, currentFilePath }) {
   const [files, setFiles] = React.useState([]);
-  const [isDarkMode, setIsDarkMode] = React.useState(false);
 
   React.useEffect(() => {
     loadFileHistory();
   }, [isVisible]);
-
-  React.useEffect(() => {
-    const handleThemeChange = (_, theme) => {
-      setIsDarkMode(theme === 'dark');
-    };
-
-    ipcRenderer.on('theme-changed', handleThemeChange);
-
-    // 초기 테마 상태 요청
-    ipcRenderer.invoke('get-theme').then(theme => {
-      setIsDarkMode(theme === 'dark');
-    });
-
-    return () => {
-      ipcRenderer.removeListener('theme-changed', handleThemeChange);
-    };
-  }, []);
 
   const loadFileHistory = async () => {
     try {
@@ -87,7 +66,7 @@ function Sidebar({ isVisible, onClose, currentFilePath }) {
   const formatPath = (fullPath) => {
     const parts = fullPath.split(path.sep);
     const fileName = parts.pop(); // 파일명 제거
-    const truncatedPath = parts.slice(-3).join(path.sep); // 상위 3개 폴더만
+    const truncatedPath = parts.slice(-2).join(path.sep); // 상위 2개 폴더만
     return truncatedPath;
   };
 
@@ -105,8 +84,7 @@ function Sidebar({ isVisible, onClose, currentFilePath }) {
   // 파일 선택 핸들러 - 단순히 열기 요청만
   const handleFileSelect = async (filePath) => {
     try {
-      const content = await ipcRenderer.invoke('read-file', filePath);
-      const result = await ipcRenderer.invoke('process-file-content', content, filePath);
+      const result = await ipcRenderer.invoke('open-history-file', filePath);
       if (result.success) {
         onClose();
       }
@@ -117,6 +95,9 @@ function Sidebar({ isVisible, onClose, currentFilePath }) {
 
   return (
     <>
+      {isVisible && (
+        <div className="sidebar-overlay" onClick={onClose} />
+      )}
       <div 
         className={`sidebar ${isVisible ? 'visible' : ''}`}
         data-theme={isDarkMode ? 'dark' : 'light'}
@@ -158,8 +139,7 @@ function Sidebar({ isVisible, onClose, currentFilePath }) {
           </div>
         </div>
       </div>
-      {isVisible && <div className="sidebar-overlay" onClick={onClose} />}
-      </>
+    </>
   );
 }
 

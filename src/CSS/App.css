@@ -8,7 +8,7 @@
   --primary-color: #007bff;
   --text-color: #333;
   --text-secondary: #666;
-  --bg-color: rgba(255, 255, 255, 0.9);
+  --bg-color: #fff;
   --dark-text: #f5f5f5;
   --dark-bg: #1e1e1e;
   --border-color: rgba(0, 0, 0, 0.2);
@@ -16,12 +16,6 @@
   --overlay-bg: rgba(255, 255, 255, 1.0);
   --danger-color: #dc3545;
   --success-color: #28a745;
-  --window-opacity: 1;
-  --bg-opacity: 0.8;
-  --bg-rgb: 255, 255, 255;
-  --dark-bg-rgb: 30, 30, 30;
-  --active-color: rgba(188, 188, 188, 1.0);
-  --btn-bg: rgba(255, 255, 255, 0.025);
 
   /* 크기 */
   --container-width: 100vw;
@@ -45,13 +39,10 @@
   --text-color: #f5f5f5;
   --text-secondary: #ccc;
   --bg-color: #1e1e1e;
-  --bg-rgb: 30, 30, 30;
   --bg-secondary: #262626;
   --border-color: rgba(255, 255, 255, 0.2);
   --hover-bg: rgba(255, 255, 255, 0.05);
   --overlay-bg: rgba(32, 32, 32, 1.0);
-  --active-color: rgba(48, 48, 48, 1.0);
-  --btn-bg: rgba(0, 0, 0, 0.025);
   
   /* 단락 관련 */
   --paragraph-bg: #262626;
@@ -108,6 +99,210 @@ body,
   transition: background-color var(--transition-default);
 }
 
+/* 메인 컨테이너 래퍼 */
+.container {
+  width: var(--container-width);
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  transition: background-color var(--transition-default), 
+              color var(--transition-default);
+}
+
+/* 컨텐츠 영역 중앙 정렬 래퍼 */
+.content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-md);
+  max-width: 90vw;
+  padding: var(--spacing-md);
+}
+
+/* 로고 */
+.logo {
+  width: auto;
+  height: auto;
+  max-width: var(--logo-width);
+  max-height: var(--logo-height);
+  object-fit: contain;
+  margin-bottom: var(--spacing-md);
+  cursor: zoom-in;
+  transition: transform var(--transition-default);
+}
+
+/* 버튼 기본 */
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  border-color: var(--btn-border);
+  color: var(--text-color);
+  background-color: transparent;
+  color: var(--text-color);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all var(--transition-default);
+  min-width: 90px;
+}
+
+/* 기본 버튼 호버 상태 */
+.btn:hover {
+  background-color: var(--hover-bg);
+}
+
+/* 버튼 변형 */
+.btn-primary {
+  background-color: var(--primary-color);
+  color: #fff;
+  border: none;
+}
+
+/* 성공 상태 버튼 */
+.btn-success {
+  background-color: var(--success-color);
+  color: #fff;
+  border: none;
+}
+
+/* 경고/위험 상태 버튼 */
+.btn-danger {
+  background-color: var(--danger-color);
+  color: #fff;
+  border: none;
+}
+
+/* icon 버튼 css */
+.btn-icon {
+  background: none;
+  color: var(--text-color);
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  outline: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px; /* Set the width to match the icon */
+  height: 28px; /* Set the height to match the icon */
+  margin: 0; /* Remove any default margin */
+}
+
+/* 아이콘 버튼 SVG 요소 */
+.btn-icon svg {
+  width: 100%;
+  height: 100%;
+  fill: currentColor;
+  stroke: currentColor;
+}
+
+/* 아이콘 버튼 상호작용 상태 */
+.btn-icon:hover,
+.btn-icon:focus,
+.btn-icon:active {
+  background: none;
+  outline: none;
+  color: inherit;
+}
+
+/* 사이드바 icon 버튼 */
+.btn-sidebar {
+  background: none;
+  color: var(--text-color);
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  outline: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute; /* Position it absolutely */
+  top: 20px;
+  left: 20px;
+  width: 28px; /* Set the width to match the icon */
+  height: 28px; /* Set the height to match the icon */
+  margin: 0; /* Remove any default margin */
+}
+
+/* 사이드바 토글 버튼 SVG */
+.btn-sidebar svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* 사이드바 버튼 상호작용 상태 */
+.btn-sidebar:hover,
+.btn-sidebar:focus,
+.btn-sidebar:active {
+  background: none;
+  outline: none;
+  color: inherit;
+}
+
+/* 닫기 버튼 */
+.btn-close {
+  background: none;
+  color: var(--text-color);
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  outline: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 25px; /* Set the width to match the icon */
+  height: 25px; /* Set the height to match the icon */
+  margin: 0; /* Remove any default margin */
+}
+
+/* 닫기 버튼 상호작용 상태 */
+.btn-close:hover,
+.btn-close:focus,
+.btn-close:active {
+  background: none;
+  outline: none;
+  color: inherit;
+}
+
+
+/* 사이드바 */
+.sidebar {
+  position: fixed;
+  left: -300px;
+  top: 0;
+  width: 300px;
+  height: 100vh;
+  background-color: var(--bg-color);
+  border-right: 1px solid var(--border-color);
+  transition: transform var(--transition-default);
+  z-index: 1000;
+  overflow-y: auto;
+}
+
+/* 사이드바 활성화 상태 */
+.sidebar.visible {
+  transform: translateX(300px);
+}
+
+/* 오버레이 */
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--overlay-bg);
+  z-index: 1000;
+  transition: opacity var(--transition-default);
+}
+
 /* 애니메이션 */
 @keyframes App-logo-spin {
   from { transform: rotate(0deg); }
@@ -119,4 +314,126 @@ body,
     transition: none !important;
     animation: none !important;
   }
+}
+
+/* 메인 컨테이너 레이아웃 */
+.main-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  padding: 20px;
+  gap: var(--spacing-md);
+}
+
+/* 컨트롤 패널 */
+.control-panel {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--spacing-sm); /* 패딩 감소 */
+  margin-bottom: var(--spacing-md); /* 하단 여백 추가 */
+}
+
+/* 버튼 그룹 컨테이너 */
+.button-group {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+/* 페이지 번호 */
+.page-number {
+  text-align: center;
+  font-size: 1.1em;
+  color: var(--text-secondary);
+  margin: var(--spacing-sm) 0;
+}
+
+/* 단락 섹션 */
+.paragraph-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  padding: 0 var(--spacing-lg);
+  margin: var(--spacing-lg) 0; /* 위아래 여백 추가 */
+}
+
+/* 단락 컨테이너 */
+.paragraph-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); /* 그림자 효과 감소 */
+}
+
+/* 단락 헤더 */
+.paragraph-header {
+  display: flex;
+  background-color: var(--bg-color);
+  border-bottom: 1px solid var(--border-color);
+  padding: var(--spacing-sm) 0;
+}
+
+/* 단락 헤더 개별 셀 */
+.paragraph-header > div {
+  flex: 1;
+  padding: var(--spacing-sm);
+  text-align: center;
+}
+
+/* 현재 단락 헤더 스타일 */
+.paragraph-header .current {
+  flex: 1.5;
+  font-weight: bold;
+}
+
+/* 단락 컨텐츠 컨테이너 */
+.paragraph-content {
+  display: flex;
+  flex: 1;
+  min-height: 200px;
+}
+
+.paragraph {
+  padding: var(--spacing-lg);
+  text-align: left;
+  cursor: pointer;
+  transition: var(--transition-default);
+  overflow-y: auto;
+  line-height: 1.6;
+  border-right: 1px solid var(--border-color);
+}
+
+.paragraph:last-child {
+  border-right: none;
+}
+
+/* 이전/다음 단락 스타일 */
+.paragraph.prev,
+.paragraph.next {
+  flex: 1;
+  opacity: 0.8; /* 투명도 감소 */
+  background-color: var(--bg-secondary);
+}
+
+/* 현재 단락 스타일 */
+.paragraph.current {
+  flex: 1.5;
+  opacity: 1;
+  background-color: var(--bg-color)
+}
+
+/* 단락 호버 효과 */
+.paragraph:hover {
+  background-color: var(--paragraph-hover);
+}
+
+/* 네비게이션 버튼 */
+.navigation-buttons {
+  display: flex;
+  justify-content: center;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
 }

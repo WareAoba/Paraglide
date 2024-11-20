@@ -1,10 +1,10 @@
 // main.js
-const { app, BrowserWindow, dialog, ipcMain, nativeTheme, clipboard, screen } = require('electron');
+const { app, BrowserWindow, dialog, ipcMain, nativeTheme, clipboard } = require('electron');
 const path = require('path');
 const fs = require('fs').promises;
 const os = require('os');
 const crypto = require('crypto');
-const SystemListener = require('./SystemListener.js');  // 클래스로 import
+const SystemListener = require('./src/SystemListener.js');  // 클래스로 import
 
 // 디바운스 함수 정의
 const debounce = (func, wait) => {
@@ -68,49 +68,34 @@ const FILE_PATHS = {
   config: path.join(os.homedir(), '.ParaglideConfigure.json'),
   log: path.join(os.homedir(), '.ParaglideParaLog.json'),
   logos: {
-    light: path.join(__dirname, '../public', 'logo-light.png'),
-    dark: path.join(__dirname, '../public', 'logo-dark.png')
+    light: path.join(__dirname, 'public', 'logo-light.png'),
+    dark: path.join(__dirname, 'public', 'logo-dark.png')
   },
-  icon: process.platform === 'win32' ? path.join(__dirname, '../public/icons/win/icon.ico')
-      : process.platform === 'darwin' ? path.join(__dirname, '../public/icons/mac/icon.icns')
-      : path.join(__dirname, '../public/icons/png/512x512.png'),
-  ui_icons: path.join(__dirname, '../public', 'UI_icons')
+  icon: process.platform === 'win32' ? path.join(__dirname, 'public/icons/win/icon.ico')
+      : process.platform === 'darwin' ? path.join(__dirname, 'public/icons/mac/icon.icns')
+      : path.join(__dirname, 'public/icons/png/512x512.png'),
+  ui_icons: path.join(__dirname, 'public', 'UI_icons')
 };
 
 
 // 설정할 값 정의
 
-const getDefaultConfig = () => ({
-  overlayBounds: { 
-    width: 300, 
-    height: 240,
-    get x() { return Math.floor(screen.getPrimaryDisplay().workAreaSize.width * 0.02) },
-    get y() { return Math.floor(screen.getPrimaryDisplay().workAreaSize.height * 0.05) }
-  },
-  windowOpacity: 1.0,
-  contentOpacity: 0.8,
+const DEFAULT_CONFIG = {
+  overlayBounds: { width: 300, height: 240 },
+  overlayOpacity: 0.8,
   overlayFixed: false,
   loadLastOverlayBounds: true,
   accentColor: '#007bff'
-});
+};
 
 const ConfigManager = {
   extractConfig(config = {}) {
-
-    const defaultConfig = getDefaultConfig();
-    const loadLastOverlayBounds = typeof config.loadLastOverlayBounds !== 'undefined' 
-    ? config.loadLastOverlayBounds 
-    : defaultConfig.loadLastOverlayBounds;
-
     return {
-      overlayBounds: loadLastOverlayBounds
-        ? (config.overlayBounds || defaultConfig.overlayBounds)
-        : defaultConfig.overlayBounds,
-      windowOpacity: config.windowOpacity ?? defaultConfig.windowOpacity,
-      contentOpacity: config.contentOpacity ?? defaultConfig.contentOpacity,
-      overlayFixed: typeof config.overlayFixed !== 'undefined' ? config.overlayFixed : defaultConfig.overlayFixed,
-      loadLastOverlayBounds,
-      accentColor: config.accentColor || defaultConfig.accentColor
+      overlayBounds: config.overlayBounds || globalState.overlayBounds || DEFAULT_CONFIG.overlayBounds,
+      overlayOpacity: config.overlayOpacity || globalState.overlayOpacity || DEFAULT_CONFIG.overlayOpacity,
+      overlayFixed: typeof config.overlayFixed !== 'undefined' ? config.overlayFixed : globalState.overlayFixed,
+      loadLastOverlayBounds: typeof config.loadLastOverlayBounds !== 'undefined' ? config.loadLastOverlayBounds : DEFAULT_CONFIG.loadLastOverlayBounds,
+      accentColor: config.accentColor || globalState.accentColor || DEFAULT_CONFIG.accentColor
     };
   }
 };
@@ -135,8 +120,7 @@ let globalState = {
 
   // Settings.json
   overlayBounds: { width: 300, height: 240 },
-  windowOpacity: 1.0,
-  contentOpacity: 0.8,
+  overlayOpacity: 0.8,
   overlayFixed: false,
   accentColor: '#007bff',
   loadLastOverlayBounds: true
@@ -167,13 +151,6 @@ const updateGlobalState = async (newState, source = 'other') => {
       globalState = { ...globalState, ...newState };
     }
 
-      // 일시정지 해제 시 현재 단락 복사
-      if ('isPaused' in newState && 
-        newState.isPaused === false && 
-        globalState.paragraphs?.[globalState.currentParagraph]) {
-        ContentManager.copyAndLogDebouncer(globalState.paragraphs[globalState.currentParagraph]);
-    }
-
     // 여기에 단락 변경 시 디바운스된 복사 로직 추가
     if ('currentParagraph' in newState && globalState.paragraphs?.[globalState.currentParagraph]) {
       ContentManager.copyAndLogDebouncer(globalState.paragraphs[globalState.currentParagraph]);
@@ -181,14 +158,9 @@ const updateGlobalState = async (newState, source = 'other') => {
 
     // UI 업데이트
     mainWindow?.webContents.send('state-update', globalState);
-
-    if (overlayWindow && !overlayWindow.isDestroyed()) {
-      if (globalState.isOverlayVisible) {
-        overlayWindow.showInactive();
-        await WindowManager.updateOverlayContent();
-      } else {
-        overlayWindow.hide();
-      }
+    if (globalState.isOverlayVisible && overlayWindow) {
+      overlayWindow.show();
+      await WindowManager.updateOverlayContent();
     }
 
     ipcMain.emit('program-status-update', 'event', {
@@ -235,91 +207,28 @@ const FileManager = {
 
   async loadConfig() {
     try {
-
-     try{
-      await fs.access(FILE_PATHS.config);
-    } catch {
-      // 파일이 없으면 기본 설정으로 새로 생성
-      const defaultConfig = getDefaultConfig();
-      await this.saveConfig(defaultConfig);
-      return defaultConfig;
-    }
-
       const data = await fs.readFile(FILE_PATHS.config, 'utf8');
-
-        // 내용이 비어있거나 유효하지 않은 JSON인 경우
-        if (!data.trim()) {
-          const defaultConfig = getDefaultConfig();
-          await this.saveConfig(defaultConfig);
-          return defaultConfig;
-        }
-
       return JSON.parse(data);
     } catch (error) {
-      console.error('설정 로드 실패, 기본값 사용:', error);
-      return getDefaultConfig();
+      return {};
     }
   },
 
   async saveLog(log) {
     try {
-      // 1. 데이터 유효성 검증
-      const validLog = typeof log === 'object' ? log : {};
-      
-      // 2. JSON 문자열로 변환
-      const jsonString = JSON.stringify(validLog, null, 2);
-      
-      // 3. 파일 저장
-      await fs.writeFile(FILE_PATHS.log, jsonString, 'utf8');
-      
-      console.log('로그 저장 완료');
-      return true;
+      const jsonString = JSON.stringify(log, null, 2);
+      await fs.writeFile(FILE_PATHS.log, jsonString);
     } catch (error) {
       console.error('로그 저장 실패:', error);
-      return false;
+      throw error;
     }
   },
 
   async loadLog() {
     try {
-      // 1. 파일 존재 여부 확인
-      try {
-        await fs.access(FILE_PATHS.log);
-      } catch {
-        // 파일이 없으면 빈 로그로 새로 생성
-        await this.saveLog({});
-        return {};
-      }
-
-      // 2. 파일 읽기
       const data = await fs.readFile(FILE_PATHS.log, 'utf8');
-
-      // 3. 내용 검증
-      if (!data.trim()) {
-        // 빈 파일이면 초기화
-        await this.saveLog({});
-        return {};
-      }
-
-      try {
-        // JSON 파싱 시도
-        const parsed = JSON.parse(data);
-        
-        // 객체가 아니면 초기화
-        if (!parsed || typeof parsed !== 'object') {
-          await this.saveLog({});
-          return {};
-        }
-
-        return parsed;
-      } catch (parseError) {
-        // JSON 파싱 실패시 파일 복구
-        console.error('로그 파일 손상, 초기화됨:', parseError);
-        await this.saveLog({});
-        return {};
-      }
+      return data ? JSON.parse(data) : {};
     } catch (error) {
-      console.error('로그 파일 로드 실패:', error);
       return {};
     }
   },
@@ -381,15 +290,18 @@ const FileManager = {
   async getFileHistory() {
     try {
       const logData = await this.loadLog();
-      const currentFile = globalState.currentFilePath ? {
-        path: globalState.currentFilePath,
-        hash: this.getFileHash(globalState.paragraphs.join('\n'))
-      } : null;
-  
-      return {
-        logData,  // 원본 로그 데이터 그대로 전달
-        currentFile
-      };
+
+      // 현재 파일 제외하고 반환
+      return Object.entries(logData)
+        .filter(([path]) => path !== globalState.currentFilePath)
+        .map(([path, data]) => ({
+          path,
+          lastPosition: data.currentParagraph,
+          currentNumber: data.currentPageNumber,
+          lastAccessed: data.timestamp,
+          metadata: data.metadata
+        }))
+        .sort((a, b) => b.lastAccessed - a.lastAccessed);
     } catch (error) {
       console.error('파일 기록 로드 실패:', error);
       return [];
@@ -478,7 +390,7 @@ const WindowManager = {
   createMainWindow() {
     mainWindow = new BrowserWindow({
       width: 600,
-      height: 660,
+      height: 600,
       minWidth: 600,
       minHeight: 660,
       maxWidth: 1300,
@@ -507,8 +419,8 @@ const WindowManager = {
     };
 
     const bounds = globalState.loadLastOverlayBounds ? 
-      { ...globalState.overlayBounds } : 
-      { ...defaultBounds };
+    globalState.overlayBounds : 
+    { width: 300, height: 240, x: undefined, y: undefined };
 
     overlayWindow = new BrowserWindow({
       width: globalState.loadLastOverlayBounds ? bounds.width : defaultBounds.width,
@@ -519,7 +431,7 @@ const WindowManager = {
       minWidth: 300,
       maxHeight: 600,
       maxWidth: 500,
-      opacity: globalState.windowOpacity,
+      opacity: 1.0,
       frame: false,
       transparent: true,
       focusable: true,
@@ -541,7 +453,7 @@ const WindowManager = {
 
   setupMainWindowEvents() {
     mainWindow.once('ready-to-show', () => {
-      mainWindow.webContents.send('theme-changed', globalState.isDarkMode);
+      mainWindow.webContents.send('theme-updated', globalState.isDarkMode);
       mainWindow.show();
     });
 
@@ -557,21 +469,14 @@ const WindowManager = {
     });
   },
 
-  async saveOverlayBounds() {
+  saveOverlayBounds() {
     if (!overlayWindow) return;
-  
-    // 1. 현재 설정 로드
-    const currentConfig = await FileManager.loadConfig();
-    
-    // 2. 바운드 정보만 업데이트
-    const newConfig = {
-      ...currentConfig,
-      overlayBounds: overlayWindow.getBounds()
-    };
-    
-    // 3. 상태 및 파일 업데이트
-    globalState.overlayBounds = newConfig.overlayBounds;
-    await FileManager.saveConfig(newConfig);
+    const overlayBounds = overlayWindow.getBounds();
+    globalState.overlayBounds = overlayBounds;
+    FileManager.saveConfig({
+      ...globalState,
+      overlayBounds
+    });
   },
 
   async updateOverlayContent() {
@@ -753,7 +658,7 @@ const IPCManager = {
       BrowserWindow.getAllWindows().forEach(window => {
         window.webContents.send('theme-changed', newTheme);
       });
-      updateGlobalState({ ...globalState, isDarkMode: isDark });
+      updateGlobalState({ ...globalState, theme: newTheme });
     });
 
     // 초기 테마 상태 설정
@@ -827,44 +732,40 @@ const IPCManager = {
     }
   },
 
-  async handleApplySettings(settings) {
-    try {
-      if (!settings) throw new Error('설정값이 없습니다');
-    
-      if (overlayWindow) {
-        // 창 전체 투명도
-        if (typeof settings.windowOpacity === 'number') {
-          overlayWindow.setOpacity(settings.windowOpacity);
-          globalState.windowOpacity = settings.windowOpacity;
+    async handleApplySettings(settings) {
+      try {
+        if (!settings) throw new Error('설정값이 없습니다');
+      
+        // 오버레이 설정 적용
+        if (overlayWindow) {
+          if (typeof settings.overlayOpacity === 'number') { // 투명도
+            overlayWindow.setOpacity(settings.overlayOpacity);
+            globalState.overlayOpacity = settings.overlayOpacity; // 전역 상태 업데이트
+          }
+          if (typeof settings.overlayFixed === 'boolean') { // 고정 여부
+            overlayWindow.setIgnoreMouseEvents(settings.overlayFixed);
+            globalState.overlayFixed = settings.overlayFixed; // 전역 상태 업데이트
+          }
+          if (typeof settings.loadLastOverlayBounds === 'boolean') { // 이전 위치 로드 여부
+            globalState.loadLastOverlayBounds = settings.loadLastOverlayBounds;
+          }
+        }
+      
+        // 강조색 적용
+        if (settings.accentColor && mainWindow) {
+          mainWindow.webContents.send('update-accent-color', settings.accentColor);
+          globalState.accentColor = settings.accentColor; // 전역 상태 업데이트
         }
         
-        // 배경 투명도
-        if (typeof settings.contentOpacity === 'number') {
-          overlayWindow.webContents.send('update-content-opacity', settings.contentOpacity);
-          globalState.contentOpacity = settings.contentOpacity;
-        }
-
-        // 기존 설정들...
-        if (typeof settings.overlayFixed === 'boolean') {
-          overlayWindow.setIgnoreMouseEvents(settings.overlayFixed);
-          globalState.overlayFixed = settings.overlayFixed;
-        }
+        const currentConfig = ConfigManager.extractConfig(globalState);
+        await FileManager.saveConfig(currentConfig);
         
-        if (typeof settings.loadLastOverlayBounds === 'boolean') {
-          globalState.loadLastOverlayBounds = settings.loadLastOverlayBounds;
-        }
+        return true;
+      } catch (error) {
+        console.error('설정 적용 중 오류:', error);
+        return false;
       }
-      
-      // 설정 저장
-      const currentConfig = ConfigManager.extractConfig(globalState);
-      await FileManager.saveConfig(currentConfig);
-      
-      return true;
-    } catch (error) {
-      console.error('설정 적용 중 오류:', error);
-      return false;
-    }
-  },
+    },
 
   // 네비게이션 관련 메서드
   handleMove(direction) {
@@ -874,41 +775,24 @@ const IPCManager = {
       globalState.currentParagraph > 0;
 
     if (canMove) {
-
-      const newPosition = isNext ? 
-      globalState.currentParagraph + 1 : 
-      globalState.currentParagraph - 1;
-      
       mainWindow?.webContents.send('notify-clipboard-change');
       this.handleResume();
-      
-      const newNumber = globalState.paragraphsMetadata[newPosition]?.pageNumber;
-    updateGlobalState({
-      currentParagraph: newPosition,
-      currentNumber: newNumber,  // 페이지 번호 추가
-      timestamp: Date.now(),
-    }, 'move');
-  }
-},
+      updateGlobalState({
+        currentParagraph: globalState.currentParagraph + (isNext ? 1 : -1),
+        timestamp: Date.now(),
+      }, 'move');
+    }
+  },
 
   handleMoveToPosition(position) {
     if (position >= 0 && position < globalState.paragraphs.length) {
-
-      const newPosition = isNext ? 
-      globalState.currentParagraph + 1 : 
-      globalState.currentParagraph - 1;
-
       mainWindow?.webContents.send('notify-clipboard-change');
-
-      const newNumber = globalState.paragraphsMetadata[position]?.pageNumber;
-      
-    updateGlobalState({
-      currentParagraph: newPosition,
-      currentNumber: newNumber,  // 페이지 번호 추가
-      timestamp: Date.now()
-    }, 'move');
-  }
-},
+      updateGlobalState({
+        currentParagraph: position,
+        timestamp: Date.now()
+      }, 'move');
+    }
+  },
 
   // 윈도우 관련 메서드
   handleToggleOverlay() {
@@ -1053,7 +937,14 @@ const ApplicationManager = {
 
   async exit() {
     try {
+      // 1. 현재 작업 위치 저장
+      await FileManager.saveCurrentPositionToLog();
 
+      // 2. 현재 설정값 추출 및 저장
+      const currentConfig = ConfigManager.extractConfig(globalState);
+      await FileManager.saveConfig(currentConfig);
+
+      // 3. 윈도우 정리
       if (overlayWindow && !overlayWindow.isDestroyed()) {
         overlayWindow.destroy();
         overlayWindow = null;
