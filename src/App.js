@@ -1,7 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import MainComponent from './MainComponent';
-import OverlayComponent from './OverlayComponent';
+import MainComponent from './components/MainComponent';
+import OverlayComponent from './components/OverlayComponent';
 import './CSS/App.css';
 
 function App() {
