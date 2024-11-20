@@ -3,6 +3,21 @@
   "version": "0.1.0-beta",
   "private": true,
   "main": "./src/main.js",
+  "build": {
+    "appId": "com.paraglide.app",
+    "productName": "Paraglide",
+    "mac": {
+      "category": "public.app-category.utilities"
+    },
+    "files": [
+      "build/**/*",
+      "src/main.js",
+      "node_modules/**/*"
+    ],
+    "directories": {
+      "buildResources": "assets"
+    }
+  },
   "dependencies": {
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
@@ -23,7 +38,9 @@
     "eject": "react-scripts eject",
     "electron-dev": "electron .",
     "electron": "wait-on http://localhost:3000 && npm run electron-dev",
-    "dev": "concurrently -k \"cross-env BROWSER=none npm start\" \"npm run electron\""
+    "dev": "concurrently -k \"cross-env BROWSER=none npm start\" \"npm run electron\"",
+    "electron-build": "electron-builder -m",
+    "release": "npm run build && npm run electron-build"
   },
   "eslintConfig": {
     "extends": [
@@ -46,6 +63,7 @@
   "devDependencies": {
     "concurrently": "^9.1.0",
     "electron": "^33.2.0",
+    "electron-builder": "^25.1.8",
     "wait-on": "^8.0.1"
   }
 }
