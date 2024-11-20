@@ -1,25 +1,34 @@
 /* src/components/Settings.css */
+/* settings-modal 클래스 수정 */
 .settings-modal {
   position: fixed;
   top: 0;
   left: 0;
   width: 100vw;
   height: 100vh;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: none;
+  background-color: rgba(0, 0, 0, 0);  /* 초기 투명도 0 */
+  display: flex;  /* none 대신 flex 사용 */
   z-index: 1000;
   padding: 0;  /* 패딩 제거 */
+  opacity: 0;  /* 초기 투명도 0 */
+  visibility: hidden;  /* display 대신 visibility 사용 */
+  transition: background-color 0.3s ease,  /* 배경 페이드 */
+              opacity 0.3s ease,           /* 전체 페이드 */
+              visibility 0.3s ease;        /* visibility 전환 */
 }
 
 .settings-modal.visible {
-  display: flex;
+  background-color: rgba(0, 0, 0, 0.5);  /* 최종 배경 투명도 */
+  opacity: 1;
+  visibility: visible;
 }
 
+/* settings-content 클래스에 transition 추가 */
 .settings-content {
   position: fixed;  /* absolute에서 fixed로 변경 */
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%);  /* 정확한 중앙 정렬 */
+  transform: translate(-50%, -60%);  /* 시작 위치를 약간 위로 */
   width: min(90%, 360px);     /* 480px에서 축소 */
   height: min(90%, 480px);    /* 600px에서 축소 */
   background-color: var(--bg-color);
@@ -27,7 +36,15 @@
   display: flex;
   flex-direction: column;
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
-  padding: 32px
+  padding: 32px;
+  opacity: 0;
+  transition: transform 0.3s ease,
+              opacity 0.3s ease;
+}
+
+.settings-modal.visible .settings-content {
+  transform: translate(-50%, -50%);  /* 최종 위치 */
+  opacity: 1;
 }
 
 .settings-scroll-area {

@@ -61,14 +61,14 @@ function MainComponent() {
     };
 
     // 테마 변경 핸들러
-    const handleThemeUpdate = (event, isDarkMode) => {
+    const handleThemeChanged = (event, isDarkMode) => {
       setState(prevState => ({ ...prevState, isDarkMode }));
       loadLogo();
     };
 
     // 이벤트 리스너 등록
     ipcRenderer.on('state-update', handleStateUpdate);
-    ipcRenderer.on('theme-updated', handleThemeUpdate);
+    ipcRenderer.on('theme-changed', handleThemeChanged);
     
     // 초기화
     initializeState();
@@ -76,7 +76,7 @@ function MainComponent() {
     // 클린업
     return () => {
       ipcRenderer.removeListener('state-update', handleStateUpdate);
-      ipcRenderer.removeListener('theme-updated', handleThemeUpdate);
+      ipcRenderer.removeListener('theme-changed', handleThemeChanged);
     };
   }, []);
 
@@ -110,11 +110,13 @@ function MainComponent() {
   };
 
   const handleTogglePause = () => {
-    setState(prev => ({
-      ...prev,
-      isPaused: !prev.isPaused
-    }));
-    ipcRenderer.send('toggle-pause');
+    if (state.isPaused) {
+      // 재개
+      ipcRenderer.send('toggle-resume');
+    } else {
+      // 일시정지
+      ipcRenderer.send('toggle-pause');
+    }
   };
 
   const handleToggleOverlay = () => {
@@ -241,10 +243,10 @@ function MainComponent() {
     ipcRenderer.send('show-debug-console');
   };
 
-  // 파일이 로드되지 않은 상태일 때 표시할 대기 화면
+  // MainComponent.js의 웰컴 스크린 return문 수정
   if (state.paragraphs.length === 0) {
     return (
-      <div className={`container ${state.isDarkMode ? 'dark-mode' : ''}`}>
+      <div className="app-container">
         <Sidebar 
           isVisible={state.isSidebarVisible}
           onFileSelect={handleSidebarFileSelect}
@@ -252,52 +254,62 @@ function MainComponent() {
           onClose={handleCloseSidebar}
           currentFilePath={null}
         />
-        <button className="btn-sidebar" onClick={handleToggleSidebar}>
-          <svg
-            width="100%" // Use 100% to make the SVG take up 100% of the button size
-            height="100%" // Use 100% to make the SVG take up 100% of the button size
-            fill="currentColor"
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24" // Set the viewBox to match the natural dimensions of the icon
-          >
-            <path d="M3 5H21" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"></path>
-            <path d="M3 12H21" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"></path>
-            <path d="M3 19H21" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"></path>
-          </svg>
-        </button>
+        
+        <div className="welcome-screen" data-theme={state.isDarkMode ? 'dark' : 'light'}>
+          {/* 사이드바 버튼 */}
+          <button className="btn-sidebar" onClick={handleToggleSidebar}>
+            <svg
+              width="100%"
+              height="100%"
+              fill="currentColor"
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+            >
+              <path d="M3 5H21" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"></path>
+              <path d="M3 12H21" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"></path>
+              <path d="M3 19H21" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"></path>
+            </svg>
+          </button>
 
-        <div className="content">
-          {state.logoPath && (
-            <img
-              src={state.logoPath}
-              alt="Paraglide Logo"
-              className="logo"
-              style={{ transform: `scale(${logoScale})` }}
-              onClick={handleLogoClick}
-              onError={(e) => {
-                console.error('로고 렌더링 실패:', e);
-                e.target.style.display = 'none';
-              }}
-            />
-          )}
-          <h1 className="title">Paraglide</h1>
+          {/* 설정 버튼 추가 */}
+          <button 
+            className="btn-settings"
+            onClick={() => setIsSettingsVisible(true)}
+          >
+            <img src={settingsIcon} alt="설정" className="icon" />
+          </button>
+
+          <div className="logo-container">
+            {state.logoPath && (
+              <img
+                src={state.logoPath}
+                alt="Paraglide Logo"
+                className="logo"
+                onClick={handleLogoClick}
+                onError={(e) => {
+                  console.error('로고 렌더링 실패:', e);
+                  e.target.style.display = 'none';
+                }}
+              />
+            )}
+            <h1 className="title">Paraglide</h1>
+          </div>
           <div className="button-container">
             <button 
+              className="btn-primary"
               onClick={handleLoadFile}
-              className="button"
             >
               파일 불러오기
             </button>
-            {/* 디버그 콘솔 버튼 추가 */}
-            {/* <button
-              className="btn btn-icon"
-              onClick={handleShowDebugConsole}
-            >
-              {terminalIcon && <img src={terminalIcon} alt="" className="icon" />}
-              <span>디버그 콘솔</span>
-            </button> */}
           </div>
         </div>
+
+        {/* Settings 컴포넌트 추가 */}
+        <Settings 
+          isVisible={isSettingsVisible}
+          onClose={() => setIsSettingsVisible(false)}
+          isDarkMode={state.isDarkMode}
+        />
       </div>
     );
   }
@@ -315,9 +327,30 @@ function MainComponent() {
       <div className={`app-container ${state.isDarkMode ? 'dark-mode' : ''}`} data-theme={state.isDarkMode ? 'dark' : 'light'}>
         {state.programStatus === 'READY' ? (
           <div className="welcome-screen">
-            <button className="btn btn-primary" onClick={handleLoadFile}>
-              파일 불러오기
-            </button>
+            <div className="logo-container">
+              {state.logoPath && (
+                <img
+                  src={state.logoPath}
+                  alt="Paraglide Logo"
+                  className="logo"
+                  style={{ transform: `scale(${logoScale})` }}
+                  onClick={handleLogoClick}
+                  onError={(e) => {
+                    console.error('로고 렌더링 실패:', e);
+                    e.target.style.display = 'none';
+                  }}
+                />
+              )}
+              <h1 className="title">Paraglide</h1>
+            </div>
+            <div className="button-container">
+              <button 
+                className="btn-primary"
+                onClick={handleLoadFile}
+              >
+                파일 불러오기
+              </button>
+            </div>
           </div>
         ) : (
           <div className="main-container">

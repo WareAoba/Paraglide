@@ -478,7 +478,7 @@ const WindowManager = {
   createMainWindow() {
     mainWindow = new BrowserWindow({
       width: 600,
-      height: 600,
+      height: 660,
       minWidth: 600,
       minHeight: 660,
       maxWidth: 1300,
@@ -541,7 +541,7 @@ const WindowManager = {
 
   setupMainWindowEvents() {
     mainWindow.once('ready-to-show', () => {
-      mainWindow.webContents.send('theme-updated', globalState.isDarkMode);
+      mainWindow.webContents.send('theme-changed', globalState.isDarkMode);
       mainWindow.show();
     });
 
@@ -753,7 +753,7 @@ const IPCManager = {
       BrowserWindow.getAllWindows().forEach(window => {
         window.webContents.send('theme-changed', newTheme);
       });
-      updateGlobalState({ ...globalState, theme: newTheme });
+      updateGlobalState({ ...globalState, isDarkMode: isDark });
     });
 
     // 초기 테마 상태 설정

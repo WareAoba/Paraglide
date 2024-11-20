@@ -26,7 +26,7 @@ function OverlayComponent() {
     };
 
     ipcRenderer.on('paragraphs-updated', handleUpdate);
-    ipcRenderer.on('theme-updated', (_, isDarkMode) => 
+    ipcRenderer.on('theme-changed', (_, isDarkMode) => 
       setState(prev => ({ ...prev, isDarkMode }))
     );
     
@@ -36,7 +36,7 @@ function OverlayComponent() {
 
     return () => {
       ipcRenderer.removeAllListeners('paragraphs-updated');
-      ipcRenderer.removeAllListeners('theme-updated');
+      ipcRenderer.removeAllListeners('theme-changed');
     };
   }, []);
 
