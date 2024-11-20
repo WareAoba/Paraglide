@@ -1,8 +1,8 @@
 {
   "name": "paraglide",
-  "version": "0.1.0",
+  "version": "0.1.0-beta",
   "private": true,
-  "main": "main.js",
+  "main": "./src/main.js",
   "dependencies": {
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",

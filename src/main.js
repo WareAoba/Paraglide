@@ -4,7 +4,7 @@ const path = require('path');
 const fs = require('fs').promises;
 const os = require('os');
 const crypto = require('crypto');
-const SystemListener = require('./src/SystemListener.js');  // 클래스로 import
+const SystemListener = require('./SystemListener.js');  // 클래스로 import
 
 // 디바운스 함수 정의
 const debounce = (func, wait) => {
@@ -68,13 +68,13 @@ const FILE_PATHS = {
   config: path.join(os.homedir(), '.ParaglideConfigure.json'),
   log: path.join(os.homedir(), '.ParaglideParaLog.json'),
   logos: {
-    light: path.join(__dirname, 'public', 'logo-light.png'),
-    dark: path.join(__dirname, 'public', 'logo-dark.png')
+    light: path.join(__dirname, '../public', 'logo-light.png'),
+    dark: path.join(__dirname, '../public', 'logo-dark.png')
   },
-  icon: process.platform === 'win32' ? path.join(__dirname, 'public/icons/win/icon.ico')
-      : process.platform === 'darwin' ? path.join(__dirname, 'public/icons/mac/icon.icns')
-      : path.join(__dirname, 'public/icons/png/512x512.png'),
-  ui_icons: path.join(__dirname, 'public', 'UI_icons')
+  icon: process.platform === 'win32' ? path.join(__dirname, '../public/icons/win/icon.ico')
+      : process.platform === 'darwin' ? path.join(__dirname, '../public/icons/mac/icon.icns')
+      : path.join(__dirname, '../public/icons/png/512x512.png'),
+  ui_icons: path.join(__dirname, '../public', 'UI_icons')
 };
 
 
@@ -874,24 +874,41 @@ const IPCManager = {
       globalState.currentParagraph > 0;
 
     if (canMove) {
+
+      const newPosition = isNext ? 
+      globalState.currentParagraph + 1 : 
+      globalState.currentParagraph - 1;
+      
       mainWindow?.webContents.send('notify-clipboard-change');
       this.handleResume();
-      updateGlobalState({
-        currentParagraph: globalState.currentParagraph + (isNext ? 1 : -1),
-        timestamp: Date.now(),
-      }, 'move');
-    }
-  },
+      
+      const newNumber = globalState.paragraphsMetadata[newPosition]?.pageNumber;
+    updateGlobalState({
+      currentParagraph: newPosition,
+      currentNumber: newNumber,  // 페이지 번호 추가
+      timestamp: Date.now(),
+    }, 'move');
+  }
+},
 
   handleMoveToPosition(position) {
     if (position >= 0 && position < globalState.paragraphs.length) {
+
+      const newPosition = isNext ? 
+      globalState.currentParagraph + 1 : 
+      globalState.currentParagraph - 1;
+
       mainWindow?.webContents.send('notify-clipboard-change');
-      updateGlobalState({
-        currentParagraph: position,
-        timestamp: Date.now()
-      }, 'move');
-    }
-  },
+
+      const newNumber = globalState.paragraphsMetadata[position]?.pageNumber;
+      
+    updateGlobalState({
+      currentParagraph: newPosition,
+      currentNumber: newNumber,  // 페이지 번호 추가
+      timestamp: Date.now()
+    }, 'move');
+  }
+},
 
   // 윈도우 관련 메서드
   handleToggleOverlay() {

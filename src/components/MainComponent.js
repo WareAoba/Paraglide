@@ -1,8 +1,8 @@
 // src/MainComponent.js
 import React, { useState, useEffect } from 'react';
-import './CSS/MainComponent.css';
-import Sidebar from './components/Sidebar';
-import Settings from './components/Settings';
+import '../CSS/MainComponent.css';
+import Sidebar from './Sidebar';
+import Settings from './Settings';
 const { ipcRenderer } = window.require('electron');
 
 // MainComponent.js 수정
