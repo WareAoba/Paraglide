@@ -1,184 +1,243 @@
 /* src/components/Settings.css */
-
+/* settings-modal 클래스 수정 */
 .settings-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
-    display: none;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-  }
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0);  /* 초기 투명도 0 */
+  display: flex;  /* none 대신 flex 사용 */
+  z-index: 1000;
+  padding: 0;  /* 패딩 제거 */
+  opacity: 0;  /* 초기 투명도 0 */
+  visibility: hidden;  /* display 대신 visibility 사용 */
+  transition: background-color 0.3s ease,  /* 배경 페이드 */
+              opacity 0.3s ease,           /* 전체 페이드 */
+              visibility 0.3s ease;        /* visibility 전환 */
+}
 
-  [data-theme="dark"] .settings-modal {
-    background-color: rgba(0, 0, 0, 0.7);
-  }
-  
-  .settings-modal.visible {
-    display: flex;
-  }
-  
-  .settings-content {
-    background-color: var(--bg-color);
-    border-radius: 8px;
-    padding: 20px;
-    width: 400px;
-    max-height: 80vh;
-    overflow-y: auto;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  }
-  
-  [data-theme="dark"] .settings-content {
-    background-color: var(--dark-bg);
-    color: var(--dark-text);
-    border: 1px solid var(--border-color);
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-  }
-  
-  /* 제목 */
-  .settings-content h2 {
-    margin: 0 0 20px 0;
-    color: var(--text-color);
-    font-size: 1.5em;
-  }
+.settings-modal.visible {
+  background-color: rgba(0, 0, 0, 0.5);  /* 최종 배경 투명도 */
+  opacity: 1;
+  visibility: visible;
+}
 
-  .settings-group h3 {
-    margin: 0 0 16px 0;
-    color: var(--text-color);
-    font-size: 1.2em;
-  }
+/* settings-content 클래스에 transition 추가 */
+.settings-content {
+  position: fixed;  /* absolute에서 fixed로 변경 */
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -60%);  /* 시작 위치를 약간 위로 */
+  width: min(90%, 360px);     /* 480px에서 축소 */
+  height: min(90%, 480px);    /* 600px에서 축소 */
+  background-color: var(--bg-color);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
+  padding: 32px;
+  opacity: 0;
+  transition: transform 0.3s ease,
+              opacity 0.3s ease;
+}
 
-  [data-theme="dark"] .settings-content h2,
-[data-theme="dark"] .settings-group h3 {
+.settings-modal.visible .settings-content {
+  transform: translate(-50%, -50%);  /* 최종 위치 */
+  opacity: 1;
+}
+
+.settings-scroll-area {
+  flex: 1;
+  overflow-y: auto;         /* 스크롤 활성화 */
+  padding: 0 16px;  /* 좌우 패딩만 유지 */
+  padding-bottom: 80px;      /* 버튼 영역 확보 */
+  margin-bottom: 60px;      /* 버튼 그룹 공간 확보 */
+}
+
+.settings-content h2 {
+  margin: 0 0 24px 0;
+  color: var(--text-color);
+  font-size: 2em;  /* 1.5em에서 축소 */
+  font-weight: 600;
+}
+
+.settings-group {
+  margin-bottom: 36px;
+  padding-bottom: 28px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.settings-group:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.settings-group h3 {
+  margin: 0 0 24px 0;
+  color: var(--text-color);
+  font-size: 1.25em;  /* 1.2em에서 축소 */
+  font-weight: 500;
+}
+
+.settings-group label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  color: var(--text-color);
+  font-size: 0.95em;
+}
+
+.settings-group label.checkbox-label {
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.settings-group input[type="range"] {
+  width: 160px;
+  margin-left: 16px;
+  background: transparent;
+}
+
+.settings-group input[type="range"]::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 4px;
+  background: var(--primary-color);
+  border-radius: 2px;
+}
+
+.settings-group input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  height: 16px;
+  width: 16px;
+  border-radius: 50%;
+  background: var(--primary-color);
+  margin-top: -6px;
+  cursor: pointer;
+}
+
+.settings-group input[type="checkbox"] {
+  margin-left: 16px;
+  width: 16px;
+  height: 16px;
+}
+
+.settings-group input[type="color"] {
+  width: 60px;
+  height: 30px;
+  padding: 0;
+  margin-left: 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+}
+
+.settings-button-group {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 8px 20px;       /* 좌우 여백 증가 */
+  background-color: var(--bg-color);
+  border-top: 1px solid var(--border-color);
+  border-radius: 0 0 12px 12px;
+  z-index: 1;                /* 스크롤 컨텐츠 위에 표시 */
+}
+
+.settings-button-group button {
+  padding: 8px 20px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  font-size: 0.95em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.settings-button-group button.btn-primary {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+}
+
+.settings-button-group button:hover {
+  background-color: var(--hover-bg);
+}
+
+.settings-button-group button.btn-primary:hover {
+  filter: brightness(1.1);
+}
+
+/* 다크모드 */
+[data-theme="dark"] .settings-modal {
+  background-color: rgba(0, 0, 0, 0.7);
+}
+
+[data-theme="dark"] .settings-content {
+  background-color: var(--dark-bg);
+  border: 1px solid var(--border-color);
+}
+
+[data-theme="dark"] .settings-button-group {
+  background-color: var(--dark-bg);
+  border-top-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .settings-content h2,
+[data-theme="dark"] .settings-group h3,
+[data-theme="dark"] .settings-group label {
   color: var(--dark-text);
 }
-  
-  .settings-group {
-    margin-bottom: 24px;
-    padding-bottom: 16px;
-    border-bottom: 1px solid var(--border-color);
-  }
 
-  [data-theme="dark"] .settings-group {
-    border-bottom-color: rgba(255, 255, 255, 0.1);
-  }
-  
-  
-  .settings-group label {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 12px;
-    color: var(--text-color);
-  }
+[data-theme="dark"] .settings-button-group button {
+  background-color: var(--dark-bg);
+  color: var(--dark-text);
+  border-color: rgba(255, 255, 255, 0.1);
+}
 
-  [data-theme="dark"] .settings-group {
-    border-bottom-color: rgba(255, 255, 255, 0.1);
-  }
-  
-  .settings-group input[type="range"] {
-    width: 150px;
-    margin-left: 10px;
-    background: transparent;
-  }
+[data-theme="dark"] .settings-button-group button.btn-primary {
+  background-color: var(--primary-color);
+  color: var(--dark-text);
+}
 
-  .settings-group input[type="range"]::-webkit-slider-runnable-track {
-    width: 100%;
-    height: 4px;
-    background: var(--primary-color);
-    border-radius: 2px;
-  }
+/* 새로운 설정 그룹 스타일 추가 */
+.settings-group.danger-zone {
+  margin-bottom: 36px;  /* 다른 settings-group과 동일한 마진 */
+  padding-bottom: 28px;  /* 다른 settings-group과 동일한 패딩 */
+  border-bottom: 1px solid var(--border-color);  /* 구분선 추가 */
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;  /* 다른 설정 그룹과 동일한 정렬 */
+  gap: 16px;  /* 제목과 버튼 사이 간격 */
+}
 
-  [data-theme="dark"] .settings-group input[type="range"]::-webkit-slider-runnable-track {
-    background: var(--primary-color);
-  }
+.settings-group.danger-zone h3 {
+  margin: 0 0 24px 0;  /* 다른 settings-group의 h3와 동일한 마진 */
+  color: var(--text-color);
+  font-size: 1.1em;
+  font-weight: 500;
+}
 
-  .settings-group input[type="range"]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    height: 16px;
-    width: 16px;
-    border-radius: 50%;
-    background: var(--primary-color);
-    margin-top: -6px;
-    cursor: pointer;
-  }
+.settings-group.danger-zone button {
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: 1px solid var(--danger-color);
+  background-color: transparent;
+  color: var(--danger-color);
+  font-size: 0.95em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  align-self: flex-start;  /* 버튼을 왼쪽으로 정렬 */
+}
 
-  [data-theme="dark"] .settings-group input[type="range"]::-webkit-slider-thumb {
-    background: var(--primary-color);
-    border: 2px solid var(--dark-text);
-  }
-  
-  .settings-group input[type="checkbox"] {
-    margin-left: 10px;
-  }
-
-  /* 레이블 수정 - 체크박스를 오른쪽으로 */
-.settings-group label.checkbox-label {
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 12px;
-    color: var(--text-color);
-  }
-  
-  .settings-group input[type="color"] {
-    width: 50px;
-    height: 25px;
-    padding: 0;
-    margin-left: 10px;
-    border: 1px solid var(--border-color);
-  }
-  
-  .button-group {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    margin-top: 20px;
-  }
-
-  .button-group button {
-    padding: 8px 16px;
-    border-radius: 4px;
-    border: 1px solid var(--border-color);
-    background-color: var(--bg-color);
-    color: var(--text-color);
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-
-  [data-theme="dark"] .button-group button {
-    background-color: var(--dark-bg);
-    color: var(--dark-text);
-    border-color: rgba(255, 255, 255, 0.1);
-  }
-  
-  .button-group button.primary {
-    background-color: var(--primary-color);
-    color: white;
-    border: none;
-  }
-
-  [data-theme="dark"] .button-group button.primary {
-    background-color: var(--primary-color);
-    color: var(--dark-text);
-  }
-
-  .button-group button:hover {
-    background-color: rgba(0, 0, 0, 0.05);
-  }
-
-  [data-theme="dark"] .button-group button.primary {
-    background-color: var(--primary-color);
-    color: var(--dark-text);
-  }
-
-  .button-group button.primary:hover {
-    filter: brightness(1.1);
-  }
-
-  [data-theme="dark"] .button-group button.primary:hover {
-    filter: brightness(1.2);
-  }
+.settings-group.danger-zone button:hover {
+  background-color: var(--danger-color);
+  color: white;
+}
