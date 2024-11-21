@@ -10,7 +10,14 @@ module.exports = {
     asar: {
       unpack: "**/{node_modules/node-global-key-listener,public}/**/*"
     },
-    icon: path.resolve(__dirname, 'public/icons/mac/icon.icns'),
+    unpack: [
+      "*.node",
+      "**/*.dll",
+      "**/public/**/*"
+    ],
+    icon: path.resolve(__dirname, process.platform === 'win32' 
+      ? 'public/icons/win/icon.ico' 
+      : 'public/icons/mac/icon.icns'),
     appBundleId: 'com.paraglide.app',
     appCategoryType: "public.app-category.productivity",
     extendInfo: path.resolve(__dirname, 'public/mac/Info.plist'),
@@ -41,6 +48,7 @@ module.exports = {
 
 
   makers: [
+    // macOS
     {
       name: '@electron-forge/maker-dmg',
       config: {
@@ -48,9 +56,18 @@ module.exports = {
         format: 'ULFO'
       }
     },
+    // Windows
+    {
+      name: '@electron-forge/maker-squirrel',
+      config: {
+        name: 'Paraglide',
+        authors: 'WareAoba',
+        setupIcon: path.resolve(__dirname, 'public/icons/win/icon.ico')
+      }
+    },
     {
       name: '@electron-forge/maker-zip',
-      platforms: ['darwin']
+      platforms: ['darwin', 'win32']
     }
   ],
   plugins: [

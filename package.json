@@ -22,7 +22,6 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "postinstall": "chmod +x ./node_modules/node-global-key-listener/bin/MacKeyServer",
     "make-dmg": "create-dmg '.out/Paraglide-darwin-x64/Paraglide.app' --overwrite --dmgTitle='Paraglide' --icon='public/icons/mac/icon.icns' --background='public/dmg/background.png' --window-size=540,380 --icon-size=100 --app-drop-link-size=130 --app-drop-link-x=600 --app-drop-link-y=400",
     "start": "react-scripts start",
     "build": "react-scripts build",
@@ -30,7 +29,7 @@
     "electron-dev": "cross-env NODE_ENV=development electron .",
     "dev": "concurrently -k \"cross-env BROWSER=none npm start\" \"wait-on http://localhost:3000 && npm run electron-dev\"",
     "package": "npm run build && electron-forge package",
-    "make": "electron-forge make && npm run make-dmg"
+    "make": "npm run build && electron-forge make --arch=x64"
   },
   "eslintConfig": {
     "extends": [
@@ -64,7 +63,6 @@
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
     "concurrently": "^9.1.0",
-    "create-dmg": "^7.0.0",
     "cross-env": "^7.0.3",
     "electron": "^26.2.0",
     "wait-on": "^7.2.0"
