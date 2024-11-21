@@ -16,6 +16,7 @@
    - **Alt (Opt) + Arrow Keys (↑↓)**: Pause/Resume the program.
  3. Display the **current paragraph in progress** with an overlay window and allow navigation between paragraphs.
  4. Save logs to restore the **last position** when reloading a previously processed file.
+ 5. Quickly **load previously worked files** within the app.
 
 ## Purpose of Development
 
@@ -27,35 +28,47 @@
 
 ## Project Overview
 ```
- 📦 Paraglide
- ├── 📂 public/                        # Static resources
- │   ├── 📂 icons/                     # App icons
- │   ├── 📂 UI_icons/                  # UI icons (SVG)
- │   ├── 🖼️ logo-dark.png              # Dark mode logo 
- │   └── 🖼️ logo-light.png             # Light mode logo
- │
- ├── 📂 src/                           # Source code
- │   ├── 📂 components/                # React components
- │   │   ├── 📄 Settings.js            # Settings component
- │   │   └── 📄 Sidebar.js             # Sidebar component
- │   │
- │   ├── 📂 CSS/                       # CSS styles  collection
- │   │   ├── 📄 App.css                # Main styles
- │   │   ├── 📄 OverlayComponent.css   # Overlay component styles
- │   │   └── 📄 Settings.css           # Settings styles
- │   │
- │   ├── 📄 App.js                     # Main React component
- │   ├── 📄 index.js                   # React entry point
- │   └── 📄 MainComponent.js           # Main component
- │   └── 📄 OverlayComponent.js        # Overlay component
- │   └── 📄 SystemListener.js          # System event listener
- │
- ├── 📄 main.js                        # Electron main process
- ├── 📄 package.json                   # Project config/dependencies
- ├── 📄 .gitignore                     # Git exclude files
- ├── 📄 README.md                      # Project documentation
- └── 📄 README-KR.md                   # Project documentation(Korean)
+📦 Paraglide
+├── 📂 public                         # Static Resources
+│   ├── 📂 icons                      # App Icons
+│   │   ├── 📂 mac                    # macOS Icons
+│   │   └── 📂 win                    # Windows Icons  
+│   ├── 📜 index.html                 # Main HTML
+│   ├── 📜 manifest.json              # App Manifest
+│   └── 📂 UI_icons                   # UI Icons
+│
+├── 📂 src                            # Source Code
+│   ├── 📂 components                 # React Components
+│   │   ├── 📜 MainComponent.js       # Main Component
+│   │   ├── 📜 OverlayComponent.js    # Overlay Component
+│   │   ├── 📜 Settings.js            # Settings Component
+│   │   └── 📜 Sidebar.js             # Sidebar Component
+│   │
+│   ├── 📂 CSS                        # Stylesheets
+│   │   ├── 📜 App.css                # App Styles
+│   │   ├── 📜 MainComponent.css      # Main Component Styles
+│   │   ├── 📜 OverlayComponent.css   # Overlay Styles
+│   │   ├── 📜 Settings.css           # Settings Styles
+│   │   └── 📜 Sidebar.js             # Sidebar Styles
+│   │
+│   ├── 📜 App.js                     # React Entry Point
+│   ├── 📜 index.css                  # Global Styles
+│   ├── 📜 index.js                   # App Entry Point
+│   ├── 📜 main.js                    # Electron Main Process
+│   └── 📜 SystemListener.js          # System Event Handler
+│
+├── 📜 LICENSE                        # License File
+├── 📜 package.json                   # Project Configuration
+├── 📜 README.md                      # Project Documentation
+└── 📜 README-KR.md                   # Project Documentation (Korean)
  ```
+
+## Supported Platforms
+
+ - **Windows** (*x64*)
+ - **macOS** (*arm64*, M1 and above)
+ 
+ **Coming Soon**: macOS(x86) Linux
 
 ## Contribution
 
@@ -64,7 +77,24 @@
  We deeply appreciate feedback and assistance from talented individuals.  
  Feel free to suggest improvements or highlight areas that need refinement!
 
-## Running the Program
+## Installation / Execution
+ Download the appropriate precompiled binary from the [Release Page](https://github.com/WareAoba/Paraglide/releases).
+
+ - **Windows**:
+  - Extract **Paraglide-win32-x64-0.1.0-beta.zip**.
+  - Run **Paraglide.exe**.
+ 
+ - **macOS**:
+
+  - Mount **Paraglide-0.1.0-beta-arm64.dmg**.
+  - Copy **Paraglide.app** to **~/Applications**.
+  - Follow the instructions to enable **accessibility** and **input monitoring** permissions.
+
+## Running in Dev Mode / Building
+
+ ***(Prerequisites: Node.js)***
+
+ **Dev Mode**:
 
  1. Clone the repository:
 
@@ -84,16 +114,23 @@
    npm run dev
    ```
 
-   Precompiled binaries will be uploaded at a later date.
+ **Building and Compiling**:
+
+ - Run the following command to create a build:
+
+  ```bash
+  npm run make
+  ```
+
+ (For Windows, switch to the **-win32** branch.)
 
 
 ## Recent Updates
 
- 1. **Sidebar** Added: View recent files and switch to them directly.
- 2. Task Completion Button: A fun but admittedly trivial addition.
- 3. **Keyboard Shortcuts Activated**: Shortcuts are now fully functional!
- 4. Clipboard Monitoring: The program automatically pauses when external clipboard changes are detected.
- 5. **Settings**: Settings Component is now available.
+
+ 1. ***Beta Release***
+ 2. Various bugs have been fixed.
+ 3. Finalized macOS permission checks.
 
 ## Features in Development
 
@@ -107,17 +144,12 @@
 
 ## Known Issues
 
- 1. Overlay layout misalignment: Paragraphs should have equal spacing, but gaps between current/next and previous/current are inconsistent.
- 2. UI properties are being migrated to CSS, leaving the UI temporarily messy.
- 3. The new Sidebar’s design is subpar—scheduled for improvement.
- 4. Issues with real-time theme switching; handlers seem to be missing.
- 5. Files occasionally unload randomly, with the cause still unidentified.
- 6. The 'loadLastOverlayBounds' setting does not work.
-
-## Beta Release?
-
- The ongoing CSS theme implementation is a daunting task and may take a few more days, but essential features should be completed soon. Beta v0.1 is targeted for release by the end of the month.
- If I had coding experience, this would’ve progressed much faster, but tinkering with AI often breaks working features—fixing those takes up most of my time. 😂
+ 1. Overlay layout misalignment: Paragraph spacing is inconsistent between sections.
+ 2. UI design is messy as properties are still being migrated to CSS.
+ 3. Files occasionally unload for unknown reasons.
+ 4. "Highlight Color" setting is non-functional.
+ 5. Unified build sources for macOS and Windows.
+ 6. Keyboard shortcut Alt + Arrow Keys does not work on Windows.
 
 ## License
 
