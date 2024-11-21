@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleIdentifier</key>
+    <string>com.paraglide.app</string>
+    <key>CFBundleName</key>
+    <string>Paraglide</string>
+    <key>CFBundleDisplayName</key>
+    <string>Paraglide</string>
+    <key>CFBundleExecutable</key>
+    <string>Paraglide</string>
+    <key>CFBundleIconFile</key>
+    <string>icon.icns</string>
+    <key>NSAccessibilityUsageDescription</key>
+    <string>Paraglide needs accessibility permissions to monitor keyboard shortcuts</string>
+    <key>NSHighResolutionCapable</key>
+    <true/>
+    <key>NSAppleEventsUsageDescription</key>
+    <string>Paraglide needs to monitor keyboard events</string>
+</dict>
+</plist>
