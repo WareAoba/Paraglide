@@ -134,13 +134,14 @@
 
 ## Features in Development
 
- 1. Browsing Feature: Scroll through all paragraphs (to be implemented with a button and new window).
- 2. Search Function: Search text/paragraphs and jump to the desired paragraph.
+ 1. **Browsing Feature**: Scroll through all paragraphs (to be implemented with a button and new window).
+ 2. **Search Function**: Search text/paragraphs and jump to the desired paragraph.
  3. Click-to-Jump in the overlay window.
  4. Enhanced Animations: The most challenging part—requires significant rework.
- 5. UI Icons: From pause/resume buttons to future buttons.defaults, highlight colors, etc.
- 6. User Guide: A detailed manual to accompany the beta release.
- 7. File Editing: Simple modifications like renaming files or editing paragraph content.
+ 5. **UI Icons**: From pause/resume buttons to future buttons.defaults, highlight colors, etc.
+ 6. **User Guide**: A detailed manual to accompany the beta release.
+ 7. **File Editing**: Simple modifications like renaming files or editing paragraph content.
+ 8. **Multilingual Support**: Planned to support English and Japanese first.
 
 ## Known Issues
 
