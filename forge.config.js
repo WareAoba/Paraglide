@@ -8,17 +8,12 @@ module.exports = {
     name: "Paraglide",
     executableName: "Paraglide",
     asar: {
-      unpack: "**/public/**/*"
+      unpack: "**/{node_modules/node-global-key-listener,public}/**/*"
     },
     icon: path.resolve(__dirname, 'public/icons/mac/icon.icns'),
     appBundleId: 'com.paraglide.app',
     appCategoryType: "public.app-category.productivity",
     extendInfo: path.resolve(__dirname, 'public/mac/Info.plist'),
-    osxSign: {
-        identity: null,  // 개발용
-        "entitlements": "entitlements.plist",
-        "entitlements-inherit": "entitlements.plist",
-      },
     protocols: [{
         name: "Paraglide URL",
         schemes: ["paraglide"]
@@ -27,13 +22,16 @@ module.exports = {
       "build/**/*",
       "src/main.js",
       "src/SystemListener.js",
-      "public/**/*"
+      "package.json"
     ],
     directories: {
       output: 'out',
       buildResources: 'public'
     }
   },
+
+
+
   makers: [
     {
       name: '@electron-forge/maker-dmg',

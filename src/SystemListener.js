@@ -1,7 +1,9 @@
 // SystemListener.js
-const { dialog, clipboard, systemPreferences, ipcMain } = require('electron');
+const { app, dialog, clipboard, systemPreferences, ipcMain } = require('electron');
 const { GlobalKeyboardListener } = require('node-global-key-listener');
-
+const path = require('path');
+const fs = require('fs');
+const isDev = !app.isPackaged;
 
 class SystemListener {
   constructor(mainWindow) {
@@ -15,25 +17,39 @@ class SystemListener {
 
   // 초기화
   async initialize() {
-    try {
-      // MacKeyServer 실행 권한 확인 및 설정
-      if (process.platform === 'darwin') {
-        const { execSync } = require('child_process');
-        try {
-          await execSync('sudo chmod +x ./node_modules/node-global-key-listener/bin/MacKeyServer');
-        } catch (error) {
-          console.error('MacKeyServer 권한 설정 실패:', error);
-          return false;
-        }
-      }
+    if (process.platform === 'darwin') {
+      const macKeyServerPath = isDev
+        ? path.join(__dirname, '../node_modules/node-global-key-listener/bin/MacKeyServer')
+        : path.join(process.resourcesPath, './app.asar.unpacked/node_modules/node-global-key-listener/bin/MacKeyServer');
 
+      try {
+        fs.chmodSync(macKeyServerPath, '755');
+      } catch (error) {
+        console.error('MacKeyServer 권한 설정 실패:', error);
+      }
+    }
+
+    try {
       ipcMain.on('program-status-update', (event, status) => {
         console.log('[SystemListener] 상태 업데이트:', status);
         this.programStatus = status;
       });
 
       const hasPermission = await this.setupMacPermissions();
-      if (!hasPermission) {
+      if (!hasPermission) {ㅁ
+        // 앱을 종료하지 않고 사용자에게 권한 필요 알림
+        dialog.showMessageBox({
+          type: 'error',
+          buttons: ['재시도', '종료'],
+          defaultId: 0,
+          title: '권한 필요',
+          message: '입력 모니터링 권한이 필요합니다.',
+          detail: '권한을 부여한 후 앱을 재시작해주세요.'
+        }).then(result => {
+          if (result.response === 1) {
+            app.quit();
+          }
+        });
         return false;
       }
 
@@ -47,34 +63,29 @@ class SystemListener {
     }
   }
 
+  // macOS 권한 설정
+  async setupMacPermissions() {
+    if (process.platform !== 'darwin') return true;
 
-    // macOS 권한 설정
-    async setupMacPermissions() {
-      if (process.platform !== 'darwin') return true;
-  
-      const { app } = require('electron');
-      const isTrusted = systemPreferences.isTrustedAccessibilityClient(false);
-      
-      if (!isTrusted) {
-        const response = await dialog.showMessageBox({
-          type: 'error',
-          buttons: ['Open Settings', 'Quit'],
-          defaultId: 0,
-          title: 'Paraglide Permissions Required',
-          message: 'Paraglide requires accessibility permissions to function',
-          detail: 'Please enable Paraglide in System Settings > Privacy & Security > Accessibility'
-        });
-  
-        if (response.response === 0) {
-          await require('electron').shell.openExternal('x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility');
-        }
-        
-        app.quit();
-        return false;
-      }
-  
-      return true;
+    const isTrusted = systemPreferences.isTrustedAccessibilityClient(false);
+
+    if (!isTrusted) {
+      const response = await dialog.showMessageBox({
+        type: 'warning',
+        buttons: ['확인'],
+        defaultId: 0,
+        title: '접근성 권한 필요',
+        message: 'Paraglide를 사용하려면 입력 모니터링 권한이 필요합니다.',
+        detail: '시스템 환경설정 > 보안 및 개인 정보 보호 > 입력 모니터링에서 Paraglide의 권한을 허용해주세요.'
+      });
+
+      require('electron').shell.openExternal('x-apple.systempreferences:com.apple.preference.security?Privacy_InputMonitoring');
+
+      return false;
     }
+
+    return true;
+  }
 
   // 클립보드 모니터링 설정
   setupClipboardMonitor() {
