@@ -5,3 +5,4 @@ dist
 .gitignore
 Asset
 Paraglide.code-workspace
+out/

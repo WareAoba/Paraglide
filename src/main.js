@@ -4,6 +4,7 @@ const path = require('path');
 const fs = require('fs').promises;
 const os = require('os');
 const crypto = require('crypto');
+const url = require('url');
 const SystemListener = require('./SystemListener.js');  // 클래스로 import
 
 // 디바운스 함수 정의
@@ -63,18 +64,27 @@ const ContentManager = {
   }, DEBOUNCE_TIME),
 };
 
+const isDev = !app.isPackaged;
+const appPath = isDev ? path.resolve(__dirname, '..') : app.getAppPath();
+
 // 파일 경로 정의
 const FILE_PATHS = {
   config: path.join(os.homedir(), '.ParaglideConfigure.json'),
   log: path.join(os.homedir(), '.ParaglideParaLog.json'),
   logos: {
-    light: path.join(__dirname, '../public', 'logo-light.png'),
-    dark: path.join(__dirname, '../public', 'logo-dark.png')
+    light: isDev 
+      ? path.join(appPath, 'public', 'logo-light.png')
+      : path.join(process.resourcesPath, './app.asar.unpacked/public', 'logo-light.png'),
+    dark: isDev
+      ? path.join(appPath, 'public', 'logo-dark.png')
+      : path.join(process.resourcesPath, './app.asar.unpacked/public', 'logo-dark.png')
   },
-  icon: process.platform === 'win32' ? path.join(__dirname, '../public/icons/win/icon.ico')
-      : process.platform === 'darwin' ? path.join(__dirname, '../public/icons/mac/icon.icns')
-      : path.join(__dirname, '../public/icons/png/512x512.png'),
-  ui_icons: path.join(__dirname, '../public', 'UI_icons')
+  icon: isDev
+    ? path.join(appPath, 'public', 'icons', 'mac', 'icon.icns')
+    : path.join(process.resourcesPath, './app.asar.unpacked/public', 'icons', 'mac', 'icon.icns'),
+  ui_icons: isDev
+    ? path.join(appPath, 'public', 'UI_icons')
+    : path.join(process.resourcesPath, './app.asar.unpacked/public', 'UI_icons')
 };
 
 
@@ -488,12 +498,23 @@ const WindowManager = {
       icon: FILE_PATHS.icon,
       webPreferences: {
         nodeIntegration: true,
-        contextIsolation: false
+        contextIsolation: false,
+        enableRemoteModule: true
       },
       autoHideMenuBar: true
     });
 
-    mainWindow.loadURL('http://localhost:3000');
+    const startUrl = isDev
+      ? 'http://localhost:3000'
+      : url.format({
+          pathname: path.join(__dirname, '../build/index.html'),
+          protocol: 'file:',
+          slashes: true
+        });
+
+    console.log('Main Window Path:', app.getAppPath());
+    console.log('Main Window URL:', startUrl);
+    mainWindow.loadURL(startUrl);
     this.setupMainWindowEvents();
   },
 
@@ -531,12 +552,23 @@ const WindowManager = {
       show: false,
       webPreferences: {
         nodeIntegration: true,
-        contextIsolation: false
+        contextIsolation: false,
+        enableRemoteModule: true
       }
     });
 
-    overlayWindow.loadURL('http://localhost:3000/overlay');
-    this.setupOverlayWindowEvents();
+    const overlayUrl = isDev
+    ? 'http://localhost:3000/#/overlay'  // 해시 경로 추가
+    : url.format({
+        pathname: path.join(__dirname, '../build/index.html'),
+        protocol: 'file:',
+        slashes: true,
+        hash: '/overlay'
+      });
+
+  console.log('Overlay URL:', overlayUrl);
+  overlayWindow.loadURL(overlayUrl);
+  this.setupOverlayWindowEvents();
   },
 
   setupMainWindowEvents() {
