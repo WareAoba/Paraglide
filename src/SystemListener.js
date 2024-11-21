@@ -9,21 +9,72 @@ class SystemListener {
     this.isInternalClipboardChange = false;
     this.lastInternalChangeTime = 0;
     this.lastClipboardText = '';
-  };
+    this.keyboardListener = null;  // 키보드 리스너 참조 저장
+    this.programStatus = { isPaused: false }; // 초기화 추가
+  }
 
   // 초기화
   async initialize() {
-    if (process.platform === 'darwin') {
-      await this.setupMacPermissions();
+    try {
+      // MacKeyServer 실행 권한 확인 및 설정
+      if (process.platform === 'darwin') {
+        const { execSync } = require('child_process');
+        try {
+          await execSync('sudo chmod +x ./node_modules/node-global-key-listener/bin/MacKeyServer');
+        } catch (error) {
+          console.error('MacKeyServer 권한 설정 실패:', error);
+          return false;
+        }
+      }
+
+      ipcMain.on('program-status-update', (event, status) => {
+        console.log('[SystemListener] 상태 업데이트:', status);
+        this.programStatus = status;
+      });
+
+      const hasPermission = await this.setupMacPermissions();
+      if (!hasPermission) {
+        return false;
+      }
+
+      // 나머지 초기화
+      this.setupKeyboardListener();
+      this.setupClipboardMonitor();
+      return true;
+    } catch (error) {
+      console.error('[SystemListener] 초기화 실패:', error);
+      return false;
     }
-    this.setupKeyboardListener();
-    this.setupClipboardMonitor();
-    console.log('[SystemListener] 초기화 완료');
-    ipcMain.on('program-status-update', (event, status) => {
-      this.programStatus = status;
-      console.log('[SystemListener] 프로그램 상태 업데이트:', status);
-    });
   }
+
+
+    // macOS 권한 설정
+    async setupMacPermissions() {
+      if (process.platform !== 'darwin') return true;
+  
+      const { app } = require('electron');
+      const isTrusted = systemPreferences.isTrustedAccessibilityClient(false);
+      
+      if (!isTrusted) {
+        const response = await dialog.showMessageBox({
+          type: 'error',
+          buttons: ['Open Settings', 'Quit'],
+          defaultId: 0,
+          title: 'Paraglide Permissions Required',
+          message: 'Paraglide requires accessibility permissions to function',
+          detail: 'Please enable Paraglide in System Settings > Privacy & Security > Accessibility'
+        });
+  
+        if (response.response === 0) {
+          await require('electron').shell.openExternal('x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility');
+        }
+        
+        app.quit();
+        return false;
+      }
+  
+      return true;
+    }
 
   // 클립보드 모니터링 설정
   setupClipboardMonitor() {
@@ -63,9 +114,21 @@ class SystemListener {
   // setupKeyboardListener는 수정하지 않음 (사람이 작성한 코드)
   // Important: 절대로 건들지 마세요.
   setupKeyboardListener() {
-    console.log('[SystemListener] 키보드 리스너 설정');
-    const keyboard = new GlobalKeyboardListener();
-    keyboard.addListener((e, down) => {
+    if (this.keyboardListener) {
+      // 기존 리스너가 있다면 제거
+      this.keyboardListener = null;
+    }
+
+    try {
+      console.log('[SystemListener] 키보드 리스너 설정 시도');
+      this.keyboardListener = new GlobalKeyboardListener();
+      
+      if (!this.keyboardListener) {
+        console.error('[SystemListener] 키보드 리스너 생성 실패');
+        return;
+      }
+
+      this.keyboardListener.addListener((e, down) => {
       // only handle key down events
       if (e.state === 'UP') return; 
 
@@ -105,7 +168,12 @@ class SystemListener {
         }
       }
     });
+
+    console.log('[SystemListener] 키보드 리스너 설정 완료');
+  } catch (error) {
+    console.error('[SystemListener] 키보드 리스너 설정 실패:', error);
   }
+}
 
   // 이벤트 전송
   sendEvent(eventName) {
@@ -137,18 +205,6 @@ class SystemListener {
 
   togglePause() {
     ipcMain.emit('toggle-pause');
-  }
-
-  // macOS 권한 설정
-  async setupMacPermissions() {
-    console.log('[SystemListener] macOS 접근성 권한 확인 중.');
-    const isTrusted = systemPreferences.isTrustedAccessibilityClient(true);
-    if (!isTrusted) {
-      console.error('[시스템] 접근성 권한이 필요합니다.');
-      this.showErrorDialog('앱을 사용하려면 접근성 권한이 필요합니다.');
-      throw new Error('접근성 권한이 허용되지 않았습니다.');
-    }
-    console.log('[SystemListener] 접근성 권한이 허용되었습니다.');
   }
 
   // 오류 대화상자 표시
