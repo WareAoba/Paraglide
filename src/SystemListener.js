@@ -11,8 +11,8 @@ class SystemListener {
     this.isInternalClipboardChange = false;
     this.lastInternalChangeTime = 0;
     this.lastClipboardText = '';
-    this.keyboardListener = null;  // 키보드 리스너 참조 저장
-    this.programStatus = { isPaused: false }; // 초기화 추가
+    this.keyboardListener = null;
+    this.programStatus = { isPaused: false };
   }
 
   // 초기화
@@ -35,21 +35,8 @@ class SystemListener {
         this.programStatus = status;
       });
 
-      const hasPermission = await this.setupMacPermissions();
-      if (!hasPermission) {ㅁ
-        // 앱을 종료하지 않고 사용자에게 권한 필요 알림
-        dialog.showMessageBox({
-          type: 'error',
-          buttons: ['재시도', '종료'],
-          defaultId: 0,
-          title: '권한 필요',
-          message: '입력 모니터링 권한이 필요합니다.',
-          detail: '권한을 부여한 후 앱을 재시작해주세요.'
-        }).then(result => {
-          if (result.response === 1) {
-            app.quit();
-          }
-        });
+      const hasPermission = await this.checkAndRequestMacPermissions();
+      if (!hasPermission) {
         return false;
       }
 
@@ -63,8 +50,8 @@ class SystemListener {
     }
   }
 
-  // macOS 권한 설정
-  async setupMacPermissions() {
+  // macOS 권한 확인 및 요청
+  async checkAndRequestMacPermissions() {
     if (process.platform !== 'darwin') return true;
 
     const isTrusted = systemPreferences.isTrustedAccessibilityClient(false);
@@ -72,15 +59,22 @@ class SystemListener {
     if (!isTrusted) {
       const response = await dialog.showMessageBox({
         type: 'warning',
-        buttons: ['확인'],
+        buttons: ['재시도', '종료'],
         defaultId: 0,
         title: '접근성 권한 필요',
-        message: 'Paraglide를 사용하려면 입력 모니터링 권한이 필요합니다.',
-        detail: '시스템 환경설정 > 보안 및 개인 정보 보호 > 입력 모니터링에서 Paraglide의 권한을 허용해주세요.'
+        message: 'Paraglide를 사용하려면 입력 모니터링 및 손쉬운 사용 권한이 필요합니다.',
+        detail: '시스템 환경설정 > 보안 및 개인 정보 보호 > 입력 모니터링 및 손쉬운 사용에서 Paraglide의 권한을 허용해주세요.'
       });
 
-      require('electron').shell.openExternal('x-apple.systempreferences:com.apple.preference.security?Privacy_InputMonitoring');
-
+      if (response.response === 0) {
+        require('electron').shell.openExternal('x-apple.systempreferences:com.apple.preference.security?Privacy_InputMonitoring');
+        require('electron').shell.openExternal('x-apple.systempreferences:com.apple.preference.security?Privacy_InputMonitoring');
+        // 권한 변경 후 앱 재시작을 유도
+        app.relaunch();
+        app.exit();
+      } else {
+        app.quit();
+      }
       return false;
     }
 
@@ -126,7 +120,6 @@ class SystemListener {
   // Important: 절대로 건들지 마세요.
   setupKeyboardListener() {
     if (this.keyboardListener) {
-      // 기존 리스너가 있다면 제거
       this.keyboardListener = null;
     }
 
@@ -140,64 +133,57 @@ class SystemListener {
       }
 
       this.keyboardListener.addListener((e, down) => {
-      // only handle key down events
-      if (e.state === 'UP') return; 
+        if (e.state === 'UP') return; 
 
-      const isCtrlOrCmd = (down["LEFT CTRL"] || down["RIGHT CTRL"] || 
-        down["LEFT META"] || down["RIGHT META"]);
-      
-      if (e.name === 'V' && isCtrlOrCmd) {
-        if (!this.programStatus || this.programStatus.isPaused) {
-          return;
-        }
+        const isCtrlOrCmd = (down["LEFT CTRL"] || down["RIGHT CTRL"] || 
+          down["LEFT META"] || down["RIGHT META"]);
         
-        console.log('[단축키] Cmd+V 또는 Ctrl+V');
-        this.moveToNext();
-      }
-
-      const isAlt = down["LEFT ALT"] || down["RIGHT ALT"]
-      const keyName = e.name;
-      
-      if(isAlt) {
-        switch(keyName) {
-          case 'RIGHT ARROW':
-            console.log('[단축키] Alt+Right');
-            this.moveToNext();
-            break;
-          case 'LEFT ARROW':
-            console.log('[단축키] Alt+Left');
-            this.moveToPrev();
-            break;
-          case 'UP ARROW':
-            console.log('[단축키] Alt+Up');
-            this.toggleResume();
-            break;
-          case 'DOWN ARROW':
-            console.log('[단축키] Alt+Down');
-            this.togglePause();
-            break;
+        if (e.name === 'V' && isCtrlOrCmd) {
+          if (!this.programStatus || this.programStatus.isPaused) {
+            return;
+          }
+          
+          console.log('[단축키] Cmd+V 또는 Ctrl+V');
+          this.moveToNext();
         }
-      }
-    });
 
-    console.log('[SystemListener] 키보드 리스너 설정 완료');
-  } catch (error) {
-    console.error('[SystemListener] 키보드 리스너 설정 실패:', error);
+        const isAlt = down["LEFT ALT"] || down["RIGHT ALT"]
+        const keyName = e.name;
+        
+        if(isAlt) {
+          switch(keyName) {
+            case 'RIGHT ARROW':
+              console.log('[단축키] Alt+Right');
+              this.moveToNext();
+              break;
+            case 'LEFT ARROW':
+              console.log('[단축키] Alt+Left');
+              this.moveToPrev();
+              break;
+            case 'UP ARROW':
+              console.log('[단축키] Alt+Up');
+              this.toggleResume();
+              break;
+            case 'DOWN ARROW':
+              console.log('[단축키] Alt+Down');
+              this.togglePause();
+              break;
+          }
+        }
+      });
+
+      console.log('[SystemListener] 키보드 리스너 설정 완료');
+    } catch (error) {
+      console.error('[SystemListener] 키보드 리스너 설정 실패:', error);
+    }
   }
-}
 
   // 이벤트 전송
   sendEvent(eventName) {
     if (!this.mainWindow?.isDestroyed()) {
       this.notifyInternalClipboardChange();
-
-
-      // 근데 이거는 다른거에도 쓰는지 몰라서 일단 두긴 할게
       this.mainWindow.webContents.send(eventName);
-
-      // ipcMain.on이니까
-      // ipcMain.emit으로 쏴줘야 받을 수 있음
-      ipcMain.emit(eventName)
+      ipcMain.emit(eventName);
     }
   }
 

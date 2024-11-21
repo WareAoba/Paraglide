@@ -16,8 +16,6 @@
     <string>Paraglide needs accessibility permissions to monitor keyboard shortcuts</string>
     <key>NSHighResolutionCapable</key>
     <true/>
-    <key>LSUIElement</key>
-    <true/>
     <key>NSAppleEventsUsageDescription</key>
     <string>Paraglide needs to monitor keyboard events</string>
 </dict>

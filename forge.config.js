@@ -14,6 +14,14 @@ module.exports = {
     appBundleId: 'com.paraglide.app',
     appCategoryType: "public.app-category.productivity",
     extendInfo: path.resolve(__dirname, 'public/mac/Info.plist'),
+    ignore: [
+      // 불필요한 파일 제외
+      /\.git/,
+      /node_modules[\/\\].*[/\\]test[/\\].*/,
+      /node_modules[\/\\].*[/\\]__tests__[/\\].*/,
+      /src[/\\].*\.test\.js$/,
+      /src[/\\].*\.spec\.js$/
+    ],
     protocols: [{
         name: "Paraglide URL",
         schemes: ["paraglide"]

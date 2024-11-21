@@ -10,11 +10,7 @@
     "productName": "Paraglide"
   },
   "homepage": ".",
-  
   "dependencies": {
-    "@testing-library/jest-dom": "^5.17.0",
-    "@testing-library/react": "^13.4.0",
-    "@testing-library/user-event": "^13.5.0",
     "electron-clipboard-watcher": "^1.0.1",
     "electron-squirrel-startup": "^1.0.1",
     "node-global-key-listener": "^0.3.0",
@@ -22,20 +18,20 @@
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.28.0",
     "react-scripts": "5.0.1",
-    "web-vitals": "^2.1.4",
-    "wait-on": "^7.2.0"
+    "wait-on": "^7.2.0",
+    "web-vitals": "^2.1.4"
   },
   "scripts": {
     "postinstall": "chmod +x ./node_modules/node-global-key-listener/bin/MacKeyServer",
+    "make-dmg": "create-dmg '.out/Paraglide-darwin-x64/Paraglide.app' --overwrite --dmgTitle='Paraglide' --icon='public/icons/mac/icon.icns' --background='public/dmg/background.png' --window-size=540,380 --icon-size=100 --app-drop-link-size=130 --app-drop-link-x=600 --app-drop-link-y=400",
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "electron-dev": "cross-env NODE_ENV=development electron .",
     "dev": "concurrently -k \"cross-env BROWSER=none npm start\" \"wait-on http://localhost:3000 && npm run electron-dev\"",
     "package": "npm run build && electron-forge package",
-    "make": "electron-forge make"
+    "make": "electron-forge make && npm run make-dmg"
   },
-
   "eslintConfig": {
     "extends": [
       "react-app",
@@ -64,7 +60,11 @@
     "@electron-forge/plugin-auto-unpack-natives": "^7.5.0",
     "@electron-forge/plugin-fuses": "^7.5.0",
     "@electron/fuses": "^1.8.0",
+    "@testing-library/jest-dom": "^5.17.0",
+    "@testing-library/react": "^13.4.0",
+    "@testing-library/user-event": "^13.5.0",
     "concurrently": "^9.1.0",
+    "create-dmg": "^7.0.0",
     "cross-env": "^7.0.3",
     "electron": "^26.2.0",
     "wait-on": "^7.2.0"
