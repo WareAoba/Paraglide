@@ -153,14 +153,6 @@
 
 ## Known Issues
 
-<<<<<<< Updated upstream
- 1. Overlay layout misalignment: Paragraph spacing is inconsistent between sections.
- 2. UI design is messy as properties are still being migrated to CSS.
- 3. Files occasionally unload for unknown reasons.
- 4. "Highlight Color" setting is non-functional.
- 5. Unified build sources for macOS and Windows.
- 6. Keyboard shortcut Alt + Arrow Keys does not work on Windows.
-=======
  1. Overlay layout misalignment: Paragraphs should have equal spacing, but gaps between current/next and previous/current are inconsistent.
  2. UI properties are being migrated to CSS, leaving the UI temporarily messy.
  3. The new Sidebar’s design is subpar—scheduled for improvement.
@@ -174,7 +166,6 @@
 
  The ongoing CSS theme implementation is a daunting task and may take a few more days, but essential features should be completed soon. Beta v0.1 is targeted for release by the end of the month.
  If I had coding experience, this would’ve progressed much faster, but tinkering with AI often breaks working features—fixing those takes up most of my time. 😂
->>>>>>> Stashed changes
 
 ## License
 
