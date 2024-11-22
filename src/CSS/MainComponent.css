@@ -24,8 +24,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--spacing-xl); /* gap 증가 */
-  margin-bottom: var(--spacing-xl);
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
 }
 
 /* 로고 이미지 */
@@ -224,7 +224,7 @@
   align-items: center;
   justify-content: center;
   position: absolute; /* Position it absolutely */
-  top: 20px;
+  top: 24px;
   left: 20px;
   width: 28px; /* Set the width to match the icon */
   height: 28px; /* Set the height to match the icon */
@@ -265,19 +265,19 @@
 
 /* 버튼 그룹 컨테이너 기본 레이아웃 */
 .button-group {
-  flex: 0 0 var(--button-group-height);
+  /* flex: 0 0 var(--button-group-height); */
   position: sticky;
   bottom: 0;
   display: flex;
   justify-content: space-between;
   align-items: flex-start;  /* 상단 정렬로 변경 */
-  width: 100%;
+  /* width: 100%; */
   background-color: var(--bg-color);
-  z-index: 100;
-  padding-top: var(--spacing-md);  /* 상단 패딩 줄임 */
-  padding-bottom: var(--spacing-xl);  /* 하단 패딩 키움 */
+  /* z-index: 100; */
+  /* padding-top: var(--spacing-md); 
+  padding-bottom: var(--spacing-xl);  
   padding-left: var(--spacing-xxl);
-  padding-right: var(--spacing-xxl);
+  padding-right: var(--spacing-xxl); */
   height: var(--button-group-height);
 }
 
@@ -329,9 +329,11 @@
   text-align: center;
   font-weight: 700;  /* 더 굵게 */
   color: var(--text-color);
-  margin: var(--spacing-xl) 0 var(--spacing-lg);  /* 상단 여백 증가 */
-  padding: var(--spacing-md);
-  transform: translateY(20px);  
+  margin: 0px;
+  padding: 0px;
+  /* margin: var(--spacing-xl) 0 var(--spacing-lg);  상단 여백 증가 */
+  /* padding: var(--spacing-md); */
+  /* transform: translateY(20px);   */
 }
 
 /* 단락 섹션 */
@@ -339,9 +341,9 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-md);
-  padding: 0 var(--spacing-xxl);
-  overflow-y: auto;
+  /* gap: var(--spacing-md);
+  padding: 0 var(--spacing-xxl); */
+  /* overflow-y: auto; */
 }
 
 /* 단락 컨테이너 */
@@ -522,7 +524,7 @@
 .button-group-controls {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: start;
   width: 100%;
   max-width: 800px;
   margin: 0 auto;

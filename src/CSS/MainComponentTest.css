@@ -1,0 +1,27 @@
+:root {
+  --button-group-height: 100px;
+  --content-padding: 20px;
+  --container-spacing: var(--spacing-md);
+}
+
+.welcome-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: var(--spacing-xxl);
+    gap: var(--spacing-xl);
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    transition: background-color var(--transition-default),
+                color var(--transition-default);
+}
+
+.welcome-screen .logo-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-xl); /* gap 증가 */
+    margin-bottom: var(--spacing-xl);
+  }
