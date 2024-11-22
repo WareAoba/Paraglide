@@ -254,9 +254,10 @@ function MainComponent() {
           onClose={handleCloseSidebar}
           currentFilePath={null}
         />
-
-        <div className = "button-group-controls">
-          <button className="btn-icon" onClick={handleToggleSidebar}>
+        
+        <div className="welcome-screen" data-theme={state.isDarkMode ? 'dark' : 'light'}>
+          {/* 사이드바 버튼 */}
+          <button className="btn-sidebar" onClick={handleToggleSidebar}>
             <svg
               width="100%"
               height="100%"
@@ -270,19 +271,13 @@ function MainComponent() {
             </svg>
           </button>
 
+          {/* 설정 버튼 추가 */}
           <button 
-            className="btn-icon"
+            className="btn-settings"
             onClick={() => setIsSettingsVisible(true)}
           >
             <img src={settingsIcon} alt="설정" className="icon" />
           </button>
-        </div>
-
-        <div className="welcome-screen" data-theme={state.isDarkMode ? 'dark' : 'light'}>
-          
-
-          {/* 설정 버튼 추가 */}
-          
 
           <div className="logo-container">
             {state.logoPath && (
@@ -359,63 +354,19 @@ function MainComponent() {
           </div>
         ) : (
           <div className="main-container">
-
-            <div className="button-group-controls">
-                <button className="btn-icon" onClick={handleToggleSidebar}>
-                  <svg 
-                    fill="currentColor"
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="100%" // Use 100% to make the SVG take up 100% of the button size
-                    height="100%" // Use 100% to make the SVG take up 100% of the button size
-                    viewBox="0 0 24 24" // Set the viewBox to match the natural dimensions of the icon
-                  >
-                    <path d="M3 5H21" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"></path>
-                    <path d="M3 12H21" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"></path>
-                    <path d="M3 19H21" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"></path>
-                  </svg>
-                </button>
-
-                <button 
-                  className="btn-settings"
-                  onClick={() => setIsSettingsVisible(true)}
-                >
-                  <svg 
-                    fill="currentColor"
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="100%" // Use 100% to make the SVG take up 100% of the button size
-                    height="100%" // Use 100% to make the SVG take up 100% of the button size
-                    viewBox="0 0 24 24" // Set the viewBox to match the natural dimensions of the icon
-                  >
-                    <path fill="currentColor" d="M8.013 4.389c0-.767.621-1.389 1.389-1.389h1.196c.767 0 1.39.622 1.39 1.389v.66c0 .153.101.33.307.436.141.074.278.155.411.241.196.128.402.13.536.052l.576-.332a1.389 1.389 0 0 1 1.897.508l.599 1.037a1.39 1.39 0 0 1-.509 1.897l-.621.359c-.131.075-.232.249-.225.477a5.135 5.135 0 0 1-.004.427c-.012.233.09.412.223.489l.627.362c.665.384.892 1.233.509 1.897l-.599 1.037a1.39 1.39 0 0 1-1.897.508l-.672-.388c-.132-.076-.332-.076-.526.045a4.928 4.928 0 0 1-.325.185c-.206.108-.308.284-.308.437v.778a1.39 1.39 0 0 1-1.389 1.39h-1.196a1.389 1.389 0 0 1-1.39-1.39v-.778c0-.153-.102-.33-.307-.437a4.96 4.96 0 0 1-.325-.185c-.194-.121-.395-.12-.526-.045l-.672.388a1.39 1.39 0 0 1-1.898-.508l-.598-1.037a1.389 1.389 0 0 1 .509-1.897l.627-.362c.133-.077.235-.256.223-.49a5.03 5.03 0 0 1-.004-.426c.007-.228-.094-.401-.225-.477l-.621-.359a1.389 1.389 0 0 1-.509-1.897l.598-1.037a1.389 1.389 0 0 1 1.898-.508l.576.332c.133.078.34.076.535-.052a4.81 4.81 0 0 1 .412-.24c.205-.108.308-.284.308-.437v-.66Zm1.987 7.611a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/>
-                  </svg>
-                </button>
-                
-                <button 
-                  className="btn btn-complete"
-                  onClick={handleCompleteWork}
-                >
-                  작업 완료
-                </button>
-                
-                <div className="toggle-buttons">
-                  <button 
-                    className={`btn-icon ${state.isPaused ? 'btn-danger' : 'btn-success'}`}
-                    onClick={handleTogglePause}
-                  >
-                    {state.isPaused ? (
-                      <img src={playIcon} alt="재생" className="icon" />
-                    ) : (
-                      <img src={pauseIcon} alt="일시정지" className="icon" />
-                    )}
-                  </button>
-                  <button 
-                    className={`toggle-button ${state.isOverlayVisible ? 'btn-active' : 'btn-outline'}`}
-                    onClick={handleToggleOverlay}
-                  >
-                    {state.isOverlayVisible ? '오버레이' : '오버레이'}
-                  </button>
-              </div>
-            </div>
+            <button className="btn-sidebar" onClick={handleToggleSidebar}>
+              <svg 
+                fill="currentColor"
+                xmlns="http://www.w3.org/2000/svg"
+                width="100%" // Use 100% to make the SVG take up 100% of the button size
+                height="100%" // Use 100% to make the SVG take up 100% of the button size
+                viewBox="0 0 24 24" // Set the viewBox to match the natural dimensions of the icon
+              >
+                <path d="M3 5H21" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"></path>
+                <path d="M3 12H21" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"></path>
+                <path d="M3 19H21" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"></path>
+              </svg>
+            </button>
 
             <div className="page-number">
               {state.currentNumber ? `${state.currentNumber} 페이지` : ''}
@@ -456,12 +407,46 @@ function MainComponent() {
                   </div>
                 </div>
               </div>
-                
-              {/* <div className="navigation-buttons">
+
+              <div className="navigation-buttons">
                 <button className="btn btn-outline" onClick={handlePrev}>◀ 이전</button>
                 <button className="btn btn-outline" onClick={handleNext}>다음 ▶</button>
-              </div> */}
+              </div>
               
+              <div className="button-group">
+                <button 
+                  className="btn-icon btn-settings"
+                  onClick={() => setIsSettingsVisible(true)}
+                >
+                  <img src={settingsIcon} alt="설정" className="icon" />
+                </button>
+                
+                <button 
+                  className="btn btn-complete"
+                  onClick={handleCompleteWork}
+                >
+                  작업 완료
+                </button>
+                
+                <div className="toggle-buttons">
+                  <button 
+                    className={`btn-icon ${state.isPaused ? 'btn-danger' : 'btn-success'}`}
+                    onClick={handleTogglePause}
+                  >
+                    {state.isPaused ? (
+                      <img src={playIcon} alt="재생" className="icon" />
+                    ) : (
+                      <img src={pauseIcon} alt="일시정지" className="icon" />
+                    )}
+                  </button>
+                  <button 
+                    className={`toggle-button ${state.isOverlayVisible ? 'btn-active' : 'btn-outline'}`}
+                    onClick={handleToggleOverlay}
+                  >
+                    {state.isOverlayVisible ? '오버레이' : '오버레이'}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -471,7 +456,7 @@ function MainComponent() {
         onClose={() => setIsSettingsVisible(false)}
         isDarkMode={state.isDarkMode}
       />
-      </div>
+    </div>
   );
 }
 
