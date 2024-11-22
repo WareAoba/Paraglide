@@ -6,6 +6,14 @@
 .TXT 파일을 로드하여 **각 단락별로 순차적으로** 복사하고, Ctrl[Cmd] + V를 감지하면 **다음 단락으로 이동하여 복사**하는 기능을 자동화한 프로그램입니다.
 
 
+## 미리보기
+
+ ![Welcome](https://github.com/user-attachments/assets/1a591599-6d0c-4af7-a50b-317eae89adc1)
+ ![Comparison](https://github.com/user-attachments/assets/bd0683c2-08a6-47f6-970e-52179b2a7995)
+ ![Paste](https://github.com/user-attachments/assets/c59d59a8-f582-4b82-8e9b-85334cffd50f)
+ ![AltArrow](https://github.com/user-attachments/assets/c5e3e283-add9-4c46-888e-bba88b496c63)
+ ![Sidebar](https://github.com/user-attachments/assets/ec5bdcc4-33a4-4fce-92ea-3a89fa289701)
+
 ## 핵심 기능
 
  1. .TXT 파일을 로드, 단락을 나누어 **이전/현재/다음** 단락을 표시.
@@ -156,10 +164,19 @@
 ## 수정할 사항
  1. 오버레이 레이아웃이 좀 잘못돼있습니다. 모든 단락들이 같은 간격으로 벌어져야 하는데, 이전-현재, 현재-다음만 유난히 넓음. 어떻게 고쳐야 할지 감도 안 잡히는 상황.
  2. UI 속성을 CSS로 모두 이관하는 작업중이라 UI가 지금은 개판입니다. 언제 다 고쳐질진 몰?루...
+<<<<<<< Updated upstream
  3. 간헐적으로 파일 로드가 해제되어 버리는데, 진짜 원인 불명......
  4. 설정 항목중에 "강조색" 옵션이 아직 작동하지 않습니다.
  5. macOS와 Windows의 빌드 소스를 하나로 통합.
  6. Windows에서는 **알트 + 방향키**가 작동하지 않습니다.
+=======
+ 3. 새로 추가한 Sidebar의 디자인이 아주 구립니다. 추후 개선 예정.
+ 4. 실시간 테마 적용에 문제가 발생. 예전엔 됐는데 핸들러가 누락된듯?
+ 5. 간헐적으로 파일 로드가 해제되어 버리는데, 진짜 원인 불명......
+ 6. 설정 항목중에 'loadLastOverlayBounds'가 작동하지 않습니다.
+ 7. 현재 프로그램 용량이 매우 큽니다. 차차 줄여나갈 예정.
+ 8. State 관리를 위해 Redux 도입 예정.
+>>>>>>> Stashed changes
 
 
 ## 라이센스

@@ -7,6 +7,14 @@
 
  A program designed to automate the process of **sequentially copying each paragraph** from a loaded .TXT file and moving to the **next paragraph upon detecting Ctrl[Cmd] + V input**.
 
+## Overview
+
+ ![Welcome](https://github.com/user-attachments/assets/1a591599-6d0c-4af7-a50b-317eae89adc1)
+ ![Comparison](https://github.com/user-attachments/assets/bd0683c2-08a6-47f6-970e-52179b2a7995)
+ ![Paste](https://github.com/user-attachments/assets/c59d59a8-f582-4b82-8e9b-85334cffd50f)
+ ![AltArrow](https://github.com/user-attachments/assets/c5e3e283-add9-4c46-888e-bba88b496c63)
+ ![Sidebar](https://github.com/user-attachments/assets/ec5bdcc4-33a4-4fce-92ea-3a89fa289701)
+
 ## Key Features
 
  1. Load .TXT files and split paragraphs, displaying **previous/current/next** paragraphs.
@@ -145,12 +153,28 @@
 
 ## Known Issues
 
+<<<<<<< Updated upstream
  1. Overlay layout misalignment: Paragraph spacing is inconsistent between sections.
  2. UI design is messy as properties are still being migrated to CSS.
  3. Files occasionally unload for unknown reasons.
  4. "Highlight Color" setting is non-functional.
  5. Unified build sources for macOS and Windows.
  6. Keyboard shortcut Alt + Arrow Keys does not work on Windows.
+=======
+ 1. Overlay layout misalignment: Paragraphs should have equal spacing, but gaps between current/next and previous/current are inconsistent.
+ 2. UI properties are being migrated to CSS, leaving the UI temporarily messy.
+ 3. The new Sidebar’s design is subpar—scheduled for improvement.
+ 4. Issues with real-time theme switching; handlers seem to be missing.
+ 5. Files occasionally unload randomly, with the cause still unidentified.
+ 6. The 'loadLastOverlayBounds' setting does not work.
+ 7. The current program size is quite large and will be gradually reduced.
+ 8. Planning to introduce Redux for state management.
+
+## Beta Release?
+
+ The ongoing CSS theme implementation is a daunting task and may take a few more days, but essential features should be completed soon. Beta v0.1 is targeted for release by the end of the month.
+ If I had coding experience, this would’ve progressed much faster, but tinkering with AI often breaks working features—fixing those takes up most of my time. 😂
+>>>>>>> Stashed changes
 
 ## License
 
