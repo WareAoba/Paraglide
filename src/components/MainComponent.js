@@ -27,6 +27,9 @@ function MainComponent() {
   const [settingsIcon, setSettingsIcon] = useState(null);
   const [isSettingsVisible, setIsSettingsVisible] = useState(false);
   const [sidebarIcon, setSidebarIcon] = useState(null);
+  const [endIcon, setEndIcon] = useState(null);
+  const [eyeIcon, setEyeIcon] = useState(null);
+  const [eyeOffIcon, setEyeOffIcon] = useState(null);
 
 
   useEffect(() => {
@@ -86,17 +89,24 @@ function MainComponent() {
     const loadIcons = async () => {
       try {
         const [playIconPath, pauseIconPath, terminalIconPath, settingsIcon ] = await Promise.all([
-          ipcRenderer.invoke('get-icon-path', 'play-solid.svg'),
-          ipcRenderer.invoke('get-icon-path', 'pause-solid.svg'),
+          ipcRenderer.invoke('get-icon-path', 'play.svg'),
+          ipcRenderer.invoke('get-icon-path', 'pause.svg'),
           ipcRenderer.invoke('get-icon-path', 'terminal-tag.svg'),
           ipcRenderer.invoke('get-icon-path', 'settings.svg'),
         ]);
         const sidebarIcon = await ipcRenderer.invoke('get-icon-path', 'menu.svg');
+        const endIcon = await ipcRenderer.invoke('get-icon-path', 'save.svg')
+        const eyeIcon = await ipcRenderer.invoke('get-icon-path', 'eyes.svg')
+        const eyeOffIcon = await ipcRenderer.invoke('get-icon-path', 'eyes-off.svg')
+        
         setPlayIcon(playIconPath);
         setPauseIcon(pauseIconPath);
         setTerminalIcon(terminalIconPath);
         setSettingsIcon(settingsIcon);
         setSidebarIcon(sidebarIcon);
+        setEndIcon(endIcon);
+        setEyeIcon(eyeIcon);
+        setEyeOffIcon(eyeOffIcon);
       } catch (error) {
         console.error('아이콘 로드 실패:', error);
       }
@@ -363,10 +373,10 @@ function MainComponent() {
                 </button>
                 
                 <button 
-                  className="btn btn-complete"
+                  className="btn-icon"
                   onClick={handleCompleteWork}
                 >
-                  작업 완료
+                  <img src={endIcon} alt = "작업 종료" className="icon"/>
                 </button>
                 
                 <div className="toggle-buttons">
@@ -381,10 +391,13 @@ function MainComponent() {
                     )}
                   </button>
                   <button 
-                    className={`toggle-button ${state.isOverlayVisible ? 'btn-active' : 'btn-outline'}`}
+                    className={`btn-icon ${state.isOverlayVisible ? 'btn-active' : 'btn-outline'}`}
                     onClick={handleToggleOverlay}
                   >
-                    {state.isOverlayVisible ? '오버레이' : '오버레이'}
+                    {state.isOverlayVisible ?
+                      <img src={eyeIcon} alt="일시정지" className="icon" />
+                       : 
+                      <img src={eyeOffIcon} alt="일시정지" className="icon" /> }
                   </button>
               </div>
             </div>

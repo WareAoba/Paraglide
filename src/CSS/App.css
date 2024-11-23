@@ -1,5 +1,6 @@
 /* 기본 폰트 */
 @import url('https://fonts.googleapis.com/css?family=Rubik:500');
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css");
 
 
 /* 전역 변수 */
@@ -77,14 +78,14 @@ body,
   width: 100%;
   height: 100%;
   overflow: hidden;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto';
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color: var(--text-color);
   transition: background-color var(--transition-default), 
               color var(--transition-default);
 }
+
 
 /* 스크롤바 제거 */
 ::-webkit-scrollbar {

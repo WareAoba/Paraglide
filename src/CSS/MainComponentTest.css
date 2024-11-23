@@ -167,17 +167,18 @@
     text-align: left;
     font-weight: 700; 
     color: var(--text-color);
-    margin: 0px;
-    padding: var(--spacing-sm);
+    margin: var(--spacing-xs);
   }
 
   .main-container .paragraph-container {
     flex: 1 0 auto;
     display: flex;
     flex-direction: column;
-    border: none;
-    border-radius: 10px;
-    background-color: rgba(0, 0, 0, 0.12);
+    border: 2px solid var(--border-color);
+    border-radius: 15px;
+    margin-left: var(--spacing-xs);
+    margin-right: var(--spacing-xs);
+    background-color: var(--bg-color);
     padding-left: var(--spacing-sm);
     padding-right: var(--spacing-sm);
     overflow-y: auto;
@@ -217,7 +218,8 @@
     max-height: 250px;
     overflow-y: auto;
     gap: var(--spacing-md);  /* 단락 간 간격 확대 */
-    margin-top: var(--spacing-md);
+    margin-top: var(--spacing-sm);
+    padding-top: var(--spacing-sm);
   }
 
 .paragraph-current,
