@@ -487,12 +487,12 @@ const FileManager = {
 const WindowManager = {
   createMainWindow() {
     mainWindow = new BrowserWindow({
-      width: 600,
-      height: 660,
-      minWidth: 600,
-      minHeight: 660,
-      maxWidth: 1300,
-      maxHeight: 800,
+      width: 550,
+      height: 550,
+      minWidth: 550,
+      minHeight: 550,
+      maxWidth: 550,
+      maxHeight: 550,
       show: false,
       title: 'Paraglide',
       icon: FILE_PATHS.icon,
