@@ -22,18 +22,23 @@
   --dark-bg-rgb: 30, 30, 30;
   --active-color: rgba(188, 188, 188, 1.0);
   --btn-bg: rgba(255, 255, 255, 0.025);
+  --btn-icon: rgba(154,154,154, 1.0);
+  --btn-icon-hover: rgba(154,154,154, 0.1);
 
   /* 크기 */
   --container-width: 100vw;
   --logo-width: 80vw;
   --logo-height: 50vh;
-  --btn-size: 28px;
+  --btn-size: 40px;
   --close-btn-size: 25px;
+  --btn-iconsize: 32px;
   
   /* 간격 */
+  --spacing-xs: 3px;
   --spacing-sm: 10px;
   --spacing-md: 20px;
   --spacing-lg: 30px;
+  --spacing-xl: 45px
 
   /* 트랜지션 */
   --transition-default: 0.3s ease;

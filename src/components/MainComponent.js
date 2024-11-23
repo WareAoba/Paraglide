@@ -1,6 +1,6 @@
 // src/MainComponent.js
 import React, { useState, useEffect } from 'react';
-import '../CSS/MainComponent.css';
+import '../CSS/MainComponentTest.css';
 import Sidebar from './Sidebar';
 import Settings from './Settings';
 const { ipcRenderer } = window.require('electron');
@@ -26,6 +26,8 @@ function MainComponent() {
   const [terminalIcon, setTerminalIcon] = useState(null);
   const [settingsIcon, setSettingsIcon] = useState(null);
   const [isSettingsVisible, setIsSettingsVisible] = useState(false);
+  const [sidebarIcon, setSidebarIcon] = useState(null);
+
 
   useEffect(() => {
     // 로고 로드 함수 수정
@@ -87,12 +89,14 @@ function MainComponent() {
           ipcRenderer.invoke('get-icon-path', 'play-solid.svg'),
           ipcRenderer.invoke('get-icon-path', 'pause-solid.svg'),
           ipcRenderer.invoke('get-icon-path', 'terminal-tag.svg'),
-          ipcRenderer.invoke('get-icon-path', 'settings.svg')
+          ipcRenderer.invoke('get-icon-path', 'settings.svg'),
         ]);
+        const sidebarIcon = await ipcRenderer.invoke('get-icon-path', 'menu.svg');
         setPlayIcon(playIconPath);
         setPauseIcon(pauseIconPath);
         setTerminalIcon(terminalIconPath);
         setSettingsIcon(settingsIcon);
+        setSidebarIcon(sidebarIcon);
       } catch (error) {
         console.error('아이콘 로드 실패:', error);
       }
@@ -255,34 +259,20 @@ function MainComponent() {
           currentFilePath={null}
         />
 
-        <div className = "button-group-controls">
-          <button className="btn-icon" onClick={handleToggleSidebar}>
-            <svg
-              width="100%"
-              height="100%"
-              fill="currentColor"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-            >
-              <path d="M3 5H21" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"></path>
-              <path d="M3 12H21" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"></path>
-              <path d="M3 19H21" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"></path>
-            </svg>
-          </button>
-
-          <button 
-            className="btn-icon"
-            onClick={() => setIsSettingsVisible(true)}
-          >
-            <img src={settingsIcon} alt="설정" className="icon" />
-          </button>
-        </div>
 
         <div className="welcome-screen" data-theme={state.isDarkMode ? 'dark' : 'light'}>
           
-
-          {/* 설정 버튼 추가 */}
-          
+          <div className = "button-group-controls">
+            <button className="btn-icon" onClick={handleToggleSidebar}>
+              <img src={sidebarIcon} alt="Sidebar Icon" className="icon" />
+            </button>
+            <button 
+              className="btn-icon"
+              onClick={() => setIsSettingsVisible(true)}
+            >
+              <img src={settingsIcon} alt="설정" className="icon"/>
+            </button>
+          </div>          
 
           <div className="logo-container">
             {state.logoPath && (
@@ -362,32 +352,14 @@ function MainComponent() {
 
             <div className="button-group-controls">
                 <button className="btn-icon" onClick={handleToggleSidebar}>
-                  <svg 
-                    fill="currentColor"
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="100%" // Use 100% to make the SVG take up 100% of the button size
-                    height="100%" // Use 100% to make the SVG take up 100% of the button size
-                    viewBox="0 0 24 24" // Set the viewBox to match the natural dimensions of the icon
-                  >
-                    <path d="M3 5H21" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"></path>
-                    <path d="M3 12H21" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"></path>
-                    <path d="M3 19H21" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"></path>
-                  </svg>
+                  <img src={sidebarIcon} alt="Sidebar Icon" className="icon" />
                 </button>
 
                 <button 
-                  className="btn-settings"
+                  className="btn-icon"
                   onClick={() => setIsSettingsVisible(true)}
                 >
-                  <svg 
-                    fill="currentColor"
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="100%" // Use 100% to make the SVG take up 100% of the button size
-                    height="100%" // Use 100% to make the SVG take up 100% of the button size
-                    viewBox="0 0 24 24" // Set the viewBox to match the natural dimensions of the icon
-                  >
-                    <path fill="currentColor" d="M8.013 4.389c0-.767.621-1.389 1.389-1.389h1.196c.767 0 1.39.622 1.39 1.389v.66c0 .153.101.33.307.436.141.074.278.155.411.241.196.128.402.13.536.052l.576-.332a1.389 1.389 0 0 1 1.897.508l.599 1.037a1.39 1.39 0 0 1-.509 1.897l-.621.359c-.131.075-.232.249-.225.477a5.135 5.135 0 0 1-.004.427c-.012.233.09.412.223.489l.627.362c.665.384.892 1.233.509 1.897l-.599 1.037a1.39 1.39 0 0 1-1.897.508l-.672-.388c-.132-.076-.332-.076-.526.045a4.928 4.928 0 0 1-.325.185c-.206.108-.308.284-.308.437v.778a1.39 1.39 0 0 1-1.389 1.39h-1.196a1.389 1.389 0 0 1-1.39-1.39v-.778c0-.153-.102-.33-.307-.437a4.96 4.96 0 0 1-.325-.185c-.194-.121-.395-.12-.526-.045l-.672.388a1.39 1.39 0 0 1-1.898-.508l-.598-1.037a1.389 1.389 0 0 1 .509-1.897l.627-.362c.133-.077.235-.256.223-.49a5.03 5.03 0 0 1-.004-.426c.007-.228-.094-.401-.225-.477l-.621-.359a1.389 1.389 0 0 1-.509-1.897l.598-1.037a1.389 1.389 0 0 1 1.898-.508l.576.332c.133.078.34.076.535-.052a4.81 4.81 0 0 1 .412-.24c.205-.108.308-.284.308-.437v-.66Zm1.987 7.611a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/>
-                  </svg>
+                  <img src={settingsIcon} alt="Sidebar Icon" className="icon" />
                 </button>
                 
                 <button 
@@ -420,8 +392,6 @@ function MainComponent() {
             <div className="page-number">
               {state.currentNumber ? `${state.currentNumber} 페이지` : ''}
             </div>
-
-            <div className="paragraph-section">
               <div className="paragraph-container">
                 <div className="paragraph-header">
                   <div>이전 단락</div>
@@ -456,14 +426,7 @@ function MainComponent() {
                   </div>
                 </div>
               </div>
-                
-              {/* <div className="navigation-buttons">
-                <button className="btn btn-outline" onClick={handlePrev}>◀ 이전</button>
-                <button className="btn btn-outline" onClick={handleNext}>다음 ▶</button>
-              </div> */}
-              
             </div>
-          </div>
         )}
       </div>
       <Settings 
