@@ -96,6 +96,10 @@
 
   - Mount **Paraglide-0.1.0-beta-arm64.dmg**.
   - Copy **Paraglide.app** to **~/Applications**.
+  - If the error message "The file is damaged" appears, enter the following command in the terminal:
+   ```bash
+   sudo xattr -r -d com.apple.quarantine /Applications/Paraglide.app
+   ```
   - Follow the instructions to enable **accessibility** and **input monitoring** permissions.
 
 ## Running in Dev Mode / Building

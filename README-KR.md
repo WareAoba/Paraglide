@@ -104,6 +104,10 @@
  - **macOS**:
    - **Paraglide-0.1.0-beta-arm64.dmg** 마운트.
    - **Paraglide.app**을 **~/Application**에 복사.
+   - "파일이 손상되었습니다" 에러 메세지가 표시될 경우, 터미널에 다음 명령어를 입력해줍니다.
+   ```bash
+   sudo xattr -r -d com.apple.quarantine /Applications/Paraglide.app
+   ```
    - 환경 설정에서 **손쉬운 사용**과 **입력 모니터링** 권한 설정(안내 메세지를 따라해주시기 바랍니다.).
 
 
