@@ -7,12 +7,41 @@
   "description": "Paragraph Clipboader",
   "build": {
     "appId": "com.paraglide.app",
-    "productName": "Paraglide"
+    "productName": "Paraglide",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "build/**/*",
+      "src/**/*",
+      "node_modules/**/*",
+      "!**/node_modules/.cache/**/*"
+    ],
+    "mac": {
+      "icon": "public/icons/mac/icon.icns",
+      "category": "public.app-category.utilities",
+      "target": [
+        "dmg",
+        "zip"
+      ]
+    },
+    "dmg": {
+      "title": "Paraglide",
+      "icon": "public/icons/mac/icon.icns",
+      "background": "public/dmg/background.png",
+      "window": {
+        "width": 540,
+        "height": 380
+      },
+      "contents": [
+        { "x": 130, "y": 220, "type": "file" },
+        { "x": 410, "y": 220, "type": "link", "path": "/Applications" }
+      ]
+    }
   },
-  "homepage": ".",
+  "homepage": "./",
   "dependencies": {
     "electron-clipboard-watcher": "^1.0.1",
-    "electron-squirrel-startup": "^1.0.1",
     "node-global-key-listener": "^0.3.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -23,7 +52,7 @@
   },
   "scripts": {
     "postinstall": "chmod +x ./node_modules/node-global-key-listener/bin/MacKeyServer",
-    "make-dmg": "create-dmg '.out/Paraglide-darwin-x64/Paraglide.app' --overwrite --dmgTitle='Paraglide' --icon='public/icons/mac/icon.icns' --background='public/dmg/background.png' --window-size=540,380 --icon-size=100 --app-drop-link-size=130 --app-drop-link-x=600 --app-drop-link-y=400",
+    "make-dmg": "create-dmg 'dist/mac/Paraglide.app' --overwrite --dmgTitle='Paraglide' --icon='public/icons/mac/icon.icns' --background='public/dmg/background.png' --window-size=540,380 --icon-size=100 --app-drop-link-size=130 --app-drop-link-x=600 --app-drop-link-y=400",
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
@@ -67,6 +96,8 @@
     "create-dmg": "^7.0.0",
     "cross-env": "^7.0.3",
     "electron": "^26.2.0",
-    "wait-on": "^7.2.0"
+    "wait-on": "^7.2.0",
+    "electron-squirrel-startup": "^1.0.1"
+
   }
 }
