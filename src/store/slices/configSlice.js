@@ -18,8 +18,8 @@ const initialState = {
     bounds: { 
       width: 320, 
       height: 240,
-      x: undefined,
-      y: undefined
+      x: null,
+      y: null
     },
     window: {
       opacity: 1.0,
@@ -59,10 +59,16 @@ const configSlice = createSlice({
     },
 
     setOverlayBounds: (state, action) => {
-      state.overlay.bounds = {
-        ...state.overlay.bounds,
-        ...action.payload
-      };
+      const newBounds = action.payload;
+      if (newBounds) {
+        state.overlay.bounds = {
+          ...state.overlay.bounds,
+          x: newBounds.x ?? state.overlay.bounds.x,
+          y: newBounds.y ?? state.overlay.bounds.y,
+          width: newBounds.width ?? state.overlay.bounds.width,
+          height: newBounds.height ?? state.overlay.bounds.height
+        };
+      }
     },
 
     updateOverlaySettings: (state, action) => {

@@ -177,11 +177,35 @@ const FileManager = {
   async saveConfig(config) {
     try {
       const state = store.getState().config;
-      const newConfig = {
-        ...state,
-        ...config
-      };
+      let newConfig = { ...state };
+  
+      // 테마 설정 처리
+      if (config.theme) {
+        newConfig.theme = {
+          isDarkMode: config.theme.isDarkMode ?? state.theme.isDarkMode,
+          mode: config.theme.isDarkMode ? 'dark' : 'light',
+          accentColor: config.theme.accentColor ?? state.theme.accentColor
+        };
+      }
+  
+      // 오버레이 설정 처리
+      if (config.overlayBounds) {
+        // overlayBounds를 overlay.bounds로 통합
+        newConfig.overlay = {
+          ...newConfig.overlay,
+          bounds: config.overlayBounds
+        };
+      } else if (config.overlay) {
+        newConfig.overlay = {
+          ...newConfig.overlay,
+          ...config.overlay
+        };
+      }
+  
+      // Redux store 업데이트
       store.dispatch(configActions.loadConfig(newConfig));
+      
+      // 파일 저장
       await fs.writeFile(FILE_PATHS.config, JSON.stringify(newConfig, null, 2));
     } catch (error) {
       console.error('설정 저장 실패:', error);
@@ -355,7 +379,7 @@ const FileManager = {
     try {
       const content = await fs.readFile(filePath, 'utf8');
       if (!content) {
-        console.error('파일 내용 없음:', filePath);
+        console.error('파일 내용 있음:', filePath);
         return { success: false };
       }
   
@@ -514,28 +538,27 @@ const WindowManager = {
     const { bounds, window: windowConfig } = config.overlay;
     const primaryDisplay = screen.getPrimaryDisplay();
     
-    // 초기 위치가 없으면 계산
-    if (bounds.x === undefined || bounds.y === undefined) {
-      store.dispatch(configActions.updateInitialPosition({
-        width: primaryDisplay.workAreaSize.width,
-        height: primaryDisplay.workAreaSize.height
-      }));
-    }
+    // null 체크만 수행
+    const needsInitialPosition = bounds.x === null || bounds.y === null;
     
-    const updatedConfig = store.getState().config;
-    const { bounds: updatedBounds, window: updatedWindowConfig } = updatedConfig.overlay;
+    let windowBounds = needsInitialPosition ? {
+      width: 320,
+      height: 240,
+      x: Math.floor(primaryDisplay.workAreaSize.width * 0.02),
+      y: Math.floor(primaryDisplay.workAreaSize.height * 0.05)
+    } : bounds;
   
-    // 윈도우 설정 구성
+    if (needsInitialPosition) {
+      store.dispatch(configActions.setOverlayBounds(windowBounds));
+    }
+  
     const windowOptions = {
-      width: updatedWindowConfig.loadLastBounds ? updatedBounds.width : 320,
-      height: updatedWindowConfig.loadLastBounds ? updatedBounds.height : 240,
-      x: updatedBounds.x,
-      y: updatedBounds.y,
+      ...windowBounds,
       minHeight: 240,
       minWidth: 300,
       maxHeight: 600,
       maxWidth: 500,
-      opacity: updatedWindowConfig.opacity,
+      opacity: windowConfig.opacity,
       frame: false,
       transparent: true,
       focusable: true,
@@ -552,11 +575,8 @@ const WindowManager = {
       }
     };
   
-    // overlayWindow 인스턴스 생성
     overlayWindow = new BrowserWindow(windowOptions);
-    
-    // 마우스 이벤트 설정
-    overlayWindow.setIgnoreMouseEvents(updatedWindowConfig.isFixed);
+    overlayWindow.setIgnoreMouseEvents(windowConfig.isFixed);
   
     const overlayUrl = isDev
       ? 'http://localhost:3000/#/overlay'
@@ -594,8 +614,16 @@ const WindowManager = {
   async saveOverlayBounds() {
     if (!overlayWindow) return;
     const bounds = overlayWindow.getBounds();
+    
+    // overlay.bounds로 저장
+    const config = {
+      overlay: {
+        bounds: bounds
+      }
+    };
+    
     store.dispatch(configActions.setOverlayBounds(bounds));
-    await FileManager.saveConfig({ overlayBounds: bounds });
+    await FileManager.saveConfig(config);
   },
 
   async updateOverlayContent() {
