@@ -274,3 +274,14 @@
   transform: translateY(-2px);  /* 살짝 띄우기 효과 */
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);  /* 그림자 강화 */
 }
+
+
+.sidebar.visible {
+  transform: translateX(301px);
+  transition: all 0.3s ease;
+}
+
+.sidebar.invisible {
+  transform: translateX(301px);
+  transition: all 0.3s ease;
+}
