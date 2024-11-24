@@ -6,30 +6,12 @@ import '../CSS/Sidebar.css';
 const { ipcRenderer } = window.require('electron');
 const path = window.require('path');
 
-function Sidebar({ isVisible, onClose, currentFilePath }) {
+function Sidebar({ isVisible, onClose, currentFilePath, isDarkMode }) {
   const [files, setFiles] = React.useState([]);
-  const [isDarkMode, setIsDarkMode] = React.useState(false);
 
   React.useEffect(() => {
     loadFileHistory();
   }, [isVisible]);
-
-  React.useEffect(() => {
-    const handleThemeChange = (_, theme) => {
-      setIsDarkMode(theme === 'dark');
-    };
-
-    ipcRenderer.on('theme-changed', handleThemeChange);
-
-    // 초기 테마 상태 요청
-    ipcRenderer.invoke('get-theme').then(theme => {
-      setIsDarkMode(theme === 'dark');
-    });
-
-    return () => {
-      ipcRenderer.removeListener('theme-changed', handleThemeChange);
-    };
-  }, []);
 
   const loadFileHistory = async () => {
     try {

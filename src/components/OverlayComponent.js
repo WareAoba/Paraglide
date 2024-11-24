@@ -18,24 +18,40 @@ function OverlayComponent() {
   const containerRef = useRef(null);
 
   useEffect(() => {
+    // 단락 업데이트 핸들러
     const handleUpdate = (event, data) => {
-      setState((prevState) => ({
+      if (!data) return;
+      
+      setState(prevState => ({
         ...prevState,
         ...data,
+        isDarkMode: data.isDarkMode ?? prevState.isDarkMode
+      }));
+    };
+
+    // 테마 업데이트 핸들러
+    const handleThemeUpdate = (_, theme) => {
+      if (!theme) return;
+      
+      setState(prevState => ({
+        ...prevState,
+        isDarkMode: theme.isDarkMode ?? prevState.isDarkMode
       }));
     };
 
     ipcRenderer.on("paragraphs-updated", handleUpdate);
-    ipcRenderer.on("theme-changed", (_, isDarkMode) =>
-      setState((prev) => ({ ...prev, isDarkMode })),
-    );
+    ipcRenderer.on("theme-update", handleThemeUpdate);
 
     // 초기 상태 로드
-    ipcRenderer.invoke("get-state").then(handleUpdate);
+    ipcRenderer.invoke("get-state").then(initialState => {
+      if (initialState) {
+        handleUpdate(null, initialState);
+      }
+    });
 
     return () => {
-      ipcRenderer.removeAllListeners("paragraphs-updated");
-      ipcRenderer.removeAllListeners("theme-changed");
+      ipcRenderer.removeListener("paragraphs-updated", handleUpdate);
+      ipcRenderer.removeListener("theme-update", handleThemeUpdate);
     };
   }, []);
 

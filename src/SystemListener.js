@@ -1,6 +1,8 @@
 // SystemListener.js
-const { app, dialog, clipboard, systemPreferences, ipcMain } = require('electron');
+const { app, dialog, clipboard, systemPreferences, ipcMain, nativeTheme } = require('electron');
 const { GlobalKeyboardListener } = require('node-global-key-listener');
+const { configActions } = require('./store/slices/configSlice');
+const store = require('./store/store');
 const path = require('path');
 const fs = require('fs');
 const isDev = !app.isPackaged;
@@ -43,6 +45,7 @@ class SystemListener {
       // 나머지 초기화
       this.setupKeyboardListener();
       this.setupClipboardMonitor();
+      this.setupThemeListener();
       return true;
     } catch (error) {
       console.error('[SystemListener] 초기화 실패:', error);
@@ -108,6 +111,23 @@ class SystemListener {
     if (this.mainWindow?.isDestroyed()) return;
     ipcMain.emit('toggle-pause');
     console.log('[클립보드] 외부 복사 감지');
+  }
+
+  // 테마 감지 메서드 추가
+  setupThemeListener() {
+    // 초기 테마 설정
+    this.updateTheme(nativeTheme.shouldUseDarkColors);
+
+    // 테마 변경 이벤트 리스너
+    nativeTheme.on('updated', () => {
+      this.updateTheme(nativeTheme.shouldUseDarkColors);
+    });
+  }
+
+  // 테마 업데이트 메서드
+  updateTheme(isDark) {
+    console.log('[SystemListener] Theme change detected:', isDark);
+    store.dispatch(configActions.updateTheme(isDark));
   }
 
   // 내부 클립보드 변경 알림

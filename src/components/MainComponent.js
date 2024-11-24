@@ -57,18 +57,25 @@ function MainComponent() {
 
     // 상태 업데이트 핸들러
     const handleStateUpdate = (event, updatedState) => {
-      setState(prev => ({ ...prev, ...updatedState }));
+      setState(prev => ({
+        ...prev,
+        ...updatedState,
+        isDarkMode: updatedState.theme?.isDarkMode ?? prev.isDarkMode
+      }));
     };
 
     // 테마 변경 핸들러
-    const handleThemeChanged = (event, isDarkMode) => {
-      setState(prevState => ({ ...prevState, isDarkMode }));
+    const handleThemeUpdate = (event, theme) => {
+      setState(prevState => ({
+        ...prevState,
+        isDarkMode: theme.isDarkMode
+      }));
       loadLogo();
     };
 
     // 이벤트 리스너 등록
     ipcRenderer.on('state-update', handleStateUpdate);
-    ipcRenderer.on('theme-changed', handleThemeChanged);
+    ipcRenderer.on('theme-update', handleThemeUpdate);
     
     // 초기화
     initializeState();
@@ -76,7 +83,7 @@ function MainComponent() {
     // 클린업
     return () => {
       ipcRenderer.removeListener('state-update', handleStateUpdate);
-      ipcRenderer.removeListener('theme-changed', handleThemeChanged);
+      ipcRenderer.removeListener('theme-update', handleThemeUpdate);
     };
   }, []);
 
@@ -246,7 +253,7 @@ function MainComponent() {
   // MainComponent.js의 웰컴 스크린 return문 수정
   if (state.paragraphs.length === 0) {
     return (
-      <div className="app-container">
+      <div className={`app-container ${state.isDarkMode ? 'dark-mode' : ''}`}>
         <Sidebar 
           isVisible={state.isSidebarVisible}
           onFileSelect={handleSidebarFileSelect}

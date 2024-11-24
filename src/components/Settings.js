@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import '../CSS/Settings.css';
 const { ipcRenderer } = window.require('electron');
 
-function Settings({ isVisible, onClose }) {
+function Settings({ isVisible, onClose, isDarkMode }) {
   const [settings, setSettings] = useState({
     windowOpacity: 1.0,      // 창 전체 투명도
     contentOpacity: 0.8,     // 배경 투명도
@@ -12,27 +12,9 @@ function Settings({ isVisible, onClose }) {
     accentColor: '#007bff'
   });
   const [originalSettings, setOriginalSettings] = useState(null);
-  const [isDarkMode, setIsDarkMode] = useState(false);
 
+  // 초기 설정 로드
   useEffect(() => {
-    const handleThemeChange = (_, theme) => {
-      setIsDarkMode(theme === 'dark');
-    };
-
-    ipcRenderer.on('theme-changed', handleThemeChange);
-
-    // 초기 테마 상태 요청
-    ipcRenderer.invoke('get-theme').then(theme => {
-      setIsDarkMode(theme === 'dark');
-    });
-
-    return () => {
-      ipcRenderer.removeListener('theme-changed', handleThemeChange);
-    };
-  }, []);
-
-  useEffect(() => {
-    
     ipcRenderer.invoke('load-settings').then(savedSettings => {
       if (savedSettings) {
         setSettings(savedSettings);

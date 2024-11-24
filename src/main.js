@@ -4,6 +4,8 @@ const path = require('path');
 const store = require('./store/store');
 const { TextProcessUtils } = require('./store/utils/TextProcessUtils');
 const { textProcessActions } = require('./store/slices/textProcessSlice');
+const { configActions } = require('./store/slices/configSlice');
+const { ConfigManager } = require('./store/utils/ConfigManager');
 const fs = require('fs').promises;
 const os = require('os');
 const crypto = require('crypto');
@@ -35,9 +37,8 @@ const DEBOUNCE_TIME = 250;
 
 // ContentManager 수정
 const ContentManager = {
-  debounceTime: 250, // 디바운스 시간 설정
-
-  // 복사와 로깅 통합 함수
+  debounceTime: DEBOUNCE_TIME,
+  
   copyAndLogDebouncer: debounce(async (content, skipLog = false) => {
     try {
       if (!content) return;
@@ -51,15 +52,16 @@ const ContentManager = {
       clipboard.writeText(content);
       console.log('복사됨:', content.substring(0, 20) + '...');
   
-      // 로깅 수행
-      if (!skipLog && globalState.currentFilePath) {
-        await FileManager.saveCurrentPositionToLog(); // 이미 Redux store 사용하도록 수정됨
+      // 로깅 수행 - Redux store 사용
+      const state = store.getState().textProcess;
+      if (!skipLog && state.currentFilePath) {
+        await FileManager.saveCurrentPositionToLog();
         console.log('로그 저장됨');
       }
     } catch (error) {
       console.error('복사/로깅 중 오류:', error);
     }
-  }, DEBOUNCE_TIME),
+  }, DEBOUNCE_TIME)
 };
 
 const isDev = !app.isPackaged;
@@ -86,42 +88,6 @@ const FILE_PATHS = {
 };
 
 
-// 설정할 값 정의
-
-const getDefaultConfig = () => ({
-  overlayBounds: { 
-    width: 300, 
-    height: 240,
-    get x() { return Math.floor(screen.getPrimaryDisplay().workAreaSize.width * 0.02) },
-    get y() { return Math.floor(screen.getPrimaryDisplay().workAreaSize.height * 0.05) }
-  },
-  windowOpacity: 1.0,
-  contentOpacity: 0.8,
-  overlayFixed: false,
-  loadLastOverlayBounds: true,
-  accentColor: '#007bff'
-});
-
-const ConfigManager = {
-  extractConfig(config = {}) {
-
-    const defaultConfig = getDefaultConfig();
-    const loadLastOverlayBounds = typeof config.loadLastOverlayBounds !== 'undefined' 
-    ? config.loadLastOverlayBounds 
-    : defaultConfig.loadLastOverlayBounds;
-
-    return {
-      overlayBounds: loadLastOverlayBounds
-        ? (config.overlayBounds || defaultConfig.overlayBounds)
-        : defaultConfig.overlayBounds,
-      windowOpacity: config.windowOpacity ?? defaultConfig.windowOpacity,
-      contentOpacity: config.contentOpacity ?? defaultConfig.contentOpacity,
-      overlayFixed: typeof config.overlayFixed !== 'undefined' ? config.overlayFixed : defaultConfig.overlayFixed,
-      loadLastOverlayBounds,
-      accentColor: config.accentColor || defaultConfig.accentColor
-    };
-  }
-};
 
 // 전역 상태
 let mainWindow;
@@ -136,63 +102,36 @@ let globalState = {
   paragraphsMetadata: [],
   isPaused: true,
   timestamp: Date.now(),
-  isOverlayVisible: false,
-  visibleRanges: {
-    overlay: { before: 5, after: 5 }
-  },
-
-  // Settings.json
-  overlayBounds: { width: 300, height: 240 },
-  windowOpacity: 1.0,
-  contentOpacity: 0.8,
-  overlayFixed: false,
-  accentColor: '#007bff',
-  loadLastOverlayBounds: true
+  isOverlayVisible: false
 };
 
 // 상태 업데이트 함수
 const updateGlobalState = async (newState, source = 'other') => {
   try {
-    // READY 상태로 전환 시 특별 처리
     if (newState.programStatus === ProgramStatus.READY) {
       globalState = {
-        ...globalState,
         programStatus: ProgramStatus.READY,
-        paragraphs: [],
         currentParagraph: 0,
         currentNumber: null,
         isPaused: false,
         isOverlayVisible: false,
-        currentFilePath: null
+        currentFilePath: null,
+        timestamp: Date.now()
       };
-
-      // 오버레이 창 숨기기
-      if (overlayWindow && !overlayWindow.isDestroyed()) {
-        overlayWindow.hide();
-      }
     } else {
-      // 일반적인 상태 업데이트
       globalState = { ...globalState, ...newState };
     }
 
-    // updateGlobalState 함수 내부 수정
-    if ('isPaused' in newState && newState.isPaused === false) {
-      const state = store.getState()?.textProcess;
-      if (state?.paragraphs?.[state.currentParagraph]) {
-        ContentManager.copyAndLogDebouncer(state.paragraphs[state.currentParagraph]);
-      }
-    }
-    
-    if ('currentParagraph' in newState) {
-      const state = store.getState()?.textProcess;
-      if (state?.paragraphs?.[state.currentParagraph]) {
-        ContentManager.copyAndLogDebouncer(state.paragraphs[state.currentParagraph]);
-      }
-    }
+    const state = store.getState().textProcess;
+    const configState = store.getState().config;
 
-    // UI 업데이트
-    mainWindow?.webContents.send('state-update', globalState);
+    // 상태 업데이트에 테마 정보 포함
+    mainWindow?.webContents.send('state-update', {
+      ...globalState,
+      theme: ThemeManager.currentTheme
+    });
 
+    // 오버레이 윈도우 업데이트
     if (overlayWindow && !overlayWindow.isDestroyed()) {
       if (globalState.isOverlayVisible) {
         overlayWindow.showInactive();
@@ -237,8 +176,13 @@ const StatusManager = {
 const FileManager = {
   async saveConfig(config) {
     try {
-      const configToSave = ConfigManager.extractConfig(config);
-      await fs.writeFile(FILE_PATHS.config, JSON.stringify(configToSave, null, 2));
+      const state = store.getState().config;
+      const newConfig = {
+        ...state,
+        ...config
+      };
+      store.dispatch(configActions.loadConfig(newConfig));
+      await fs.writeFile(FILE_PATHS.config, JSON.stringify(newConfig, null, 2));
     } catch (error) {
       console.error('설정 저장 실패:', error);
     }
@@ -246,29 +190,25 @@ const FileManager = {
 
   async loadConfig() {
     try {
-
-     try{
-      await fs.access(FILE_PATHS.config);
-    } catch {
-      // 파일이 없으면 기본 설정으로 새로 생성
-      const defaultConfig = getDefaultConfig();
-      await this.saveConfig(defaultConfig);
-      return defaultConfig;
-    }
+      try {
+        await fs.access(FILE_PATHS.config);
+      } catch {
+        const defaultConfig = store.getState().config;
+        await this.saveConfig(defaultConfig);
+        return defaultConfig;
+      }
 
       const data = await fs.readFile(FILE_PATHS.config, 'utf8');
-
-        // 내용이 비어있거나 유효하지 않은 JSON인 경우
-        if (!data.trim()) {
-          const defaultConfig = getDefaultConfig();
-          await this.saveConfig(defaultConfig);
-          return defaultConfig;
-        }
+      if (!data.trim()) {
+        const defaultConfig = store.getState().config;
+        await this.saveConfig(defaultConfig);
+        return defaultConfig;
+      }
 
       return JSON.parse(data);
     } catch (error) {
-      console.error('설정 로드 실패, 기본값 사용:', error);
-      return getDefaultConfig();
+      console.error('설정 로드 실패:', error);
+      return store.getState().config;
     }
   },
 
@@ -353,11 +293,13 @@ const FileManager = {
   async saveCurrentPositionToLog() {
     try {
       const log = await this.loadLog();
-      if (!globalState.currentFilePath) return;
-  
       const state = store.getState().textProcess;
-      const fileName = path.basename(globalState.currentFilePath);
-      const filePath = globalState.currentFilePath;
+      const configState = store.getState().config;
+      
+      if (!state.currentFilePath) return;
+  
+      const fileName = path.basename(state.currentFilePath);
+      const filePath = state.currentFilePath;
       const fileContent = state.paragraphs.join('\n');
       const currentMetadata = state.paragraphsMetadata[state.currentParagraph];
   
@@ -476,6 +418,62 @@ const FileManager = {
   }
 };
 
+const ThemeManager = {
+  currentTheme: {
+    isDarkMode: nativeTheme.shouldUseDarkColors,
+    mode: nativeTheme.shouldUseDarkColors ? 'dark' : 'light',
+    accentColor: '#007bff'
+  },
+
+  initialize() {
+    // store 구독 설정 - 테마 변경만 감지
+    store.subscribe(() => {
+      const state = store.getState();
+      const newTheme = state.config.theme;
+      
+      if (this.currentTheme.isDarkMode !== newTheme.isDarkMode) {
+        this.updateTheme(newTheme);
+      }
+    });
+  },
+
+  updateTheme(newTheme) {
+    this.currentTheme = {
+      isDarkMode: newTheme.isDarkMode,
+      mode: newTheme.isDarkMode ? 'dark' : 'light',
+      accentColor: newTheme.accentColor
+    };
+    
+    this.broadcastTheme();
+    this.updateAllWindows();
+  },
+
+  // 모든 윈도우에 테마 업데이트 전파
+  broadcastTheme() {
+    const windows = BrowserWindow.getAllWindows();
+    windows.forEach(window => {
+      if (!window.isDestroyed()) {
+        window.webContents.send('theme-update', this.currentTheme);
+      }
+    });
+  },
+
+  // 윈도우 상태 업데이트 시에도 테마 정보 포함
+  updateAllWindows() {
+    const state = store.getState().textProcess;
+    const updatedState = {
+      ...state,
+      theme: this.currentTheme
+    };
+
+    BrowserWindow.getAllWindows().forEach(window => {
+      if (!window.isDestroyed()) {
+        window.webContents.send('state-update', updatedState);
+      }
+    });
+  }
+};
+
 // WindowManager 정의
 const WindowManager = {
   createMainWindow() {
@@ -512,28 +510,32 @@ const WindowManager = {
   },
 
   createOverlayWindow() {
-
-    const defaultBounds = {
-      width: 300,
-      height: 240,
-      x: undefined,
-      y: undefined
-    };
-
-    const bounds = globalState.loadLastOverlayBounds ? 
-      { ...globalState.overlayBounds } : 
-      { ...defaultBounds };
-
-    overlayWindow = new BrowserWindow({
-      width: globalState.loadLastOverlayBounds ? bounds.width : defaultBounds.width,
-      height: globalState.loadLastOverlayBounds ? bounds.height : defaultBounds.height,
-      x: globalState.loadLastOverlayBounds ? bounds.x : undefined,
-      y: globalState.loadLastOverlayBounds ? bounds.y : undefined,
+    const config = store.getState().config;
+    const { bounds, window: windowConfig } = config.overlay;
+    const primaryDisplay = screen.getPrimaryDisplay();
+    
+    // 초기 위치가 없으면 계산
+    if (bounds.x === undefined || bounds.y === undefined) {
+      store.dispatch(configActions.updateInitialPosition({
+        width: primaryDisplay.workAreaSize.width,
+        height: primaryDisplay.workAreaSize.height
+      }));
+    }
+    
+    const updatedConfig = store.getState().config;
+    const { bounds: updatedBounds, window: updatedWindowConfig } = updatedConfig.overlay;
+  
+    // 윈도우 설정 구성
+    const windowOptions = {
+      width: updatedWindowConfig.loadLastBounds ? updatedBounds.width : 320,
+      height: updatedWindowConfig.loadLastBounds ? updatedBounds.height : 240,
+      x: updatedBounds.x,
+      y: updatedBounds.y,
       minHeight: 240,
       minWidth: 300,
       maxHeight: 600,
       maxWidth: 500,
-      opacity: globalState.windowOpacity,
+      opacity: updatedWindowConfig.opacity,
       frame: false,
       transparent: true,
       focusable: true,
@@ -548,28 +550,35 @@ const WindowManager = {
         contextIsolation: false,
         enableRemoteModule: true
       }
-    });
-
+    };
+  
+    // overlayWindow 인스턴스 생성
+    overlayWindow = new BrowserWindow(windowOptions);
+    
+    // 마우스 이벤트 설정
+    overlayWindow.setIgnoreMouseEvents(updatedWindowConfig.isFixed);
+  
     const overlayUrl = isDev
-    ? 'http://localhost:3000/#/overlay'  // 해시 경로 추가
-    : url.format({
-        pathname: path.join(__dirname, '../build/index.html'),
-        protocol: 'file:',
-        slashes: true,
-        hash: '/overlay'
-      });
-
-  console.log('Overlay URL:', overlayUrl);
-  overlayWindow.loadURL(overlayUrl);
-  this.setupOverlayWindowEvents();
+      ? 'http://localhost:3000/#/overlay'
+      : url.format({
+          pathname: path.join(__dirname, '../build/index.html'),
+          protocol: 'file:',
+          slashes: true,
+          hash: '/overlay'
+        });
+  
+    console.log('Overlay URL:', overlayUrl);
+    overlayWindow.loadURL(overlayUrl);
+    this.setupOverlayWindowEvents();
   },
 
   setupMainWindowEvents() {
     mainWindow.once('ready-to-show', () => {
-      mainWindow.webContents.send('theme-changed', globalState.isDarkMode);
+      const config = store.getState().config;
+      mainWindow.webContents.send('theme-changed', config.theme);
       mainWindow.show();
     });
-
+  
     mainWindow.on('closed', () => ApplicationManager.exit());
   },
 
@@ -584,65 +593,70 @@ const WindowManager = {
 
   async saveOverlayBounds() {
     if (!overlayWindow) return;
-  
-    // 1. 현재 설정 로드
-    const currentConfig = await FileManager.loadConfig();
-    
-    // 2. 바운드 정보만 업데이트
-    const newConfig = {
-      ...currentConfig,
-      overlayBounds: overlayWindow.getBounds()
-    };
-    
-    // 3. 상태 및 파일 업데이트
-    globalState.overlayBounds = newConfig.overlayBounds;
-    await FileManager.saveConfig(newConfig);
+    const bounds = overlayWindow.getBounds();
+    store.dispatch(configActions.setOverlayBounds(bounds));
+    await FileManager.saveConfig({ overlayBounds: bounds });
   },
 
   async updateOverlayContent() {
-    if (!overlayWindow) return;
+    if (!overlayWindow || overlayWindow.isDestroyed()) return;
   
-    const state = store.getState().textProcess;
-    const prevParagraphs = [];
-    const nextParagraphs = [];
-    const { before, after } = globalState.visibleRanges.overlay;
+    try {
+      const state = store.getState().textProcess;
+      const config = store.getState().config;
   
-    // 이전 단락들 처리
-    for (let i = 1; i <= before; i++) {
-      const prev = TextProcessUtils.getParagraphByOffset(state, state.currentParagraph, -i);
-      if (prev) {
-        prevParagraphs.unshift({
-          text: prev.text.toString(),
-          pageNumber: prev.metadata?.pageNumber || null,
-          metadata: {  // metadata 객체 추가
-            index: state.currentParagraph - i
-          }
-        });
+      // 기본값 설정
+      const DEFAULT_RANGES = { before: 5, after: 5 };
+      const visibleRanges = config?.overlay?.visibleRanges || DEFAULT_RANGES;
+      const { before = 5, after = 5 } = visibleRanges;
+  
+      const prevParagraphs = [];
+      const nextParagraphs = [];
+  
+      // 이전 단락들 처리 
+      for (let i = 1; i <= before; i++) {
+        const prev = TextProcessUtils.getParagraphByOffset(state, state.currentParagraph, -i);
+        if (prev) {
+          prevParagraphs.unshift({
+            text: prev.text?.toString() || '',
+            pageNumber: prev.metadata?.pageNumber || null,
+            metadata: {
+              index: state.currentParagraph - i
+            }
+          });
+        }
       }
-    }
-    
-    // 다음 단락도 동일하게 수정
-    for (let i = 1; i <= after; i++) {
-      const next = TextProcessUtils.getParagraphByOffset(state, state.currentParagraph, i);
-      if (next) {
-        nextParagraphs.push({
-          text: next.text.toString(),
-          pageNumber: next.metadata?.pageNumber || null,
-          index: state.currentParagraph + i // 인덱스 추가
-        });
+      
+      // 다음 단락들 처리
+      for (let i = 1; i <= after; i++) {
+        const next = TextProcessUtils.getParagraphByOffset(state, state.currentParagraph, i);
+        if (next) {
+          nextParagraphs.push({
+            text: next.text?.toString() || '',
+            pageNumber: next.metadata?.pageNumber || null,
+            metadata: {
+              index: state.currentParagraph + i
+            }
+          });
+        }
       }
-    }
   
-    const currentMetadata = state.paragraphsMetadata[state.currentParagraph];
-    overlayWindow.webContents.send('paragraphs-updated', {
-      previous: prevParagraphs,
-      current: String(state.paragraphs[state.currentParagraph] || ''), // 객체 대신 문자열
-      next: nextParagraphs,
-      currentParagraph: state.currentParagraph,
-      currentNumber: currentMetadata?.pageNumber || null,
-      isDarkMode: globalState.isDarkMode,
-      isPaused: globalState.isPaused
-    });
+      const currentMetadata = state.paragraphsMetadata?.[state.currentParagraph];
+  
+      // 오버레이 업데이트
+      overlayWindow.webContents.send('paragraphs-updated', {
+        previous: prevParagraphs,
+        current: String(state.paragraphs?.[state.currentParagraph] || ''),
+        next: nextParagraphs,
+        currentParagraph: state.currentParagraph,
+        currentNumber: currentMetadata?.pageNumber || null,
+        isDarkMode: config?.theme?.isDarkMode || false,
+        isPaused: globalState?.isPaused || false
+      });
+  
+    } catch (error) {
+      console.error('오버레이 업데이트 중 오류:', error);
+    }
   }
 };
 
@@ -711,25 +725,6 @@ const IPCManager = {
 
     // 디버그 콘솔 핸들러
     ipcMain.on('show-debug-console', () => this.handleShowDebugConsole());
-
-    // 테마 관련 핸들러
-    ipcMain.handle('get-theme', () => {
-      return nativeTheme.shouldUseDarkColors ? 'dark' : 'light';
-    });
-
-    // 테마 변경 감지
-    nativeTheme.on('updated', () => {
-      const isDark = nativeTheme.shouldUseDarkColors;
-      const newTheme = isDark ? 'dark' : 'light';
-      BrowserWindow.getAllWindows().forEach(window => {
-        window.webContents.send('theme-changed', newTheme);
-      });
-      updateGlobalState({ ...globalState, isDarkMode: isDark });
-    });
-
-    // 초기 테마 상태 설정
-    const initialTheme = nativeTheme.shouldUseDarkColors ? 'dark' : 'light';
-    updateGlobalState({ ...globalState, theme: initialTheme });
 
     handlersInitialized = true;
   },
@@ -813,35 +808,18 @@ const IPCManager = {
   async handleApplySettings(settings) {
     try {
       if (!settings) throw new Error('설정값이 없습니다');
-    
+      
+      const validConfig = await ConfigManager.validateConfig(settings);
+      store.dispatch(configActions.loadConfig(validConfig));
+      const config = store.getState().config;
+  
       if (overlayWindow) {
-        // 창 전체 투명도
-        if (typeof settings.windowOpacity === 'number') {
-          overlayWindow.setOpacity(settings.windowOpacity);
-          globalState.windowOpacity = settings.windowOpacity;
-        }
-        
-        // 배경 투명도
-        if (typeof settings.contentOpacity === 'number') {
-          overlayWindow.webContents.send('update-content-opacity', settings.contentOpacity);
-          globalState.contentOpacity = settings.contentOpacity;
-        }
-
-        // 기존 설정들...
-        if (typeof settings.overlayFixed === 'boolean') {
-          overlayWindow.setIgnoreMouseEvents(settings.overlayFixed);
-          globalState.overlayFixed = settings.overlayFixed;
-        }
-        
-        if (typeof settings.loadLastOverlayBounds === 'boolean') {
-          globalState.loadLastOverlayBounds = settings.loadLastOverlayBounds;
-        }
+        overlayWindow.setOpacity(config.overlay.window.opacity);
+        overlayWindow.setIgnoreMouseEvents(config.overlay.window.isFixed);
+        overlayWindow.webContents.send('update-content-opacity', config.overlay.window.contentOpacity);
       }
       
-      // 설정 저장
-      const currentConfig = ConfigManager.extractConfig(globalState);
-      await FileManager.saveConfig(currentConfig);
-      
+      await FileManager.saveConfig(config);
       return true;
     } catch (error) {
       console.error('설정 적용 중 오류:', error);
@@ -862,13 +840,19 @@ const IPCManager = {
         state.currentParagraph + 1 : 
         state.currentParagraph - 1;
   
-      mainWindow?.webContents.send('notify-clipboard-change');
+      // isPaused 상태를 해제하고 복사 실행
       this.handleResume();
-  
       store.dispatch(textProcessActions.updateCurrentParagraph(newPosition));
       
+      // 현재 단락 복사
+      const currentContent = state.paragraphs[newPosition];
+      if (currentContent) {
+        ContentManager.copyAndLogDebouncer(currentContent);
+      }
+  
       updateGlobalState({
         ...store.getState().textProcess,
+        isPaused: false,  // isPaused 상태 명시적 설정
         timestamp: Date.now()
       }, 'move');
     }
@@ -977,48 +961,34 @@ const IPCManager = {
 
 // ApplicationManager 정의
 const ApplicationManager = {
-  async initialize() {
-    try {
-      await StatusManager.transition(ProgramStatus.LOADING);
+async initialize() {
+  try {
+    await StatusManager.transition(ProgramStatus.LOADING);
+    ThemeManager.initialize();
+    IPCManager.setupHandlers();
 
-      // 설정 로드
+      // 다른 설정 변경사항 처리
+      if (overlayWindow) {
+        overlayWindow.setOpacity(configState.overlay.window.opacity);
+        overlayWindow.setIgnoreMouseEvents(configState.overlay.window.isFixed);
+      };
+
+      // 3. 설정 초기화
       const savedConfig = await FileManager.loadConfig();
-      if (savedConfig) {
-        // 오버레이 윈도우 크기 / 위치
-        if (savedConfig.overlayBounds) {
-          globalState.overlayBounds = savedConfig.overlayBounds;
-        }
-        
-        // 오버레이 투명도
-        if (savedConfig.overlayOpacity) {
-          globalState.overlayOpacity = savedConfig.overlayOpacity;
-        }
+      await ConfigManager.loadAndValidateConfig(savedConfig);
 
-        // 오버레이 고정 여부
-        if (typeof savedConfig.overlayFixed !== 'undefined') {
-          globalState.overlayFixed = savedConfig.overlayFixed;
-        }
-
-        // 앱 강조색
-        if (savedConfig.accentColor) {
-          globalState.accentColor = savedConfig.accentColor;
-        }
-      }
-      
-      // 윈도우 생성
+      // 4. 초기 테마 설정 (store 구독 이후)
+      const isDark = nativeTheme.shouldUseDarkColors;
+      store.dispatch(configActions.updateTheme(isDark));
+  
+      // 5. 윈도우 생성 및 초기화
       WindowManager.createMainWindow();
       WindowManager.createOverlayWindow();
-
-      // SystemListener 초기화
+  
+      // 6. SystemListener 초기화
       systemListener = new SystemListener(mainWindow);
       await systemListener.initialize();
-
-      // 나머지 초기화
-      globalState.isDarkMode = nativeTheme.shouldUseDarkColors;
-
-      // IPC 핸들러 설정
-      IPCManager.setupHandlers();
-
+  
       await StatusManager.transition(ProgramStatus.READY);
       console.log('Application initialized successfully');
     } catch (error) {
