@@ -1,0 +1,4 @@
+  // 1. version 올리기
+  // 2. rebuild app: npm run build
+  // 3. npm run make
+  // 4. npm run make-dmg

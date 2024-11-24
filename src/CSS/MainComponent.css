@@ -24,8 +24,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--spacing-xl); /* gap 증가 */
-  margin-bottom: var(--spacing-xl);
+  gap: var(--spacing-md); /* gap 증가 */
+  margin-bottom: var(--spacing-md);
 }
 
 /* 로고 이미지 */
