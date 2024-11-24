@@ -1,6 +1,9 @@
 // main.js
 const { app, BrowserWindow, dialog, ipcMain, nativeTheme, clipboard, screen } = require('electron');
 const path = require('path');
+const store = require('./store/store');
+const { TextProcessUtils } = require('./store/utils/TextProcessUtils');
+const { textProcessActions } = require('./store/slices/textProcessSlice');
 const fs = require('fs').promises;
 const os = require('os');
 const crypto = require('crypto');
@@ -38,24 +41,19 @@ const ContentManager = {
   copyAndLogDebouncer: debounce(async (content, skipLog = false) => {
     try {
       if (!content) return;
-
-      // systemListener 인스턴스 확인
       if (!systemListener) {
         console.error('systemListener가 초기화되지 않았습니다');
         return;
       }
-
-      // 클립보드 변경 전 내부 변경 알림
+  
       mainWindow?.webContents.send('notify-clipboard-change');
-
-      // 클립보드 변경 전에 내부 복사 플래그 설정
       systemListener.notifyInternalClipboardChange();
       clipboard.writeText(content);
       console.log('복사됨:', content.substring(0, 20) + '...');
-
-      // 로깅 수행 (skipLog가 true일 경우 건너뜀)
+  
+      // 로깅 수행
       if (!skipLog && globalState.currentFilePath) {
-        await FileManager.saveCurrentPositionToLog();
+        await FileManager.saveCurrentPositionToLog(); // 이미 Redux store 사용하도록 수정됨
         console.log('로그 저장됨');
       }
     } catch (error) {
@@ -177,16 +175,19 @@ const updateGlobalState = async (newState, source = 'other') => {
       globalState = { ...globalState, ...newState };
     }
 
-      // 일시정지 해제 시 현재 단락 복사
-      if ('isPaused' in newState && 
-        newState.isPaused === false && 
-        globalState.paragraphs?.[globalState.currentParagraph]) {
-        ContentManager.copyAndLogDebouncer(globalState.paragraphs[globalState.currentParagraph]);
+    // updateGlobalState 함수 내부 수정
+    if ('isPaused' in newState && newState.isPaused === false) {
+      const state = store.getState()?.textProcess;
+      if (state?.paragraphs?.[state.currentParagraph]) {
+        ContentManager.copyAndLogDebouncer(state.paragraphs[state.currentParagraph]);
+      }
     }
-
-    // 여기에 단락 변경 시 디바운스된 복사 로직 추가
-    if ('currentParagraph' in newState && globalState.paragraphs?.[globalState.currentParagraph]) {
-      ContentManager.copyAndLogDebouncer(globalState.paragraphs[globalState.currentParagraph]);
+    
+    if ('currentParagraph' in newState) {
+      const state = store.getState()?.textProcess;
+      if (state?.paragraphs?.[state.currentParagraph]) {
+        ContentManager.copyAndLogDebouncer(state.paragraphs[state.currentParagraph]);
+      }
     }
 
     // UI 업데이트
@@ -353,21 +354,22 @@ const FileManager = {
     try {
       const log = await this.loadLog();
       if (!globalState.currentFilePath) return;
-
+  
+      const state = store.getState().textProcess;
       const fileName = path.basename(globalState.currentFilePath);
       const filePath = globalState.currentFilePath;
-      const fileContent = globalState.paragraphs.join('\n');
-      const currentMetadata = globalState.paragraphsMetadata[globalState.currentParagraph];
-
+      const fileContent = state.paragraphs.join('\n');
+      const currentMetadata = state.paragraphsMetadata[state.currentParagraph];
+  
       log[filePath] = {
         fileName,
         filePath,
         fileHash: this.getFileHash(fileContent),
-        currentParagraph: globalState.currentParagraph,
+        currentParagraph: state.currentParagraph,
         currentPageNumber: currentMetadata?.pageNumber || null,
         timestamp: Date.now()
       };
-
+  
       await this.saveLog(log);
     } catch (error) {
       console.error('현재 위치 저장 실패:', error);
@@ -391,13 +393,14 @@ const FileManager = {
   async getFileHistory() {
     try {
       const logData = await this.loadLog();
+      const state = store.getState().textProcess;
       const currentFile = globalState.currentFilePath ? {
         path: globalState.currentFilePath,
-        hash: this.getFileHash(globalState.paragraphs.join('\n'))
+        hash: this.getFileHash(state.paragraphs.join('\n')) // globalState -> state로 변경
       } : null;
   
       return {
-        logData,  // 원본 로그 데이터 그대로 전달
+        logData,
         currentFile
       };
     } catch (error) {
@@ -408,42 +411,32 @@ const FileManager = {
 
   async openFile(filePath, source = 'normal') {
     try {
-      // 1. 파일 내용 읽기
       const content = await fs.readFile(filePath, 'utf8');
       if (!content) {
         console.error('파일 내용 없음:', filePath);
         return { success: false };
       }
-
-      // 2. 로그에서 이전 위치 정보 읽기
+  
       const logData = await this.checkExistingFile(filePath);
       const startPosition = logData.isExisting ? logData.lastPosition : 0;
-      const savedPageNumber = logData.currentNumber;
-
-      // 3. 파일 처리
-      const result = TextProcessor.processParagraphs(content);
-      if (!result?.paragraphsToDisplay) {
-        console.error('단락 처리 실패');
-        return { success: false };
-      }
-
-      // 4. 상태 업데이트
-      await updateGlobalState({
-        paragraphs: result.paragraphsToDisplay,
-        paragraphsMetadata: result.paragraphsMetadata,
-        currentFilePath: filePath,
-        currentParagraph: startPosition,
-        currentNumber: savedPageNumber,
-        programStatus: ProgramStatus.PROCESS
-      }, source);
-
+  
+      // Redux store에서 처리
+      store.dispatch(textProcessActions.processParagraphs(content));
+      const state = store.getState().textProcess;
+      
       console.log('파일 로드 완료:', {
         path: filePath,
-        paragraphs: result.paragraphsToDisplay.length,
+        paragraphs: state.paragraphs.length,
         position: startPosition,
-        pageNumber: savedPageNumber
+        pageNumber: state.currentNumber
       });
-
+  
+      await updateGlobalState({
+        ...state,
+        currentFilePath: filePath,
+        programStatus: ProgramStatus.PROCESS
+      }, source);
+  
       return { success: true };
     } catch (error) {
       console.error('파일 열기 실패:', error);
@@ -608,105 +601,51 @@ const WindowManager = {
 
   async updateOverlayContent() {
     if (!overlayWindow) return;
-
+  
+    const state = store.getState().textProcess;
     const prevParagraphs = [];
     const nextParagraphs = [];
     const { before, after } = globalState.visibleRanges.overlay;
-
+  
+    // 이전 단락들 처리
     for (let i = 1; i <= before; i++) {
-      const prev = TextProcessor.getParagraphByOffset(globalState.currentParagraph, -i);
-      if (prev) prevParagraphs.unshift(prev);
+      const prev = TextProcessUtils.getParagraphByOffset(state, state.currentParagraph, -i);
+      if (prev) {
+        prevParagraphs.unshift({
+          text: prev.text.toString(),
+          pageNumber: prev.metadata?.pageNumber || null,
+          metadata: {  // metadata 객체 추가
+            index: state.currentParagraph - i
+          }
+        });
+      }
     }
-
+    
+    // 다음 단락도 동일하게 수정
     for (let i = 1; i <= after; i++) {
-      const next = TextProcessor.getParagraphByOffset(globalState.currentParagraph, i);
-      if (next) nextParagraphs.push(next);
+      const next = TextProcessUtils.getParagraphByOffset(state, state.currentParagraph, i);
+      if (next) {
+        nextParagraphs.push({
+          text: next.text.toString(),
+          pageNumber: next.metadata?.pageNumber || null,
+          index: state.currentParagraph + i // 인덱스 추가
+        });
+      }
     }
-
-    const currentMetadata = globalState.paragraphsMetadata[globalState.currentParagraph];
+  
+    const currentMetadata = state.paragraphsMetadata[state.currentParagraph];
     overlayWindow.webContents.send('paragraphs-updated', {
       previous: prevParagraphs,
-      current: globalState.paragraphs[globalState.currentParagraph],
+      current: String(state.paragraphs[state.currentParagraph] || ''), // 객체 대신 문자열
       next: nextParagraphs,
-      currentParagraph: globalState.currentParagraph,
-      currentNumber: currentMetadata?.pageNumber,
+      currentParagraph: state.currentParagraph,
+      currentNumber: currentMetadata?.pageNumber || null,
       isDarkMode: globalState.isDarkMode,
       isPaused: globalState.isPaused
     });
   }
 };
 
-// TextProcessor 정의
-const TextProcessor = {
-  pagePatterns: {
-    numberOnly: /^(\d+)$/,
-    koreanStyle: /^(\d+)(페이지|페)$/,
-    englishStyle: /^(\d+)(page|p)$/i
-  },
-
-  skipPatterns: {
-    separator: /^[=\-]{3,}/,
-    comment: /^[\/\/#]/
-  },
-
-  getParagraphByOffset(baseParagraph, offset) {
-    const targetParagraph = baseParagraph + offset;
-    if (targetParagraph >= 0 && targetParagraph < globalState.paragraphs.length) {
-      return {
-        text: globalState.paragraphs[targetParagraph],
-        metadata: globalState.paragraphsMetadata[targetParagraph],
-        index: targetParagraph,
-        distanceFromCurrent: offset
-      };
-    }
-    return null;
-  },
-
-  processParagraphs(fileContent) {
-    const splitParagraphs = fileContent
-      .split(/\n\s*\n/)
-      .map(p => p.trim())
-      .filter(p => p.length > 0);
-
-    let currentNumber = null;
-    const paragraphsMetadata = [];
-    const paragraphsToDisplay = [];
-    let previousWasPageNumber = false;
-
-    splitParagraphs.forEach((p) => {
-      const pageNum = this.extractPageNumber(p);
-
-      if (pageNum) {
-        currentNumber = pageNum;
-        previousWasPageNumber = true;
-      } else if (!this.shouldSkipParagraph(p)) {
-        paragraphsToDisplay.push(p);
-        paragraphsMetadata.push({
-          isPageChange: previousWasPageNumber,
-          pageNumber: currentNumber,
-          index: paragraphsToDisplay.length - 1
-        });
-        previousWasPageNumber = false;
-      }
-    });
-
-    return { paragraphsToDisplay, paragraphsMetadata, currentNumber };
-  },
-
-  extractPageNumber(paragraph) {
-    for (const pattern of Object.values(this.pagePatterns)) {
-      const match = paragraph.trim().match(pattern);
-      if (match) return parseInt(match[1], 10);
-    }
-    return null;
-  },
-
-  shouldSkipParagraph(paragraph) {
-    return Object.values(this.skipPatterns).some(pattern =>
-      pattern.test(paragraph.trim())
-    );
-  }
-};
 
 // IPC 통신 관리
 let handlersInitialized = false;
@@ -804,26 +743,38 @@ const IPCManager = {
 
     if (!result.canceled && result.filePaths.length > 0) {
       const filePath = result.filePaths[0];
-      const openResult = await FileManager.openFile(filePath, 'dialog');
-      return openResult.success ? filePath : null;
+      const content = await fs.readFile(filePath, 'utf8');
+      store.dispatch(textProcessActions.processParagraphs(content));
+      const state = store.getState().textProcess;
+      
+      if (!state.paragraphs.length) {
+        console.error('단락 처리 실패');
+        return { success: false };
+      }
+      return filePath;
     }
     return null;
   },
 
   async handleProcessFileContent(event, fileContent, filePath) {
     if (!fileContent || !filePath) return { success: false };
-
+  
     const fileStatus = await FileManager.checkExistingFile(filePath);
-    const result = TextProcessor.processParagraphs(fileContent);
-
-    if (!result?.paragraphsToDisplay) return { success: false };
-
+    
+    // Redux store에서 처리
+    store.dispatch(textProcessActions.processParagraphs(fileContent));
+    const state = store.getState().textProcess;
+  
+    if (!state.paragraphs.length) return { success: false };
+  
     const startPosition = fileStatus.isExisting ? fileStatus.lastPosition : 0;
-    const currentMetadata = result.paragraphsMetadata[startPosition];
-
+    
+    // 시작 위치도 Redux로 업데이트
+    store.dispatch(textProcessActions.updateCurrentParagraph(startPosition));
+    const currentMetadata = state.paragraphsMetadata[startPosition];
+  
     await updateGlobalState({
-      paragraphs: result.paragraphsToDisplay,
-      paragraphsMetadata: result.paragraphsMetadata,
+      ...store.getState().textProcess, // 업데이트된 상태 가져오기
       currentFilePath: filePath,
       currentParagraph: startPosition,
       currentNumber: currentMetadata?.pageNumber,
@@ -831,7 +782,7 @@ const IPCManager = {
       isOverlayVisible: true,
       isPaused: false
     });
-
+  
     return { success: true };
   },
 
@@ -900,47 +851,40 @@ const IPCManager = {
 
   // 네비게이션 관련 메서드
   handleMove(direction) {
+    const state = store.getState().textProcess;
     const isNext = direction === 'next';
     const canMove = isNext ?
-      globalState.currentParagraph < globalState.paragraphs.length - 1 :
-      globalState.currentParagraph > 0;
-
+      state.currentParagraph < state.paragraphs.length - 1 :
+      state.currentParagraph > 0;
+  
     if (canMove) {
-
       const newPosition = isNext ? 
-      globalState.currentParagraph + 1 : 
-      globalState.currentParagraph - 1;
-      
+        state.currentParagraph + 1 : 
+        state.currentParagraph - 1;
+  
       mainWindow?.webContents.send('notify-clipboard-change');
       this.handleResume();
+  
+      store.dispatch(textProcessActions.updateCurrentParagraph(newPosition));
       
-      const newNumber = globalState.paragraphsMetadata[newPosition]?.pageNumber;
-    updateGlobalState({
-      currentParagraph: newPosition,
-      currentNumber: newNumber,  // 페이지 번호 추가
-      timestamp: Date.now(),
-    }, 'move');
-  }
-},
+      updateGlobalState({
+        ...store.getState().textProcess,
+        timestamp: Date.now()
+      }, 'move');
+    }
+  },
 
   handleMoveToPosition(position) {
-    if (position >= 0 && position < globalState.paragraphs.length) {
-
-      const newPosition = isNext ? 
-      globalState.currentParagraph + 1 : 
-      globalState.currentParagraph - 1;
-
+    if (position >= 0 && position < store.getState().textProcess.paragraphs.length) {
+      store.dispatch(textProcessActions.updateCurrentParagraph(position));
       mainWindow?.webContents.send('notify-clipboard-change');
-
-      const newNumber = globalState.paragraphsMetadata[position]?.pageNumber;
       
-    updateGlobalState({
-      currentParagraph: newPosition,
-      currentNumber: newNumber,  // 페이지 번호 추가
-      timestamp: Date.now()
-    }, 'move');
-  }
-},
+      updateGlobalState({
+        ...store.getState().textProcess,
+        timestamp: Date.now()
+      }, 'move');
+    }
+  },
 
   // 윈도우 관련 메서드
   handleToggleOverlay() {
