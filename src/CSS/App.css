@@ -12,7 +12,7 @@
   --bg-color: rgba(255, 255, 255, 0.9);
   --dark-text: #f5f5f5;
   --dark-bg: #1e1e1e;
-  --border-color: rgba(0, 0, 0, 0.2);
+  --border-color: rgba(94, 94, 94, 0.7);
   --hover-bg: rgba(0, 0, 0, 0.05);
   --overlay-bg: rgba(255, 255, 255, 1.0);
   --danger-color: #dc3545;
@@ -30,7 +30,7 @@
   --container-width: 100vw;
   --logo-width: 80vw;
   --logo-height: 50vh;
-  --btn-size: 40px;
+  --btn-size: 30px;
   --close-btn-size: 25px;
   --btn-iconsize: 32px;
   
