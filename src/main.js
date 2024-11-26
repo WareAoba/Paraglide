@@ -188,18 +188,21 @@ const FileManager = {
         };
       }
   
-      // 오버레이 설정 처리
+      // 오버레이 설정 처리 - Settings.js와 호환되도록 수정
+      if (config.windowOpacity !== undefined) {
+        newConfig.overlay.windowOpacity = config.windowOpacity;
+      }
+      if (config.contentOpacity !== undefined) {
+        newConfig.overlay.contentOpacity = config.contentOpacity;
+      }
+      if (config.overlayFixed !== undefined) {
+        newConfig.overlay.overlayFixed = config.overlayFixed;
+      }
+      if (config.loadLastOverlayBounds !== undefined) {
+        newConfig.overlay.loadLastOverlayBounds = config.loadLastOverlayBounds;
+      }
       if (config.overlayBounds) {
-        // overlayBounds를 overlay.bounds로 통합
-        newConfig.overlay = {
-          ...newConfig.overlay,
-          bounds: config.overlayBounds
-        };
-      } else if (config.overlay) {
-        newConfig.overlay = {
-          ...newConfig.overlay,
-          ...config.overlay
-        };
+        newConfig.overlay.bounds = config.overlayBounds;
       }
   
       // Redux store 업데이트
@@ -450,49 +453,30 @@ const ThemeManager = {
   },
 
   initialize() {
-    // store 구독 설정 - 테마 변경만 감지
-    store.subscribe(() => {
-      const state = store.getState();
-      const newTheme = state.config.theme;
-      
-      if (this.currentTheme.isDarkMode !== newTheme.isDarkMode) {
-        this.updateTheme(newTheme);
-      }
-    });
-  },
-
-  updateTheme(newTheme) {
+    // 설정에서 테마 정보 가져오기
+    const config = store.getState().config;
     this.currentTheme = {
-      isDarkMode: newTheme.isDarkMode,
-      mode: newTheme.isDarkMode ? 'dark' : 'light',
-      accentColor: newTheme.accentColor
+      isDarkMode: config.theme.isDarkMode,
+      mode: config.theme.isDarkMode ? 'dark' : 'light',
+      accentColor: config.theme.accentColor
     };
     
-    this.broadcastTheme();
-    this.updateAllWindows();
-  },
-
-  // 모든 윈도우에 테마 업데이트 전파
-  broadcastTheme() {
-    const windows = BrowserWindow.getAllWindows();
-    windows.forEach(window => {
-      if (!window.isDestroyed()) {
-        window.webContents.send('theme-update', this.currentTheme);
-      }
+    // 변경사항 구독
+    store.subscribe(() => {
+      const state = store.getState();
+      this.currentTheme = state.config.theme;
+      this.broadcastTheme(this.currentTheme);
     });
   },
 
-  // 윈도우 상태 업데이트 시에도 테마 정보 포함
-  updateAllWindows() {
-    const state = store.getState().textProcess;
-    const updatedState = {
-      ...state,
-      theme: this.currentTheme
-    };
+  getCurrentTheme() {
+    return this.currentTheme;
+  },
 
+  broadcastTheme(theme) {
     BrowserWindow.getAllWindows().forEach(window => {
       if (!window.isDestroyed()) {
-        window.webContents.send('state-update', updatedState);
+        window.webContents.send('theme-update', theme);
       }
     });
   }
@@ -535,30 +519,29 @@ const WindowManager = {
 
   createOverlayWindow() {
     const config = store.getState().config;
-    const { bounds, window: windowConfig } = config.overlay;
     const primaryDisplay = screen.getPrimaryDisplay();
     
-    // null 체크만 수행
-    const needsInitialPosition = bounds.x === null || bounds.y === null;
-    
-    let windowBounds = needsInitialPosition ? {
-      width: 320,
-      height: 240,
-      x: Math.floor(primaryDisplay.workAreaSize.width * 0.02),
-      y: Math.floor(primaryDisplay.workAreaSize.height * 0.05)
-    } : bounds;
-  
-    if (needsInitialPosition) {
-      store.dispatch(configActions.setOverlayBounds(windowBounds));
+    // 1. bounds 설정
+    let windowBounds;
+    if (config.overlay.loadLastOverlayBounds && config.overlay.bounds.x !== null) {
+      windowBounds = config.overlay.bounds;
+    } else {
+      windowBounds = { // 값이 없으면 사용할 기본값
+        width: 320,
+        height: 240,
+        x: Math.floor(primaryDisplay.workArea.width * 0.02),
+        y: Math.floor(primaryDisplay.workArea.height * 0.05)
+      };
+      store.dispatch(configActions.setOverlayBounds(windowBounds));       // 새 위치 저장
     }
   
     const windowOptions = {
       ...windowBounds,
       minHeight: 240,
-      minWidth: 300,
+      minWidth: 320,
       maxHeight: 600,
       maxWidth: 500,
-      opacity: windowConfig.opacity,
+      opacity: config.overlay.windowOpacity,
       frame: false,
       transparent: true,
       focusable: true,
@@ -576,7 +559,13 @@ const WindowManager = {
     };
   
     overlayWindow = new BrowserWindow(windowOptions);
-    overlayWindow.setIgnoreMouseEvents(windowConfig.isFixed);
+    
+    // 2. 오버레이 설정 적용
+    overlayWindow.setIgnoreMouseEvents(config.overlay.overlayFixed);
+
+    overlayWindow.webContents.on('did-finish-load', () => {
+      overlayWindow.webContents.send('update-content-opacity', config.overlay.contentOpacity);
+    });
   
     const overlayUrl = isDev
       ? 'http://localhost:3000/#/overlay'
@@ -594,8 +583,6 @@ const WindowManager = {
 
   setupMainWindowEvents() {
     mainWindow.once('ready-to-show', () => {
-      const config = store.getState().config;
-      mainWindow.webContents.send('theme-changed', config.theme);
       mainWindow.show();
     });
   
@@ -747,9 +734,31 @@ const IPCManager = {
     ipcMain.on('toggle-resume', () => this.handleResume());
 
     // 설정 관련 핸들러
-    ipcMain.handle('load-settings', () => FileManager.loadConfig());
+    ipcMain.handle('load-settings', async () => {
+      try {
+        const config = await FileManager.loadConfig();
+        
+        // Settings.js가 기대하는 평면적인 구조로 변환
+        return {
+          windowOpacity: config.overlay.windowOpacity,
+          contentOpacity: config.overlay.contentOpacity,
+          overlayFixed: config.overlay.overlayFixed,
+          loadLastOverlayBounds: config.overlay.loadLastOverlayBounds,
+          accentColor: config.theme.accentColor
+        };
+      } catch (error) {
+        console.error('설정 로드 실패:', error);
+        return null;
+      }
+    });
+    
     ipcMain.handle('apply-settings', (_, settings) => this.handleApplySettings(settings));
     ipcMain.handle('clear-log-files', () => FileManager.clearLogs());
+
+    // 테마 관련 핸들러
+    ipcMain.handle('get-current-theme', () => {
+      return ThemeManager.getCurrentTheme();
+    });
 
     // 디버그 콘솔 핸들러
     ipcMain.on('show-debug-console', () => this.handleShowDebugConsole());
@@ -837,17 +846,27 @@ const IPCManager = {
     try {
       if (!settings) throw new Error('설정값이 없습니다');
       
-      const validConfig = await ConfigManager.validateConfig(settings);
-      store.dispatch(configActions.loadConfig(validConfig));
-      const config = store.getState().config;
+      const state = store.getState().config;
+      const newConfig = {
+        ...state,
+        overlay: {
+          ...state.overlay,
+          windowOpacity: settings.windowOpacity ?? state.overlay.windowOpacity,
+          contentOpacity: settings.contentOpacity ?? state.overlay.contentOpacity,
+          overlayFixed: settings.overlayFixed ?? state.overlay.overlayFixed,
+          loadLastOverlayBounds: settings.loadLastOverlayBounds ?? state.overlay.loadLastOverlayBounds
+        }
+      };
   
+      store.dispatch(configActions.loadConfig(newConfig));
+      
       if (overlayWindow) {
-        overlayWindow.setOpacity(config.overlay.window.opacity);
-        overlayWindow.setIgnoreMouseEvents(config.overlay.window.isFixed);
-        overlayWindow.webContents.send('update-content-opacity', config.overlay.window.contentOpacity);
+        overlayWindow.setOpacity(newConfig.overlay.windowOpacity);
+        overlayWindow.setIgnoreMouseEvents(newConfig.overlay.overlayFixed);
+        overlayWindow.webContents.send('update-content-opacity', newConfig.overlay.contentOpacity);
       }
       
-      await FileManager.saveConfig(config);
+      await FileManager.saveConfig(newConfig);
       return true;
     } catch (error) {
       console.error('설정 적용 중 오류:', error);
@@ -989,34 +1008,28 @@ const IPCManager = {
 
 // ApplicationManager 정의
 const ApplicationManager = {
-async initialize() {
-  try {
-    await StatusManager.transition(ProgramStatus.LOADING);
-    ThemeManager.initialize();
-    IPCManager.setupHandlers();
+  async initialize() {
+    try {
+      await StatusManager.transition(ProgramStatus.LOADING);
 
-      // 다른 설정 변경사항 처리
-      if (overlayWindow) {
-        overlayWindow.setOpacity(configState.overlay.window.opacity);
-        overlayWindow.setIgnoreMouseEvents(configState.overlay.window.isFixed);
-      };
-
-      // 3. 설정 초기화
+      // 1. 설정 파일 로드 및 적용
       const savedConfig = await FileManager.loadConfig();
       await ConfigManager.loadAndValidateConfig(savedConfig);
 
-      // 4. 초기 테마 설정 (store 구독 이후)
-      const isDark = nativeTheme.shouldUseDarkColors;
-      store.dispatch(configActions.updateTheme(isDark));
-  
-      // 5. 윈도우 생성 및 초기화
+      // 2. 테마 관리자 초기화
+      ThemeManager.initialize();
+
+      // 3. IPC 핸들러 설정
+      IPCManager.setupHandlers();
+
+      // 4. 윈도우 생성
       WindowManager.createMainWindow();
       WindowManager.createOverlayWindow();
-  
-      // 6. SystemListener 초기화
+
+      // 5. 시스템 리스너 초기화
       systemListener = new SystemListener(mainWindow);
       await systemListener.initialize();
-  
+
       await StatusManager.transition(ProgramStatus.READY);
       console.log('Application initialized successfully');
     } catch (error) {

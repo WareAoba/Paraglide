@@ -115,12 +115,9 @@ class SystemListener {
 
   // 테마 감지 메서드 추가
   setupThemeListener() {
-    // 초기 테마 설정
-    this.updateTheme(nativeTheme.shouldUseDarkColors);
-
-    // 테마 변경 이벤트 리스너
     nativeTheme.on('updated', () => {
-      this.updateTheme(nativeTheme.shouldUseDarkColors);
+      const isDark = nativeTheme.shouldUseDarkColors;
+      store.dispatch(configActions.updateTheme(isDark));
     });
   }
 

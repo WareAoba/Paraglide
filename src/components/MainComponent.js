@@ -11,12 +11,17 @@ function MainComponent() {
     paragraphs: [],
     currentParagraph: 0,
     currentNumber: null,
-    isDarkMode: false,
-    isPaused: false,
     isOverlayVisible: false,
     logoPath: null,
     isSidebarVisible: false, // 추가
-    programStatus: 'READY' // 추가
+    programStatus: 'READY', // 추가
+    isPaused: false
+  });
+
+  const [theme, setTheme] = useState({
+    isDarkMode: false,
+    mode: 'light',
+    accentColor: '#007bff'
   });
 
   const [logoScale, setLogoScale] = useState(1);
@@ -28,6 +33,12 @@ function MainComponent() {
   const [isSettingsVisible, setIsSettingsVisible] = useState(false);
 
   useEffect(() => {
+
+    const initializeTheme = async () => {
+      const initialTheme = await ipcRenderer.invoke('get-current-theme');
+      setTheme(initialTheme);
+    };
+
     // 로고 로드 함수 수정
     const loadLogo = async () => {
       try {
@@ -46,9 +57,9 @@ function MainComponent() {
         const initialState = await ipcRenderer.invoke('get-state');
         setState(prev => ({
           ...prev,
-          isDarkMode: initialState.isDarkMode,
           isOverlayVisible: initialState.isOverlayVisible
         }));
+        initializeTheme();
         loadLogo();
       } catch (error) {
         console.error('초기 상태 로드 실패:', error);
@@ -60,17 +71,13 @@ function MainComponent() {
       setState(prev => ({
         ...prev,
         ...updatedState,
-        isDarkMode: updatedState.theme?.isDarkMode ?? prev.isDarkMode
       }));
     };
 
     // 테마 변경 핸들러
-    const handleThemeUpdate = (event, theme) => {
-      setState(prevState => ({
-        ...prevState,
-        isDarkMode: theme.isDarkMode
-      }));
-      loadLogo();
+    const handleThemeUpdate = (_, newTheme) => {
+      setTheme(newTheme);
+      document.documentElement.style.setProperty('--primary-color', newTheme.accentColor);
     };
 
     // 이벤트 리스너 등록
@@ -253,16 +260,16 @@ function MainComponent() {
   // MainComponent.js의 웰컴 스크린 return문 수정
   if (state.paragraphs.length === 0) {
     return (
-      <div className={`app-container ${state.isDarkMode ? 'dark-mode' : ''}`}>
+      <div className="app-container" data-theme={theme.mode}>
         <Sidebar 
           isVisible={state.isSidebarVisible}
           onFileSelect={handleSidebarFileSelect}
-          isDarkMode={state.isDarkMode}
+          theme={theme}
           onClose={handleCloseSidebar}
           currentFilePath={null}
         />
         
-        <div className="welcome-screen" data-theme={state.isDarkMode ? 'dark' : 'light'}>
+        <div className="welcome-screen" data-theme={theme.mode}>
           {/* 사이드바 버튼 */}
           <button className="btn-sidebar" onClick={handleToggleSidebar}>
             <svg
@@ -315,7 +322,7 @@ function MainComponent() {
         <Settings 
           isVisible={isSettingsVisible}
           onClose={() => setIsSettingsVisible(false)}
-          isDarkMode={state.isDarkMode}
+          theme={theme}
         />
       </div>
     );
@@ -323,15 +330,15 @@ function MainComponent() {
 
   // MainComponent.js의 return문 부분 수정
   return (
-    <div className="app-container">
+    <div className="app-container" data-theme={theme.mode}>
       <Sidebar 
         isVisible={state.isSidebarVisible}
         onFileSelect={handleSidebarFileSelect}
-        isDarkMode={state.isDarkMode}
+        theme={theme}
         onClose={handleCloseSidebar}
       />
 
-      <div className={`app-container ${state.isDarkMode ? 'dark-mode' : ''}`} data-theme={state.isDarkMode ? 'dark' : 'light'}>
+      <div className="app-container" data-theme={theme.mode}>
         {state.programStatus === 'READY' ? (
           <div className="welcome-screen">
             <div className="logo-container">
@@ -360,7 +367,7 @@ function MainComponent() {
             </div>
           </div>
         ) : (
-          <div className="main-container">
+          <div className="main-container" data-theme={theme.mode}>
             <button className="btn-sidebar" onClick={handleToggleSidebar}>
               <svg 
                 fill="currentColor"
@@ -379,20 +386,21 @@ function MainComponent() {
               {state.currentNumber ? `${state.currentNumber} 페이지` : ''}
             </div>
 
-            <div className="paragraph-section">
+            <div className="paragraph-section" data-theme={theme.mode}>
               <div className="paragraph-container">
-                <div className="paragraph-header">
+                <div className="paragraph-header" data-theme={theme.mode}>
                   <div>이전 단락</div>
                   <div className="current">현재 단락</div>
                   <div>다음 단락</div>
                 </div>
                 
-                <div className="paragraph-content">
+                <div className="paragraph-content" data-theme={theme.mode}>
                   <div 
                     className={`paragraph-prev ${hoveredSection === 'prev' ? 'hovered' : ''}`}
                     onClick={() => handleParagraphClick('prev')}
                     onMouseEnter={() => setHoveredSection('prev')}
                     onMouseLeave={() => setHoveredSection(null)}
+                    data-theme={theme.mode}
                   >
                     {state.paragraphs[state.currentParagraph - 1] || ''}
                   </div>
@@ -400,6 +408,7 @@ function MainComponent() {
                   <div 
                     className="paragraph-current"
                     onClick={() => handleParagraphClick('current')}
+                    data-theme={theme.mode}
                   >
                     {state.paragraphs[state.currentParagraph] || ''}
                   </div>
@@ -409,6 +418,7 @@ function MainComponent() {
                     onClick={() => handleParagraphClick('next')}
                     onMouseEnter={() => setHoveredSection('next')}
                     onMouseLeave={() => setHoveredSection(null)}
+                    data-theme={theme.mode}
                   >
                     {state.paragraphs[state.currentParagraph + 1] || ''}
                   </div>
@@ -461,7 +471,7 @@ function MainComponent() {
       <Settings 
         isVisible={isSettingsVisible}
         onClose={() => setIsSettingsVisible(false)}
-        isDarkMode={state.isDarkMode}
+        theme={theme}
       />
     </div>
   );

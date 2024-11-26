@@ -21,12 +21,10 @@ const initialState = {
       x: null,
       y: null
     },
-    window: {
-      opacity: 1.0,
-      contentOpacity: 0.8,
-      isFixed: false,
-      loadLastBounds: true
-    },
+    windowOpacity: 1.0,
+    contentOpacity: 0.8,
+    overlayFixed: false,
+    loadLastOverlayBounds: true,
     visibleRanges: {
       before: 5, 
       after: 5
@@ -40,22 +38,38 @@ const configSlice = createSlice({
   reducers: {
     loadConfig: (state, action) => {
       const newConfig = action.payload;
-      // 깊은 병합으로 변경
       return {
-        theme: { ...state.theme, ...newConfig.theme },
+        ...state,
+        theme: { 
+          ...state.theme, 
+          ...newConfig.theme 
+        },
         overlay: {
           ...state.overlay,
-          bounds: { ...state.overlay.bounds, ...newConfig.overlay?.bounds },
-          window: { ...state.overlay.window, ...newConfig.overlay?.window },
-          visibleRanges: { ...state.overlay.visibleRanges, ...newConfig.overlay?.visibleRanges }
+          bounds: { 
+            ...state.overlay.bounds, 
+            ...newConfig.overlay?.bounds 
+          },
+          // Settings.js와 호환되도록 평면적인 구조로 저장
+          windowOpacity: newConfig.overlay?.windowOpacity ?? state.overlay.windowOpacity,
+          contentOpacity: newConfig.overlay?.contentOpacity ?? state.overlay.contentOpacity,
+          overlayFixed: newConfig.overlay?.overlayFixed ?? state.overlay.overlayFixed,
+          loadLastOverlayBounds: newConfig.overlay?.loadLastOverlayBounds ?? state.overlay.loadLastOverlayBounds,
+          visibleRanges: { 
+            ...state.overlay.visibleRanges, 
+            ...newConfig.overlay?.visibleRanges 
+          }
         }
       };
     },
 
     updateTheme: (state, action) => {
       const isDarkMode = action.payload;
-      state.theme.isDarkMode = isDarkMode;
-      state.theme.mode = isDarkMode ? THEME.DARK : THEME.LIGHT;
+      state.theme = {
+        ...state.theme,
+        isDarkMode,
+        mode: isDarkMode ? THEME.DARK : THEME.LIGHT
+      };
     },
 
     setOverlayBounds: (state, action) => {
