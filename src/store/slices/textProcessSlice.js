@@ -6,22 +6,25 @@ const initialState = {
   paragraphs: [],
   paragraphsMetadata: [],
   currentNumber: null,
-  currentParagraph: 0
+  currentParagraph: 0,
+  processMode: 'paragraph'
 };
 
 const textProcessSlice = createSlice({
   name: 'textProcess',
   initialState,
   reducers: {
-    processParagraphs(state, action) {
-      const result = TextProcessUtils.processParagraphs(action.payload);
-      state.paragraphs = result.paragraphsToDisplay;
-      state.paragraphsMetadata = result.paragraphsMetadata;
-      state.currentNumber = result.currentNumber;
+    updateContent(state, action) {
+      state.paragraphs = action.payload.paragraphs;
+      state.paragraphsMetadata = action.payload.paragraphsMetadata;
+      state.currentNumber = action.payload.currentNumber;
+      state.processMode = action.payload.processMode;
     },
     updateCurrentParagraph(state, action) {
       state.currentParagraph = action.payload;
-      state.currentNumber = state.paragraphsMetadata[action.payload]?.pageNumber || null;
+    },
+    updateProcessMode(state, action) { // 추가된 리듀서
+      state.processMode = action.payload;
     }
   }
 });

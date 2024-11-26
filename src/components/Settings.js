@@ -9,7 +9,8 @@ function Settings({ isVisible, onClose, isDarkMode }) {
     contentOpacity: 0.8,     // 배경 투명도
     overlayFixed: false,
     loadLastOverlayBounds: true,
-    accentColor: '#007bff'
+    accentColor: '#007bff',
+    processMode: 'paragraph'  // 기본 텍스트 처리 방식
   });
   const [originalSettings, setOriginalSettings] = useState(null);
 
@@ -23,8 +24,8 @@ function Settings({ isVisible, onClose, isDarkMode }) {
     });
   }, []);
   
-   // 로그 파일 정리 핸들러
-   const handleClearLogs = async () => {
+  // 로그 파일 정리 핸들러
+  const handleClearLogs = async () => {
     if (window.confirm('모든 로그 파일을 정리하시겠습니까?')) {
       await ipcRenderer.invoke('clear-log-files');
     }
@@ -42,6 +43,7 @@ function Settings({ isVisible, onClose, isDarkMode }) {
         overlayFixed: newSettings.overlayFixed,
         loadLastOverlayBounds: newSettings.loadLastOverlayBounds,
         accentColor: newSettings.accentColor,
+        processMode: newSettings.processMode
       });
   
       if (!result) {
@@ -52,9 +54,19 @@ function Settings({ isVisible, onClose, isDarkMode }) {
     }
   };
 
+  // 텍스트 처리 방식 토글 핸들러
+  const handleProcessModeToggle = () => {
+    const newMode = settings.processMode === 'paragraph' ? 'line' : 'paragraph';
+    handleSettingChange({
+      ...settings,
+      processMode: newMode
+    });
+  };
+
   // 취소 시 원래 값으로 복원
   const handleCancel = () => {
     if (originalSettings) {
+      setSettings(originalSettings);
       handleSettingChange(originalSettings);
     }
     onClose();
@@ -62,12 +74,29 @@ function Settings({ isVisible, onClose, isDarkMode }) {
 
   return (
     <div className={`settings-modal ${isVisible ? 'visible' : ''}`}
-    data-theme={isDarkMode ? 'dark' : 'light'}
+      data-theme={isDarkMode ? 'dark' : 'light'}
     >
       <div className="settings-content">
         <h2>설정</h2>
         
         <div className="settings-scroll-area">
+          {/* 텍스트 처리 방식 그룹 */}
+          <div className="settings-group">
+            <h3>텍스트 처리 방식</h3>
+            <div className="toggle-switch">
+              <span className="toggle-label">{settings.processMode === 'paragraph' ? '단락 단위로' : '줄 단위로'}</span>
+              <label className="switch">
+                <input 
+                  type="checkbox" 
+                  checked={settings.processMode === 'line'}
+                  onChange={handleProcessModeToggle}
+                />
+                <span className="slider"></span>
+              </label>
+            </div>
+          </div>
+
+          {/* 오버레이 그룹 */}
           <div className="settings-group">
             <h3>오버레이</h3>
             <label>
@@ -122,6 +151,7 @@ function Settings({ isVisible, onClose, isDarkMode }) {
             </label>
           </div>
 
+          {/* 앱 설정 그룹 */}
           <div className="settings-group">
             <h3>앱 설정</h3>
             <label>
@@ -137,6 +167,7 @@ function Settings({ isVisible, onClose, isDarkMode }) {
             </label>
           </div>
 
+          {/* 데이터 관리 그룹 */}
           <div className="settings-group danger-zone">
             <h3>데이터 관리</h3>
             <button onClick={handleClearLogs}>

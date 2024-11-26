@@ -61,7 +61,11 @@ const ConfigManager = {
                         defaultConfig.overlay.visibleRanges.after
                     )
                 }
-            }
+            },
+            processMode: this.validateProcessMode(
+                savedConfig.processMode, 
+                defaultConfig.processMode
+            )
         };
     },
     
@@ -75,6 +79,11 @@ const ConfigManager = {
             return defaultValue;
         }
         return Math.min(Math.max(value, min), max);
+    },
+
+    validateProcessMode(value, defaultValue) { // 추가된 함수
+        const allowedModes = ['paragraph', 'line']; // 예시: 허용된 모드 목록
+        return allowedModes.includes(value) ? value : defaultValue;
     },
     
     async loadAndValidateConfig(savedConfig) {
