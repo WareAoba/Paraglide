@@ -122,9 +122,6 @@ const updateGlobalState = async (newState, source = 'other') => {
       globalState = { ...globalState, ...newState };
     }
 
-    const state = store.getState().textProcess;
-    const configState = store.getState().config;
-
     // 상태 업데이트에 테마 정보 포함
     mainWindow?.webContents.send('state-update', {
       ...globalState,
@@ -321,7 +318,6 @@ const FileManager = {
     try {
       const log = await this.loadLog();
       const state = store.getState().textProcess;
-      const configState = store.getState().config;
       
       if (!state.currentFilePath) return;
   
