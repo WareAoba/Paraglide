@@ -324,19 +324,30 @@ const FileManager = {
       
       if (!state.currentFilePath) return;
   
-      const fileName = path.basename(state.currentFilePath);
-      const filePath = state.currentFilePath;
-      const fileContent = state.paragraphs.join('\n');
       const currentMetadata = state.paragraphsMetadata[state.currentParagraph];
+      const positionContext = TextProcessUtils.getPositionContext(
+        state.paragraphs,
+        state.paragraphsMetadata,
+        state.currentParagraph
+      );
   
-      log[filePath] = {
-        fileName,
-        filePath,
-        fileHash: this.getFileHash(fileContent),
+      log[state.currentFilePath] = {
+        fileName: path.basename(state.currentFilePath),
+        filePath: state.currentFilePath,
+        fileHash: this.getFileHash(state.paragraphs.join('\n')),
         currentParagraph: state.currentParagraph,
         currentPageNumber: currentMetadata?.pageNumber || null,
         timestamp: Date.now(),
-        processMode: state.processMode || DEFAULT_PROCESS_MODE
+        processMode: state.processMode,
+        // 위치 컨텍스트에 모드별 메타데이터 추가
+        positionContext: {
+          ...positionContext,
+          mode: state.processMode,
+          pageInfo: {
+            number: currentMetadata?.pageNumber || null,
+            isPageChange: currentMetadata?.isPageChange || false
+          }
+        }
       };
   
       await this.saveLog(log);
@@ -428,37 +439,57 @@ const FileManager = {
       const filePath = globalState.currentFilePath;
       if (!filePath) return;
   
+      // 1. 이전 상태 저장 (Redux store에서)
+      const previousState = store.getState().textProcess;
+      const oldContent = previousState.paragraphs;
+      const oldMetadata = previousState.paragraphsMetadata;
+      const currentIndex = previousState.currentParagraph;
+  
+      // 2. 설정 업데이트
+      store.dispatch(configActions.updateProcessMode(newMode));
+      await FileManager.saveConfig({ processMode: newMode });
+  
+      // 3. 파일 재처리
       const content = await fs.readFile(filePath, 'utf8');
       const result = TextProcessUtils.processParagraphs(content, newMode);
-      const newCurrentParagraph = this.mapCurrentPosition(
-        globalState.paragraphsMetadata,
+  
+      // 4. 위치 매핑
+      const newPosition = TextProcessUtils.mapPositionBetweenModes(
+        oldContent,
+        result.paragraphsToDisplay,
+        oldMetadata,
         result.paragraphsMetadata,
-        globalState.currentParagraph
+        currentIndex,
+        newMode
       );
   
-      // Redux store에 업데이트
-      store.dispatch(textProcessActions.updateContent({
+      // 5. Redux store 업데이트
+      const updatePayload = {
         paragraphs: result.paragraphsToDisplay,
         paragraphsMetadata: result.paragraphsMetadata,
-        currentNumber: result.currentNumber,
-        processMode: newMode
-      }));
-      store.dispatch(configActions.updateProcessMode(newMode));
+        currentNumber: result.paragraphsMetadata[newPosition]?.pageNumber || null,
+        processMode: newMode,
+        currentParagraph: newPosition
+      };
+      
+      store.dispatch(textProcessActions.updateContent(updatePayload));
+      store.dispatch(textProcessActions.updateCurrentParagraph(newPosition));
   
+      // 6. 전역 상태 업데이트
       await updateGlobalState({
-        ...result,
-        currentParagraph: newCurrentParagraph,
-        processMode: newMode
+        ...updatePayload,
+        timestamp: Date.now()
       });
   
-      console.log(`모드가 ${newMode}으로 전환되었습니다.`);
-      mainWindow.webContents.send('state-update', {
-        processMode: newMode,
-        currentParagraph: newCurrentParagraph,
-        paragraphs: result.paragraphsToDisplay,
-      })
+      // 7. 오버레이 창 업데이트 (비동기로)
+      if (globalState.isOverlayVisible) {
+        await WindowManager.updateOverlayContent();
+      }
+  
+      return { success: true };
     } catch (error) {
       console.error('모드 전환 실패:', error);
+      return { success: false };
     }
   },
 
@@ -669,53 +700,41 @@ const WindowManager = {
       const state = store.getState().textProcess;
       const config = store.getState().config;
   
-      // 기본값 설정
+      // 1. 상태 검증
+      if (!state.paragraphs || !state.paragraphsMetadata) {
+        console.warn('Invalid text process state');
+        return;
+      }
+  
+      const currentIndex = state.currentParagraph;
+      if (currentIndex < 0 || currentIndex >= state.paragraphs.length) {
+        console.warn('Invalid current paragraph index');
+        return;
+      }
+  
       const DEFAULT_RANGES = { before: 5, after: 5 };
       const visibleRanges = config?.overlay?.visibleRanges || DEFAULT_RANGES;
       const { before = 5, after = 5 } = visibleRanges;
   
-      const prevParagraphs = [];
-      const nextParagraphs = [];
+      const startIdx = Math.max(0, currentIndex - before);
+      const endIdx = Math.min(state.paragraphs.length, currentIndex + after + 1);
   
-      // 이전 단락들 처리 
-      for (let i = 1; i <= before; i++) {
-        const prev = TextProcessUtils.getParagraphByOffset(state, state.currentParagraph, -i);
-        if (prev) {
-          prevParagraphs.unshift({
-            text: prev.text?.toString() || '',
-            pageNumber: prev.metadata?.pageNumber || null,
-            metadata: {
-              index: state.currentParagraph - i
-            }
-          });
-        }
-      }
-      
-      // 다음 단락들 처리
-      for (let i = 1; i <= after; i++) {
-        const next = TextProcessUtils.getParagraphByOffset(state, state.currentParagraph, i);
-        if (next) {
-          nextParagraphs.push({
-            text: next.text?.toString() || '',
-            pageNumber: next.metadata?.pageNumber || null,
-            metadata: {
-              index: state.currentParagraph + i
-            }
-          });
-        }
-      }
-  
-      const currentMetadata = state.paragraphsMetadata?.[state.currentParagraph];
-  
-      // 오버레이 업데이트
       overlayWindow.webContents.send('paragraphs-updated', {
-        previous: prevParagraphs,
-        current: String(state.paragraphs?.[state.currentParagraph] || ''),
-        next: nextParagraphs,
-        currentParagraph: state.currentParagraph,
-        currentNumber: currentMetadata?.pageNumber || null,
-        isDarkMode: config?.theme?.isDarkMode || false,
-        isPaused: globalState?.isPaused || false
+        previous: state.paragraphs.slice(startIdx, currentIndex).map((text, idx) => ({
+          text: String(text),  // 문자열 보장
+          index: startIdx + idx,
+          metadata: state.paragraphsMetadata[startIdx + idx]
+        })),
+        current: state.paragraphs[currentIndex]?.toString() || '',  // 직접 문자열 전달
+        next: state.paragraphs.slice(currentIndex + 1, endIdx).map((text, idx) => ({
+          text: String(text),  // 문자열 보장
+          index: currentIndex + 1 + idx,
+          metadata: state.paragraphsMetadata[currentIndex + 1 + idx]
+        })),
+        processMode: state.processMode,
+        totalParagraphs: state.paragraphs.length,
+        currentParagraph: currentIndex,
+        metadata: state.paragraphsMetadata[currentIndex]  // 메타데이터는 별도로 전달
       });
   
     } catch (error) {
@@ -799,7 +818,8 @@ const IPCManager = {
           contentOpacity: config.overlay.contentOpacity,
           overlayFixed: config.overlay.overlayFixed,
           loadLastOverlayBounds: config.overlay.loadLastOverlayBounds,
-          accentColor: config.theme.accentColor
+          accentColor: config.theme.accentColor,
+          processMode: config.processMode
         };
       } catch (error) {
         console.error('설정 로드 실패:', error);
@@ -827,17 +847,37 @@ const IPCManager = {
       properties: ['openFile'],
       filters: [{ name: 'Text Files', extensions: ['txt'] }]
     });
-
+  
     if (!result.canceled && result.filePaths.length > 0) {
       const filePath = result.filePaths[0];
       const content = await fs.readFile(filePath, 'utf8');
-      store.dispatch(textProcessActions.processParagraphs(content));
-      const state = store.getState().textProcess;
       
-      if (!state.paragraphs.length) {
-        console.error('단락 처리 실패');
-        return { success: false };
-      }
+      const fileStatus = await FileManager.checkExistingFile(filePath);
+      const currentMode = store.getState().config.processMode || DEFAULT_PROCESS_MODE;
+      const processResult = TextProcessUtils.processParagraphs(content, currentMode);
+  
+      // Redux store 업데이트
+      store.dispatch(textProcessActions.updateContent({
+        paragraphs: processResult.paragraphsToDisplay,
+        paragraphsMetadata: processResult.paragraphsMetadata,
+        currentNumber: processResult.currentNumber,
+        processMode: currentMode
+      }));
+  
+      // 상태 업데이트 전에 paragraphs를 globalState에 포함
+      globalState.paragraphs = processResult.paragraphsToDisplay;
+  
+      // 전역 상태 업데이트
+      await updateGlobalState({
+        paragraphs: processResult.paragraphsToDisplay,  // 명시적으로 포함
+        currentFilePath: filePath,
+        currentParagraph: fileStatus.isExisting ? fileStatus.lastPosition : 0,
+        programStatus: ProgramStatus.PROCESS,
+        isOverlayVisible: true,
+        isPaused: false,
+        ...processResult
+      });
+  
       return filePath;
     }
     return null;

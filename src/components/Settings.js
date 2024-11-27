@@ -16,13 +16,34 @@ function Settings({ isVisible, onClose, isDarkMode }) {
 
   // 초기 설정 로드
   useEffect(() => {
-    ipcRenderer.invoke('load-settings').then(savedSettings => {
-      if (savedSettings) {
-        setSettings(savedSettings);
-        setOriginalSettings(savedSettings);
+    const loadSettings = async () => {
+      try {
+        const savedSettings = await ipcRenderer.invoke('load-settings');
+        if (savedSettings) {
+          // 기존 processMode를 우선적으로 사용
+          const processMode = savedSettings.processMode || 'paragraph';
+          
+          const newSettings = {
+            ...settings,
+            ...savedSettings,
+            processMode // 명시적으로 processMode 설정
+          };
+          
+          setSettings(newSettings);
+          setOriginalSettings(newSettings); // originalSettings도 동일하게 설정
+          
+          // 디버깅용
+          console.log('로드된 설정:', newSettings);
+        }
+      } catch (error) {
+        console.error('설정 로드 중 오류:', error);
       }
-    });
-  }, []);
+    };
+    
+    if (isVisible) {
+      loadSettings();
+    }
+  }, [isVisible]);
   
   // 로그 파일 정리 핸들러
   const handleClearLogs = async () => {
@@ -55,12 +76,34 @@ function Settings({ isVisible, onClose, isDarkMode }) {
   };
 
   // 텍스트 처리 방식 토글 핸들러
-  const handleProcessModeToggle = () => {
-    const newMode = settings.processMode === 'paragraph' ? 'line' : 'paragraph';
-    handleSettingChange({
-      ...settings,
-      processMode: newMode
-    });
+  const handleProcessModeToggle = async () => {
+    try {
+      const currentMode = settings.processMode;
+      const newMode = currentMode === 'paragraph' ? 'line' : 'paragraph';
+      
+      // 디버깅용
+      console.log('모드 전환:', currentMode, '->', newMode);
+
+      const newSettings = {
+        ...settings,
+        processMode: newMode
+      };
+
+      // 먼저 UI 상태 업데이트
+      setSettings(newSettings);
+      
+      // 설정 저장 및 모드 전환 요청
+      await ipcRenderer.invoke('apply-settings', newSettings);
+      ipcRenderer.send('switch-mode', newMode);
+      
+      // 성공 시 originalSettings 업데이트
+      setOriginalSettings(newSettings);
+
+    } catch (error) {
+      console.error('모드 전환 중 오류:', error);
+      // 오류 시 이전 상태로 복구
+      setSettings(originalSettings);
+    }
   };
 
   // 취소 시 원래 값으로 복원

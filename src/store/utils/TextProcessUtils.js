@@ -93,29 +93,42 @@ const TextProcessUtils = {
       );
   },
 
-  // 위치 매핑 함수 추가
-  mapLineToParagraph(lineMetadata, paragraphMetadata, currentLineIndex) {
-      const lineStartPos = lineMetadata[currentLineIndex]?.startPos || 0;
-
-      for (let i = 0; i < paragraphMetadata.length; i++) {
-          const paraMeta = paragraphMetadata[i];
-          if (lineStartPos >= paraMeta.startPos && lineStartPos <= paraMeta.endPos) {
-              return i; // 단락 인덱스 반환
-          }
+  mapPositionBetweenModes(oldContent, newContent, oldMetadata, newMetadata, currentIndex, targetMode) {
+    const currentMeta = oldMetadata[currentIndex];
+    if (!currentMeta) return 0;
+  
+    const currentStartPos = currentMeta.startPos;
+    const currentContent = oldContent[currentIndex];
+  
+    if (!currentContent) return 0;
+  
+    if (targetMode === 'line') {
+      // paragraph -> line: 현재 단락의 시작 위치와 가장 가까운 라인
+      for (let i = 0; i < newMetadata.length; i++) {
+        if (newMetadata[i].startPos >= currentStartPos) {
+          return i;
+        }
       }
-      return 0;
+    } else {
+      // line -> paragraph: 현재 라인이 포함된 단락
+      for (let i = 0; i < newMetadata.length; i++) {
+        const meta = newMetadata[i];
+        if (currentStartPos >= meta.startPos && currentStartPos <= meta.endPos) {
+          return i;
+        }
+      }
+    }
+  
+    return 0;
   },
 
-  mapParagraphToLine(paragraphMetadata, lineMetadata, currentParagraphIndex) {
-      const paraStartPos = paragraphMetadata[currentParagraphIndex]?.startPos || 0;
-
-      for (let i = 0; i < lineMetadata.length; i++) {
-          const lineMeta = lineMetadata[i];
-          if (lineMeta.startPos >= paraStartPos) {
-              return i; // 줄 인덱스 반환
-          }
-      }
-      return 0;
+  getPositionContext(content, metadata, index) {
+    return {
+      startPos: metadata[index]?.startPos,
+      endPos: metadata[index]?.endPos,
+      pageNumber: metadata[index]?.pageNumber,
+      content: content[index]
+    };
   }
 };
 
