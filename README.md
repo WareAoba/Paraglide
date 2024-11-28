@@ -110,13 +110,19 @@
    git clone https://github.com/WareAoba/Paraglide
    ```
 
- 2. Install NPM in root directory of the project:
+ 2. Switch to the **development** branch:
+  
+   ```bash
+   git checkout -b development
+   ```
+
+ 3. Install NPM in root directory of the project:
 
    ```bash
    git clone https://github.com/WareAoba/Paraglide
    ```
 
- 3. Run the program with the following command:
+ 4. Run the program with the following command:
    
    ```bash
    npm run dev
@@ -124,7 +130,7 @@
 
  **Building and Compiling**:
 
- - Run the following command to create a build:
+ - Run the following command to create a build:(**may not have been tested** for compilation.)
 
   ```bash
   npm run make
@@ -139,6 +145,8 @@
  1. ***Beta Release***
  2. Various bugs have been fixed.
  3. Finalized macOS permission checks.
+ 4. [Dev] Introduced Redux for state management.
+ 5. [Dev] Line Mode: Added a mode to process text on a line-by-line basis instead of by paragraphs.
 
 ## Features in Development
 
@@ -153,28 +161,15 @@
 
 ## Known Issues
 
-<<<<<<< Updated upstream
- 1. Overlay layout misalignment: Paragraph spacing is inconsistent between sections.
- 2. UI design is messy as properties are still being migrated to CSS.
- 3. Files occasionally unload for unknown reasons.
- 4. "Highlight Color" setting is non-functional.
- 5. Unified build sources for macOS and Windows.
- 6. Keyboard shortcut Alt + Arrow Keys does not work on Windows.
-=======
- 1. Overlay layout misalignment: Paragraphs should have equal spacing, but gaps between current/next and previous/current are inconsistent.
- 2. UI properties are being migrated to CSS, leaving the UI temporarily messy.
- 3. The new Sidebar’s design is subpar—scheduled for improvement.
- 4. Issues with real-time theme switching; handlers seem to be missing.
- 5. Files occasionally unload randomly, with the cause still unidentified.
- 6. The 'loadLastOverlayBounds' setting does not work.
- 7. The current program size is quite large and will be gradually reduced.
- 8. Planning to introduce Redux for state management.
+ 1. **Overlay layout misalignment**: All paragraphs should have equal spacing, but the gaps between previous/current and current/next are unusually wide. I'm currently unsure how to fix this.
+ 2. **UI properties being migrated to CSS**: Converting all UI properties to CSS is currently making the UI quite messy. It's uncertain when this will be fully resolved.
+ 3. **New Sidebar design is subpar**: The design of the newly added Sidebar is very poor. Improvements are planned for the future.
+ 4. **Program size issue**: The current size of the program is quite large. Plans are in place to gradually reduce it.
 
 ## Beta Release?
 
  The ongoing CSS theme implementation is a daunting task and may take a few more days, but essential features should be completed soon. Beta v0.1 is targeted for release by the end of the month.
  If I had coding experience, this would’ve progressed much faster, but tinkering with AI often breaks working features—fixing those takes up most of my time. 😂
->>>>>>> Stashed changes
 
 ## License
 
