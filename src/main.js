@@ -53,14 +53,7 @@ const ContentManager = {
       clipboard.writeText(content);
       console.log('복사됨:', content.substring(0, 20) + '...');
   
-      // 로깅 디버그
       const state = store.getState().textProcess;
-      console.log('로깅 상태 확인:', {
-        skipLog,
-        hasCurrentFilePath: !!state.currentFilePath,
-        currentFilePath: state.currentFilePath,
-        currentParagraph: state.currentParagraph
-      });
   
       if (!skipLog && state.currentFilePath) {
         await FileManager.saveCurrentPositionToLog();
@@ -339,12 +332,6 @@ const FileManager = {
     try {
       const log = await this.loadLog();
       const state = store.getState().textProcess;
-      
-      console.log('로그 저장 시도:', {
-        currentFilePath: state.currentFilePath,
-        currentParagraph: state.currentParagraph,
-        hasMetadata: !!state.paragraphsMetadata[state.currentParagraph]
-      });
       
       if (!state.currentFilePath) {
         console.warn('currentFilePath가 없어 로그 저장 취소');
@@ -637,8 +624,6 @@ const WindowManager = {
           slashes: true
         });
 
-    console.log('Main Window Path:', app.getAppPath());
-    console.log('Main Window URL:', startUrl);
     mainWindow.loadURL(startUrl);
     this.setupMainWindowEvents();
   },
@@ -702,7 +687,6 @@ const WindowManager = {
           hash: '/overlay'
         });
   
-    console.log('Overlay URL:', overlayUrl);
     overlayWindow.loadURL(overlayUrl);
     this.setupOverlayWindowEvents();
   },
@@ -1117,9 +1101,9 @@ const ApplicationManager = {
       await systemListener.initialize();
 
       await StatusManager.transition(ProgramStatus.READY);
-      console.log('Application initialized successfully');
+      console.log('메인 프로세스 초기화 성공');
     } catch (error) {
-      console.error('Application initialization failed:', error);
+      console.error('메인 프로세스 초기화 실패:', error);
       await StatusManager.transition(ProgramStatus.READY);
     }
   },
