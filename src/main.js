@@ -309,13 +309,24 @@ const FileManager = {
     }
   },
 
-  async clearLogs() {
+  async clearLogs(filePath = null) {  // filePath 파라미터 추가
     try {
-      await this.saveLog({});
-      console.log('로그 파일이 정리되었습니다.');
+      if (filePath) {
+        // 특정 파일 기록만 삭제
+        const logData = await this.loadLog();
+        if (logData[filePath]) {
+          delete logData[filePath];
+          await this.saveLog(logData);
+          console.log('파일 기록이 삭제되었습니다:', filePath);
+        }
+      } else {
+        // 전체 로그 초기화
+        await this.saveLog({});
+        console.log('로그 파일이 정리되었습니다.');
+      }
       return { success: true };
     } catch (error) {
-      console.error('로그 파일 정리 실패:', error);
+      console.error('로그 정리 실패:', error);
       return { success: false };
     }
   },
@@ -372,11 +383,10 @@ const FileManager = {
       const logData = await this.loadLog();
       const fileLog = logData[filePath];
   
-      // lastPosition 객체의 구조에 맞게 수정
       return {
         isExisting: !!fileLog,
         lastPosition: fileLog?.lastPosition?.currentParagraph || 0,
-        processMode: fileLog?.lastPosition?.processMode || DEFAULT_PROCESS_MODE,
+        processMode: fileLog?.lastPosition?.processMode || null,  // 여기를 null로 변경
         metadata: fileLog?.lastPosition?.metadata || null
       };
     } catch (error) {
@@ -384,7 +394,7 @@ const FileManager = {
       return { 
         isExisting: false,
         lastPosition: 0,
-        processMode: DEFAULT_PROCESS_MODE,
+        processMode: null,  // 여기도 null로 변경
         metadata: null
       };
     }
@@ -419,28 +429,38 @@ const FileManager = {
   
       // 파일 상태 확인
       const fileStatus = await this.checkExistingFile(filePath);
-      const savedMode = fileStatus.processMode;
-      const currentMode = store.getState().config.processMode;
-      
-      // 모드 설정
-      const processMode = savedMode || currentMode || DEFAULT_PROCESS_MODE;
-      if (savedMode && savedMode !== currentMode) {
-        store.dispatch(configActions.updateProcessMode(savedMode));
-        await this.saveConfig({ processMode: savedMode });
+      let processMode = fileStatus.processMode;  // 로그에 저장된 모드
+  
+      // 로그에 저장된 모드가 없을 때만 검사
+      if (!processMode) {
+        const shouldSuggestLine = TextProcessUtils.detectLineMode(fileContent);
+  
+        if (shouldSuggestLine) {
+          const choice = await dialog.showMessageBox(mainWindow, {
+            type: 'question',
+            buttons: ['확인', '취소'],
+            defaultId: 0,
+            title: '모드 추천',
+            message: '문장 길이가 길어 보입니다. 줄 단위로 표시할까요?'
+          });
+          
+          // 사용자 선택에 따라 모드 설정
+          processMode = choice.response === 0 ? 'line' : 'paragraph';
+        } else {
+          processMode = DEFAULT_PROCESS_MODE;
+        }
       }
   
       // 파일 처리
       const result = TextProcessUtils.processParagraphs(fileContent, processMode);
   
-      // 위치 복원 로직 개선
+      // 위치 복원 로직
       let restoredPosition = 0;
       if (fileStatus.isExisting && fileStatus.metadata) {
-        // 메타데이터 기반 위치 복원 시도
         restoredPosition = result.paragraphsMetadata.findIndex(meta => 
           meta?.startPos === fileStatus.metadata.startPos && 
           meta?.endPos === fileStatus.metadata.endPos
         );
-        // 찾지 못한 경우 lastPosition 사용
         if (restoredPosition === -1) {
           restoredPosition = Math.min(
             fileStatus.lastPosition, 
@@ -468,13 +488,13 @@ const FileManager = {
         isOverlayVisible: true,
         isPaused: false,
         processMode: processMode,
-        currentNumber: result.paragraphsMetadata[restoredPosition]?.pageNumber || null  // 페이지 번호 즉시 업데이트
+        currentNumber: result.paragraphsMetadata[restoredPosition]?.pageNumber || null
       });
   
       // 현재 단락 즉시 복사 및 로깅
       const currentContent = result.paragraphsToDisplay[restoredPosition];
       if (currentContent) {
-        ContentManager.copyAndLogDebouncer(currentContent, false);  // skipLog를 false로 설정
+        ContentManager.copyAndLogDebouncer(currentContent, false);
       }
   
       return { success: true };
@@ -820,6 +840,7 @@ const IPCManager = {
         return { success: false };
       }
     });
+
     ipcMain.handle('read-file', async (event, filePath) => fs.readFile(filePath, 'utf8'));
 
     // 리소스 관련 핸들러
@@ -870,7 +891,7 @@ const IPCManager = {
     });
     
     ipcMain.handle('apply-settings', (_, settings) => this.handleApplySettings(settings));
-    ipcMain.handle('clear-log-files', () => FileManager.clearLogs());
+    ipcMain.handle('clear-log-files', (_, filePath = null) => FileManager.clearLogs(filePath));
 
     // 테마 관련 핸들러
     ipcMain.handle('get-current-theme', () => {

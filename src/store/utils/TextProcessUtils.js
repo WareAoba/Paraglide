@@ -12,6 +12,11 @@ const TextProcessUtils = {
   },
 
   processParagraphs(fileContent, mode = 'paragraph') {
+
+    if (mode === undefined || mode === null) { // 모드 정의가 안 되어있으면 감지합니다.
+      mode = this.detectLineMode(fileContent) ? 'line' : 'paragraph';
+  }
+
     let splitParts;
     if (mode === 'line') {
         splitParts = fileContent
@@ -45,7 +50,7 @@ const TextProcessUtils = {
             paragraphsToDisplay.push(trimmedPart);
             paragraphsMetadata.push({
                 isPageChange: previousWasPageNumber,
-                pageNumber: currentNumber, // 현재 페이지 번호 유지
+                pageNumber: currentNumber,
                 index: paragraphsToDisplay.length - 1,
                 startPos: partStartPos,
                 endPos: partStartPos + trimmedPart.length
@@ -88,6 +93,21 @@ const TextProcessUtils = {
       return Object.values(this.skipPatterns).some(pattern =>
           pattern.test(paragraph.trim())
       );
+  },
+  detectLineMode(fileContent) {
+
+    const lines = fileContent.split('\n');
+    
+    const longLines = lines.reduce((count, line, index) => {
+      const trimmedLength = line.replace(/\s+/g, '').length;
+      if (trimmedLength > 20) {
+        console.log(`긴 라인 발견 [${index + 1}]: ${trimmedLength}자`);
+      }
+      return trimmedLength > 20 ? count + 1 : count;
+    }, 0);
+
+    const result = longLines >= 5;
+    return result;
   },
 
   mapPositionBetweenModes(oldContent, newContent, oldMetadata, newMetadata, currentIndex, targetMode) {

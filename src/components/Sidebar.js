@@ -77,7 +77,7 @@ function Sidebar({ isVisible, onClose, currentFilePath, isDarkMode }) {
   const handleRemoveFile = async (e, filePath) => {
     e.stopPropagation(); // 클릭 이벤트 전파 방지
     try {
-      await ipcRenderer.invoke('remove-history-file', filePath);
+      await ipcRenderer.invoke('clear-log-files', filePath);
       loadFileHistory(); // 목록 새로고침
     } catch (error) {
       console.error('파일 기록 삭제 실패:', error);
