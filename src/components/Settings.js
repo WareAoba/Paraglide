@@ -76,7 +76,7 @@ function Settings({ isVisible, onClose, isDarkMode }) {
   };
 
   // 텍스트 처리 방식 토글 핸들러
-  const handleProcessModeToggle = async () => {
+  const handleProcessModeChange = async () => {
     try {
       const currentMode = settings.processMode;
       const newMode = currentMode === 'paragraph' ? 'line' : 'paragraph';
@@ -126,18 +126,21 @@ function Settings({ isVisible, onClose, isDarkMode }) {
           {/* 텍스트 처리 방식 그룹 */}
           <div className="settings-group">
             <h3>텍스트 처리 방식</h3>
-            <div className="toggle-switch">
-              <span className="toggle-label">{settings.processMode === 'paragraph' ? '단락 단위로' : '줄 단위로'}</span>
-              <label className="switch">
-                <input 
-                  type="checkbox" 
-                  checked={settings.processMode === 'line'}
-                  onChange={handleProcessModeToggle}
-                />
-                <span className="slider"></span>
-              </label>
-            </div>
-          </div>
+            <div className="segment-control" data-mode={settings.processMode}>
+               <button 
+                 className={settings.processMode === 'paragraph' ? 'active' : ''}
+                 onClick={() => handleProcessModeChange('paragraph')}
+               >
+                 단락 단위로
+               </button>
+               <button 
+                 className={settings.processMode === 'line' ? 'active' : ''}
+                 onClick={() => handleProcessModeChange('line')}
+               >
+                 줄 단위로
+               </button>
+             </div>
+           </div>
 
           {/* 오버레이 그룹 */}
           <div className="settings-group">

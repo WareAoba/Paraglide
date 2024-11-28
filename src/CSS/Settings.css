@@ -90,6 +90,63 @@
   font-size: 0.95em;
 }
 
+.segment-control {
+  display: flex;
+  background-color: var(--border-color);
+  padding: 2px; /* 4px에서 3px로 줄임 */
+  border-radius: 6px; /* 8px에서 6px로 줄임 */
+  width: 100%;
+  position: relative;
+  height: 28px; /* 높이 명시적 지정 */
+}
+
+.segment-control::before {
+  content: '';
+  position: absolute;
+  left: 3px;
+  top: 3px;
+  width: calc(50% - 4px); /* 약간 더 작게 */
+  height: calc(100% - 7px); /* 약간 더 작게 */
+  background-color: var(--primary-color);
+  border-radius: 4px;
+  transition: transform 0.4s ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.segment-control[data-mode="line"]::before {
+  transform: translateX(calc(100% + 3px)); /* 패딩 값 반영 */
+}
+
+.segment-control button {
+  flex: 1;
+  border: none;
+  padding: 6px 12px;
+  background: none;
+  color: var(--text-color);
+  font-size: 0.9em;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s ease; /* color -> all로 변경 */
+  position: relative;
+  z-index: 1;
+  opacity: 0.2; /* 기본 상태는 흐리게 */
+}
+
+.segment-control button.active {
+  opacity: 1; /* 활성화된 버튼만 선명하게 */
+  color: white;
+  transition: all 0.3s ease; 
+}
+
+/* 다크모드 수정 */
+[data-theme="dark"] .segment-control {
+  background-color: rgba(0, 0, 0, 0.3); /* 배경보다 어둡게 */
+}
+
+[data-theme="dark"] .segment-control::before {
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
 .switch {
   position: relative;
   display: inline-block;
@@ -205,7 +262,7 @@ input:checked + .slider:before {
   justify-content: flex-end;
   gap: 12px;
   padding: 8px 20px;       /* 좌우 여백 증가 */
-  background-color: var(--bg-color);
+  background-color: none;
   border-top: 1px solid var(--border-color);
   border-radius: 0 0 12px 12px;
   z-index: 1;                /* 스크롤 컨텐츠 위에 표시 */
@@ -247,7 +304,7 @@ input:checked + .slider:before {
 }
 
 [data-theme="dark"] .settings-button-group {
-  background-color: var(--dark-bg);
+  background-color: none;
   border-top-color: rgba(255, 255, 255, 0.1);
 }
 

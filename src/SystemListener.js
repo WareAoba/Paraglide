@@ -33,7 +33,6 @@ class SystemListener {
 
     try {
       ipcMain.on('program-status-update', (event, status) => {
-        console.log('[SystemListener] 상태 업데이트:', status);
         this.programStatus = status;
       });
 
@@ -123,7 +122,7 @@ class SystemListener {
 
   // 테마 업데이트 메서드
   updateTheme(isDark) {
-    console.log('[SystemListener] Theme change detected:', isDark);
+    console.log('[SystemListener] 테마 변경 감지:', isDark);
     store.dispatch(configActions.updateTheme(isDark));
   }
 
@@ -141,7 +140,6 @@ class SystemListener {
     }
 
     try {
-      console.log('[SystemListener] 키보드 리스너 설정 시도');
       this.keyboardListener = new GlobalKeyboardListener();
       
       if (!this.keyboardListener) {
