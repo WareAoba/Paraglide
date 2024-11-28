@@ -5,6 +5,7 @@ const { TextProcessUtils } = require('../utils/TextProcessUtils');
 const initialState = {
   paragraphs: [],
   paragraphsMetadata: [],
+  currentFilePath: null,  // 추가
   currentNumber: null,
   currentParagraph: 0,
   processMode: 'paragraph'
@@ -19,6 +20,7 @@ const textProcessSlice = createSlice({
       state.paragraphsMetadata = action.payload.paragraphsMetadata;
       state.currentNumber = action.payload.currentNumber;
       state.processMode = action.payload.processMode;
+      state.currentFilePath = action.payload.currentFilePath;
     },
     updateCurrentParagraph(state, action) {
       state.currentParagraph = action.payload;

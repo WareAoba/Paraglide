@@ -144,13 +144,11 @@ function MainComponent() {
   // 파일 로드 핸들러 수정
   const handleLoadFile = async () => {
     try {
-      const filePath = await ipcRenderer.invoke('open-file-dialog');
-      if (!filePath) return;
-
-      const content = await ipcRenderer.invoke('read-file', filePath);
-      if (!content) return;
-
-      const result = await ipcRenderer.invoke('process-file-content', content, filePath);
+      // 통합된 open-file 핸들러 사용
+      const result = await ipcRenderer.invoke('open-file', {
+        source: 'dialog'  // 다이얼로그를 통한 파일 열기임을 명시
+      });
+  
       if (result.success) {
         const newState = await ipcRenderer.invoke('get-state');
         setState(prev => ({ ...prev, ...newState }));
@@ -236,19 +234,21 @@ function MainComponent() {
       paragraphs: [],
       currentParagraph: 0,
       currentNumber: null,
+      currentFilePath: null,
       isPaused: false,
       isOverlayVisible: false
     });
-
-    // 그 다음 로컬 상태 업데이트
+  
+    // 그 다음 로컬 상태 업데이트 - isSidebarVisible 유지
     setState(prevState => ({
       ...prevState,
       paragraphs: [],
       currentParagraph: 0,
       currentNumber: null,
+      currentFilePath: null,
       isPaused: false,
       isOverlayVisible: false,
-      programStatus: 'READY'
+      programStatus: 'READY',
     }));
   };
 
@@ -258,7 +258,7 @@ function MainComponent() {
   };
 
   // MainComponent.js의 웰컴 스크린 return문 수정
-  if (state.paragraphs.length === 0) {
+  if (state.paragraphs.length === 0 || state.programStatus === 'READY') {
     return (
       <div className="app-container" data-theme={theme.mode}>
         <Sidebar 
@@ -266,7 +266,7 @@ function MainComponent() {
           onFileSelect={handleSidebarFileSelect}
           theme={theme}
           onClose={handleCloseSidebar}
-          currentFilePath={null}
+          currentFilePath={state.programStatus === 'PROCESS' ? state.currentFilePath : null}
         />
         
         <div className="welcome-screen" data-theme={theme.mode}>
@@ -339,34 +339,6 @@ function MainComponent() {
       />
 
       <div className="app-container" data-theme={theme.mode}>
-        {state.programStatus === 'READY' ? (
-          <div className="welcome-screen">
-            <div className="logo-container">
-              {state.logoPath && (
-                <img
-                  src={state.logoPath}
-                  alt="Paraglide Logo"
-                  className="logo"
-                  style={{ transform: `scale(${logoScale})` }}
-                  onClick={handleLogoClick}
-                  onError={(e) => {
-                    console.error('로고 렌더링 실패:', e);
-                    e.target.style.display = 'none';
-                  }}
-                />
-              )}
-              <h1 className="title">Paraglide</h1>
-            </div>
-            <div className="button-container">
-              <button 
-                className="btn-primary"
-                onClick={handleLoadFile}
-              >
-                파일 불러오기
-              </button>
-            </div>
-          </div>
-        ) : (
           <div className="main-container" data-theme={theme.mode}>
             <button className="btn-sidebar" onClick={handleToggleSidebar}>
               <svg 
@@ -466,7 +438,6 @@ function MainComponent() {
               </div>
             </div>
           </div>
-        )}
       </div>
       <Settings 
         isVisible={isSettingsVisible}

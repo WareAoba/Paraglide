@@ -10,28 +10,28 @@ function Sidebar({ isVisible, onClose, currentFilePath, isDarkMode }) {
   const [files, setFiles] = React.useState([]);
 
   React.useEffect(() => {
-    loadFileHistory();
-  }, [isVisible]);
+    if (isVisible) {
+      loadFileHistory();
+    }
+  }, [isVisible, currentFilePath]); 
 
   const loadFileHistory = async () => {
     try {
-      // 원본 로그 데이터와 현재 파일 정보 수신
       const { logData, currentFile } = await ipcRenderer.invoke('get-file-history');
       
-      // 사이드바 내부에서 데이터 가공
       const processedFiles = Object.entries(logData)
         .filter(([filePath, data]) => {
-          // 현재 파일 필터링 (경로 또는 해시값으로 비교)
-          if (!currentFile) return true;
-          const isSamePath = filePath === currentFile.path;
-          const isSameHash = data.fileHash === currentFile.hash;
-          return !isSamePath && !isSameHash;
+          // currentFile이 없으면 모든 파일 표시
+          if (!currentFile || !currentFile.path) return true;
+          
+          // 현재 작업 중인 파일만 제외
+          return filePath !== currentFile.path;
         })
         .map(([filePath, data]) => ({
           fileName: path.basename(filePath),
           filePath: filePath,
-          currentPageNumber: data.currentPageNumber,
-          currentParagraph: data.currentParagraph,
+          currentPageNumber: data.lastPosition?.pageNumber || null,
+          currentParagraph: data.lastPosition?.currentParagraph,
           timestamp: data.timestamp
         }))
         .sort((a, b) => b.timestamp - a.timestamp);
@@ -87,8 +87,12 @@ function Sidebar({ isVisible, onClose, currentFilePath, isDarkMode }) {
   // 파일 선택 핸들러 - 단순히 열기 요청만
   const handleFileSelect = async (filePath) => {
     try {
-      const content = await ipcRenderer.invoke('read-file', filePath);
-      const result = await ipcRenderer.invoke('process-file-content', content, filePath);
+      // 통합된 open-file 핸들러 사용
+      const result = await ipcRenderer.invoke('open-file', {
+        filePath,
+        source: 'history'
+      });
+      
       if (result.success) {
         onClose();
       }

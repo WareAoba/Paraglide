@@ -12,57 +12,54 @@ const TextProcessUtils = {
   },
 
   processParagraphs(fileContent, mode = 'paragraph') {
-      let splitParts;
-      if (mode === 'line') {
-          // 줄 단위로 분할
-          splitParts = fileContent
-              .split(/\n/)
-              .map(l => l.trimEnd())
-              .filter(l => l.length > 0);
-      } else {
-          // 단락 단위로 분할
-          splitParts = fileContent
-              .split(/\n\s*\n/)
-              .map(p => p.trimEnd())
-              .filter(p => p.length > 0);
-      }
+    let splitParts;
+    if (mode === 'line') {
+        splitParts = fileContent
+            .split(/\n/)
+            .map(l => l.trimEnd())
+            .filter(l => l.length > 0);
+    } else {
+        splitParts = fileContent
+            .split(/\n\s*\n/)
+            .map(p => p.trimEnd())
+            .filter(p => p.length > 0);
+    }
 
-      let currentNumber = null;
-      const paragraphsMetadata = [];
-      const paragraphsToDisplay = [];
-      let previousWasPageNumber = false;
-      let currentIndex = 0;
+    let currentNumber = null;
+    const paragraphsMetadata = [];
+    const paragraphsToDisplay = [];
+    let previousWasPageNumber = false;
+    let currentIndex = 0;
 
-      splitParts.forEach((part) => {
-          const trimmedPart = part.trimStart();
-          const partStartPos = fileContent.indexOf(part, currentIndex);
-          currentIndex = partStartPos + part.length;
+    splitParts.forEach((part) => {
+        const trimmedPart = part.trimStart();
+        const partStartPos = fileContent.indexOf(part, currentIndex);
+        currentIndex = partStartPos + part.length;
 
-          const pageNum = this.extractPageNumber(trimmedPart);
+        const pageNum = this.extractPageNumber(trimmedPart);
 
-          if (pageNum) {
-              currentNumber = pageNum;
-              previousWasPageNumber = true;
-          } else if (!this.shouldSkipParagraph(trimmedPart)) {
-              paragraphsToDisplay.push(trimmedPart);
-              paragraphsMetadata.push({
-                  isPageChange: previousWasPageNumber,
-                  pageNumber: currentNumber,
-                  index: paragraphsToDisplay.length - 1,
-                  startPos: partStartPos
-              });
-              previousWasPageNumber = false;
-          }
-      });
+        if (pageNum) {
+            currentNumber = pageNum;
+            previousWasPageNumber = true;
+        } else if (!this.shouldSkipParagraph(trimmedPart)) {
+            paragraphsToDisplay.push(trimmedPart);
+            paragraphsMetadata.push({
+                isPageChange: previousWasPageNumber,
+                pageNumber: currentNumber, // 현재 페이지 번호 유지
+                index: paragraphsToDisplay.length - 1,
+                startPos: partStartPos,
+                endPos: partStartPos + trimmedPart.length
+            });
+            previousWasPageNumber = false;
+        }
+    });
 
-      // endPos 계산
-      paragraphsMetadata.forEach((meta, i) => {
-          meta.endPos = paragraphsMetadata[i + 1]
-              ? paragraphsMetadata[i + 1].startPos - 1
-              : fileContent.length;
-      });
-
-      return { paragraphsToDisplay, paragraphsMetadata, currentNumber };
+    // 마지막 endPos 계산은 유지
+    return { 
+        paragraphsToDisplay, 
+        paragraphsMetadata, 
+        currentNumber: currentNumber // 마지막 확인된 페이지 번호
+    };
   },
 
   getParagraphByOffset(state, currentIndex, offset) {
