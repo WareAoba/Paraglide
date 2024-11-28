@@ -125,13 +125,20 @@ const updateGlobalState = async (newState, source = 'other') => {
       globalState = { ...globalState, ...newState };
     }
 
-    // 상태 업데이트에 테마 정보 포함
+    // Redux store에서 최신 상태 가져오기
+    const state = store.getState().textProcess;
+
+    // 메인 창 업데이트 (Redux store 데이터 사용)
     mainWindow?.webContents.send('state-update', {
-      ...globalState,
+      ...globalState,  // UI 상태
+      paragraphs: state.paragraphs,  // 텍스트 데이터
+      currentParagraph: state.currentParagraph,
+      paragraphsMetadata: state.paragraphsMetadata,
+      currentNumber: state.currentNumber,
       theme: ThemeManager.currentTheme
     });
 
-    // 오버레이 윈도우 업데이트
+    // 오버레이 윈도우 업데이트 (기존 코드)
     if (overlayWindow && !overlayWindow.isDestroyed()) {
       if (globalState.isOverlayVisible) {
         overlayWindow.showInactive();
@@ -885,31 +892,29 @@ const IPCManager = {
 
   async handleProcessFileContent(event, fileContent, filePath) {
     if (!fileContent || !filePath) return { success: false };
-
+  
     const fileStatus = await FileManager.checkExistingFile(filePath);
-    const currentMode = store.getState().config.processMode || DEFAULT_PROCESS_MODE; // 현재 모드 가져오기
-    const result = TextProcessUtils.processParagraphs(fileContent, currentMode); // 모드 전달
-
-    // Redux store에 처리 결과 디스패치
-    store.dispatch(textProcessActions.updateContent({
-      paragraphs: result.paragraphsToDisplay,
-      paragraphsMetadata: result.paragraphsMetadata,
-      currentNumber: result.currentNumber,
-      processMode: currentMode
-    }));
-
-    if (!result.paragraphsToDisplay.length) return { success: false };
-
-    const startPosition = fileStatus.isExisting ? fileStatus.lastPosition : 0;
-
-    await updateGlobalState({
-      ...result,
+    const currentMode = store.getState().config.processMode || DEFAULT_PROCESS_MODE;
+    const processResult = TextProcessUtils.processParagraphs(fileContent, currentMode);
+  
+    // Redux store와 globalState 동기화
+    const updatedState = {
+      paragraphs: processResult.paragraphsToDisplay,
+      paragraphsMetadata: processResult.paragraphsMetadata,
+      currentNumber: processResult.currentNumber,
       currentFilePath: filePath,
-      currentParagraph: startPosition,
+      currentParagraph: fileStatus.isExisting ? fileStatus.lastPosition : 0,
       programStatus: ProgramStatus.PROCESS,
       isOverlayVisible: true,
-      isPaused: false
-    });
+      isPaused: false,
+      processMode: currentMode
+    };
+  
+    // Redux store 업데이트
+    store.dispatch(textProcessActions.updateContent(updatedState));
+  
+    // 전역 상태 업데이트
+    await updateGlobalState(updatedState);
   
     return { success: true };
   },
