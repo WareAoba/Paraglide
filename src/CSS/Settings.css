@@ -119,8 +119,11 @@
 
 .segment-control button {
   flex: 1;
+  display: flex;          /* 추가 */
+  align-items: center;    /* 추가 */
+  justify-content: center; /* 추가 */
   border: none;
-  padding: 6px 12px;
+  padding: 0px 12px;
   background: none;
   color: var(--text-color);
   font-size: 0.9em;
@@ -129,6 +132,7 @@
   transition: all 0.2s ease; /* color -> all로 변경 */
   position: relative;
   z-index: 1;
+  font-family: inherit;
   opacity: 0.2; /* 기본 상태는 흐리게 */
 }
 

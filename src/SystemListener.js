@@ -162,25 +162,25 @@ class SystemListener {
           this.moveToNext();
         }
 
-        const isAlt = down["LEFT ALT"] || down["RIGHT ALT"]
+        const isShift = down["LEFT SHIFT"] || down["RIGHT SHIFT"]
         const keyName = e.name;
         
-        if(isAlt) {
+        if(isShift) {
           switch(keyName) {
             case 'RIGHT ARROW':
-              console.log('[단축키] Alt+Right');
+              console.log('[단축키] Shift+Right');
               this.moveToNext();
               break;
             case 'LEFT ARROW':
-              console.log('[단축키] Alt+Left');
+              console.log('[단축키] Shift+Left');
               this.moveToPrev();
               break;
             case 'UP ARROW':
-              console.log('[단축키] Alt+Up');
+              console.log('[단축키] Shift+Up');
               this.toggleResume();
               break;
             case 'DOWN ARROW':
-              console.log('[단축키] Alt+Down');
+              console.log('[단축키] Shift+Down');
               this.togglePause();
               break;
           }
