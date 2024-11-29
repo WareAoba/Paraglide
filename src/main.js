@@ -444,14 +444,24 @@ const FileManager = {
         return { success: false };
       }
   
-      // 파일 상태 확인
-      const fileStatus = await this.checkExistingFile(filePath);
-      let processMode = fileStatus.processMode;  // 로그에 저장된 모드
+      // 1. 설정의 processMode 먼저 확인
+      const config = store.getState().config;
+      let processMode = config.processMode;
   
-      // 로그에 저장된 모드가 없을 때만 검사
+      // 2. 파일 상태 확인 (이전 로그)
+      const fileStatus = await this.checkExistingFile(filePath);
+      
+      // 3. 로그에 저장된 모드가 있다면 우선 적용
+      if (fileStatus.processMode) {
+        processMode = fileStatus.processMode;
+
+        store.dispatch(configActions.updateProcessMode(processMode));
+        await this.saveConfig({ processMode: processMode });
+      }
+      
+      // 4. 모드가 없을 때만 자동 감지
       if (!processMode) {
         const shouldSuggestLine = TextProcessUtils.detectLineMode(fileContent);
-  
         if (shouldSuggestLine) {
           const choice = await dialog.showMessageBox(mainWindow, {
             type: 'question',
@@ -460,15 +470,13 @@ const FileManager = {
             title: '모드 추천',
             message: '문장 길이가 길어 보입니다. 줄 단위로 표시할까요?'
           });
-          
-          // 사용자 선택에 따라 모드 설정
           processMode = choice.response === 0 ? 'line' : 'paragraph';
         } else {
           processMode = DEFAULT_PROCESS_MODE;
         }
       }
   
-      // 파일 처리
+      // 나머지 로직은 그대로 유지
       const result = TextProcessUtils.processParagraphs(fileContent, processMode);
   
       // 위치 복원 로직
