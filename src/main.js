@@ -325,18 +325,22 @@ const FileManager = {
   },
 
   getFileHash(content) {
-    return crypto.createHash('sha256').update(content).digest('hex');
+    const normalizedContent = content.replace(/\s+/g, ' ').trim();
+    return crypto.createHash('sha256').update(normalizedContent).digest('hex');
   },
 
   async saveCurrentPositionToLog() {
     try {
-      const log = await this.loadLog();
-      const state = store.getState().textProcess;
+      const state = store.getState().textProcess;  // 여기로 이동
       
       if (!state.currentFilePath) {
         console.warn('currentFilePath가 없어 로그 저장 취소');
         return;
       }
+
+      const originalContent = await fs.readFile(state.currentFilePath, 'utf8');
+      const fileHash = this.getFileHash(originalContent);
+      const log = await this.loadLog();
   
       const currentMeta = state.paragraphsMetadata[state.currentParagraph];
       if (!currentMeta) {
@@ -346,7 +350,7 @@ const FileManager = {
       
       log[state.currentFilePath] = {
         fileName: path.basename(state.currentFilePath),
-        fileHash: this.getFileHash(state.paragraphs.join('\n')),
+        fileHash: fileHash,
         lastPosition: {
           currentParagraph: state.currentParagraph,
           pageNumber: currentMeta?.pageNumber || null,
@@ -368,20 +372,41 @@ const FileManager = {
   async checkExistingFile(filePath) {
     try {
       const logData = await this.loadLog();
-      const fileLog = logData[filePath];
+      const content = await fs.readFile(filePath, 'utf8');
+      const currentHash = this.getFileHash(content);
+      
+      // 1. 같은 경로 확인
+      let fileLog = logData[filePath];
+      let oldPath = null;
+      
+      // 2. 해시값으로 다른 파일 검색
+      if (!fileLog) {
+        const existingFile = Object.entries(logData).find(([path, log]) => log.fileHash === currentHash);
+        if (existingFile) {
+          [oldPath, fileLog] = existingFile;
+          // 새 경로로 로그 이전
+          logData[filePath] = {
+            ...fileLog,
+            fileName: path.basename(filePath)  // 새 파일명으로 업데이트
+          };
+          // 기존 로그 삭제
+          delete logData[oldPath];
+          await this.saveLog(logData);
+        }
+      }
   
       return {
         isExisting: !!fileLog,
         lastPosition: fileLog?.lastPosition?.currentParagraph || 0,
-        processMode: fileLog?.lastPosition?.processMode || null,  // 여기를 null로 변경
+        processMode: fileLog?.lastPosition?.processMode || null,
         metadata: fileLog?.lastPosition?.metadata || null
       };
     } catch (error) {
       console.error('파일 확인 실패:', error);
       return { 
-        isExisting: false,
+        isExisting: false, 
         lastPosition: 0,
-        processMode: null,  // 여기도 null로 변경
+        processMode: null,
         metadata: null
       };
     }
@@ -391,10 +416,15 @@ const FileManager = {
     try {
       const logData = await this.loadLog();
       const state = store.getState().textProcess;
-      const currentFile = globalState.currentFilePath ? {
-        path: globalState.currentFilePath,
-        hash: this.getFileHash(state.paragraphs.join('\n')) // globalState -> state로 변경
-      } : null;
+      
+      let currentFile = null;
+      if (globalState.currentFilePath) {
+          const originalContent = await fs.readFile(globalState.currentFilePath, 'utf8');
+          currentFile = {
+              path: globalState.currentFilePath,
+              hash: this.getFileHash(originalContent)
+          };
+      }
   
       return {
         logData,
@@ -1012,8 +1042,13 @@ const IPCManager = {
     if (globalState.isPaused) {
       globalState.isPaused = false;
       updateState({ isPaused: false });
+      const state = store.getState().textProcess;
+      const currentContent = state.paragraphs[state.currentParagraph];
+      if (currentContent) {
+        ContentManager.copyAndLogDebouncer(currentContent);
+      }
     }
-  },
+},
 
   // 디버그 콘솔 메서드
   handleShowDebugConsole() {
