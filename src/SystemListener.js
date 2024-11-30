@@ -163,26 +163,46 @@ class SystemListener {
         }
 
         const isShift = down["LEFT SHIFT"] || down["RIGHT SHIFT"]
+        const isAlt = down["LEFT ALT"] || down["RIGHT ALT"]
         const keyName = e.name;
         
         if(isShift) {
-          switch(keyName) {
-            case 'RIGHT ARROW':
-              console.log('[단축키] Shift+Right');
-              this.moveToNext();
-              break;
-            case 'LEFT ARROW':
-              console.log('[단축키] Shift+Left');
-              this.moveToPrev();
-              break;
-            case 'UP ARROW':
-              console.log('[단축키] Shift+Up');
-              this.toggleResume();
-              break;
-            case 'DOWN ARROW':
-              console.log('[단축키] Shift+Down');
-              this.togglePause();
-              break;
+          if(isAlt) {
+            // Shift + Alt 조합
+            switch(keyName) {
+              case 'RIGHT ARROW':
+                console.log('[단축키] Shift+Alt+Right');
+                this.moveToNextPage();
+                break;
+              case 'LEFT ARROW':
+                console.log('[단축키] Shift+Alt+Left');
+                this.moveToPrevPage();
+                break;
+              case 'UP ARROW':
+                console.log('[단축키] Shift+Alt+Up');
+                this.toggleOverlay();
+                break;
+            }
+          } else {
+            // 기존 Shift 조합
+            switch(keyName) {
+              case 'RIGHT ARROW':
+                console.log('[단축키] Shift+Right');
+                this.moveToNext();
+                break;
+              case 'LEFT ARROW':
+                console.log('[단축키] Shift+Left');
+                this.moveToPrev();
+                break;
+              case 'UP ARROW':
+                console.log('[단축키] Shift+Up');
+                this.toggleResume();
+                break;
+              case 'DOWN ARROW':
+                console.log('[단축키] Shift+Down');
+                this.togglePause();
+                break;
+            }
           }
         }
       });
@@ -218,6 +238,18 @@ class SystemListener {
   togglePause() {
     ipcMain.emit('toggle-pause');
   }
+
+  moveToNextPage() {
+    ipcMain.emit('move-to-next-page');
+  }
+
+  moveToPrevPage() {
+    ipcMain.emit('move-to-prev-page');
+  }
+
+  toggleOverlay() {
+    ipcMain.emit('toggle-overlay');
+  } 
 
   // 오류 대화상자 표시
   showErrorDialog(message) {

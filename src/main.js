@@ -879,6 +879,8 @@ const IPCManager = {
     // 네비게이션 핸들러
     ipcMain.on('move-to-next', () => IPCManager.handleMove('next'));
     ipcMain.on('move-to-prev', () => IPCManager.handleMove('prev'));
+    ipcMain.on('move-to-next-page', () => IPCManager.handleMove('next', 'page'));
+    ipcMain.on('move-to-prev-page', () => IPCManager.handleMove('prev', 'page'));
     ipcMain.on('move-to-position', (event, position) => this.handleMoveToPosition(position));
 
     // 모드 전환 핸들러
@@ -983,23 +985,46 @@ const IPCManager = {
   },
 
   // 네비게이션 관련 메서드
-  handleMove(direction) {
+  handleMove(direction, moveType = 'paragraph') { // moveType 파라미터 추가
     const state = store.getState().textProcess;
     const isNext = direction === 'next';
-    const canMove = isNext ?
-      state.currentParagraph < state.paragraphs.length - 1 :
-      state.currentParagraph > 0;
+    let newPosition;
   
-    if (canMove) {
-      const newPosition = isNext ? 
+    if (moveType === 'page') {  // 페이지 신호에서는 페이지 단위로 이동
+      const currentPage = state.paragraphsMetadata[state.currentParagraph]?.pageNumber;
+      
+      if (currentPage !== null) {
+        // 다음/이전 페이지의 첫 단락 찾기
+        const targetPage = isNext ? currentPage + 1 : currentPage - 1;
+        newPosition = state.paragraphsMetadata.findIndex(
+          meta => meta?.pageNumber === targetPage
+        );
+      
+        if (newPosition === -1) { // 페이지를 찾지 못했거나 범위를 벗어난 경우
+          newPosition = isNext ? 
+            state.paragraphs.length - 1 : // 마지막 단락
+            0; // 첫 단락
+        }
+      } else {
+        // 페이지 정보가 없는 경우 기존 단락 이동으로 폴백
+        newPosition = isNext ? 
+          state.currentParagraph + 1 : 
+          state.currentParagraph - 1;
+      }
+    } else {
+      // 기존 단락 단위 이동
+      newPosition = isNext ? 
         state.currentParagraph + 1 : 
         state.currentParagraph - 1;
+    }
   
-      // isPaused 상태를 해제하고 복사 실행
+    // 범위 검사
+    const canMove = newPosition >= 0 && newPosition < state.paragraphs.length;
+    
+    if (canMove) {
       this.handleResume();
       store.dispatch(textProcessActions.updateCurrentParagraph(newPosition));
       
-      // 현재 단락 복사
       const currentContent = state.paragraphs[newPosition];
       if (currentContent) {
         ContentManager.copyAndLogDebouncer(currentContent);
@@ -1007,7 +1032,7 @@ const IPCManager = {
   
       updateState({
         ...store.getState().textProcess,
-        isPaused: false,  // isPaused 상태 명시적 설정
+        isPaused: false,
         timestamp: Date.now()
       }, 'move');
     }
@@ -1026,17 +1051,25 @@ const IPCManager = {
   },
 
   // 윈도우 관련 메서드
-  handleToggleOverlay() {
+  async handleToggleOverlay() {
     if (!overlayWindow) return;
-
-    globalState.isOverlayVisible = !globalState.isOverlayVisible;
-    if (globalState.isOverlayVisible) {
-      overlayWindow.show();
-      mainWindow.focus();
+    
+    const newVisibility = !globalState.isOverlayVisible;
+    
+    // 1. 먼저 상태 업데이트
+    await updateState({ isOverlayVisible: newVisibility });
+    
+    // 2. 창 상태 업데이트
+    if (newVisibility) {
+      if (!overlayWindow.isDestroyed()) {
+        overlayWindow.show();
+        mainWindow?.focus();
+      }
     } else {
-      overlayWindow.hide();
+      if (!overlayWindow.isDestroyed()) {
+        overlayWindow.hide();
+      }
     }
-    updateState({ isOverlayVisible: globalState.isOverlayVisible });
   },
 
   handlePause() {
