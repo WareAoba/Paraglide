@@ -1,6 +1,8 @@
 /* 기본 폰트 */
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@100..900&display=swap');
 
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css");
+
 
 /* 전역 변수 */
 :root {
@@ -11,8 +13,8 @@
   --bg-color: rgba(255, 255, 255, 0.9);
   --dark-text: #f5f5f5;
   --dark-bg: #1e1e1e;
-  --border-color: rgba(0, 0, 0, 0.2);
-  --hover-bg: rgba(0, 0, 0, 0.05);
+  --border-color: rgba(0, 0, 0, 0.45);
+  --hover-bg: rgba(0, 0, 0, 0.1);
   --overlay-bg: rgba(255, 255, 255, 1.0);
   --danger-color: #dc3545;
   --success-color: #28a745;
@@ -22,15 +24,20 @@
   --dark-bg-rgb: 30, 30, 30;
   --active-color: rgba(188, 188, 188, 1.0);
   --btn-bg: rgba(255, 255, 255, 0.025);
+  --icon-filter: brightness(0) saturate(100%) invert(37%) sepia(1%) saturate(0%) hue-rotate(19deg) brightness(96%) contrast(93%)
 
   /* 크기 */
   --container-width: 100vw;
   --logo-width: 80vw;
   --logo-height: 50vh;
-  --btn-size: 24px;
+  --btn-size: 34px;
+  --btn-iconsize: 30px;
   --close-btn-size: 25px;
+  --content-padding: 10px;
   
   /* 간격 */
+  --spacing-xxs: 3px;
+  --spacing-xs: 5px;
   --spacing-sm: 10px;
   --spacing-md: 20px;
   --spacing-lg: 30px;
@@ -47,11 +54,12 @@
   --bg-color: #1e1e1e;
   --bg-rgb: 30, 30, 30;
   --bg-secondary: #262626;
-  --border-color: rgba(255, 255, 255, 0.2);
+  --border-color: rgba(255, 255, 255, 0.5);
   --hover-bg: rgba(255, 255, 255, 0.05);
   --overlay-bg: rgba(32, 32, 32, 1.0);
   --active-color: rgba(48, 48, 48, 1.0);
   --btn-bg: rgba(0, 0, 0, 0.025);
+  --icon-filter: brightness(0) saturate(100%) invert(61%) sepia(2%) saturate(0%) hue-rotate(327deg) brightness(95%) contrast(84%);
   
   /* 단락 관련 */
   --paragraph-bg: #262626;
@@ -72,8 +80,7 @@ body,
   width: 100%;
   height: 100%;
   overflow: hidden;
-  font-family: -apple-system, BlinkMacSystemFont, 'Noto Sans KR', 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color: var(--text-color);

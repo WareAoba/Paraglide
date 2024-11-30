@@ -340,7 +340,6 @@ function MainComponent() {
         onClose={handleCloseSidebar}
       />
 
-      <div className="app-container" data-theme={theme.mode}>
           <div className="main-container" data-theme={theme.mode}>
 
             <div className="button-group-controls">
@@ -383,11 +382,12 @@ function MainComponent() {
                 </button>
             </div>
 
-            
-              <div className="paragraph-container">
-                <div className="page-number">
+              <div className="page-number">
                   {state.currentNumber ? `${state.currentNumber} 페이지` : ''}
                 </div>
+            
+              <div className="paragraph-container">
+                
                 <div className="paragraph-header" data-theme={theme.mode}>
                   <div>이전 단락</div>
                   <div className="current">현재 단락</div>
@@ -425,7 +425,6 @@ function MainComponent() {
                 </div>
               </div>
             </div>
-      </div>
       <Settings 
         isVisible={isSettingsVisible}
         onClose={() => setIsSettingsVisible(false)}

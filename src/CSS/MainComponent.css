@@ -2,7 +2,6 @@
   --button-group-height: 100px;
   --content-padding: 20px;
   --container-spacing: var(--spacing-md);
-  --icon-filter: brightness(0) saturate(100%) invert(92%) sepia(1%) saturate(45%) hue-rotate(314deg) brightness(75%) contrast(82%);
 }
 
 /* 다크모드 대응 */
@@ -15,10 +14,7 @@
   color: var(--text-color);
 }
 
-.icon{
-  height: var(--btn-iconsize);
-  width: var(--btn-iconsize);
-}
+
 
 .welcome-screen {
     display: flex;
@@ -33,38 +29,6 @@
     transition: background-color var(--transition-default),
                 color var(--transition-default);
 }
-
-.welcome-screen .button-group-controls {
-  display: flex;
-  align-items: center;
-  justify-content: start;
-  width: 100%;
-  max-width: 800px;
-  margin: 0 auto;
-  gap: var(--spacing-xs);
-  padding: var(--spacing-xs);
-  filter: var(--icon-filter);
-}
-
-.welcome-screen .button-group-controls .btn-icon {
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  outline: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 15%;
-  width: var(--btn-size); 
-  height: var(--btn-size);
-  margin: 0;
-}
-
-.welcome-screen .button-group-controls .btn-icon:hover {
-  background-color: var(--btn-icon-hover); /* Add a subtle hover effect */
-}
-
 
 .welcome-screen .logo-container {
     display: flex;
@@ -130,19 +94,24 @@
     overflow: hidden; /* 중요: 스크롤 방지 */
   }
 
-  .main-container .button-group-controls{
+ .button-group-controls{
     display: flex;
     align-items: center;
     justify-content: start;
     width: 100%;
     max-width: 800px;
     margin: 0 auto;
-    gap: var(--spacing-sm);
+    margin: var(--spacing-xs);
+    gap: var(--spacing-xxs);
     padding: var(--spacing-xs);
     filter: var(--icon-filter);
   }
 
-  .main-container .button-group-controls .btn-icon {
+  [data-theme="dark"] .button-group-controls {
+    filter: var(--icon-filter);
+  }
+
+.button-group-controls .btn-icon {
     background: none;
     border: none;
     padding: 0;
@@ -157,17 +126,23 @@
     margin: 0;
   }
 
-  .main-container .button-group-controls .btn-icon:hover {
-    background-color: var(--btn-icon-hover); /* Add a subtle hover effect */
-  }
+
+.button-group-controls .btn-icon:hover {
+  background-color: var(--hover-bg); 
+}
+
+.icon{
+  height: var(--btn-iconsize);
+  width: var(--btn-iconsize);
+}
 
 
   .main-container .page-number {
-    font-size: 2em;  
+    font-size: 2.1em;  
     text-align: left;
     font-weight: 700; 
     color: var(--text-color);
-    margin: var(--spacing-xs);
+    margin-left: var(--spacing-sm);
   }
 
   .main-container .paragraph-container {
@@ -203,6 +178,12 @@
     font-weight: 500;  /* 약간의 강조 */
     color: var(--text-color);
   }
+
+  [data-theme="dark"] .paragraph-header > div {
+    color: var(--text-color);
+  }
+
+
 
   .paragraph-header .current {
     flex: 1.5;
@@ -240,6 +221,12 @@
   -webkit-line-clamp: 6;   /* 최대 8줄까지 표시 */
   -webkit-box-orient: vertical;
   word-break: break-word;  /* 긴 단어 처리 */
+}
+
+[data-theme="dark"] .paragraph-current,
+.paragraph-prev,
+.paragraph-next  {
+  color: var(--text-color);
 }
 
 .paragraph-current {
