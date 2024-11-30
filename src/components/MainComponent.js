@@ -284,25 +284,7 @@ function MainComponent() {
         />
         
         <div className="welcome-screen" data-theme={theme.mode}>
-          {/* 사이드바 버튼 */}
-          <button className="btn-sidebar" onClick={handleToggleSidebar}>
-            <svg
-              width="100%"
-              height="100%"
-              fill="currentColor"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-            >
-              <path d="M3 5H21" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"></path>
-              <path d="M3 12H21" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"></path>
-              <path d="M3 19H21" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"></path>
-            </svg>
-          </button>
-
-
-        <div className="welcome-screen" data-theme={state.isDarkMode ? 'dark' : 'light'}>
-          
-          <div className = "button-group-controls">
+          <div className="button-group-controls">
             <button className="btn-icon" onClick={handleToggleSidebar}>
               <img src={sidebarIcon} alt="Sidebar Icon" className="icon" />
             </button>
@@ -313,7 +295,7 @@ function MainComponent() {
               <img src={settingsIcon} alt="설정" className="icon"/>
             </button>
           </div>          
-
+  
           <div className="logo-container">
             {state.logoPath && (
               <img
@@ -338,8 +320,7 @@ function MainComponent() {
             </button>
           </div>
         </div>
-
-        {/* Settings 컴포넌트 추가 */}
+  
         <Settings 
           isVisible={isSettingsVisible}
           onClose={() => setIsSettingsVisible(false)}
