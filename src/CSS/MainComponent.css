@@ -2,7 +2,7 @@
   --button-group-height: 100px;
   --content-padding: 20px;
   --container-spacing: var(--spacing-md);
-  --icon-filter: brightness(0) saturate(100%) invert(37%) sepia(1%) saturate(0%) hue-rotate(19deg) brightness(96%) contrast(93%)
+  --icon-filter: brightness(0) saturate(100%) invert(92%) sepia(1%) saturate(45%) hue-rotate(314deg) brightness(75%) contrast(82%);
 }
 
 /* 다크모드 대응 */
@@ -41,8 +41,8 @@
   width: 100%;
   max-width: 800px;
   margin: 0 auto;
-  gap: var(--spacing-lg);
-  padding: var(--spacing-xs0);
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs);
   filter: var(--icon-filter);
 }
 
@@ -137,7 +137,7 @@
     width: 100%;
     max-width: 800px;
     margin: 0 auto;
-    gap: var(--spacing-xs);
+    gap: var(--spacing-sm);
     padding: var(--spacing-xs);
     filter: var(--icon-filter);
   }

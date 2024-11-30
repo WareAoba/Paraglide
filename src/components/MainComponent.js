@@ -362,8 +362,7 @@ function MainComponent() {
                   <img src={endIcon} alt = "작업 종료" className="icon"/>
                 </button>
                 
-                <div className="toggle-buttons">
-                  <button 
+                <button 
                     className={`btn-icon ${state.isPaused ? 'btn-danger' : 'btn-success'}`}
                     onClick={handleTogglePause}
                   >
@@ -372,23 +371,23 @@ function MainComponent() {
                     ) : (
                       <img src={pauseIcon} alt="일시정지" className="icon" />
                     )}
-                  </button>
-                  <button 
-                    className={`btn-icon ${state.isOverlayVisible ? 'btn-active' : 'btn-outline'}`}
-                    onClick={handleToggleOverlay}
-                  >
-                    {state.isOverlayVisible ?
-                      <img src={eyeIcon} alt="일시정지" className="icon" />
-                       : 
-                      <img src={eyeOffIcon} alt="일시정지" className="icon" /> }
-                  </button>
-              </div>
+                </button>
+                <button 
+                  className={`btn-icon ${state.isOverlayVisible ? 'btn-active' : 'btn-outline'}`}
+                  onClick={handleToggleOverlay}
+                >
+                  {state.isOverlayVisible ?
+                    <img src={eyeIcon} alt="일시정지" className="icon" />
+                     : 
+                    <img src={eyeOffIcon} alt="일시정지" className="icon" /> }
+                </button>
             </div>
 
-            <div className="page-number">
-              {state.currentNumber ? `${state.currentNumber} 페이지` : ''}
-            </div>
+            
               <div className="paragraph-container">
+                <div className="page-number">
+                  {state.currentNumber ? `${state.currentNumber} 페이지` : ''}
+                </div>
                 <div className="paragraph-header" data-theme={theme.mode}>
                   <div>이전 단락</div>
                   <div className="current">현재 단락</div>
