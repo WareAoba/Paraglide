@@ -1,6 +1,5 @@
 /* 기본 폰트 */
-@import url('https://fonts.googleapis.com/css?family=Rubik:500');
-@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css");
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@100..900&display=swap');
 
 
 /* 전역 변수 */
@@ -12,7 +11,7 @@
   --bg-color: rgba(255, 255, 255, 0.9);
   --dark-text: #f5f5f5;
   --dark-bg: #1e1e1e;
-  --border-color: rgba(94, 94, 94, 0.7);
+  --border-color: rgba(0, 0, 0, 0.2);
   --hover-bg: rgba(0, 0, 0, 0.05);
   --overlay-bg: rgba(255, 255, 255, 1.0);
   --danger-color: #dc3545;
@@ -23,23 +22,18 @@
   --dark-bg-rgb: 30, 30, 30;
   --active-color: rgba(188, 188, 188, 1.0);
   --btn-bg: rgba(255, 255, 255, 0.025);
-  --btn-icon: rgba(154,154,154, 1.0);
-  --btn-icon-hover: rgba(154,154,154, 0.1);
 
   /* 크기 */
   --container-width: 100vw;
   --logo-width: 80vw;
   --logo-height: 50vh;
-  --btn-size: 30px;
+  --btn-size: 28px;
   --close-btn-size: 25px;
-  --btn-iconsize: 32px;
   
   /* 간격 */
-  --spacing-xs: 3px;
   --spacing-sm: 10px;
   --spacing-md: 20px;
   --spacing-lg: 30px;
-  --spacing-xl: 45px
 
   /* 트랜지션 */
   --transition-default: 0.3s ease;
@@ -78,14 +72,14 @@ body,
   width: 100%;
   height: 100%;
   overflow: hidden;
-  font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto';
+  font-family: -apple-system, BlinkMacSystemFont, 'Noto Sans KR', 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color: var(--text-color);
   transition: background-color var(--transition-default), 
               color var(--transition-default);
 }
-
 
 /* 스크롤바 제거 */
 ::-webkit-scrollbar {

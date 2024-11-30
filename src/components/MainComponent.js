@@ -11,12 +11,17 @@ function MainComponent() {
     paragraphs: [],
     currentParagraph: 0,
     currentNumber: null,
-    isDarkMode: false,
-    isPaused: false,
     isOverlayVisible: false,
     logoPath: null,
     isSidebarVisible: false, // 추가
-    programStatus: 'READY' // 추가
+    programStatus: 'READY', // 추가
+    isPaused: false
+  });
+
+  const [theme, setTheme] = useState({
+    isDarkMode: false,
+    mode: 'light',
+    accentColor: '#007bff'
   });
 
   const [logoScale, setLogoScale] = useState(1);
@@ -33,6 +38,12 @@ function MainComponent() {
 
 
   useEffect(() => {
+
+    const initializeTheme = async () => {
+      const initialTheme = await ipcRenderer.invoke('get-current-theme');
+      setTheme(initialTheme);
+    };
+
     // 로고 로드 함수 수정
     const loadLogo = async () => {
       try {
@@ -51,9 +62,9 @@ function MainComponent() {
         const initialState = await ipcRenderer.invoke('get-state');
         setState(prev => ({
           ...prev,
-          isDarkMode: initialState.isDarkMode,
           isOverlayVisible: initialState.isOverlayVisible
         }));
+        initializeTheme();
         loadLogo();
       } catch (error) {
         console.error('초기 상태 로드 실패:', error);
@@ -62,18 +73,21 @@ function MainComponent() {
 
     // 상태 업데이트 핸들러
     const handleStateUpdate = (event, updatedState) => {
-      setState(prev => ({ ...prev, ...updatedState }));
+      setState(prev => ({
+        ...prev,
+        ...updatedState,
+      }));
     };
 
     // 테마 변경 핸들러
-    const handleThemeChanged = (event, isDarkMode) => {
-      setState(prevState => ({ ...prevState, isDarkMode }));
-      loadLogo();
+    const handleThemeUpdate = (_, newTheme) => {
+      setTheme(newTheme);
+      document.documentElement.style.setProperty('--primary-color', newTheme.accentColor);
     };
 
     // 이벤트 리스너 등록
     ipcRenderer.on('state-update', handleStateUpdate);
-    ipcRenderer.on('theme-changed', handleThemeChanged);
+    ipcRenderer.on('theme-update', handleThemeUpdate);
     
     // 초기화
     initializeState();
@@ -81,7 +95,7 @@ function MainComponent() {
     // 클린업
     return () => {
       ipcRenderer.removeListener('state-update', handleStateUpdate);
-      ipcRenderer.removeListener('theme-changed', handleThemeChanged);
+      ipcRenderer.removeListener('theme-update', handleThemeUpdate);
     };
   }, []);
 
@@ -144,13 +158,11 @@ function MainComponent() {
   // 파일 로드 핸들러 수정
   const handleLoadFile = async () => {
     try {
-      const filePath = await ipcRenderer.invoke('open-file-dialog');
-      if (!filePath) return;
-
-      const content = await ipcRenderer.invoke('read-file', filePath);
-      if (!content) return;
-
-      const result = await ipcRenderer.invoke('process-file-content', content, filePath);
+      // 통합된 open-file 핸들러 사용
+      const result = await ipcRenderer.invoke('open-file', {
+        source: 'dialog'  // 다이얼로그를 통한 파일 열기임을 명시
+      });
+  
       if (result.success) {
         const newState = await ipcRenderer.invoke('get-state');
         setState(prev => ({ ...prev, ...newState }));
@@ -236,19 +248,21 @@ function MainComponent() {
       paragraphs: [],
       currentParagraph: 0,
       currentNumber: null,
+      currentFilePath: null,
       isPaused: false,
       isOverlayVisible: false
     });
-
-    // 그 다음 로컬 상태 업데이트
+  
+    // 그 다음 로컬 상태 업데이트 - isSidebarVisible 유지
     setState(prevState => ({
       ...prevState,
       paragraphs: [],
       currentParagraph: 0,
       currentNumber: null,
+      currentFilePath: null,
       isPaused: false,
       isOverlayVisible: false,
-      programStatus: 'READY'
+      programStatus: 'READY',
     }));
   };
 
@@ -258,16 +272,32 @@ function MainComponent() {
   };
 
   // MainComponent.js의 웰컴 스크린 return문 수정
-  if (state.paragraphs.length === 0) {
+  if (state.paragraphs.length === 0 || state.programStatus === 'READY') {
     return (
-      <div className="app-container">
+      <div className="app-container" data-theme={theme.mode}>
         <Sidebar 
           isVisible={state.isSidebarVisible}
           onFileSelect={handleSidebarFileSelect}
-          isDarkMode={state.isDarkMode}
+          theme={theme}
           onClose={handleCloseSidebar}
-          currentFilePath={null}
+          currentFilePath={state.programStatus === 'PROCESS' ? state.currentFilePath : null}
         />
+        
+        <div className="welcome-screen" data-theme={theme.mode}>
+          {/* 사이드바 버튼 */}
+          <button className="btn-sidebar" onClick={handleToggleSidebar}>
+            <svg
+              width="100%"
+              height="100%"
+              fill="currentColor"
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+            >
+              <path d="M3 5H21" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"></path>
+              <path d="M3 12H21" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"></path>
+              <path d="M3 19H21" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"></path>
+            </svg>
+          </button>
 
 
         <div className="welcome-screen" data-theme={state.isDarkMode ? 'dark' : 'light'}>
@@ -313,7 +343,7 @@ function MainComponent() {
         <Settings 
           isVisible={isSettingsVisible}
           onClose={() => setIsSettingsVisible(false)}
-          isDarkMode={state.isDarkMode}
+          theme={theme}
         />
       </div>
     );
@@ -321,44 +351,16 @@ function MainComponent() {
 
   // MainComponent.js의 return문 부분 수정
   return (
-    <div className="app-container">
+    <div className="app-container" data-theme={theme.mode}>
       <Sidebar 
         isVisible={state.isSidebarVisible}
         onFileSelect={handleSidebarFileSelect}
-        isDarkMode={state.isDarkMode}
+        theme={theme}
         onClose={handleCloseSidebar}
       />
 
-      <div className={`app-container ${state.isDarkMode ? 'dark-mode' : ''}`} data-theme={state.isDarkMode ? 'dark' : 'light'}>
-        {state.programStatus === 'READY' ? (
-          <div className="welcome-screen">
-            <div className="logo-container">
-              {state.logoPath && (
-                <img
-                  src={state.logoPath}
-                  alt="Paraglide Logo"
-                  className="logo"
-                  style={{ transform: `scale(${logoScale})` }}
-                  onClick={handleLogoClick}
-                  onError={(e) => {
-                    console.error('로고 렌더링 실패:', e);
-                    e.target.style.display = 'none';
-                  }}
-                />
-              )}
-              <h1 className="title">Paraglide</h1>
-            </div>
-            <div className="button-container">
-              <button 
-                className="btn-primary"
-                onClick={handleLoadFile}
-              >
-                파일 불러오기
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="main-container">
+      <div className="app-container" data-theme={theme.mode}>
+          <div className="main-container" data-theme={theme.mode}>
 
             <div className="button-group-controls">
                 <button className="btn-icon" onClick={handleToggleSidebar}>
@@ -406,18 +408,19 @@ function MainComponent() {
               {state.currentNumber ? `${state.currentNumber} 페이지` : ''}
             </div>
               <div className="paragraph-container">
-                <div className="paragraph-header">
+                <div className="paragraph-header" data-theme={theme.mode}>
                   <div>이전 단락</div>
                   <div className="current">현재 단락</div>
                   <div>다음 단락</div>
                 </div>
                 
-                <div className="paragraph-content">
+                <div className="paragraph-content" data-theme={theme.mode}>
                   <div 
                     className={`paragraph-prev ${hoveredSection === 'prev' ? 'hovered' : ''}`}
                     onClick={() => handleParagraphClick('prev')}
                     onMouseEnter={() => setHoveredSection('prev')}
                     onMouseLeave={() => setHoveredSection(null)}
+                    data-theme={theme.mode}
                   >
                     {state.paragraphs[state.currentParagraph - 1] || ''}
                   </div>
@@ -425,6 +428,7 @@ function MainComponent() {
                   <div 
                     className="paragraph-current"
                     onClick={() => handleParagraphClick('current')}
+                    data-theme={theme.mode}
                   >
                     {state.paragraphs[state.currentParagraph] || ''}
                   </div>
@@ -434,18 +438,18 @@ function MainComponent() {
                     onClick={() => handleParagraphClick('next')}
                     onMouseEnter={() => setHoveredSection('next')}
                     onMouseLeave={() => setHoveredSection(null)}
+                    data-theme={theme.mode}
                   >
                     {state.paragraphs[state.currentParagraph + 1] || ''}
                   </div>
                 </div>
               </div>
             </div>
-        )}
       </div>
       <Settings 
         isVisible={isSettingsVisible}
         onClose={() => setIsSettingsVisible(false)}
-        isDarkMode={state.isDarkMode}
+        theme={theme}
       />
       </div>
   );

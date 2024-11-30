@@ -96,10 +96,6 @@
 
   - Mount **Paraglide-0.1.0-beta-arm64.dmg**.
   - Copy **Paraglide.app** to **~/Applications**.
-  - If the error message "The file is damaged" appears, enter the following command in the terminal:
-   ```bash
-   sudo xattr -r -d com.apple.quarantine /Applications/Paraglide.app
-   ```
   - Follow the instructions to enable **accessibility** and **input monitoring** permissions.
 
 ## Running in Dev Mode / Building
@@ -114,13 +110,19 @@
    git clone https://github.com/WareAoba/Paraglide
    ```
 
- 2. Install NPM in root directory of the project:
+ 2. Switch to the **development** branch:
+  
+   ```bash
+   git checkout -b development
+   ```
+
+ 3. Install NPM in root directory of the project:
 
    ```bash
    git clone https://github.com/WareAoba/Paraglide
    ```
 
- 3. Run the program with the following command:
+ 4. Run the program with the following command:
    
    ```bash
    npm run dev
@@ -128,7 +130,7 @@
 
  **Building and Compiling**:
 
- - Run the following command to create a build:
+ - Run the following command to create a build:(**may not have been tested** for compilation.)
 
   ```bash
   npm run make
@@ -143,6 +145,8 @@
  1. ***Beta Release***
  2. Various bugs have been fixed.
  3. Finalized macOS permission checks.
+ 4. [Dev] Introduced Redux for state management.
+ 5. [Dev] Line Mode: Added a mode to process text on a line-by-line basis instead of by paragraphs.
 
 ## Features in Development
 
@@ -157,14 +161,10 @@
 
 ## Known Issues
 
- 1. Overlay layout misalignment: Paragraphs should have equal spacing, but gaps between current/next and previous/current are inconsistent.
- 2. UI properties are being migrated to CSS, leaving the UI temporarily messy.
- 3. The new Sidebar’s design is subpar—scheduled for improvement.
- 4. Issues with real-time theme switching; handlers seem to be missing.
- 5. Files occasionally unload randomly, with the cause still unidentified.
- 6. The 'loadLastOverlayBounds' setting does not work.
- 7. The current program size is quite large and will be gradually reduced.
- 8. Planning to introduce Redux for state management.
+ 1. **Overlay layout misalignment**: All paragraphs should have equal spacing, but the gaps between previous/current and current/next are unusually wide. I'm currently unsure how to fix this.
+ 2. **UI properties being migrated to CSS**: Converting all UI properties to CSS is currently making the UI quite messy. It's uncertain when this will be fully resolved.
+ 3. **New Sidebar design is subpar**: The design of the newly added Sidebar is very poor. Improvements are planned for the future.
+ 4. **Program size issue**: The current size of the program is quite large. Plans are in place to gradually reduce it.
 
 ## Beta Release?
 
