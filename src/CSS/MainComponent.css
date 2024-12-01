@@ -215,10 +215,10 @@
   line-height: 1.6;  /* 행간 조정 */
   text-align: left;
   text-overflow: ellipsis;
+  user-select: none;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);  /* 미묘한 그림자 */
   overflow: hidden;         /* 넘치는 텍스트 숨김 */
   display: -webkit-box;    /* 웹킷 기반 다중 라인 ellipsis */
-  -webkit-line-clamp: 6;   /* 최대 8줄까지 표시 */
   -webkit-box-orient: vertical;
   word-break: break-word;  /* 긴 단어 처리 */
 }

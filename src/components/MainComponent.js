@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import '../CSS/MainComponent.css';
 import Sidebar from './Sidebar';
 import Settings from './Settings';
+import ListView from './Views/ListView';
 const { ipcRenderer } = window.require('electron');
 
 // MainComponent.js 수정
@@ -24,7 +25,8 @@ function MainComponent() {
     accentColor: '#007bff'
   });
 
-  const [logoScale, setLogoScale] = useState(1);
+  const [viewMode, setViewMode] = useState('overview');  // 'overview' | 'list'
+
   const [hoveredSection, setHoveredSection] = useState(null);
   const [playIcon, setPlayIcon] = useState(null);
   const [pauseIcon, setPauseIcon] = useState(null);
@@ -35,6 +37,7 @@ function MainComponent() {
   const [endIcon, setEndIcon] = useState(null);
   const [eyeIcon, setEyeIcon] = useState(null);
   const [eyeOffIcon, setEyeOffIcon] = useState(null);
+  const [listIcon, setListIcon] = useState(null);
 
 
   useEffect(() => {
@@ -99,6 +102,47 @@ function MainComponent() {
     };
   }, []);
 
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const files = Array.from(e.dataTransfer.files);
+    const txtFile = files.find(file => file.name.endsWith('.txt'));
+
+    if (txtFile) {
+      try {
+        // 파일 경로 추출 (Electron의 경우)
+        const filePath = txtFile.path;
+        
+        // 기존 open-file 핸들러 재사용
+        const result = await ipcRenderer.invoke('open-file', {
+          filePath,
+          source: 'drag-drop'
+        });
+
+        if (result.success) {
+          const newState = await ipcRenderer.invoke('get-state');
+          setState(prev => ({ ...prev, ...newState }));
+        }
+      } catch (error) {
+        console.error('파일 로드 실패:', error);
+      }
+    }
+  };
+
+  const handleViewModeToggle = () => {
+    setViewMode(prev => prev === 'overview' ? 'list' : 'overview');
+  };
+
+  const handleParagraphSelect = (index) => {
+    ipcRenderer.send('move-to-position', index);
+  };
+
   useEffect(() => {
     const loadIcons = async () => {
       try {
@@ -112,7 +156,8 @@ function MainComponent() {
         const endIcon = await ipcRenderer.invoke('get-icon-path', 'save.svg')
         const eyeIcon = await ipcRenderer.invoke('get-icon-path', 'eyes.svg')
         const eyeOffIcon = await ipcRenderer.invoke('get-icon-path', 'eyes-off.svg')
-        
+        const listIconPath = await ipcRenderer.invoke('get-icon-path', 'list.svg');
+
         setPlayIcon(playIconPath);
         setPauseIcon(pauseIconPath);
         setTerminalIcon(terminalIconPath);
@@ -121,6 +166,7 @@ function MainComponent() {
         setEndIcon(endIcon);
         setEyeIcon(eyeIcon);
         setEyeOffIcon(eyeOffIcon);
+        setListIcon(listIconPath);
       } catch (error) {
         console.error('아이콘 로드 실패:', error);
       }
@@ -172,13 +218,6 @@ function MainComponent() {
     }
   };
 
-  const handleLogoClick = () => {
-    setLogoScale(prev => {
-      const newScale = prev >= 2 ? 1 : prev + 0.5;
-      return newScale;
-    });
-  };
-
   // MainComponent.js에서 복사 함수
   const handleParagraphClick = (type) => {
     if (type === 'prev') {
@@ -189,7 +228,6 @@ function MainComponent() {
       ipcRenderer.send('toggle-resume');
     }
   };
-
 
   // 사이드바 토글 함수
   const handleToggleSidebar = () => {
@@ -261,7 +299,12 @@ function MainComponent() {
   // MainComponent.js의 웰컴 스크린 return문 수정
   if (state.paragraphs.length === 0 || state.programStatus === 'READY') {
     return (
-      <div className="app-container" data-theme={theme.mode}>
+      <div
+        className="app-container"
+        data-theme={theme.mode}
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}>
+          
         <Sidebar 
           isVisible={state.isSidebarVisible}
           onFileSelect={handleSidebarFileSelect}
@@ -289,7 +332,6 @@ function MainComponent() {
                 src={state.logoPath}
                 alt="Paraglide Logo"
                 className="logo"
-                onClick={handleLogoClick}
                 onError={(e) => {
                   console.error('로고 렌더링 실패:', e);
                   e.target.style.display = 'none';
@@ -319,7 +361,12 @@ function MainComponent() {
 
   // MainComponent.js의 return문 부분 수정
   return (
-    <div className="app-container" data-theme={theme.mode}>
+    <div
+      className="app-container"
+      data-theme={theme.mode}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}>
+
       <Sidebar 
         isVisible={state.isSidebarVisible}
         onFileSelect={handleSidebarFileSelect}
@@ -327,97 +374,106 @@ function MainComponent() {
         onClose={handleCloseSidebar}
       />
 
-          <div className="main-container" data-theme={theme.mode}>
+      <div className="main-container" data-theme={theme.mode}>
 
-            <div className="button-group-controls">
-                <button className="btn-icon" onClick={handleToggleSidebar}>
-                  <img src={sidebarIcon} alt="Sidebar Icon" className="icon" />
-                </button>
+        <div className="button-group-controls">
+          <button className="btn-icon" onClick={handleToggleSidebar}>
+            <img src={sidebarIcon} alt="Sidebar Icon" className="icon" />
+          </button>
 
-                <button 
-                  className="btn-icon"
-                  onClick={() => setIsSettingsVisible(true)}
-                >
-                  <img src={settingsIcon} alt="Sidebar Icon" className="icon" />
-                </button>
-                
-                <button 
-                  className="btn-icon"
-                  onClick={handleCompleteWork}
-                >
-                  <img src={endIcon} alt = "작업 종료" className="icon"/>
-                </button>
-                
-                <button 
-                    className={`btn-icon ${state.isPaused ? 'btn-danger' : 'btn-success'}`}
-                    onClick={handleTogglePause}
-                  >
-                    {state.isPaused ? (
-                      <img src={playIcon} alt="재생" className="icon" />
-                    ) : (
-                      <img src={pauseIcon} alt="일시정지" className="icon" />
-                    )}
-                </button>
-                <button 
-                  className={`btn-icon ${state.isOverlayVisible ? 'btn-active' : 'btn-outline'}`}
-                  onClick={handleToggleOverlay}
-                >
-                  {state.isOverlayVisible ?
-                    <img src={eyeIcon} alt="일시정지" className="icon" />
-                     : 
-                    <img src={eyeOffIcon} alt="일시정지" className="icon" /> }
-                </button>
+          <button 
+            className="btn-icon"
+            onClick={() => setIsSettingsVisible(true)}
+          >
+            <img src={settingsIcon} alt="Sidebar Icon" className="icon"/>
+          </button>
+          
+          <button 
+            className="btn-icon"
+            onClick={handleCompleteWork}
+          >
+            <img src={endIcon} alt="작업 종료" className="icon"/>
+          </button>
+          
+          <button 
+            className={`btn-icon ${state.isPaused ? 'btn-danger' : 'btn-success'}`}
+            onClick={handleTogglePause}
+          >
+            {state.isPaused ? (
+              <img src={playIcon} alt="재생" className="icon" />
+            ) : (
+              <img src={pauseIcon} alt="일시정지" className="icon" />
+            )}
+          </button>
+          <button 
+            className={`btn-icon ${state.isOverlayVisible ? 'btn-active' : 'btn-outline'}`}
+            onClick={handleToggleOverlay}
+          >
+            {state.isOverlayVisible ?
+              <img src={eyeIcon} alt="일시정지" className="icon" />
+               : 
+              <img src={eyeOffIcon} alt="일시정지" className="icon" /> }
+          </button>
+          <button className={`btn-icon ${viewMode === 'list' ? 'btn-active' : 'btn-outline'}`}
+            onClick={handleViewModeToggle}>
+            <img src={listIcon} alt="리스트 뷰" className="icon" />
+          </button>
+
+        </div>
+      
+        <div className="page-number">
+          {state.currentNumber ? `${state.currentNumber} 페이지` : ''}
+        </div>
+      
+        {viewMode === 'overview' ? (
+          <div className="paragraph-container">
+            <div className="paragraph-header" data-theme={theme.mode}>
+              <div>이전 단락</div>
+              <div className="current">현재 단락</div>
+              <div>다음 단락</div>
             </div>
-
-              <div className="page-number">
-                  {state.currentNumber ? `${state.currentNumber} 페이지` : ''}
-                </div>
             
-              <div className="paragraph-container">
-                
-                <div className="paragraph-header" data-theme={theme.mode}>
-                  <div>이전 단락</div>
-                  <div className="current">현재 단락</div>
-                  <div>다음 단락</div>
-                </div>
-                
-                <div className="paragraph-content" data-theme={theme.mode}>
-                  <div 
-                    className={`paragraph-prev ${hoveredSection === 'prev' ? 'hovered' : ''}`}
-                    onClick={() => handleParagraphClick('prev')}
-                    onMouseEnter={() => setHoveredSection('prev')}
-                    onMouseLeave={() => setHoveredSection(null)}
-                    data-theme={theme.mode}
-                  >
-                    {state.paragraphs[state.currentParagraph - 1] || ''}
-                  </div>
+            <div className="paragraph-content" data-theme={theme.mode}>
+              <div className={`paragraph-prev ${hoveredSection === 'prev' ? 'hovered' : ''}`}
+                onClick={() => handleParagraphClick('prev')}
+                onMouseEnter={() => setHoveredSection('prev')}
+                onMouseLeave={() => setHoveredSection(null)}
+                data-theme={theme.mode}>
+                {state.paragraphs[state.currentParagraph - 1] || ''}
+              </div>
 
-                  <div 
-                    className="paragraph-current"
-                    onClick={() => handleParagraphClick('current')}
-                    data-theme={theme.mode}
-                  >
-                    {state.paragraphs[state.currentParagraph] || ''}
-                  </div>
+              <div className="paragraph-current"
+                onClick={() => handleParagraphClick('current')}
+                data-theme={theme.mode}>
+                {state.paragraphs[state.currentParagraph] || ''}
+              </div>
 
-                  <div 
-                    className={`paragraph-next ${hoveredSection === 'next' ? 'hovered' : ''}`}
-                    onClick={() => handleParagraphClick('next')}
-                    onMouseEnter={() => setHoveredSection('next')}
-                    onMouseLeave={() => setHoveredSection(null)}
-                    data-theme={theme.mode}
-                  >
-                    {state.paragraphs[state.currentParagraph + 1] || ''}
-                  </div>
-                </div>
+              <div className={`paragraph-next ${hoveredSection === 'next' ? 'hovered' : ''}`}
+                onClick={() => handleParagraphClick('next')}
+                onMouseEnter={() => setHoveredSection('next')}
+                onMouseLeave={() => setHoveredSection(null)}
+                data-theme={theme.mode}>
+                {state.paragraphs[state.currentParagraph + 1] || ''}
               </div>
             </div>
+          </div>
+        ) : (
+          <ListView
+            paragraphs={state.paragraphs}
+            metadata={state.paragraphsMetadata}
+            currentParagraph={state.currentParagraph}
+            onParagraphSelect={handleParagraphSelect}
+            theme={theme}
+          />
+        )}
+      </div>
+
       <Settings 
         isVisible={isSettingsVisible}
         onClose={() => setIsSettingsVisible(false)}
         theme={theme}
       />
-      </div>
+    </div>
   );
 }
 

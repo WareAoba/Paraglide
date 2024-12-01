@@ -1058,13 +1058,25 @@ const IPCManager = {
 
   handleMoveToPosition(position) {
     if (position >= 0 && position < store.getState().textProcess.paragraphs.length) {
+      // 1. 현재 단락으로 이동
       store.dispatch(textProcessActions.updateCurrentParagraph(position));
-      mainWindow?.webContents.send('notify-clipboard-change');
       
+      // 2. 일시정지 해제
+      globalState.isPaused = false;
+      
+      // 3. 상태 업데이트 (isPaused 포함)
       updateState({
         ...store.getState().textProcess,
+        isPaused: false,
         timestamp: Date.now()
-      }, 'move');
+      });
+  
+      // 4. 현재 단락 복사 및 로깅
+      const state = store.getState().textProcess;
+      const currentContent = state.paragraphs[position];
+      if (currentContent) {
+        ContentManager.copyAndLogDebouncer(currentContent);
+      }
     }
   },
 
