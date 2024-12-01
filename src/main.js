@@ -994,22 +994,41 @@ const IPCManager = {
       const currentPage = state.paragraphsMetadata[state.currentParagraph]?.pageNumber;
       
       if (currentPage !== null) {
-        // 다음/이전 페이지의 첫 단락 찾기
         const targetPage = isNext ? currentPage + 1 : currentPage - 1;
-        newPosition = state.paragraphsMetadata.findIndex(
-          meta => meta?.pageNumber === targetPage
-        );
-      
-        if (newPosition === -1) { // 페이지를 찾지 못했거나 범위를 벗어난 경우
-          newPosition = isNext ? 
-            state.paragraphs.length - 1 : // 마지막 단락
-            0; // 첫 단락
+        
+        // 다음/이전 페이지 검색 시 내용이 있는 페이지를 찾을 때까지 계속 검색
+        let searchPage = targetPage;
+        let found = false;
+        
+        while (!found) {
+          newPosition = state.paragraphsMetadata.findIndex(meta => {
+            // 페이지 번호가 있고 내용이 있는 단락을 찾음
+            return meta?.pageNumber === searchPage && 
+                   state.paragraphs[state.paragraphsMetadata.indexOf(meta)]?.trim().length > 0;
+          });
+          
+          if (newPosition !== -1) {
+            found = true;
+          } else {
+            // 못 찾으면 다음/이전 페이지로 계속 검색
+            searchPage = isNext ? searchPage + 1 : searchPage - 1;
+            
+            // 검색 범위를 벗어나면 중단
+            const lastPage = Math.max(...state.paragraphsMetadata
+              .filter(meta => meta?.pageNumber !== null)
+              .map(meta => meta.pageNumber));
+            const firstPage = Math.min(...state.paragraphsMetadata
+              .filter(meta => meta?.pageNumber !== null)
+              .map(meta => meta.pageNumber));
+              
+            if (searchPage > lastPage || searchPage < firstPage) {
+              newPosition = isNext ? 
+                state.paragraphs.length - 1 : // 마지막 단락
+                0; // 첫 단락
+              break;
+            }
+          }
         }
-      } else {
-        // 페이지 정보가 없는 경우 기존 단락 이동으로 폴백
-        newPosition = isNext ? 
-          state.currentParagraph + 1 : 
-          state.currentParagraph - 1;
       }
     } else {
       // 기존 단락 단위 이동
@@ -1018,7 +1037,6 @@ const IPCManager = {
         state.currentParagraph - 1;
     }
   
-    // 범위 검사
     const canMove = newPosition >= 0 && newPosition < state.paragraphs.length;
     
     if (canMove) {
@@ -1080,15 +1098,12 @@ const IPCManager = {
   },
   
   handleResume() {
-    if (globalState.isPaused) {
-      globalState.isPaused = false;
       updateState({ isPaused: false });
       const state = store.getState().textProcess;
       const currentContent = state.paragraphs[state.currentParagraph];
       if (currentContent) {
         ContentManager.copyAndLogDebouncer(currentContent);
       }
-    }
 },
 
   // 디버그 콘솔 메서드

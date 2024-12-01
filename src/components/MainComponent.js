@@ -181,25 +181,12 @@ function MainComponent() {
 
   // MainComponent.js에서 복사 함수
   const handleParagraphClick = (type) => {
-    if (type === 'current') {
-      const currentContent = state.paragraphs[state.currentParagraph];
-      if (currentContent) {
-        ipcRenderer.send('copy-to-clipboard', currentContent);  // 이 부분이 제대로 호출되는지 확인
-      }
-    }
     if (type === 'prev') {
       handlePrev();
     } else if (type === 'next') {
       handleNext();
-    } else {
-      // 현재 단락 재복사 및 재개
-      const currentContent = state.paragraphs[state.currentParagraph];
-      if (currentContent) {
-        ipcRenderer.send('copy-to-clipboard', currentContent);
-      }
-      if (state.isPaused) {
-        handleTogglePause();
-      }
+    } else if (type === 'current') {
+      ipcRenderer.send('toggle-resume');
     }
   };
 
