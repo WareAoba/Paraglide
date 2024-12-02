@@ -887,6 +887,16 @@ const IPCManager = {
       event.reply('mode-switched', newMode);
     });
 
+    // 뷰모드 전환 핸들러
+    ipcMain.on('update-view-mode', async (event, newViewMode) => {
+      store.dispatch(configActions.updateViewMode(newViewMode));
+      BrowserWindow.getAllWindows().forEach(window => {
+        if (!window.isDestroyed()) {
+          window.webContents.send('view-mode-update', newViewMode);
+        }
+      });
+    });
+
     // 윈도우 관련 핸들러
     ipcMain.on('toggle-overlay', () => this.handleToggleOverlay());
     ipcMain.on('toggle-pause', () => this.handlePause());
@@ -904,7 +914,8 @@ const IPCManager = {
           overlayFixed: config.overlay.overlayFixed,
           loadLastOverlayBounds: config.overlay.loadLastOverlayBounds,
           accentColor: config.theme.accentColor,
-          processMode: config.processMode
+          processMode: config.processMode,
+          viewMode: config.viewMode
         };
       } catch (error) {
         console.error('설정 로드 실패:', error);
@@ -964,6 +975,7 @@ const IPCManager = {
           loadLastOverlayBounds: settings.loadLastOverlayBounds ?? state.overlay.loadLastOverlayBounds
         },
         processMode: settings.processMode ?? state.processMode,
+        viewMode: settings.viewMode ?? state.viewMode
       };
   
       store.dispatch(configActions.loadConfig(newConfig));

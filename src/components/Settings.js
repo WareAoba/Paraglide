@@ -10,7 +10,8 @@ function Settings({ isVisible, onClose, isDarkMode }) {
     overlayFixed: false,
     loadLastOverlayBounds: true,
     accentColor: '#007bff',
-    processMode: 'paragraph'  // 기본 텍스트 처리 방식
+    processMode: 'paragraph',  // 기본 텍스트 처리 방식
+    viewMode: 'overview'
   });
   const [originalSettings, setOriginalSettings] = useState(null);
 
@@ -64,8 +65,13 @@ function Settings({ isVisible, onClose, isDarkMode }) {
         overlayFixed: newSettings.overlayFixed,
         loadLastOverlayBounds: newSettings.loadLastOverlayBounds,
         accentColor: newSettings.accentColor,
-        processMode: newSettings.processMode
+        processMode: newSettings.processMode,
+        viewMode: newSettings.viewMode
       });
+
+      if (newSettings.viewMode && newSettings.viewMode !== settings.viewMode) {
+        ipcRenderer.send('update-view-mode', newSettings.viewMode);
+      }
   
       if (!result) {
         console.error('설정 적용 실패');
@@ -123,24 +129,47 @@ function Settings({ isVisible, onClose, isDarkMode }) {
         <h2>설정</h2>
         
         <div className="settings-scroll-area">
-          {/* 텍스트 처리 방식 그룹 */}
+        <div className="settings-group">
+          <h3>텍스트 처리 방식</h3> {/* 텍스트 처리 방식 그룹 */}
+          <div className="segment-control" data-mode={settings.processMode}>
+            <button 
+              className={settings.processMode === 'paragraph' ? 'active' : ''}
+              onClick={() => handleProcessModeChange('paragraph')}
+            >
+              단락 단위로
+            </button>
+            <button 
+              className={settings.processMode === 'line' ? 'active' : ''}
+              onClick={() => handleProcessModeChange('line')}
+            >
+              줄 단위로
+            </button>
+          </div>
+        </div>
+
           <div className="settings-group">
-            <h3>텍스트 처리 방식</h3>
-            <div className="segment-control" data-mode={settings.processMode}>
-               <button 
-                 className={settings.processMode === 'paragraph' ? 'active' : ''}
-                 onClick={() => handleProcessModeChange('paragraph')}
-               >
-                 단락 단위로
-               </button>
-               <button 
-                 className={settings.processMode === 'line' ? 'active' : ''}
-                 onClick={() => handleProcessModeChange('line')}
-               >
-                 줄 단위로
-               </button>
-             </div>
-           </div>
+            <h3>화면 표시 방식</h3> {/* 화면 표시 방식 그룹 */}
+            <div className="segment-control" data-mode={settings.viewMode}>
+              <button 
+                className={settings.viewMode === 'overview' ? 'active' : ''}
+                onClick={() => handleSettingChange({
+                  ...settings,
+                  viewMode: 'overview'
+                })}
+              >
+                오버뷰
+              </button>
+              <button 
+                className={settings.viewMode === 'listview' ? 'active' : ''}
+                onClick={() => handleSettingChange({
+                  ...settings,
+                  viewMode: 'listview'
+                })}
+              >
+                리스트뷰
+              </button>
+            </div>
+          </div>
 
           {/* 오버레이 그룹 */}
           <div className="settings-group">

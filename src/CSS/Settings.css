@@ -117,6 +117,10 @@
   transform: translateX(calc(100% + 3px)); /* 패딩 값 반영 */
 }
 
+.segment-control[data-mode="listview"]::before {
+  transform: translateX(calc(100% + 3px));
+}
+
 .segment-control button {
   flex: 1;
   display: flex;          /* 추가 */
@@ -304,7 +308,7 @@ input:checked + .slider:before {
 
 [data-theme="dark"] .settings-content {
   background-color: var(--dark-bg);
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--dark-border);
 }
 
 [data-theme="dark"] .settings-button-group {

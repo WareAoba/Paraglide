@@ -30,7 +30,8 @@ const initialState = {
       after: 5
     }
   },
-  processMode: 'paragraph'
+  processMode: 'paragraph',
+  viewMode: 'overview'
 };
 
 const configSlice = createSlice({
@@ -61,7 +62,8 @@ const configSlice = createSlice({
             ...newConfig.overlay?.visibleRanges 
           }
         },
-        processMode: newConfig.processMode ?? state.processMode
+        processMode: newConfig.processMode ?? state.processMode,
+        viewMode: newConfig.viewMode ?? state.viewMode
       };
     },
 
@@ -102,6 +104,10 @@ const configSlice = createSlice({
 
     updateProcessMode: (state, action) => { // 추가된 리듀서
       state.processMode = action.payload;
+    },
+
+    updateViewMode: (state, action) => {
+      state.viewMode = action.payload;
     }
   }
 });
@@ -110,6 +116,7 @@ const configSlice = createSlice({
 const selectTheme = (state) => state.config.theme;
 const selectOverlay = (state) => state.config.overlay;
 const selectProcessMode = (state) => state.config.processMode;
+const selectViewMode = (state) => state.config.viewMode;
 
 module.exports = {
   configReducer: configSlice.reducer,

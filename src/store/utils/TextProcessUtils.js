@@ -82,10 +82,25 @@ const TextProcessUtils = {
   },
 
   extractPageNumber(paragraph) {
-      for (const pattern of Object.values(this.pagePatterns)) {
-          const match = paragraph.trim().match(pattern);
-          if (match) return parseInt(match[1], 10);
-      }
+    // 숫자만 있는 경우
+    const numberMatch = paragraph.match(this.pagePatterns.numberOnly);
+    if (numberMatch) {
+      return parseInt(numberMatch[1]);
+    }
+
+    // 한글 스타일 ('1페이지', '페이지1' 등)
+    const koreanMatch = paragraph.match(this.pagePatterns.koreanStyle);
+    if (koreanMatch) {
+      const numbers = paragraph.match(/\d+/);
+      return numbers ? parseInt(numbers[0]) : null;
+    }
+
+    // 영어 스타일 ('p1', '1p', 'page1' 등) 추가
+    const englishMatch = paragraph.match(this.pagePatterns.englishStyle);
+    if (englishMatch) {
+      const numbers = paragraph.match(/\d+/);
+      return numbers ? parseInt(numbers[0]) : null;
+    }
       return null;
   },
 

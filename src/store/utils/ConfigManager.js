@@ -65,6 +65,10 @@ const ConfigManager = {
             processMode: this.validateProcessMode(
                 savedConfig.processMode, 
                 defaultConfig.processMode
+            ),
+            viewMode: this.validateViewMode(
+                savedConfig.viewMode,
+                defaultConfig.viewMode
             )
         };
     },
@@ -83,6 +87,11 @@ const ConfigManager = {
 
     validateProcessMode(value, defaultValue) { // 추가된 함수
         const allowedModes = ['paragraph', 'line']; // 예시: 허용된 모드 목록
+        return allowedModes.includes(value) ? value : defaultValue;
+    },
+
+    validateViewMode(value, defaultValue) {
+        const allowedModes = ['overview', 'listview'];
         return allowedModes.includes(value) ? value : defaultValue;
     },
     

@@ -18,9 +18,10 @@ function MainComponent() {
     currentNumber: null,
     isOverlayVisible: false,
     logoPath: null,
-    isSidebarVisible: false, // 추가
-    programStatus: 'READY', // 추가
-    isPaused: false
+    isSidebarVisible: false,
+    programStatus: 'READY',
+    isPaused: false,
+    viewMode: 'overview' 
   });
 
   const [theme, setTheme] = useState({
@@ -28,8 +29,6 @@ function MainComponent() {
     mode: 'light',
     accentColor: '#007bff'
   });
-
-  const [viewMode, setViewMode] = useState('overview');  // 'overview' | 'list'
 
   const [isDragging, setIsDragging] = useState(false);
   const [dragCounter, setDragCounter] = useState(0);
@@ -70,9 +69,12 @@ function MainComponent() {
     const initializeState = async () => {
       try {
         const initialState = await ipcRenderer.invoke('get-state');
+        const savedSettings = await ipcRenderer.invoke('load-settings');
+
         setState(prev => ({
           ...prev,
-          isOverlayVisible: initialState.isOverlayVisible
+          isOverlayVisible: initialState.isOverlayVisible,
+          viewMode: savedSettings.viewMode || 'overview'
         }));
         initializeTheme();
         loadLogo();
@@ -95,9 +97,17 @@ function MainComponent() {
       document.documentElement.style.setProperty('--primary-color', newTheme.accentColor);
     };
 
+    const handleViewModeUpdate = (event, newViewMode) => {
+      setState(prev => ({
+        ...prev,
+        viewMode: newViewMode
+      }));
+    };
+
     // 이벤트 리스너 등록
     ipcRenderer.on('state-update', handleStateUpdate);
     ipcRenderer.on('theme-update', handleThemeUpdate);
+    ipcRenderer.on('view-mode-update', handleViewModeUpdate);
     
     // 초기화
     initializeState();
@@ -106,6 +116,7 @@ function MainComponent() {
     return () => {
       ipcRenderer.removeListener('state-update', handleStateUpdate);
       ipcRenderer.removeListener('theme-update', handleThemeUpdate);
+      ipcRenderer.removeListener('view-mode-update', handleViewModeUpdate);
     };
   }, []);
 
@@ -167,10 +178,6 @@ function MainComponent() {
         console.error('파일 로드 실패:', error);
       }
     }
-  };
-
-  const handleViewModeToggle = () => {
-    setViewMode(prev => prev === 'overview' ? 'list' : 'overview');
   };
 
   const handleParagraphSelect = (index) => {
@@ -454,10 +461,6 @@ function MainComponent() {
                : 
               <img src={eyeOffIcon} alt="일시정지" className="icon" /> }
           </button>
-          <button className={`btn-icon ${viewMode === 'list' ? 'btn-active' : 'btn-outline'}`}
-            onClick={handleViewModeToggle}>
-            <img src={listIcon} alt="리스트 뷰" className="icon" />
-          </button>
 
         </div>
       
@@ -465,7 +468,7 @@ function MainComponent() {
           {state.currentNumber ? `${state.currentNumber} 페이지` : ''}
         </div>
       
-        {viewMode === 'overview' ? (
+        {state.viewMode === 'overview' ? (
           <Overview 
             paragraphs={state.paragraphs}
             currentParagraph={state.currentParagraph}
