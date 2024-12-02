@@ -465,9 +465,9 @@ function MainComponent() {
 
         </div>
       
-        <div className="page-number">
+        {/* <div className="page-number">
           {state.currentNumber?.display || ''}
-        </div>
+        </div> */}
       
         {state.viewMode === 'overview' ? (
           <Overview 

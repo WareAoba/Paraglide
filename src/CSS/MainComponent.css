@@ -84,14 +84,22 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
+
+
+
+
+
+
+
 .main-container {
     display: flex;
     flex-direction: column;
+    align-items: flex-start;
     min-height: 100vh;
     height: 100vh;
-    padding: var(--content-padding);
-    gap: var(--container-spacing);
-    overflow: hidden; /* 중요: 스크롤 방지 */
+    padding: 20px;
+    box-sizing: border-box;
+    gap: var(--spacing-md);
 }
 
 .button-group-controls{
@@ -100,11 +108,8 @@
     justify-content: start;
     width: 100%;
     max-width: 800px;
-    margin: 0 auto;
-    margin: var(--spacing-xs);
-    gap: var(--spacing-xxs);
-    padding: var(--spacing-xs);
     filter: var(--icon-filter);
+    gap: var(--spacing-xs);
 }
 
 [data-theme="dark"] .button-group-controls {
