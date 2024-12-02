@@ -3,8 +3,11 @@ import React, { useState, useEffect, useCallback } from 'react';
 import '../CSS/MainComponent.css';
 import Sidebar from './Sidebar';
 import Settings from './Settings';
+
+import Overview from './Views/Overview';
 import ListView from './Views/ListView';
 import DragDropOverlay from './DragDropOverlay';
+
 const { ipcRenderer } = window.require('electron');
 
 // MainComponent.js 수정
@@ -463,37 +466,14 @@ function MainComponent() {
         </div>
       
         {viewMode === 'overview' ? (
-          <div className="paragraph-container">
-            <div className="paragraph-header" data-theme={theme.mode}>
-              <div>이전 단락</div>
-              <div className="current">현재 단락</div>
-              <div>다음 단락</div>
-            </div>
-            
-            <div className="paragraph-content" data-theme={theme.mode}>
-              <div className={`paragraph-prev ${hoveredSection === 'prev' ? 'hovered' : ''}`}
-                onClick={() => handleParagraphClick('prev')}
-                onMouseEnter={() => setHoveredSection('prev')}
-                onMouseLeave={() => setHoveredSection(null)}
-                data-theme={theme.mode}>
-                {state.paragraphs[state.currentParagraph - 1] || ''}
-              </div>
-
-              <div className="paragraph-current"
-                onClick={() => handleParagraphClick('current')}
-                data-theme={theme.mode}>
-                {state.paragraphs[state.currentParagraph] || ''}
-              </div>
-
-              <div className={`paragraph-next ${hoveredSection === 'next' ? 'hovered' : ''}`}
-                onClick={() => handleParagraphClick('next')}
-                onMouseEnter={() => setHoveredSection('next')}
-                onMouseLeave={() => setHoveredSection(null)}
-                data-theme={theme.mode}>
-                {state.paragraphs[state.currentParagraph + 1] || ''}
-              </div>
-            </div>
-          </div>
+          <Overview 
+            paragraphs={state.paragraphs}
+            currentParagraph={state.currentParagraph}
+            onParagraphClick={handleParagraphClick}
+            theme={theme}
+            hoveredSection={hoveredSection}
+            onHoverChange={setHoveredSection}
+          />
         ) : (
           <ListView
             paragraphs={state.paragraphs}
