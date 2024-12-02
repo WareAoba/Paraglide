@@ -1,6 +1,6 @@
 // src/components/Views/Overview.js
 import React from 'react';
-import '../../CSS/Overview.css';
+import '../../CSS/Views/Overview.css';
 
 function Overview({ paragraphs, currentParagraph, onParagraphClick, theme, hoveredSection, onHoverChange }) {
   return (

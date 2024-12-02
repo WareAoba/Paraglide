@@ -1,6 +1,6 @@
 // src/components/ListView.js
 import React, { useEffect, useRef } from 'react';
-import '../../CSS/ListView.css';
+import '../../CSS/Views/ListView.css';
 
 function ListView({ paragraphs, metadata, currentParagraph, onParagraphSelect, theme }) {
   const listRef = useRef(null);
