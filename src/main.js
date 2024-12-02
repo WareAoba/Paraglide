@@ -217,88 +217,93 @@ const FileManager = {
 
   async loadConfig() {
     try {
+      // 1. 파일 존재 확인
       try {
         await fs.access(FILE_PATHS.config);
       } catch {
-        const defaultConfig = store.getState().config;
+        console.log('설정 파일이 없습니다. 기본값으로 생성합니다.');
+        const defaultConfig = store.getState().config;  // store에서 직접 가져오기
         await this.saveConfig(defaultConfig);
         return defaultConfig;
       }
-
+  
+      // 2. 파일 읽기
       const data = await fs.readFile(FILE_PATHS.config, 'utf8');
+      
+      // 3. 파일 내용 검증
       if (!data.trim()) {
-        const defaultConfig = store.getState().config;
+        console.log('빈 설정 파일, 기본값으로 초기화합니다.');
+        const defaultConfig = store.getState().config;  // store에서 직접 가져오기
         await this.saveConfig(defaultConfig);
         return defaultConfig;
       }
-
-      return JSON.parse(data);
+  
+      try {
+        const parsedConfig = JSON.parse(data);
+        
+        // 4. 구조 검증
+        if (!ConfigManager.validateConfigStructure(parsedConfig)) {
+          console.log('잘못된 설정 구조, 기본값으로 초기화합니다.');
+          const defaultConfig = store.getState().config;  // store에서 직접 가져오기
+          await this.saveConfig(defaultConfig);
+          return defaultConfig;
+        }
+  
+        return parsedConfig;
+      } catch (parseError) {
+        console.error('설정 파일 파싱 실패:', parseError);
+        const defaultConfig = store.getState().config;  // store에서 직접 가져오기
+        await this.saveConfig(defaultConfig);
+        return defaultConfig;
+      }
     } catch (error) {
       console.error('설정 로드 실패:', error);
-      return store.getState().config;
-    }
-  },
-
-  async saveLog(log) {
-    try {
-      // 1. 데이터 유효성 검증
-      const validLog = typeof log === 'object' ? log : {};
-      
-      // 2. JSON 문자열로 변환
-      const jsonString = JSON.stringify(validLog, null, 2);
-      
-      // 3. 파일 저장
-      await fs.writeFile(FILE_PATHS.log, jsonString, 'utf8');
-      
-      console.log('로그 저장 완료');
-      return true;
-    } catch (error) {
-      console.error('로그 저장 실패:', error);
-      return false;
+      return store.getState().config;  // store에서 직접 가져오기
     }
   },
 
   async loadLog() {
     try {
-      // 1. 파일 존재 여부 확인
+      // 1. 로그 파일 존재 확인
       try {
         await fs.access(FILE_PATHS.log);
       } catch {
-        // 파일이 없으면 빈 로그로 새로 생성
-        await this.saveLog({});
+        // 로그 파일이 없으면 빈 객체로 초기화
+        await fs.writeFile(FILE_PATHS.log, '{}', 'utf8');
         return {};
       }
 
-      // 2. 파일 읽기
+      // 2. 로그 파일 읽기
       const data = await fs.readFile(FILE_PATHS.log, 'utf8');
 
-      // 3. 내용 검증
+      // 3. 파일 내용 검증
       if (!data.trim()) {
         // 빈 파일이면 초기화
-        await this.saveLog({});
+        await fs.writeFile(FILE_PATHS.log, '{}', 'utf8');
         return {};
       }
 
       try {
-        // JSON 파싱 시도
-        const parsed = JSON.parse(data);
-        
-        // 객체가 아니면 초기화
-        if (!parsed || typeof parsed !== 'object') {
-          await this.saveLog({});
-          return {};
-        }
-
-        return parsed;
+        // 4. JSON 파싱
+        const parsedLog = JSON.parse(data);
+        return parsedLog;
       } catch (parseError) {
-        // JSON 파싱 실패시 파일 복구
-        console.error('로그 파일 손상, 초기화됨:', parseError);
-        await this.saveLog({});
+        console.error('로그 파일 파싱 실패:', parseError);
+        // 파싱 실패시 초기화
+        await fs.writeFile(FILE_PATHS.log, '{}', 'utf8');
         return {};
       }
     } catch (error) {
       console.error('로그 파일 로드 실패:', error);
       return {};
+    }
+  },
+
+  async saveLog(logData) {
+    try {
+      await fs.writeFile(FILE_PATHS.log, JSON.stringify(logData, null, 2), 'utf8');
+    } catch (error) {
+      console.error('로그 저장 실패:', error);
     }
   },
 

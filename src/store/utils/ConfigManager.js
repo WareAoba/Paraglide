@@ -5,8 +5,23 @@ const { configActions } = require('../slices/configSlice');  // 추가
 const ConfigManager = {
     validateConfig(savedConfig = {}) {
         const defaultConfig = store.getState().config;
-        
-        // 중첩 구조 유지하면서 검증
+        return this.validateConfigStructure(savedConfig) ? 
+            this.mergeWithDefaults(savedConfig, defaultConfig) : 
+            defaultConfig;
+    },
+
+    validateConfigStructure(config) {
+        return (
+            config &&
+            typeof config === 'object' &&
+            config.theme &&
+            config.overlay &&
+            typeof config.processMode === 'string' &&
+            typeof config.viewMode === 'string'
+        );
+    },
+
+    mergeWithDefaults(savedConfig, defaultConfig) {
         return {
             theme: {
                 isDarkMode: this.validateBoolean(
@@ -50,27 +65,30 @@ const ConfigManager = {
                 loadLastOverlayBounds: this.validateBoolean(
                     savedConfig.overlay?.loadLastOverlayBounds, 
                     defaultConfig.overlay.loadLastOverlayBounds
-                ),
-                visibleRanges: {
-                    before: this.validateNumber(
-                        savedConfig.overlay?.visibleRanges?.before, 
-                        defaultConfig.overlay.visibleRanges.before
-                    ),
-                    after: this.validateNumber(
-                        savedConfig.overlay?.visibleRanges?.after, 
-                        defaultConfig.overlay.visibleRanges.after
-                    )
-                }
+                )
             },
             processMode: this.validateProcessMode(
                 savedConfig.processMode, 
                 defaultConfig.processMode
             ),
             viewMode: this.validateViewMode(
-                savedConfig.viewMode,
+                savedConfig.viewMode, 
                 defaultConfig.viewMode
             )
         };
+    },
+
+    async loadAndValidateConfig(savedConfig) {
+        try {
+            const validConfig = this.validateConfig(savedConfig);
+            store.dispatch(configActions.loadConfig(validConfig));
+            return validConfig;
+        } catch (error) {
+            console.error('설정 검증 실패:', error);
+            const defaultConfig = store.getState().config;
+            store.dispatch(configActions.loadConfig(defaultConfig));
+            return defaultConfig;
+        }
     },
     
     // Helper functions

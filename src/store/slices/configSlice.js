@@ -124,5 +124,6 @@ module.exports = {
   selectTheme,
   selectOverlay,
   selectProcessMode,
+  selectViewMode,
   THEME
 };

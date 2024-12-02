@@ -85,6 +85,7 @@ body,
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color: var(--text-color);
+  user-select: none;
   transition: background-color var(--transition-default), 
               color var(--transition-default);
 }
