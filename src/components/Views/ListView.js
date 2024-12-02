@@ -1,16 +1,28 @@
 // src/components/ListView.js
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useMemo } from 'react';
 import '../../CSS/Views/ListView.css';
 
 function ListView({ paragraphs, metadata, currentParagraph, onParagraphSelect, theme }) {
   const listRef = useRef(null);
 
+  const renderPageNumber = (meta) => {
+    return meta?.pageInfo?.display || '';  // pageInfo.display 사용
+  };
+
   // 페이지별 단락 그룹화
-  const groupedParagraphs = React.useMemo(() => {
+  const groupedParagraphs = useMemo(() => {
     return paragraphs.reduce((acc, para, idx) => {
-      const pageNum = metadata[idx]?.pageNumber || 'Unknown';
-      if (!acc[pageNum]) acc[pageNum] = [];
-      acc[pageNum].push({ content: para, index: idx });
+      const pageInfo = metadata[idx]?.pageInfo;
+      if (!pageInfo) return acc;
+
+      // pageInfo.display를 키로 사용 (예: "380-381 페이지")
+      const pageKey = pageInfo.display || `${pageInfo.start} 페이지`;
+      
+      if (!acc[pageKey]) {
+        acc[pageKey] = [];
+      }
+      
+      acc[pageKey].push({ content: para, index: idx });
       return acc;
     }, {});
   }, [paragraphs, metadata]);
@@ -42,9 +54,9 @@ function ListView({ paragraphs, metadata, currentParagraph, onParagraphSelect, t
 
   return (
     <div className="listview-container" ref={listRef} data-theme={theme?.mode}>
-      {Object.entries(groupedParagraphs).map(([pageNum, items]) => (
-        <div key={pageNum} className="listview-section">
-          <h2 className="listview-header">{pageNum} 페이지</h2>
+      {Object.entries(groupedParagraphs).map(([pageKey, items]) => (
+        <div key={pageKey} className="listview-section">
+          <h2 className="listview-header">{pageKey}</h2>
           {items.map(({ content, index }) => (
             <div
               key={index}

@@ -86,7 +86,8 @@ function OverlayComponent() {
       >
         <div className="overlay-header">
           <span className="overlay-page-number">
-            {state.currentNumber ? `${state.currentNumber} 페이지` : ""}
+            {/* pageInfo.display를 그대로 사용 */}
+            {state.currentNumber?.display || ""}
           </span>
           <div className="header-controls">
             {state.isPaused && (

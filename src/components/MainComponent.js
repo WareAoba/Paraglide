@@ -88,6 +88,7 @@ function MainComponent() {
       setState(prev => ({
         ...prev,
         ...updatedState,
+        currentNumber: updatedState.paragraphsMetadata?.[updatedState.currentParagraph]?.pageInfo || null
       }));
     };
 
@@ -465,7 +466,7 @@ function MainComponent() {
         </div>
       
         <div className="page-number">
-          {state.currentNumber ? `${state.currentNumber} 페이지` : ''}
+          {state.currentNumber?.display || ''}
         </div>
       
         {state.viewMode === 'overview' ? (

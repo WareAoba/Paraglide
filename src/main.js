@@ -777,18 +777,33 @@ const WindowManager = {
     }
   
     if (window === mainWindow) {
+      // 메인 창에는 항상 "페이지" 문구를 포함하여 표시
+      const pageInfo = state.paragraphsMetadata[currentParagraph]?.pageInfo;
+      const display = pageInfo ? (
+        pageInfo.end !== pageInfo.start ? 
+        `${pageInfo.start}-${pageInfo.end} 페이지` : 
+        `${pageInfo.start} 페이지`
+      ) : '';
+    
       window.webContents.send('state-update', {
-          ...globalState,
-          paragraphs: state.paragraphs,
-          currentParagraph: state.currentParagraph,
-          paragraphsMetadata: state.paragraphsMetadata,
-          currentNumber: state.paragraphsMetadata[currentParagraph]?.pageNumber,  // 현재 단락의 페이지 번호
-          theme: ThemeManager.currentTheme
+        ...globalState,
+        paragraphs: state.paragraphs,
+        currentParagraph: state.currentParagraph,
+        paragraphsMetadata: state.paragraphsMetadata,
+        currentNumber: { ...pageInfo, display }, // display 속성 덮어쓰기
+        theme: ThemeManager.currentTheme
       });
     } else if (window === overlayWindow) {
       const startIdx = Math.max(0, currentParagraph - 5);
       const endIdx = Math.min(state.paragraphs.length, currentParagraph + 6);
-  
+        // 오버레이에는 합페일 때 숫자만 표시
+      const pageInfo = state.paragraphsMetadata[currentParagraph]?.pageInfo;
+      const display = pageInfo ? (
+        pageInfo.end !== pageInfo.start ? 
+        `${pageInfo.start}-${pageInfo.end}` : 
+        `${pageInfo.start} 페이지`
+      ) : '';
+    
       window.webContents.send('paragraphs-updated', {
         previous: state.paragraphs.slice(startIdx, currentParagraph).map((text, idx) => ({
           text: String(text),
@@ -802,7 +817,8 @@ const WindowManager = {
           metadata: state.paragraphsMetadata[currentParagraph + 1 + idx]
         })),
         currentParagraph: currentParagraph,
-        currentNumber: state.paragraphsMetadata[currentParagraph]?.pageNumber,
+        // currentNumber를 전체 pageInfo 객체로 전달
+        currentNumber: { ...pageInfo, display } || null,
         isPaused: globalState.isPaused,
         isDarkMode: ThemeManager.currentTheme.isDarkMode,
         processMode: state.processMode,
