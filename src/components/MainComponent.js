@@ -1,9 +1,10 @@
 // src/MainComponent.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import '../CSS/MainComponent.css';
 import Sidebar from './Sidebar';
 import Settings from './Settings';
 import ListView from './Views/ListView';
+import DragDropOverlay from './DragDropOverlay';
 const { ipcRenderer } = window.require('electron');
 
 // MainComponent.js 수정
@@ -26,6 +27,9 @@ function MainComponent() {
   });
 
   const [viewMode, setViewMode] = useState('overview');  // 'overview' | 'list'
+
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragCounter, setDragCounter] = useState(0);
 
   const [hoveredSection, setHoveredSection] = useState(null);
   const [playIcon, setPlayIcon] = useState(null);
@@ -107,9 +111,36 @@ function MainComponent() {
     e.stopPropagation();
   };
 
+  const handleDragEnter = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragCounter(prev => {
+      // 카운터를 증가시키고 그 값으로 상태 업데이트
+      const newCount = prev + 1;
+      if (newCount === 1) {
+        setIsDragging(true);
+      }
+      return newCount;
+    });
+  }, []);
+
+  const handleDragLeave = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragCounter(prev => {
+      const newCount = prev - 1;
+      if (newCount === 0) {
+        setIsDragging(false);
+      }
+      return newCount;
+    });
+  }, []);
+
   const handleDrop = async (e) => {
     e.preventDefault();
     e.stopPropagation();
+    setDragCounter(0);
+    setIsDragging(false);
 
     const files = Array.from(e.dataTransfer.files);
     const txtFile = files.find(file => file.name.endsWith('.txt'));
@@ -303,6 +334,8 @@ function MainComponent() {
         className="app-container"
         data-theme={theme.mode}
         onDragOver={handleDragOver}
+        onDragEnter={handleDragEnter}
+        onDragLeave={handleDragLeave}
         onDrop={handleDrop}>
           
         <Sidebar 
@@ -312,6 +345,7 @@ function MainComponent() {
           onClose={handleCloseSidebar}
           currentFilePath={state.programStatus === 'PROCESS' ? state.currentFilePath : null}
         />
+        <DragDropOverlay isVisible={isDragging} />
         
         <div className="welcome-screen" data-theme={theme.mode}>
           <div className="button-group-controls">
@@ -365,6 +399,8 @@ function MainComponent() {
       className="app-container"
       data-theme={theme.mode}
       onDragOver={handleDragOver}
+      onDragEnter={handleDragEnter}
+      onDragLeave={handleDragLeave}
       onDrop={handleDrop}>
 
       <Sidebar 
@@ -373,6 +409,7 @@ function MainComponent() {
         theme={theme}
         onClose={handleCloseSidebar}
       />
+      <DragDropOverlay isVisible={isDragging} />
 
       <div className="main-container" data-theme={theme.mode}>
 
