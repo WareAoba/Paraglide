@@ -641,8 +641,6 @@ const WindowManager = {
       height: 660,
       minWidth: 600,
       minHeight: 660,
-      maxWidth: 1300,
-      maxHeight: 800,
       show: false,
       title: 'Paraglide',
       icon: FILE_PATHS.icon,
