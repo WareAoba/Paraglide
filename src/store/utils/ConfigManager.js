@@ -65,7 +65,11 @@ const ConfigManager = {
                 loadLastOverlayBounds: this.validateBoolean(
                     savedConfig.overlay?.loadLastOverlayBounds, 
                     defaultConfig.overlay.loadLastOverlayBounds
-                )
+                ),
+                isVisible: this.validateBoolean(
+                    savedConfig.overlay?.isVisible,
+                    defaultConfig.overlay.isVisible
+                ),
             },
             processMode: this.validateProcessMode(
                 savedConfig.processMode, 

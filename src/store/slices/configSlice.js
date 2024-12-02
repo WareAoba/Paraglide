@@ -28,7 +28,8 @@ const initialState = {
     visibleRanges: {
       before: 5, 
       after: 5
-    }
+    },
+    isVisible: true
   },
   processMode: 'paragraph',
   viewMode: 'overview'
@@ -48,6 +49,7 @@ const configSlice = createSlice({
         },
         overlay: {
           ...state.overlay,
+          ...newConfig.overlay,
           bounds: { 
             ...state.overlay.bounds, 
             ...newConfig.overlay?.bounds 
@@ -94,6 +96,10 @@ const configSlice = createSlice({
         ...state.overlay,
         ...action.payload
       };
+    },
+
+    updateOverlayVisibility: (state, action) => {
+      state.overlay.isVisible = action.payload;
     },
 
     updateInitialPosition: (state, action) => {

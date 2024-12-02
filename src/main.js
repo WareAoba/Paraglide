@@ -119,25 +119,50 @@ const updateState = async (newState) => {
 
   // 전역 상태 업데이트
   const state = store.getState().textProcess;
-  globalState = newState.programStatus === ProgramStatus.READY
-    ? {
-        programStatus: ProgramStatus.READY,
-        currentParagraph: 0,
-        currentNumber: null,
-        isPaused: false,
-        isOverlayVisible: false,
-        currentFilePath: null,
-        timestamp: Date.now(),
-        processMode: DEFAULT_PROCESS_MODE
-      }
-    : { ...globalState, ...newState };
+  const config = store.getState().config;
+
+  if (newState.programStatus === ProgramStatus.READY) {
+    // READY 상태일 때는 무조건 false
+    globalState = {
+      programStatus: ProgramStatus.READY,
+      currentParagraph: 0,
+      currentNumber: null,
+      isPaused: false,
+      isOverlayVisible: false,
+      currentFilePath: null,
+      timestamp: Date.now(),
+      processMode: DEFAULT_PROCESS_MODE
+    };
+  } else if (newState.programStatus === ProgramStatus.PROCESS && globalState.programStatus !== ProgramStatus.PROCESS) {
+    // PROCESS 상태로 처음 전환될 때 (파일 열기)
+    globalState = {
+      ...globalState,
+      ...newState,
+      isOverlayVisible: config.overlay.isVisible // config의 설정값 사용
+    };
+  } else {
+    // 그 외의 상태 업데이트
+    const overlayVisibility = newState.isOverlayVisible !== undefined ? 
+      newState.isOverlayVisible : 
+      globalState.isOverlayVisible;
+    
+    globalState = {
+      ...globalState,
+      ...newState,
+      isOverlayVisible: overlayVisibility
+    };
+  }
 
   // 창 업데이트
   await WindowManager.updateWindowContent(mainWindow, 'state-update');
 
+  // 오버레이 창 처리
   if (overlayWindow && !overlayWindow.isDestroyed()) {
-    if (globalState.programStatus === ProgramStatus.PROCESS) {
-      overlayWindow.showInactive();
+    const shouldShow = globalState.programStatus === ProgramStatus.PROCESS && 
+                      globalState.isOverlayVisible;
+    
+    if (shouldShow) {
+      overlayWindow.show();
       await WindowManager.updateWindowContent(overlayWindow, 'content-update');
     } else {
       overlayWindow.hide();
@@ -515,7 +540,7 @@ const FileManager = {
         currentFilePath: filePath,
         currentParagraph: restoredPosition,
         programStatus: ProgramStatus.PROCESS,
-        isOverlayVisible: true,
+        isOverlayVisible: config.overlay.isVisible,
         isPaused: false,
         processMode: processMode,
         currentNumber: result.paragraphsMetadata[restoredPosition]?.pageNumber || null
@@ -581,7 +606,7 @@ const FileManager = {
         currentFilePath: filePath,
         currentParagraph: newPosition,
         programStatus: ProgramStatus.PROCESS,
-        isOverlayVisible: true,
+        isOverlayVisible: globalState.isOverlayVisible,
         isPaused: false,
         processMode: newMode,
         timestamp: Date.now()
@@ -1114,23 +1139,20 @@ const IPCManager = {
   // 윈도우 관련 메서드
   async handleToggleOverlay() {
     if (!overlayWindow) return;
-    
+  
     const newVisibility = !globalState.isOverlayVisible;
     
-    // 1. 먼저 상태 업데이트
-    await updateState({ isOverlayVisible: newVisibility });
+    store.dispatch(configActions.updateOverlayVisibility(newVisibility));
+
+    // 1. 사용자의 직접 토글 동작에서만 설정 저장
+    const config = store.getState().config;
+    await FileManager.saveConfig(config);
     
-    // 2. 창 상태 업데이트
-    if (newVisibility) {
-      if (!overlayWindow.isDestroyed()) {
-        overlayWindow.show();
-        mainWindow?.focus();
-      }
-    } else {
-      if (!overlayWindow.isDestroyed()) {
-        overlayWindow.hide();
-      }
-    }
+    // 2. 상태 업데이트
+    await updateState({ 
+      isOverlayVisible: newVisibility,
+      timestamp: Date.now()  // 상태 변경 시점 기록
+    });
   },
 
   handlePause() {
