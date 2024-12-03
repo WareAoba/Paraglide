@@ -562,63 +562,65 @@ const FileManager = {
   async switchMode(newMode) {
     try {
       const filePath = globalState.currentFilePath;
-      if (!filePath) return;
-  
-      // 1. 파일 재처리를 먼저 수행
-      const content = await fs.readFile(filePath, 'utf8');
-      const result = TextProcessUtils.processParagraphs(content, newMode);
-      
-      // 2. 이전 상태 저장
-      const previousState = store.getState().textProcess;
-      const oldContent = previousState.paragraphs;
-      const oldMetadata = previousState.paragraphsMetadata;
-      const currentParagraph = previousState.currentParagraph;
-
-      // 3. 위치 매핑
-      const newPosition = TextProcessUtils.mapPositionBetweenModes(
-        oldContent,
-        result.paragraphsToDisplay,
-        oldMetadata,
-        result.paragraphsMetadata,
-        currentParagraph,
-        newMode
-      );
-      
-      // 4. Redux store 업데이트 순서 변경
-      store.dispatch(textProcessActions.updateContent({
-        paragraphs: result.paragraphsToDisplay,
-        paragraphsMetadata: result.paragraphsMetadata,
-        currentNumber: result.paragraphsMetadata[newPosition]?.pageNumber || null,
-        processMode: newMode,
-        currentFilePath: filePath
-      }));
-
-      // 5. 설정 업데이트는 그 다음에
-      store.dispatch(configActions.updateProcessMode(newMode));
-      await FileManager.saveConfig({ processMode: newMode });
-      
-      // 6. 현재 단락 위치 업데이트
-      store.dispatch(textProcessActions.updateCurrentParagraph(newPosition));
-
-      // 7. 전역 상태 업데이트
-      await updateState({
-        paragraphs: result.paragraphsToDisplay,
-        currentFilePath: filePath,
-        currentParagraph: newPosition,
-        programStatus: ProgramStatus.PROCESS,
-        isOverlayVisible: globalState.isOverlayVisible,
-        isPaused: false,
-        processMode: newMode,
-        timestamp: Date.now()
-      });
-
-      ContentManager.copyAndLogDebouncer(result.paragraphsToDisplay[newPosition]);
-  
-      if (globalState.isOverlayVisible) {
-        await WindowManager.updateWindowContent();
+      if (!filePath) {
+        console.log('전환할 파일이 없습니다');
+        return { success: false };
       }
   
-      return { success: true };
+      // 1. 파일 및 이전 상태 로드
+      const content = await fs.readFile(filePath, 'utf8');
+      const previousState = store.getState().textProcess;
+      
+      // 2. 새로운 모드로 텍스트 처리
+      const result = TextProcessUtils.processParagraphs(content, newMode);
+      
+      // 3. 위치 매핑
+      const newPosition = TextProcessUtils.mapPositionBetweenModes(
+        previousState.currentParagraph,
+        previousState.paragraphsMetadata,
+        result.paragraphsMetadata,
+        previousState.processMode,
+        newMode
+      );
+  
+      // 4. 상태 업데이트를 트랜잭션으로 처리
+      try {
+        await Promise.all([
+          // Redux 스토어 업데이트
+          store.dispatch(textProcessActions.updateContent({
+            paragraphs: result.paragraphsToDisplay,
+            paragraphsMetadata: result.paragraphsMetadata,
+            processMode: newMode,
+            currentFilePath: filePath
+          })),
+          store.dispatch(textProcessActions.updateCurrentParagraph(newPosition)),
+          store.dispatch(configActions.updateProcessMode(newMode)),
+          
+          // 설정 저장
+          FileManager.saveConfig({ processMode: newMode }),
+  
+          // 전역 상태 업데이트
+          updateState({
+            paragraphs: result.paragraphsToDisplay,  
+            currentFilePath: filePath,
+            currentParagraph: newPosition,
+            programStatus: ProgramStatus.PROCESS,
+            processMode: newMode,
+            timestamp: Date.now()
+          })
+        ]);
+        
+        // 5. UI 업데이트
+        WindowManager.updateWindowContent(mainWindow, 'state-update');
+        if (overlayWindow && !overlayWindow.isDestroyed()) {
+          WindowManager.updateWindowContent(overlayWindow, 'paragraphs-updated');
+        }
+  
+        return { success: true };
+      } catch (updateError) {
+        console.error('모드 전환 중 상태 업데이트 실패:', updateError);
+        throw updateError;
+      }
     } catch (error) {
       console.error('모드 전환 실패:', error);
       return { success: false };

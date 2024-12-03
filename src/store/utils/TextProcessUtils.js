@@ -17,7 +17,6 @@ const TextProcessUtils = {
       mode = this.detectLineMode(fileContent) ? 'line' : 'paragraph';
     }
   
-    // 1. 먼저 줄 단위로 분할
     const normalizedContent = fileContent.replace(/\r\n/g, '\n');
     const allLines = normalizedContent.split(/\n/).map(l => l.trimEnd());
     
@@ -26,49 +25,63 @@ const TextProcessUtils = {
     const paragraphsToDisplay = [];
     let currentIndex = 0;
     let currentParagraph = [];
-    
-    // 2. 각 줄 처리
+    let lastStartPos = 0;
+  
     for (let i = 0; i < allLines.length; i++) {
       const line = allLines[i].trimStart();
       const lineStartPos = normalizedContent.indexOf(allLines[i], currentIndex);
       
-      // 빈 줄이면 현재 단락 저장하고 초기화
-      if (!line) {
-        if (currentParagraph.length > 0) {
-          const cleanedPart = currentParagraph.join('\n');
-          paragraphsToDisplay.push(cleanedPart);
-          paragraphsMetadata.push({
-            pageNumber: currentNumber?.start,
-            pageInfo: currentNumber,
-            index: paragraphsToDisplay.length - 1,
-            startPos: currentIndex,
-            endPos: lineStartPos
-          });
-          currentParagraph = [];
+      if (mode === 'line') {
+        // 라인 모드: 각 줄을 개별 단위로 처리
+        if (line && !this.shouldSkipParagraph(line)) {
+          const pageInfo = this.extractPageNumber(line);
+          if (pageInfo) {
+            currentNumber = pageInfo;
+          } else {
+            paragraphsToDisplay.push(line);
+            paragraphsMetadata.push({
+              pageNumber: currentNumber?.start,
+              pageInfo: currentNumber,
+              index: paragraphsToDisplay.length - 1,
+              startPos: lineStartPos,
+              endPos: lineStartPos + line.length,
+              length: line.length
+            });
+          }
         }
-        continue;
+      } else {
+        // 단락 모드: 빈 줄로 구분된 단락 처리
+        if (!line) {
+          if (currentParagraph.length > 0) {
+            const cleanedPart = currentParagraph.join('\n');
+            paragraphsToDisplay.push(cleanedPart);
+            paragraphsMetadata.push({
+              pageNumber: currentNumber?.start,
+              pageInfo: currentNumber,
+              index: paragraphsToDisplay.length - 1,
+              startPos: lastStartPos,
+              endPos: lineStartPos - 1,
+              length: cleanedPart.length
+            });
+            currentParagraph = [];
+          }
+        } else {
+          const pageInfo = this.extractPageNumber(line);
+          if (pageInfo) {
+            currentNumber = pageInfo;
+          } else if (!this.shouldSkipParagraph(line)) {
+            if (currentParagraph.length === 0) {
+              lastStartPos = lineStartPos;
+            }
+            currentParagraph.push(line);
+          }
+        }
       }
-  
-      // 페이지 번호 확인
-      const pageInfo = this.extractPageNumber(line);
-      if (pageInfo) {
-        currentNumber = pageInfo;
-        currentIndex = lineStartPos + line.length + 1;
-        continue;
-      }
-  
-      // 건너뛰어야 할 줄 확인
-      if (this.shouldSkipParagraph(line)) {
-        currentIndex = lineStartPos + line.length + 1;
-        continue;
-      }
-  
-      // 일반 텍스트 줄 추가
-      currentParagraph.push(line);
+      
       currentIndex = lineStartPos + line.length + 1;
     }
   
-    // 마지막 단락 처리
+    // 마지막 처리
     if (currentParagraph.length > 0) {
       const cleanedPart = currentParagraph.join('\n');
       paragraphsToDisplay.push(cleanedPart);
@@ -76,8 +89,9 @@ const TextProcessUtils = {
         pageNumber: currentNumber?.start,
         pageInfo: currentNumber,
         index: paragraphsToDisplay.length - 1,
-        startPos: currentIndex - cleanedPart.length,
-        endPos: currentIndex
+        startPos: lastStartPos,
+        endPos: currentIndex - 1,
+        length: cleanedPart.length
       });
     }
   
@@ -165,33 +179,46 @@ const TextProcessUtils = {
     return result;
   },
 
-  mapPositionBetweenModes(oldContent, newContent, oldMetadata, newMetadata, currentIndex, targetMode) {
-    const currentMeta = oldMetadata[currentIndex];
-    if (!currentMeta) return 0;
+  mapPositionBetweenModes(currentParagraph, oldMetadata, newMetadata, oldMode, newMode) {
+    try {
+      // 인덱스가 숫자가 아닐 경우 처리
+      const currentIndex = typeof currentParagraph === 'number' ? 
+        currentParagraph : 0;
   
-    const currentStartPos = currentMeta.startPos;
-    const currentContent = oldContent[currentIndex];
+      const currentMeta = oldMetadata[currentIndex];
+      if (!currentMeta) return 0;
   
-    if (!currentContent) return 0;
+      const currentStartPos = currentMeta.startPos;
   
-    if (targetMode === 'line') {
-      // paragraph -> line: 현재 단락의 시작 위치와 가장 가까운 라인
-      for (let i = 0; i < newMetadata.length; i++) {
-        if (newMetadata[i].startPos >= currentStartPos) {
-          return i;
+      if (oldMode === 'paragraph' && newMode === 'line') {
+        // paragraph -> line: 현재 단락의 시작 위치와 가장 가까운 라인
+        let closestIndex = 0;
+        let minDistance = Number.MAX_VALUE;
+  
+        for (let i = 0; i < newMetadata.length; i++) {
+          const distance = Math.abs(newMetadata[i].startPos - currentStartPos);
+          if (distance < minDistance) {
+            minDistance = distance;
+            closestIndex = i;
+          }
+        }
+        return closestIndex;
+  
+      } else if (oldMode === 'line' && newMode === 'paragraph') {
+        // line -> paragraph: 현재 라인이 포함된 단락
+        for (let i = 0; i < newMetadata.length; i++) {
+          const meta = newMetadata[i];
+          if (currentStartPos >= meta.startPos && currentStartPos <= meta.endPos) {
+            return i;
+          }
         }
       }
-    } else {
-      // line -> paragraph: 현재 라인이 포함된 단락
-      for (let i = 0; i < newMetadata.length; i++) {
-        const meta = newMetadata[i];
-        if (currentStartPos >= meta.startPos && currentStartPos <= meta.endPos) {
-          return i;
-        }
-      }
+  
+      return 0;
+    } catch (error) {
+      console.error('위치 매핑 중 오류:', error);
+      return 0;
     }
-  
-    return 0;
   },
 
   getPositionContext(content, metadata, index) {
