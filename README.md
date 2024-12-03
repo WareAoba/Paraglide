@@ -1,13 +1,12 @@
-<img width="1093" alt="LogoDarkReady" src="https://github.com/user-attachments/assets/d9c3df89-3937-4ba7-b278-c76bb44f14e9#gh-dark-mode-only"><br>
+<img width="1093" alt="LogoDarkReady" src="https://github.com/user-attachments/assets/d9c3df89-3937-4ba7-b278-c76bb44f14e9#gh-dark-mode-only">
 <img width="1093" alt="LogoLightReady" src="https://github.com/user-attachments/assets/7c2e239b-3684-436e-a23c-5ebf85db1ab9#gh-light-mode-only">
 
-### [한국어](https://github.com/WareAoba/Paraglide/blob/main/README-KR.md)
+# Paraglide - 텍스트 단락 처리기
 
-# Paraglide - Paragraph Processor
+.TXT 파일을 로드하여 **각 단락별로 순차적으로** 복사하고, Ctrl[Cmd] + V를 감지하면 **다음 단락으로 이동하여 복사**하는 기능을 자동화한 프로그램입니다.
 
- A program designed to automate the process of **sequentially copying each paragraph** from a loaded .TXT file and moving to the **next paragraph upon detecting Ctrl[Cmd] + V input**.
 
-## Overview
+## 미리보기
 
  ![Welcome](https://github.com/user-attachments/assets/1a591599-6d0c-4af7-a50b-317eae89adc1)
  ![Comparison](https://github.com/user-attachments/assets/bd0683c2-08a6-47f6-970e-52179b2a7995)
@@ -15,164 +14,172 @@
  ![AltArrow](https://github.com/user-attachments/assets/c5e3e283-add9-4c46-888e-bba88b496c63)
  ![Sidebar](https://github.com/user-attachments/assets/ec5bdcc4-33a4-4fce-92ea-3a89fa289701)
 
-## Key Features
+## 핵심 기능
 
- 1. Load .TXT files and split paragraphs, displaying **previous/current/next** paragraphs.
- 2. Monitor keyboard input and perform **actions based on key combinations**:
-   - **Paste (Ctrl + V, Cmd + V)**: Copy the next paragraph.
-   - **Alt (Opt) + Arrow Keys (←→)**: Navigate to the previous/next paragraph.
-   - **Alt (Opt) + Arrow Keys (↑↓)**: Pause/Resume the program.
- 3. Display the **current paragraph in progress** with an overlay window and allow navigation between paragraphs.
- 4. Save logs to restore the **last position** when reloading a previously processed file.
- 5. Quickly **load previously worked files** within the app.
+ 1. .TXT 파일을 로드, 단락을 나누어 **이전/현재/다음** 단락을 표시.
+ 
+ 2. 키보드 입력을 모니터링. 특정 키 조합에 따라 **대응하는 기능**을 수행.
+     - **붙여넣기(Ctrl + V, Cmd + V)** : 다음 단락 복사
+     - **알트(Alt, Opt) + 좌우 화살표(←→)** : 이전/다음 단락으로 이동
+     - **알트(Alt, Opt) + 상하 화살표(↑↓)** : 프로그램 일시정지/재개
+ 3. 오버레이 창을 통해 현재 **작업중인 단락**을 표시 및 **이전/다음 단락 이동**. 
+ 4. 로그를 저장해 이전 작업한 파일을 로드할 시 **마지막 위치 복원**
+ 5. 이전 작업했던 파일을 앱 내에서 **빠르게 로드하여 작업**.
 
-## Purpose of Development
 
- Inspired by [SB2Tool](https://github.com/JOWONRO/SB2Tool), this program addresses one major limitation of the original tool: **it was Windows-exclusive**. 
+## 개발 의도
 
- Despite not being a professional coder, I enthusiastically leveraged GPT to create this program. Written in **JavaScript** (NPM, React, Electron), it works across platforms, making it **more versatile** than the Windows-only predecessor.
+ [식붕이툴](https://github.com/JOWONRO/SB2Tool)에서 영감을 받아 제작했습니다.
 
- Although the beta version is still under development, the current pace suggests that a release might be possible within this month.
+ 기존 식붕이툴의 가장 큰 단점이었던 **윈도우 전용 프로그램**이라는 점을 해결하고자
+ 코딩은 할 줄 모르지만 GPT 들고 신나게 만들어봤습니다.
 
-## Project Overview
+ **자바스크립트**(NPM, React, Electron)로 작성되어
+ 기존의 윈도우 전용이 아닌, **범용**으로 사용할 수 있다는 점이
+ 가장 큰 장점입니다.
+
+ 아직 베타 버전도 완성되지 않았지만, 개발 속도를 보아
+ 이번 달 내로 Release가 가능할 것 같습니다.
+
+## 프로젝트 구조
 ```
 📦 Paraglide
-├── 📂 public                         # Static Resources
-│   ├── 📂 icons                      # App Icons
-│   │   ├── 📂 mac                    # macOS Icons
-│   │   └── 📂 win                    # Windows Icons  
-│   ├── 📜 index.html                 # Main HTML
-│   ├── 📜 manifest.json              # App Manifest
-│   └── 📂 UI_icons                   # UI Icons
+├── 📂 public                         # 정적 리소스
+│   ├── 📂 icons                      # 앱 아이콘
+│   │   ├── 📂 mac                    # macOS용 아이콘
+│   │   └── 📂 win                    # Windows용 아이콘
+│   ├── 📜 index.html                 # 메인 HTML
+│   ├── 📜 manifest.json              # 앱 매니페스트
+│   └── 📂 UI_icons                   # UI 아이콘
 │
-├── 📂 src                            # Source Code
-│   ├── 📂 components                 # React Components
-│   │   ├── 📜 MainComponent.js       # Main Component
-│   │   ├── 📜 OverlayComponent.js    # Overlay Component
-│   │   ├── 📜 Settings.js            # Settings Component
-│   │   └── 📜 Sidebar.js             # Sidebar Component
+├── 📂 src                            # 소스 코드
+│   ├── 📂 components                 # React 컴포넌트
+│   │   ├── 📜 MainComponent.js       # 메인 컴포넌트
+│   │   ├── 📜 OverlayComponent.js    # 오버레이 컴포넌트
+│   │   ├── 📜 Settings.js            # 설정 컴포넌트
+│   │   └── 📜 Sidebar.js             # 사이드바 컴포넌트
 │   │
-│   ├── 📂 CSS                        # Stylesheets
-│   │   ├── 📜 App.css                # App Styles
-│   │   ├── 📜 MainComponent.css      # Main Component Styles
-│   │   ├── 📜 OverlayComponent.css   # Overlay Styles
-│   │   ├── 📜 Settings.css           # Settings Styles
-│   │   └── 📜 Sidebar.js             # Sidebar Styles
+│   ├── 📂 CSS                        # 스타일시트
+│   │   ├── 📜 App.css                # 앱 스타일
+│   │   ├── 📜 MainComponent.css      # 메인 컴포넌트 스타일
+│   │   ├── 📜 OverlayComponent.css   # 오버레이 스타일
+│   │   ├── 📜 Settings.css           # 설정 스타일
+│   │   └── 📜 Sidebar.js             # 사이드바 스타일
 │   │
-│   ├── 📜 App.js                     # React Entry Point
-│   ├── 📜 index.css                  # Global Styles
-│   ├── 📜 index.js                   # App Entry Point
-│   ├── 📜 main.js                    # Electron Main Process
-│   └── 📜 SystemListener.js          # System Event Handler
+│   ├── 📜 App.js                     # React 진입점
+│   ├── 📜 index.css                  # 글로벌 스타일
+│   ├── 📜 index.js                   # 앱 진입점
+│   ├── 📜 main.js                    # Electron 메인 프로세스
+│   └── 📜 SystemListener.js          # 시스템 이벤트 처리
 │
-├── 📜 LICENSE                        # License File
-├── 📜 package.json                   # Project Configuration
-├── 📜 README.md                      # Project Documentation
-└── 📜 README-KR.md                   # Project Documentation (Korean)
- ```
+├── 📜 LICENSE                        # 라이선스 파일
+├── 📜 package.json                   # 프로젝트 설정
+├── 📜 README.md                      # 프로젝트 문서
+└── 📜 README-KR.md                   # 프로젝트 문서(한글)
+```
 
-## Supported Platforms
+## 지원 환경
 
- - **Windows** (*x64*)
- - **macOS** (*arm64*, M1 and above)
- 
- **Coming Soon**: macOS(x86) Linux
+ - **Windows**(*x64*)
+ - **macOS**(*arm64*, M1 이상)
 
-## Contribution
+ **추후 지원 예정**: macOS(x86), Linux
 
- ***Your contributions can enhance the quality of this program!***  
+## 기여
 
- We deeply appreciate feedback and assistance from talented individuals.  
- Feel free to suggest improvements or highlight areas that need refinement!
+ ***여러분의 기여가 프로그램의 질을 높입니다!***
 
-## Installation / Execution
- Download the appropriate precompiled binary from the [Release Page](https://github.com/WareAoba/Paraglide/releases).
+ 능력자분들의 많은 도움이 절실합니다.
+ 단순 훈수도 좋아요, 개선의 여지가 필요한 부분은
+ 주저없이 말씀해주시면 감사하겠습니다!
+
+## 릴리즈 버전 설치 / 실행
+
+ [Release 페이지](https://github.com/WareAoba/Paraglide/releases)에서 파일을 다운로드해주세요.
 
  - **Windows**:
-  - Extract **Paraglide-win32-x64-0.1.0-beta.zip**.
-  - Run **Paraglide.exe**.
- 
+   - **Paraglide-win32-x64-0.1.0-beta.zip** 압축 해제.
+   - **Paraglide.exe** 실행.
+
  - **macOS**:
+   - **Paraglide-0.1.0-beta-arm64.dmg** 마운트.
+   - **Paraglide.app**을 **~/Application**에 복사.
+   - 환경 설정에서 **손쉬운 사용**과 **입력 모니터링** 권한 설정(안내 메세지를 따라해주시기 바랍니다.).
 
-  - Mount **Paraglide-0.1.0-beta-arm64.dmg**.
-  - Copy **Paraglide.app** to **~/Applications**.
-  - Follow the instructions to enable **accessibility** and **input monitoring** permissions.
 
-## Running in Dev Mode / Building
 
- ***(Prerequisites: Node.js)***
+## 개발 버전 실행 / 빌드 및 컴파일
 
- **Dev Mode**:
+***(Node.js 필요)***
 
- 1. Clone the repository:
+**개발 버전 실행**:
 
+ 1. 먼저 Clone해줍니다.
+ 
    ```bash
    git clone https://github.com/WareAoba/Paraglide
    ```
 
- 2. Switch to the **development** branch:
-  
+ 2. 개발용 브랜치 **development**로 교체합니다.
+
    ```bash
    git checkout -b development
    ```
 
- 3. Install NPM in root directory of the project:
-
+ 3. 프로젝트 루트 디렉토리에 NPM을 설치해주세요.
+ 
    ```bash
-   git clone https://github.com/WareAoba/Paraglide
+   npm install
    ```
 
- 4. Run the program with the following command:
-   
+ 4. 다음 명령어로 실행합니다.
+ 
    ```bash
    npm run dev
    ```
 
- **Building and Compiling**:
+ **빌드 및 컴파일**
 
- - Run the following command to create a build:(**may not have been tested** for compilation.)
+ - 다음 명령어를 입력합니다.(**개발용 브랜치는 컴파일 확인이 안 돼있을 가능성이 있습니다.**)
 
   ```bash
   npm run make
   ```
 
- (For Windows, switch to the **-win32** branch.)
+ (Windows는 Branch를 **-win32**로 변경해야 가능)
 
 
-## Recent Updates
-
-
+## 최근 추가 기능
+ 
  1. ***Beta Release***
- 2. Various bugs have been fixed.
- 3. Finalized macOS permission checks.
- 4. [Dev] Introduced Redux for state management.
- 5. [Dev] Line Mode: Added a mode to process text on a line-by-line basis instead of by paragraphs.
+ 2. 각종 버그를 수정했습니다.
+ 3. macOS 권한 체크 최종 수정 완료.
+ 4. [Dev] Redux 도입.
+ 5. [Dev] **Line 모드** : 단락 단위가 아닌, 한 줄 단위로 처리할 수 있는 모드를 추가했습니다.
 
-## Features in Development
+## 추가할 기능
+ 
+ 1. **브라우징 기능** : 모든 단락을 스크롤로 볼 수 있게 해주는 기능. (버튼과 새 창으로 구현 예정)
+ 2. **검색 기능** : 텍스트/단락 등을 검색하고 원하는 단락으로 점프할 수 있는 기능
+ 3. 오버레이 창에서 단락 클릭으로 점프하는 기능
+ 4. 다양한 애니메이션 : 제일 난감한 부분. 좀 많이 뜯어고쳐야 할 것 같습니다...
+ 5. **UI 아이콘** 추가 : 일시정지/재개 버튼부터 시작해서, 앞으로 추가하게 될 버튼에까지?
+ 6. **유저 가이드** : 나중에 프로그램 상세 설명서를 하나 작성하고 싶네요.
+ 7. **프로그램 내에서 파일 수정 기능** : 그냥 간단하게 파일명이나 단락내용 정도...?
+ 8. **다국어 지원** : 영어와 일본어 우선 지원 예정.
 
- 1. **Browsing Feature**: Scroll through all paragraphs (to be implemented with a button and new window).
- 2. **Search Function**: Search text/paragraphs and jump to the desired paragraph.
- 3. Click-to-Jump in the overlay window.
- 4. Enhanced Animations: The most challenging part—requires significant rework.
- 5. **UI Icons**: From pause/resume buttons to future buttons.defaults, highlight colors, etc.
- 6. **User Guide**: A detailed manual to accompany the beta release.
- 7. **File Editing**: Simple modifications like renaming files or editing paragraph content.
- 8. **Multilingual Support**: Planned to support English and Japanese first.
 
-## Known Issues
+## 수정할 사항
+ 1. 오버레이 레이아웃이 좀 잘못돼있습니다. 모든 단락들이 같은 간격으로 벌어져야 하는데, 이전-현재, 현재-다음만 유난히 넓음. 어떻게 고쳐야 할지 감도 안 잡히는 상황.
+ 2. UI 속성을 CSS로 모두 이관하는 작업중이라 UI가 지금은 개판입니다. 언제 다 고쳐질진 몰?루...
+ 3. 새로 추가한 Sidebar의 디자인이 아주 구립니다. 추후 개선 예정.
+ 4. 현재 프로그램 용량이 매우 큽니다. 차차 줄여나갈 예정.
 
- 1. **Overlay layout misalignment**: All paragraphs should have equal spacing, but the gaps between previous/current and current/next are unusually wide. I'm currently unsure how to fix this.
- 2. **UI properties being migrated to CSS**: Converting all UI properties to CSS is currently making the UI quite messy. It's uncertain when this will be fully resolved.
- 3. **New Sidebar design is subpar**: The design of the newly added Sidebar is very poor. Improvements are planned for the future.
- 4. **Program size issue**: The current size of the program is quite large. Plans are in place to gradually reduce it.
 
-## Beta Release?
+## 라이센스
 
- The ongoing CSS theme implementation is a daunting task and may take a few more days, but essential features should be completed soon. Beta v0.1 is targeted for release by the end of the month.
- If I had coding experience, this would’ve progressed much faster, but tinkering with AI often breaks working features—fixing those takes up most of my time. 😂
+해당 프로그램의 대부분의 코드는 **Github Copilot Chat**으로 작성되었습니다.
 
-## License
+해당 프로그램과 코드는 **MIT License**를 통해 배포됩니다.
 
- The majority of the code for this program was generated using **GitHub Copilot Chat**.
 
- The program and its source code are distributed under the **MIT License**.
