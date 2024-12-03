@@ -114,6 +114,27 @@ function Settings({ isVisible, onClose, isDarkMode }) {
     }
   };
 
+  const handleViewModeChange = async () => {
+    try {
+      const currentMode = settings.viewMode;
+      const newMode = currentMode === 'overview' ? 'listview' : 'overview';
+      
+      const newSettings = {
+        ...settings,
+        viewMode: newMode
+      };
+  
+      setSettings(newSettings);
+      await ipcRenderer.invoke('apply-settings', newSettings);
+      ipcRenderer.send('update-view-mode', newMode);
+      
+      setOriginalSettings(newSettings);
+    } catch (error) {
+      console.error('뷰 모드 전환 중 오류:', error);
+      setSettings(originalSettings);
+    }
+  };
+
   // 취소 시 원래 값으로 복원
   const handleCancel = () => {
     if (originalSettings) {
@@ -132,7 +153,7 @@ function Settings({ isVisible, onClose, isDarkMode }) {
         
         <div className="settings-scroll-area">
         <div className="settings-group">
-          <h3>텍스트 처리 방식</h3> {/* 텍스트 처리 방식 그룹 */}
+          {/* 텍스트 처리 방식 그룹 */}
           <div className="segment-control" data-mode={settings.processMode}>
             <button 
               className={settings.processMode === 'paragraph' ? 'active' : ''}
@@ -147,26 +168,20 @@ function Settings({ isVisible, onClose, isDarkMode }) {
               줄 단위로
             </button>
           </div>
-        </div>
+          </div>
 
           <div className="settings-group">
-            <h3>화면 표시 방식</h3> {/* 화면 표시 방식 그룹 */}
-            <div className="segment-control" data-mode={settings.viewMode}>
+            <h3>화면 표시 방식</h3>
+            <div className="segment-control" 
+                 data-mode={settings.viewMode}
+                 onClick={handleViewModeChange}>  {/* 전체 영역에 클릭 핸들러 추가 */}
               <button 
                 className={settings.viewMode === 'overview' ? 'active' : ''}
-                onClick={() => handleSettingChange({
-                  ...settings,
-                  viewMode: 'overview'
-                })}
               >
                 오버뷰
               </button>
               <button 
                 className={settings.viewMode === 'listview' ? 'active' : ''}
-                onClick={() => handleSettingChange({
-                  ...settings,
-                  viewMode: 'listview'
-                })}
               >
                 리스트뷰
               </button>
