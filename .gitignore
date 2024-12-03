@@ -6,3 +6,5 @@ dist
 Asset
 Paraglide.code-workspace
 out/
+releases/
+*.iss

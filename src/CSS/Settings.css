@@ -353,6 +353,7 @@ input:focus + .slider {
 [data-theme="dark"] .settings-button-group button {
   background-color: var(--dark-bg);
   color: var(--dark-text);
+  font-family: inherit;
   border-color: rgba(255, 255, 255, 0.1);
 }
 

@@ -70,6 +70,7 @@
     padding: 0 var(--spacing-xl);
     font-size: 1.1rem;
     font-weight: 500;
+    font-family: inherit;
     background-color: var(--primary-color);
     color: #fff;
     border: none;
