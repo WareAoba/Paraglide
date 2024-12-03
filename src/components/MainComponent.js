@@ -41,7 +41,7 @@ function MainComponent() {
   const [settingsIcon, setSettingsIcon] = useState(null);
   const [isSettingsVisible, setIsSettingsVisible] = useState(false);
   const [sidebarIcon, setSidebarIcon] = useState(null);
-  const [endIcon, setEndIcon] = useState(null);
+  const [homeIcon, setHomeIcon] = useState(null);
   const [eyeIcon, setEyeIcon] = useState(null);
   const [eyeOffIcon, setEyeOffIcon] = useState(null);
   const [listIcon, setListIcon] = useState(null);
@@ -204,7 +204,7 @@ function MainComponent() {
           ipcRenderer.invoke('get-icon-path', 'settings.svg'),
         ]);
         const sidebarIcon = await ipcRenderer.invoke('get-icon-path', 'menu.svg');
-        const endIcon = await ipcRenderer.invoke('get-icon-path', 'save.svg')
+        const homeIcon = await ipcRenderer.invoke('get-icon-path', 'home.svg')
         const eyeIcon = await ipcRenderer.invoke('get-icon-path', 'eyes.svg')
         const eyeOffIcon = await ipcRenderer.invoke('get-icon-path', 'eyes-off.svg')
         const listIconPath = await ipcRenderer.invoke('get-icon-path', 'list.svg');
@@ -215,7 +215,7 @@ function MainComponent() {
         setTerminalIcon(terminalIconPath);
         setSettingsIcon(settingsIcon);
         setSidebarIcon(sidebarIcon);
-        setEndIcon(endIcon);
+        setHomeIcon(homeIcon);
         setEyeIcon(eyeIcon);
         setEyeOffIcon(eyeOffIcon);
         setListIcon(listIconPath);
@@ -457,7 +457,7 @@ function MainComponent() {
             className="btn-icon"
             onClick={handleCompleteWork}
           >
-            <img src={endIcon} alt="작업 종료" className="icon"/>
+            <img src={homeIcon} alt="작업 종료" className="icon"/>
           </button>
           
           <button 

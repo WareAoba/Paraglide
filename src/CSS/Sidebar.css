@@ -60,6 +60,7 @@
   height: var(--btn-iconsize);
   width: var(--btn-iconsize);
   filter: var(--icon-filter);
+  border-radius: 15%;
   transition: opacity 0.2s;
 }
 
@@ -101,7 +102,7 @@
 .file-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 20px;
 }
 
 /* 파일 항목 */
@@ -115,24 +116,6 @@
   margin-bottom: 8px;
   position: relative;
 }
-
-/* 아이템 사이 여백과 구분선 */
-.file-item + .file-item {
-  position: relative;
-  margin-top: 24px;  /* 아이템 간 간격 */
-}
-
-/* 구분선을 아이템 사이 여백에 배치 */
-.file-item + .file-item::before {
-  content: '';
-  position: absolute;
-  top: -22px;  /* 여백의 중간에 위치 */
-  left: 20px;
-  right: 20px;
-  height: 1px;
-  background-color: var(--border-color);
-}
-
 
 .file-item:hover {
   background-color: var(--hover-bg);
