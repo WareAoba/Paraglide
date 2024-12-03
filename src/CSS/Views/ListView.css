@@ -9,11 +9,19 @@
 }
 
 .listview-header {
-  height: 2rem;          /* 헤더 높이 설정 */
-  margin: 1rem 0;        /* 상하 마진 */
+  height: 2rem;
+  margin: 1rem 0;
   padding-bottom: 0.5rem;
   border-bottom: 1px solid var(--border-color);
   color: var(--text-color);
+  display: flex;
+  align-items: center;
+}
+
+/* 페이지 번호 없음 헤더 스타일 */
+.listview-header[data-no-page-number] {
+  font-style: italic;
+  color: color-mix(in srgb, var(--text-color) 25%, transparent);
 }
 
 .listview-section {

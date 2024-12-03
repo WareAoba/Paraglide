@@ -14,8 +14,6 @@
   color: var(--text-color);
 }
 
-
-
 .welcome-screen {
     display: flex;
     flex-direction: column;
@@ -84,13 +82,6 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-
-
-
-
-
-
-
 .main-container {
     display: flex;
     flex-direction: column;
@@ -100,6 +91,7 @@
     padding: 20px;
     box-sizing: border-box;
     gap: var(--spacing-md);
+    padding-bottom: 50px;
 }
 
 .button-group-controls{
@@ -157,4 +149,65 @@
 .sidebar.invisible {
   transform: translateX(301px);
   transition: all 0.3s ease;
+}
+
+.file-info-container {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  box-sizing: border-box;
+  padding: var(--spacing-sm) var(--spacing-lg); /* 좌우 여백 통일 */
+  background-color: var(--bg-color);
+  font-size: 0.9rem;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+}
+
+/* 파일명과 단락번호를 포함하는 그룹 */
+.file-info-container .file-info-group {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  flex: 1;
+}
+
+/* 파일명 */
+.file-info-container .file-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 500;
+  flex: 0 1 auto; /* grow 0, shrink 1 */
+  width: min-content; /* calc 없이 사용 */
+  margin-right: 5px; /* 대신 마진으로 여백 추가 */
+}
+
+/* 단락번호 */
+.file-info-container .paragraph-info {
+  white-space: nowrap;
+  color: var(--text-color);
+  font-weight: 500;
+  flex: 0 0 auto; /* grow 0, shrink 0 */
+}
+
+/* 구분자와 경로를 포함하는 그룹 */
+.file-info-container .path-group {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  margin-left: var(--spacing-lg);
+}
+
+/* 파일 경로 */
+.file-info-container .file-path {
+  color: var(--text-secondary);
+  opacity: 0.7;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  flex: 0 0 auto;
+  width: max-content;
+  min-width: fit-content;
+  overflow: visible;
 }

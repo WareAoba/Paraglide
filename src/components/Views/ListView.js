@@ -9,14 +9,15 @@ function ListView({ paragraphs, metadata, currentParagraph, onParagraphSelect, t
     return meta?.pageInfo?.display || '';  // pageInfo.display 사용
   };
 
-  // 페이지별 단락 그룹화
+  // 페이지별 단락 그룹화 - 페이지 번호 없는 단락도 포함
   const groupedParagraphs = useMemo(() => {
     return paragraphs.reduce((acc, para, idx) => {
       const pageInfo = metadata[idx]?.pageInfo;
-      if (!pageInfo) return acc;
-
-      // pageInfo.display를 키로 사용 (예: "380-381 페이지")
-      const pageKey = pageInfo.display || `${pageInfo.start} 페이지`;
+      
+      // 페이지 정보가 없는 경우 "기타" 그룹으로 분류
+      const pageKey = pageInfo ? 
+        (pageInfo.display || `${pageInfo.start} 페이지`) : 
+        '페이지 번호 없음';
       
       if (!acc[pageKey]) {
         acc[pageKey] = [];
@@ -56,7 +57,12 @@ function ListView({ paragraphs, metadata, currentParagraph, onParagraphSelect, t
     <div className="listview-container" ref={listRef} data-theme={theme?.mode}>
       {Object.entries(groupedParagraphs).map(([pageKey, items]) => (
         <div key={pageKey} className="listview-section">
-          <h2 className="listview-header">{pageKey}</h2>
+          <h2
+            className="listview-header"
+            data-no-page-number={pageKey === '페이지 번호 없음' ? '' : undefined}
+          >
+            {pageKey}
+          </h2>
           {items.map(({ content, index }) => (
             <div
               key={index}

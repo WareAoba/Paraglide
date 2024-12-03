@@ -121,6 +121,12 @@ function MainComponent() {
     };
   }, []);
 
+  const formatPath = (fullPath) => {
+    if (!fullPath) return '';
+    const parts = fullPath.split('/');
+    return parts.slice(-3, -1).join('/'); // 파일명 제외 상위 2개 디렉토리
+  };
+
   const handleDragOver = (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -465,9 +471,9 @@ function MainComponent() {
 
         </div>
       
-        {/* <div className="page-number">
-          {state.currentNumber?.display || ''}
-        </div> */}
+        <div className="page-number">
+          {state.currentNumber?.display || '\u00A0'}
+        </div>
       
         {state.viewMode === 'overview' ? (
           <Overview 
@@ -488,7 +494,23 @@ function MainComponent() {
           />
         )}
       </div>
-
+      {state.currentFilePath && (
+       <div className="file-info-container">
+       <div className="file-info-group">
+         <span className="file-name">
+           {state.currentFilePath.split('/').pop()}
+         </span>
+         <span className="paragraph-info">
+           - {state.currentParagraph + 1}
+         </span>
+       </div>
+       <div className="path-group">
+         <span className="file-path">
+           ({formatPath(state.currentFilePath)})
+         </span>
+       </div>
+     </div>
+      )}
       <Settings 
         isVisible={isSettingsVisible}
         onClose={() => setIsSettingsVisible(false)}

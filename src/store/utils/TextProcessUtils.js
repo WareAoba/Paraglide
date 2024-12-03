@@ -2,9 +2,9 @@
 const TextProcessUtils = {
   pagePatterns: {
     numberOnly: /^(\d+)$/,
-    koreanStyle: /^(?:\d+(페이지|페)|(?:페이지|페)\d+)$/,
-    englishStyle: /^(?:\d+(page|p)|(?:page|p)\d+)$/i,
-    rangeStyle: /^(\d+)-(\d+)(?:\s*페이지)?$/  // "380-381", "380-381 페이지" 모두 매칭
+    koreanStyle: /^(?:\d+\s*(?:페이지|페)|(?:페이지|페)\s*\d+)$/,
+    englishStyle: /^(?:\d+\s*(?:page|p)|(?:page|p)\s*\d+)$/i,
+    rangeStyle: /^(?:(?:페이지|페|page|p)\s*)?(\d+)\s*[-~]+\s*(\d+)(?:\s*(?:페이지|페|page|p))?$/i  // 합페 인식
   },
 
   skipPatterns: {
@@ -13,58 +13,78 @@ const TextProcessUtils = {
   },
 
   processParagraphs(fileContent, mode = 'paragraph') {
-
-    if (mode === undefined || mode === null) { // 모드 정의가 안 되어있으면 감지합니다.
+    if (mode === undefined || mode === null) {
       mode = this.detectLineMode(fileContent) ? 'line' : 'paragraph';
     }
-
-    let splitParts;
-    if (mode === 'line') {
-      splitParts = fileContent
-        .split(/\n/)
-        .map(l => l.trimEnd())
-        .filter(l => l.length > 0);
-    } else {
-      splitParts = fileContent
-        .split(/\n\s*\n/)
-        .map(p => p.trimEnd())
-        .filter(p => p.length > 0);
-    }
-
+  
+    // 1. 먼저 줄 단위로 분할
+    const normalizedContent = fileContent.replace(/\r\n/g, '\n');
+    const allLines = normalizedContent.split(/\n/).map(l => l.trimEnd());
+    
     let currentNumber = null;
     const paragraphsMetadata = [];
     const paragraphsToDisplay = [];
-    let previousWasPageNumber = false;
     let currentIndex = 0;
-
-    splitParts.forEach((part) => {
-      const trimmedPart = part.trimStart();
-      const partStartPos = fileContent.indexOf(part, currentIndex);
-      currentIndex = partStartPos + part.length;
-
-      const pageInfo = this.extractPageNumber(trimmedPart);
-
-      if (pageInfo) {
-        currentNumber = pageInfo;  // 전체 페이지 정보 객체 저장
-        previousWasPageNumber = true;
-      } else if (!this.shouldSkipParagraph(trimmedPart)) {
-        paragraphsToDisplay.push(trimmedPart);
-        paragraphsMetadata.push({
-          pageNumber: currentNumber?.start,  // 시작 페이지만 저장
-          pageInfo: currentNumber,           // 전체 페이지 정보 저장
-          index: paragraphsToDisplay.length - 1,
-          startPos: partStartPos,
-          endPos: partStartPos + trimmedPart.length
-        });
-        previousWasPageNumber = false;
+    let currentParagraph = [];
+    
+    // 2. 각 줄 처리
+    for (let i = 0; i < allLines.length; i++) {
+      const line = allLines[i].trimStart();
+      const lineStartPos = normalizedContent.indexOf(allLines[i], currentIndex);
+      
+      // 빈 줄이면 현재 단락 저장하고 초기화
+      if (!line) {
+        if (currentParagraph.length > 0) {
+          const cleanedPart = currentParagraph.join('\n');
+          paragraphsToDisplay.push(cleanedPart);
+          paragraphsMetadata.push({
+            pageNumber: currentNumber?.start,
+            pageInfo: currentNumber,
+            index: paragraphsToDisplay.length - 1,
+            startPos: currentIndex,
+            endPos: lineStartPos
+          });
+          currentParagraph = [];
+        }
+        continue;
       }
-    });
-
-    // 마지막 endPos 계산은 유지
-    return { 
-      paragraphsToDisplay, 
-      paragraphsMetadata, 
-      currentNumber: currentNumber // 마지막 확인된 페이지 번호
+  
+      // 페이지 번호 확인
+      const pageInfo = this.extractPageNumber(line);
+      if (pageInfo) {
+        currentNumber = pageInfo;
+        currentIndex = lineStartPos + line.length + 1;
+        continue;
+      }
+  
+      // 건너뛰어야 할 줄 확인
+      if (this.shouldSkipParagraph(line)) {
+        currentIndex = lineStartPos + line.length + 1;
+        continue;
+      }
+  
+      // 일반 텍스트 줄 추가
+      currentParagraph.push(line);
+      currentIndex = lineStartPos + line.length + 1;
+    }
+  
+    // 마지막 단락 처리
+    if (currentParagraph.length > 0) {
+      const cleanedPart = currentParagraph.join('\n');
+      paragraphsToDisplay.push(cleanedPart);
+      paragraphsMetadata.push({
+        pageNumber: currentNumber?.start,
+        pageInfo: currentNumber,
+        index: paragraphsToDisplay.length - 1,
+        startPos: currentIndex - cleanedPart.length,
+        endPos: currentIndex
+      });
+    }
+  
+    return {
+      paragraphsToDisplay,
+      paragraphsMetadata,
+      currentNumber
     };
   },
 
