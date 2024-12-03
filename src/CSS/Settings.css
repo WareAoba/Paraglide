@@ -386,6 +386,7 @@ input:focus + .slider {
   background-color: transparent;
   color: var(--danger-color);
   font-size: 0.95em;
+  font-family: inherit;
   cursor: pointer;
   transition: all 0.2s ease;
   align-self: flex-start;  /* 버튼을 왼쪽으로 정렬 */

@@ -2,7 +2,7 @@
 import React, { useEffect, useRef, useMemo } from 'react';
 import '../../CSS/Views/ListView.css';
 
-function ListView({ paragraphs, metadata, currentParagraph, onParagraphSelect, theme }) {
+function ListView({ paragraphs, metadata, currentParagraph, onParagraphSelect, theme, onCompleteWork }) {
   const listRef = useRef(null);
 
   const renderPageNumber = (meta) => {
@@ -55,7 +55,7 @@ function ListView({ paragraphs, metadata, currentParagraph, onParagraphSelect, t
 
   return (
     <div className="listview-container" ref={listRef} data-theme={theme?.mode}>
-      {Object.entries(groupedParagraphs).map(([pageKey, items]) => (
+      {Object.entries(groupedParagraphs).map(([pageKey, items], groupIndex, groupArray) => (
         <div key={pageKey} className="listview-section">
           <h2
             className="listview-header"
@@ -73,6 +73,14 @@ function ListView({ paragraphs, metadata, currentParagraph, onParagraphSelect, t
               {content}
             </div>
           ))}
+       {groupIndex === groupArray.length - 1 && (
+            <button 
+              className="complete-work-button"
+              onClick={onCompleteWork}
+            >
+              작업 완료
+            </button>
+          )}
         </div>
       ))}
     </div>

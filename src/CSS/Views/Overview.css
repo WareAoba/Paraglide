@@ -2,61 +2,58 @@
   padding: 20px;
 }
 
-
 .paragraph-container {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    border: 2px solid var(--border-color);
-    border-radius: 15px;
-    background-color: var(--bg-color);
-    box-sizing: border-box; /* Include padding and border in width calculation */
-    overflow-y: auto;
-    max-height: 380px;
-    width: 94vw;
-    padding: var(--spacing-md);
-
-    /* margin: var(--spacing-md) */
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  border: 2px solid var(--border-color);
+  border-radius: 15px;
+  background-color: var(--bg-color);
+  box-sizing: border-box; /* Include padding and border in width calculation */
+  overflow-y: auto;
+  max-height: 380px;
+  width: 94vw;
+  padding: var(--spacing-md);
 }
 
 .paragraph-header {
-    display: grid;
-    grid-template-columns: 1fr 1.2fr 1fr;
-    background-color: transparent;
-    border: none;
-    padding: var(--spacing-xs), var(--spacing-xs), 0px, var(--spacing-xs);  /* 패딩 감소 */
-    gap: var(--spacing-sm);
+  display: grid;
+  grid-template-columns: 1fr 1.2fr 1fr;
+  background-color: transparent;
+  border: none;
+  padding: var(--spacing-xs), var(--spacing-xs), 0px, var(--spacing-xs);  /* 패딩 감소 */
+  gap: var(--spacing-sm);
 }
 
 .paragraph-header > div {
-    flex: 0;
-    padding: var(--spacing-xs);  /* 패딩 감소 */
-    text-align: center;
-    font-size: 1.1rem;  /* 폰트 크기 증가 */
-    font-weight: 500;  /* 약간의 강조 */
-    color: var(--text-color);
+  flex: 0;
+  padding: var(--spacing-xs);  /* 패딩 감소 */
+  text-align: center;
+  font-size: 1.1rem;  /* 폰트 크기 증가 */
+  font-weight: 500;  /* 약간의 강조 */
+  color: var(--text-color);
 }
 
 [data-theme="dark"] .paragraph-header > div {
-    color: var(--text-color);
+  color: var(--text-color);
 }
 
 .paragraph-header .current {
-    flex: 1.5;
-    font-weight: bold;
+  flex: 1.5;
+  font-weight: bold;
 }
 
 .paragraph-content {
-    display: flex;
-    flex-direction: row;
-    flex: 1 1 auto;
-    min-height: 200px;
-    width: 100%;
-    max-height: 250px;
-    overflow-y: auto;
-    gap: var(--spacing-md);  /* 단락 간 간격 확대 */
-    margin-top: var(--spacing-sm);
-    padding-top: var(--spacing-sm);
+  display: flex;
+  flex-direction: row;
+  flex: 1 1 auto;
+  min-height: 200px;
+  width: 100%;
+  max-height: 250px;
+  overflow-y: auto;
+  gap: var(--spacing-md);  /* 단락 간 간격 확대 */
+  margin-top: var(--spacing-sm);
+  padding-top: var(--spacing-sm);
 }
 
 .paragraph-current,
