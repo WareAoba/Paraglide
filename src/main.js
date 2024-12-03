@@ -567,14 +567,9 @@ const FileManager = {
         return { success: false };
       }
   
-      // 1. 파일 및 이전 상태 로드
       const content = await fs.readFile(filePath, 'utf8');
       const previousState = store.getState().textProcess;
-      
-      // 2. 새로운 모드로 텍스트 처리
       const result = TextProcessUtils.processParagraphs(content, newMode);
-      
-      // 3. 위치 매핑
       const newPosition = TextProcessUtils.mapPositionBetweenModes(
         previousState.currentParagraph,
         previousState.paragraphsMetadata,
@@ -583,44 +578,37 @@ const FileManager = {
         newMode
       );
   
-      // 4. 상태 업데이트를 트랜잭션으로 처리
-      try {
-        await Promise.all([
-          // Redux 스토어 업데이트
-          store.dispatch(textProcessActions.updateContent({
-            paragraphs: result.paragraphsToDisplay,
-            paragraphsMetadata: result.paragraphsMetadata,
-            processMode: newMode,
-            currentFilePath: filePath
-          })),
-          store.dispatch(textProcessActions.updateCurrentParagraph(newPosition)),
-          store.dispatch(configActions.updateProcessMode(newMode)),
-          
-          // 설정 저장
-          FileManager.saveConfig({ processMode: newMode }),
+      // 1. Redux 상태 먼저 업데이트
+      store.dispatch(textProcessActions.updateContent({
+        paragraphs: result.paragraphsToDisplay,
+        paragraphsMetadata: result.paragraphsMetadata,
+        processMode: newMode,
+        currentFilePath: filePath
+      }));
+      store.dispatch(textProcessActions.updateCurrentParagraph(newPosition));
+      store.dispatch(configActions.updateProcessMode(newMode));
   
-          // 전역 상태 업데이트
-          updateState({
-            paragraphs: result.paragraphsToDisplay,  
-            currentFilePath: filePath,
-            currentParagraph: newPosition,
-            programStatus: ProgramStatus.PROCESS,
-            processMode: newMode,
-            timestamp: Date.now()
-          })
-        ]);
-        
-        // 5. UI 업데이트
-        WindowManager.updateWindowContent(mainWindow, 'state-update');
-        if (overlayWindow && !overlayWindow.isDestroyed()) {
-          WindowManager.updateWindowContent(overlayWindow, 'paragraphs-updated');
-        }
+      // 2. 전역 상태 업데이트
+      await updateState({
+        paragraphs: result.paragraphsToDisplay,
+        currentFilePath: filePath,
+        currentParagraph: newPosition,
+        programStatus: ProgramStatus.PROCESS,
+        processMode: newMode,
+        timestamp: Date.now()
+      });
   
-        return { success: true };
-      } catch (updateError) {
-        console.error('모드 전환 중 상태 업데이트 실패:', updateError);
-        throw updateError;
+      // 3. 설정과 로그 저장 (상태 업데이트 후)
+      await FileManager.saveConfig({ processMode: newMode });
+      await FileManager.saveCurrentPositionToLog(); // Redux 상태가 업데이트된 후 실행
+  
+      // 4. UI 업데이트
+      WindowManager.updateWindowContent(mainWindow, 'state-update');
+      if (overlayWindow && !overlayWindow.isDestroyed()) {
+        WindowManager.updateWindowContent(overlayWindow, 'paragraphs-updated');
       }
+  
+      return { success: true };
     } catch (error) {
       console.error('모드 전환 실패:', error);
       return { success: false };
