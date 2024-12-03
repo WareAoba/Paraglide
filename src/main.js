@@ -162,7 +162,7 @@ const updateState = async (newState) => {
                       globalState.isOverlayVisible;
     
     if (shouldShow) {
-      overlayWindow.show();
+      overlayWindow.showInactive();
       await WindowManager.updateWindowContent(overlayWindow, 'content-update');
     } else {
       overlayWindow.hide();
@@ -759,7 +759,7 @@ const WindowManager = {
 
   setupMainWindowEvents() {
     mainWindow.once('ready-to-show', () => {
-      mainWindow.show();
+      mainWindow.showInactive();
     });
   
     mainWindow.on('closed', () => ApplicationManager.exit());
