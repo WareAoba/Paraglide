@@ -1,0 +1,82 @@
+/* DragDropOverlay.css */
+.drag-drop-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+}
+
+.drag-drop-overlay.visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+.drag-drop-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0);
+  backdrop-filter: blur(0);
+  transform: translateZ(0);  /* 블러 성능 개선 */
+  transition: background-color 0.3s ease-in-out,
+              backdrop-filter 0.2s ease-in-out,
+}
+
+.drag-drop-overlay.visible .drag-drop-backdrop {
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.drag-drop-content {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 2rem;
+  background: none;
+  border: 4px dashed var(--border-color);
+  border-radius: 8px;
+  transform: scale(0.9);
+  opacity: 0;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.drag-drop-overlay.visible .drag-drop-content {
+  transform: scale(1);
+  opacity: 1;
+}
+
+.drag-drop-icon {
+  width: 64px;
+  height: 64px;
+  margin-bottom: 1rem;
+  filter: var(--icon-filter, brightness(0.3));
+}
+
+/* 다크모드 대응 */
+[data-theme="dark"] .drag-drop-icon {
+  filter: var(--icon-filter, brightness(0.8));
+}
+
+.drag-drop-message {
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: var(--text-color);
+}
+
+.drag-drop-sub {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}

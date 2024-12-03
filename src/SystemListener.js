@@ -1,6 +1,8 @@
 // SystemListener.js
-const { app, dialog, clipboard, systemPreferences, ipcMain } = require('electron');
+const { app, dialog, clipboard, systemPreferences, ipcMain, nativeTheme } = require('electron');
 const { GlobalKeyboardListener } = require('node-global-key-listener');
+const { configActions } = require('./store/slices/configSlice');
+const store = require('./store/store');
 const path = require('path');
 const fs = require('fs');
 const isDev = !app.isPackaged;
@@ -31,7 +33,6 @@ class SystemListener {
 
     try {
       ipcMain.on('program-status-update', (event, status) => {
-        console.log('[SystemListener] 상태 업데이트:', status);
         this.programStatus = status;
       });
 
@@ -43,6 +44,7 @@ class SystemListener {
       // 나머지 초기화
       this.setupKeyboardListener();
       this.setupClipboardMonitor();
+      this.setupThemeListener();
       return true;
     } catch (error) {
       console.error('[SystemListener] 초기화 실패:', error);
@@ -110,6 +112,20 @@ class SystemListener {
     console.log('[클립보드] 외부 복사 감지');
   }
 
+  // 테마 감지 메서드 추가
+  setupThemeListener() {
+    nativeTheme.on('updated', () => {
+      const isDark = nativeTheme.shouldUseDarkColors;
+      store.dispatch(configActions.updateTheme(isDark));
+    });
+  }
+
+  // 테마 업데이트 메서드
+  updateTheme(isDark) {
+    console.log('[SystemListener] 테마 변경 감지:', isDark);
+    store.dispatch(configActions.updateTheme(isDark));
+  }
+
   // 내부 클립보드 변경 알림
   notifyInternalClipboardChange() {
     this.isInternalClipboardChange = true;
@@ -124,7 +140,6 @@ class SystemListener {
     }
 
     try {
-      console.log('[SystemListener] 키보드 리스너 설정 시도');
       this.keyboardListener = new GlobalKeyboardListener();
       
       if (!this.keyboardListener) {
@@ -147,27 +162,47 @@ class SystemListener {
           this.moveToNext();
         }
 
+        const isShift = down["LEFT SHIFT"] || down["RIGHT SHIFT"]
         const isAlt = down["LEFT ALT"] || down["RIGHT ALT"]
         const keyName = e.name;
         
-        if(isAlt) {
-          switch(keyName) {
-            case 'RIGHT ARROW':
-              console.log('[단축키] Alt+Right');
-              this.moveToNext();
-              break;
-            case 'LEFT ARROW':
-              console.log('[단축키] Alt+Left');
-              this.moveToPrev();
-              break;
-            case 'UP ARROW':
-              console.log('[단축키] Alt+Up');
-              this.toggleResume();
-              break;
-            case 'DOWN ARROW':
-              console.log('[단축키] Alt+Down');
-              this.togglePause();
-              break;
+        if(isShift) {
+          if(isAlt) {
+            // Shift + Alt 조합
+            switch(keyName) {
+              case 'RIGHT ARROW':
+                console.log('[단축키] Shift+Alt+Right');
+                this.moveToNextPage();
+                break;
+              case 'LEFT ARROW':
+                console.log('[단축키] Shift+Alt+Left');
+                this.moveToPrevPage();
+                break;
+              case 'UP ARROW':
+                console.log('[단축키] Shift+Alt+Up');
+                this.toggleOverlay();
+                break;
+            }
+          } else {
+            // 기존 Shift 조합
+            switch(keyName) {
+              case 'RIGHT ARROW':
+                console.log('[단축키] Shift+Right');
+                this.moveToNext();
+                break;
+              case 'LEFT ARROW':
+                console.log('[단축키] Shift+Left');
+                this.moveToPrev();
+                break;
+              case 'UP ARROW':
+                console.log('[단축키] Shift+Up');
+                this.toggleResume();
+                break;
+              case 'DOWN ARROW':
+                console.log('[단축키] Shift+Down');
+                this.togglePause();
+                break;
+            }
           }
         }
       });
@@ -203,6 +238,18 @@ class SystemListener {
   togglePause() {
     ipcMain.emit('toggle-pause');
   }
+
+  moveToNextPage() {
+    ipcMain.emit('move-to-next-page');
+  }
+
+  moveToPrevPage() {
+    ipcMain.emit('move-to-prev-page');
+  }
+
+  toggleOverlay() {
+    ipcMain.emit('toggle-overlay');
+  } 
 
   // 오류 대화상자 표시
   showErrorDialog(message) {

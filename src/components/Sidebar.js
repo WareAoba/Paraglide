@@ -6,50 +6,33 @@ import '../CSS/Sidebar.css';
 const { ipcRenderer } = window.require('electron');
 const path = window.require('path');
 
-function Sidebar({ isVisible, onClose, currentFilePath }) {
+// icons prop 추가
+function Sidebar({ isVisible, onClose, currentFilePath, isDarkMode, icons }) {
   const [files, setFiles] = React.useState([]);
-  const [isDarkMode, setIsDarkMode] = React.useState(false);
 
   React.useEffect(() => {
-    loadFileHistory();
-  }, [isVisible]);
-
-  React.useEffect(() => {
-    const handleThemeChange = (_, theme) => {
-      setIsDarkMode(theme === 'dark');
-    };
-
-    ipcRenderer.on('theme-changed', handleThemeChange);
-
-    // 초기 테마 상태 요청
-    ipcRenderer.invoke('get-theme').then(theme => {
-      setIsDarkMode(theme === 'dark');
-    });
-
-    return () => {
-      ipcRenderer.removeListener('theme-changed', handleThemeChange);
-    };
-  }, []);
+    if (isVisible) {
+      loadFileHistory();
+    }
+  }, [isVisible, currentFilePath]); 
 
   const loadFileHistory = async () => {
     try {
-      // 원본 로그 데이터와 현재 파일 정보 수신
       const { logData, currentFile } = await ipcRenderer.invoke('get-file-history');
       
-      // 사이드바 내부에서 데이터 가공
       const processedFiles = Object.entries(logData)
         .filter(([filePath, data]) => {
-          // 현재 파일 필터링 (경로 또는 해시값으로 비교)
-          if (!currentFile) return true;
-          const isSamePath = filePath === currentFile.path;
-          const isSameHash = data.fileHash === currentFile.hash;
-          return !isSamePath && !isSameHash;
+          // currentFile이 없으면 모든 파일 표시
+          if (!currentFile || !currentFile.path) return true;
+          
+          // 현재 작업 중인 파일만 제외
+          return filePath !== currentFile.path;
         })
         .map(([filePath, data]) => ({
           fileName: path.basename(filePath),
           filePath: filePath,
-          currentPageNumber: data.currentPageNumber,
-          currentParagraph: data.currentParagraph,
+          currentPageNumber: data.lastPosition?.pageNumber || null,
+          currentParagraph: data.lastPosition?.currentParagraph,
           timestamp: data.timestamp
         }))
         .sort((a, b) => b.timestamp - a.timestamp);
@@ -95,7 +78,7 @@ function Sidebar({ isVisible, onClose, currentFilePath }) {
   const handleRemoveFile = async (e, filePath) => {
     e.stopPropagation(); // 클릭 이벤트 전파 방지
     try {
-      await ipcRenderer.invoke('remove-history-file', filePath);
+      await ipcRenderer.invoke('clear-log-files', filePath);
       loadFileHistory(); // 목록 새로고침
     } catch (error) {
       console.error('파일 기록 삭제 실패:', error);
@@ -105,8 +88,12 @@ function Sidebar({ isVisible, onClose, currentFilePath }) {
   // 파일 선택 핸들러 - 단순히 열기 요청만
   const handleFileSelect = async (filePath) => {
     try {
-      const content = await ipcRenderer.invoke('read-file', filePath);
-      const result = await ipcRenderer.invoke('process-file-content', content, filePath);
+      // 통합된 open-file 핸들러 사용
+      const result = await ipcRenderer.invoke('open-file', {
+        filePath,
+        source: 'history'
+      });
+      
       if (result.success) {
         onClose();
       }
@@ -118,12 +105,18 @@ function Sidebar({ isVisible, onClose, currentFilePath }) {
   return (
     <>
       <div 
-        className={`sidebar ${isVisible ? 'visible' : ''}`}
+        className={`sidebar ${isVisible ? 'visible' : ''} ${isDarkMode ? 'dark' : ''}`}
         data-theme={isDarkMode ? 'dark' : 'light'}
       >
         <div className="sidebar-header">
-          <h3>최근 작업 파일</h3>
-          <button className="btn-close" onClick={onClose}>×</button>
+          <h2>최근 작업 파일</h2>
+          <button className="sidebar-close-button" onClick={onClose}>
+            <img 
+              src={icons?.menuUnfold} 
+              alt="닫기" 
+              className="sidebar-icon-button"
+            />
+          </button>
         </div>
         <div className="sidebar-content">
           <div className="file-list">

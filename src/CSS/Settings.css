@@ -90,11 +90,122 @@
   font-size: 0.95em;
 }
 
-.settings-group label.checkbox-label {
-  flex-direction: row;
-  justify-content: space-between;
+.segment-control {
+  display: flex;
+  background-color: var(--border-color);
+  padding: 2px; /* 4px에서 3px로 줄임 */
+  border-radius: 6px; /* 8px에서 6px로 줄임 */
+  width: 100%;
+  position: relative;
+  height: 28px; /* 높이 명시적 지정 */
+}
+
+.segment-control::before {
+  content: '';
+  position: absolute;
+  left: 3px;
+  top: 3px;
+  width: calc(50% - 4px); /* 약간 더 작게 */
+  height: calc(100% - 7px); /* 약간 더 작게 */
+  background-color: var(--primary-color);
+  border-radius: 4px;
+  transition: transform 0.4s ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.segment-control[data-mode="line"]::before {
+  transform: translateX(calc(100% + 3px)); /* 패딩 값 반영 */
+}
+
+.segment-control[data-mode="listview"]::before {
+  transform: translateX(calc(100% + 3px));
+}
+
+.segment-control button {
+  flex: 1;
+  display: flex;          /* 추가 */
+  align-items: center;    /* 추가 */
+  justify-content: center; /* 추가 */
+  border: none;
+  padding: 0px 12px;
+  background: none;
+  color: var(--text-color);
+  font-size: 0.9em;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s ease; /* color -> all로 변경 */
+  position: relative;
+  z-index: 1;
+  font-family: inherit;
+  opacity: 0.2; /* 기본 상태는 흐리게 */
+}
+
+.segment-control button.active {
+  opacity: 1; /* 활성화된 버튼만 선명하게 */
+  color: white;
+  transition: all 0.3s ease; 
+}
+
+/* 다크모드 수정 */
+[data-theme="dark"] .segment-control {
+  background-color: rgba(0, 0, 0, 0.3); /* 배경보다 어둡게 */
+}
+
+[data-theme="dark"] .segment-control::before {
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 50px;  /* 길이 조정 */
+  height: 24px; /* 높이 조정 */
+  margin-left: 16px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--border-color);
+  transition: 0.4s;
+  border-radius: 34px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: var(--bg-color);
+  transition: 0.4s;
+  border-radius: 50%;
+}
+
+input:focus + .slider {
+  box-shadow: 0 0 1px var(--primary-color);
+}
+
+.toggle-switch {
+  display: flex;
   align-items: center;
-  margin-bottom: 16px;
+  justify-content: space-between;
+}
+
+.toggle-label {
+  font-size: 0.95em;
+  color: var(--text-color);
 }
 
 .settings-group input[type="range"] {
@@ -120,12 +231,6 @@
   cursor: pointer;
 }
 
-.settings-group input[type="checkbox"] {
-  margin-left: 16px;
-  width: 16px;
-  height: 16px;
-}
-
 .settings-group input[type="color"] {
   width: 60px;
   height: 30px;
@@ -133,6 +238,55 @@
   margin-left: 16px;
   border: 1px solid var(--border-color);
   border-radius: 4px;
+}
+
+.slider-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+/* 라벨 텍스트 스타일 추가 */
+.slider-wrapper span {
+  color: var(--text-color); /* 테마 색상 적용 */
+  font-size: 0.95em; /* settings-group label과 동일한 크기 */
+  flex-shrink: 0; /* 텍스트 줄바꿈 방지 */
+}
+
+.settings-group label.checkbox-label {
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+/* 체크박스 우측 여백 조정 */
+.settings-group .checkbox-wrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 0;  /* 기존 마진 제거 */
+  padding: 0;  /* 기존 패딩 제거 */
+  margin-bottom: 20px;  /* 슬라이더와 동일한 간격 */
+}
+
+.settings-group .checkbox-wrapper .checkbox {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.settings-group .checkbox-wrapper .checkbox span:last-child {
+  order: 0;  /* 기본 순서 */
+  padding-left: 0;  /* 왼쪽 패딩 제거 */
+}
+
+.settings-group .checkbox-wrapper .checkbox span:first-child {
+  order: 1;  /* 오른쪽으로 이동 */
+  margin-left: 16px;  /* 텍스트와의 간격 */
 }
 
 .settings-button-group {
@@ -144,7 +298,7 @@
   justify-content: flex-end;
   gap: 12px;
   padding: 8px 20px;       /* 좌우 여백 증가 */
-  background-color: var(--bg-color);
+  background-color: none;
   border-top: 1px solid var(--border-color);
   border-radius: 0 0 12px 12px;
   z-index: 1;                /* 스크롤 컨텐츠 위에 표시 */
@@ -182,11 +336,11 @@
 
 [data-theme="dark"] .settings-content {
   background-color: var(--dark-bg);
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--dark-border);
 }
 
 [data-theme="dark"] .settings-button-group {
-  background-color: var(--dark-bg);
+  background-color: none;
   border-top-color: rgba(255, 255, 255, 0.1);
 }
 
@@ -199,6 +353,7 @@
 [data-theme="dark"] .settings-button-group button {
   background-color: var(--dark-bg);
   color: var(--dark-text);
+  font-family: inherit;
   border-color: rgba(255, 255, 255, 0.1);
 }
 
@@ -232,6 +387,7 @@
   background-color: transparent;
   color: var(--danger-color);
   font-size: 0.95em;
+  font-family: inherit;
   cursor: pointer;
   transition: all 0.2s ease;
   align-self: flex-start;  /* 버튼을 왼쪽으로 정렬 */

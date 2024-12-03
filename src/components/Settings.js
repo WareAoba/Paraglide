@@ -1,48 +1,55 @@
 // src/components/Settings.js
 import React, { useState, useEffect } from 'react';
 import '../CSS/Settings.css';
+import '../CSS/Controllers/Checkbox.css';
+import '../CSS/Controllers/RangeSlider.css';
 const { ipcRenderer } = window.require('electron');
 
-function Settings({ isVisible, onClose }) {
+function Settings({ isVisible, onClose, isDarkMode }) {
   const [settings, setSettings] = useState({
     windowOpacity: 1.0,      // 창 전체 투명도
     contentOpacity: 0.8,     // 배경 투명도
     overlayFixed: false,
     loadLastOverlayBounds: true,
-    accentColor: '#007bff'
+    accentColor: '#007bff',
+    processMode: 'paragraph',  // 기본 텍스트 처리 방식
+    viewMode: 'overview'
   });
   const [originalSettings, setOriginalSettings] = useState(null);
-  const [isDarkMode, setIsDarkMode] = useState(false);
 
+  // 초기 설정 로드
   useEffect(() => {
-    const handleThemeChange = (_, theme) => {
-      setIsDarkMode(theme === 'dark');
-    };
-
-    ipcRenderer.on('theme-changed', handleThemeChange);
-
-    // 초기 테마 상태 요청
-    ipcRenderer.invoke('get-theme').then(theme => {
-      setIsDarkMode(theme === 'dark');
-    });
-
-    return () => {
-      ipcRenderer.removeListener('theme-changed', handleThemeChange);
-    };
-  }, []);
-
-  useEffect(() => {
-    
-    ipcRenderer.invoke('load-settings').then(savedSettings => {
-      if (savedSettings) {
-        setSettings(savedSettings);
-        setOriginalSettings(savedSettings);
+    const loadSettings = async () => {
+      try {
+        const savedSettings = await ipcRenderer.invoke('load-settings');
+        if (savedSettings) {
+          // 기존 processMode를 우선적으로 사용
+          const processMode = savedSettings.processMode || 'paragraph';
+          
+          const newSettings = {
+            ...settings,
+            ...savedSettings,
+            processMode // 명시적으로 processMode 설정
+          };
+          
+          setSettings(newSettings);
+          setOriginalSettings(newSettings); // originalSettings도 동일하게 설정
+          
+          // 디버깅용
+          console.log('로드된 설정:', newSettings);
+        }
+      } catch (error) {
+        console.error('설정 로드 중 오류:', error);
       }
-    });
-  }, []);
+    };
+    
+    if (isVisible) {
+      loadSettings();
+    }
+  }, [isVisible]);
   
-   // 로그 파일 정리 핸들러
-   const handleClearLogs = async () => {
+  // 로그 파일 정리 핸들러
+  const handleClearLogs = async () => {
     if (window.confirm('모든 로그 파일을 정리하시겠습니까?')) {
       await ipcRenderer.invoke('clear-log-files');
     }
@@ -60,7 +67,13 @@ function Settings({ isVisible, onClose }) {
         overlayFixed: newSettings.overlayFixed,
         loadLastOverlayBounds: newSettings.loadLastOverlayBounds,
         accentColor: newSettings.accentColor,
+        processMode: newSettings.processMode,
+        viewMode: newSettings.viewMode
       });
+
+      if (newSettings.viewMode && newSettings.viewMode !== settings.viewMode) {
+        ipcRenderer.send('update-view-mode', newSettings.viewMode);
+      }
   
       if (!result) {
         console.error('설정 적용 실패');
@@ -70,9 +83,41 @@ function Settings({ isVisible, onClose }) {
     }
   };
 
+  // 텍스트 처리 방식 토글 핸들러
+  const handleProcessModeChange = async () => {
+    try {
+      const currentMode = settings.processMode;
+      const newMode = currentMode === 'paragraph' ? 'line' : 'paragraph';
+      
+      // 디버깅용
+      console.log('모드 전환:', currentMode, '->', newMode);
+
+      const newSettings = {
+        ...settings,
+        processMode: newMode
+      };
+
+      // 먼저 UI 상태 업데이트
+      setSettings(newSettings);
+      
+      // 설정 저장 및 모드 전환 요청
+      await ipcRenderer.invoke('apply-settings', newSettings);
+      ipcRenderer.send('switch-mode', newMode);
+      
+      // 성공 시 originalSettings 업데이트
+      setOriginalSettings(newSettings);
+
+    } catch (error) {
+      console.error('모드 전환 중 오류:', error);
+      // 오류 시 이전 상태로 복구
+      setSettings(originalSettings);
+    }
+  };
+
   // 취소 시 원래 값으로 복원
   const handleCancel = () => {
     if (originalSettings) {
+      setSettings(originalSettings);
       handleSettingChange(originalSettings);
     }
     onClose();
@@ -80,16 +125,59 @@ function Settings({ isVisible, onClose }) {
 
   return (
     <div className={`settings-modal ${isVisible ? 'visible' : ''}`}
-    data-theme={isDarkMode ? 'dark' : 'light'}
+      data-theme={isDarkMode ? 'dark' : 'light'}
     >
       <div className="settings-content">
         <h2>설정</h2>
         
         <div className="settings-scroll-area">
+        <div className="settings-group">
+          <h3>텍스트 처리 방식</h3> {/* 텍스트 처리 방식 그룹 */}
+          <div className="segment-control" data-mode={settings.processMode}>
+            <button 
+              className={settings.processMode === 'paragraph' ? 'active' : ''}
+              onClick={() => handleProcessModeChange('paragraph')}
+            >
+              단락 단위로
+            </button>
+            <button 
+              className={settings.processMode === 'line' ? 'active' : ''}
+              onClick={() => handleProcessModeChange('line')}
+            >
+              줄 단위로
+            </button>
+          </div>
+        </div>
+
+          <div className="settings-group">
+            <h3>화면 표시 방식</h3> {/* 화면 표시 방식 그룹 */}
+            <div className="segment-control" data-mode={settings.viewMode}>
+              <button 
+                className={settings.viewMode === 'overview' ? 'active' : ''}
+                onClick={() => handleSettingChange({
+                  ...settings,
+                  viewMode: 'overview'
+                })}
+              >
+                오버뷰
+              </button>
+              <button 
+                className={settings.viewMode === 'listview' ? 'active' : ''}
+                onClick={() => handleSettingChange({
+                  ...settings,
+                  viewMode: 'listview'
+                })}
+              >
+                리스트뷰
+              </button>
+            </div>
+          </div>
+
+          {/* 오버레이 그룹 */}
           <div className="settings-group">
             <h3>오버레이</h3>
-            <label>
-              전체 투명도
+            <div className="slider-wrapper">
+              <span>전체 투명도</span>
               <input 
                 type="range" 
                 min="0"
@@ -101,9 +189,9 @@ function Settings({ isVisible, onClose }) {
                   windowOpacity: parseFloat(e.target.value) / 100
                 })}
               />
-            </label>
-            <label>
-              배경 투명도
+            </div>
+            <div className="slider-wrapper">
+              <span>배경 투명도</span>
               <input 
                 type="range" 
                 min="0"
@@ -115,31 +203,48 @@ function Settings({ isVisible, onClose }) {
                   contentOpacity: parseFloat(e.target.value) / 100
                 })}
               />
-            </label>
-            <label className="checkbox-label">
-              오버레이 위치 고정
+            </div>
+            <div className="checkbox-wrapper">
               <input 
                 type="checkbox"
+                id="overlayFixed"
                 checked={settings.overlayFixed}
                 onChange={e => handleSettingChange({
                   ...settings, 
                   overlayFixed: e.target.checked
                 })}
               />
-            </label>
-            <label className="checkbox-label">
-              마지막 오버레이 위치/크기 가져오기
+              <label className="checkbox" htmlFor="overlayFixed">
+                <span>
+                  <svg width="12" height="10" viewBox="0 0 12 10">
+                    <polyline points="1.5 6 4.5 9 10.5 1"></polyline>
+                  </svg>
+                </span>
+                <span>오버레이 위치 고정</span>
+              </label>
+            </div>
+            <div className="checkbox-wrapper">
               <input 
                 type="checkbox"
+                id="loadLastOverlayBounds"
                 checked={settings.loadLastOverlayBounds}
                 onChange={e => handleSettingChange({
                   ...settings, 
                   loadLastOverlayBounds: e.target.checked
                 })}
               />
-            </label>
+              <label className="checkbox" htmlFor="loadLastOverlayBounds">
+                <span>
+                  <svg width="12" height="10" viewBox="0 0 12 10">
+                    <polyline points="1.5 6 4.5 9 10.5 1"></polyline>
+                  </svg>
+                </span>
+                <span>마지막 오버레이 위치/크기 가져오기</span>
+              </label>
+            </div>
           </div>
 
+          {/* 앱 설정 그룹 */}
           <div className="settings-group">
             <h3>앱 설정</h3>
             <label>
@@ -155,6 +260,7 @@ function Settings({ isVisible, onClose }) {
             </label>
           </div>
 
+          {/* 데이터 관리 그룹 */}
           <div className="settings-group danger-zone">
             <h3>데이터 관리</h3>
             <button onClick={handleClearLogs}>

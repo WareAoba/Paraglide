@@ -1,6 +1,6 @@
 {
   "name": "paraglide",
-  "version": "0.1.1-beta",
+  "version": "0.2.0-beta",
   "private": true,
   "main": "./src/main.js",
   "author": "WareAoba",
@@ -34,25 +34,32 @@
         "height": 380
       },
       "contents": [
-        { "x": 130, "y": 220, "type": "file" },
-        { "x": 410, "y": 220, "type": "link", "path": "/Applications" }
+        {
+          "x": 130,
+          "y": 220,
+          "type": "file"
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
       ]
     }
   },
   "homepage": "./",
   "dependencies": {
+    "@reduxjs/toolkit": "^2.3.0",
     "electron-clipboard-watcher": "^1.0.1",
     "node-global-key-listener": "^0.3.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-router-dom": "^6.28.0",
-    "react-scripts": "5.0.1",
-    "wait-on": "^7.2.0",
-    "web-vitals": "^2.1.4"
+    "react-router-dom": "^6.28.0"
   },
   "scripts": {
-    "postinstall": "chmod +x ./node_modules/node-global-key-listener/bin/MacKeyServer",
     "make-dmg": "create-dmg 'dist/mac/Paraglide.app' --overwrite --dmgTitle='Paraglide' --icon='public/icons/mac/icon.icns' --background='public/dmg/background.png' --window-size=540,380 --icon-size=100 --app-drop-link-size=130 --app-drop-link-x=600 --app-drop-link-y=400",
+    "make-win": "electron-forge make --platform win32 --targets @electron-forge/maker-zip",
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
@@ -93,11 +100,10 @@
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
     "concurrently": "^9.1.0",
-    "create-dmg": "^7.0.0",
     "cross-env": "^7.0.3",
     "electron": "^26.2.0",
+    "electron-squirrel-startup": "^1.0.1",
     "wait-on": "^7.2.0",
-    "electron-squirrel-startup": "^1.0.1"
-
+    "react-scripts": "5.0.1"
   }
 }
