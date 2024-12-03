@@ -1,6 +1,8 @@
 // src/components/Settings.js
 import React, { useState, useEffect } from 'react';
 import '../CSS/Settings.css';
+import '../CSS/Controllers/Checkbox.css';
+import '../CSS/Controllers/RangeSlider.css';
 const { ipcRenderer } = window.require('electron');
 
 function Settings({ isVisible, onClose, isDarkMode }) {
@@ -174,8 +176,8 @@ function Settings({ isVisible, onClose, isDarkMode }) {
           {/* 오버레이 그룹 */}
           <div className="settings-group">
             <h3>오버레이</h3>
-            <label>
-              전체 투명도
+            <div className="slider-wrapper">
+              <span>전체 투명도</span>
               <input 
                 type="range" 
                 min="0"
@@ -187,9 +189,9 @@ function Settings({ isVisible, onClose, isDarkMode }) {
                   windowOpacity: parseFloat(e.target.value) / 100
                 })}
               />
-            </label>
-            <label>
-              배경 투명도
+            </div>
+            <div className="slider-wrapper">
+              <span>배경 투명도</span>
               <input 
                 type="range" 
                 min="0"
@@ -201,29 +203,45 @@ function Settings({ isVisible, onClose, isDarkMode }) {
                   contentOpacity: parseFloat(e.target.value) / 100
                 })}
               />
-            </label>
-            <label className="checkbox-label">
-              오버레이 위치 고정
+            </div>
+            <div className="checkbox-wrapper">
               <input 
                 type="checkbox"
+                id="overlayFixed"
                 checked={settings.overlayFixed}
                 onChange={e => handleSettingChange({
                   ...settings, 
                   overlayFixed: e.target.checked
                 })}
               />
-            </label>
-            <label className="checkbox-label">
-              마지막 오버레이 위치/크기 가져오기
+              <label className="checkbox" htmlFor="overlayFixed">
+                <span>
+                  <svg width="12" height="10" viewBox="0 0 12 10">
+                    <polyline points="1.5 6 4.5 9 10.5 1"></polyline>
+                  </svg>
+                </span>
+                <span>오버레이 위치 고정</span>
+              </label>
+            </div>
+            <div className="checkbox-wrapper">
               <input 
                 type="checkbox"
+                id="loadLastOverlayBounds"
                 checked={settings.loadLastOverlayBounds}
                 onChange={e => handleSettingChange({
                   ...settings, 
                   loadLastOverlayBounds: e.target.checked
                 })}
               />
-            </label>
+              <label className="checkbox" htmlFor="loadLastOverlayBounds">
+                <span>
+                  <svg width="12" height="10" viewBox="0 0 12 10">
+                    <polyline points="1.5 6 4.5 9 10.5 1"></polyline>
+                  </svg>
+                </span>
+                <span>마지막 오버레이 위치/크기 가져오기</span>
+              </label>
+            </div>
           </div>
 
           {/* 앱 설정 그룹 */}

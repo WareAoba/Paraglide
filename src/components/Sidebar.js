@@ -6,7 +6,8 @@ import '../CSS/Sidebar.css';
 const { ipcRenderer } = window.require('electron');
 const path = window.require('path');
 
-function Sidebar({ isVisible, onClose, currentFilePath, isDarkMode }) {
+// icons prop 추가
+function Sidebar({ isVisible, onClose, currentFilePath, isDarkMode, icons }) {
   const [files, setFiles] = React.useState([]);
 
   React.useEffect(() => {
@@ -104,12 +105,18 @@ function Sidebar({ isVisible, onClose, currentFilePath, isDarkMode }) {
   return (
     <>
       <div 
-        className={`sidebar ${isVisible ? 'visible' : ''}`}
+        className={`sidebar ${isVisible ? 'visible' : ''} ${isDarkMode ? 'dark' : ''}`}
         data-theme={isDarkMode ? 'dark' : 'light'}
       >
         <div className="sidebar-header">
-          <h3>최근 작업 파일</h3>
-          <button className="btn-close" onClick={onClose}>×</button>
+          <h2>최근 작업 파일</h2>
+          <button className="sidebar-close-button" onClick={onClose}>
+            <img 
+              src={icons?.menuUnfold} 
+              alt="닫기" 
+              className="sidebar-icon-button"
+            />
+          </button>
         </div>
         <div className="sidebar-content">
           <div className="file-list">

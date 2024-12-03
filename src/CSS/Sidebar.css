@@ -1,58 +1,19 @@
 /* 사이드바 */
-  .sidebar {
-    position: fixed;
-    left: -301px;
-    top: 0;
-    width: 300px;
-    height: 100vh;
-    background-color: var(--bg-color);
-    border-right: none;
-    border-radius: 0 16px 16px 0;  /* 우측 상/하단만 둥글게 */
-    transition: transform var(--transition-default);
-    z-index: 1000;
-    overflow-y: auto;
-  }
+.sidebar {
+  position: fixed;
+  left: -301px;
+  top: 0;
+  width: 300px;
+  height: 100vh;
+  background-color: var(--bg-color);
+  border-right: none;
+  border-radius: 0 16px 16px 0;  /* 우측 상/하단만 둥글게 */
+  transition: transform var(--transition-default);
+  z-index: 1000;
+  overflow-y: auto;
+}
 
-    /* 사이드바 버튼 상호작용 상태 */
-    .btn-sidebar:hover,
-    .btn-sidebar:focus,
-    .btn-sidebar:active {
-      background: none;
-      outline: none;
-      color: inherit;
-    }
-    
-    /* 닫기 버튼 */
-    .btn-close {
-      position: absolute;
-      right: 20px; 
-      top: 50%;           /* 수직 중앙 */
-      transform: translateY(-50%);  /* 수직 중앙 정렬 보정 */
-      width: 32px;        /* 크기 증가 */
-      height: 32px;       /* 크기 증가 */
-      font-size: 1.5em;   /* 아이콘 크기 증가 */
-      background: none;
-      color: var(--text-color);
-      border: none;
-      padding: 0;
-      cursor: pointer;
-      outline: none;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin: 0; /* Remove any default margin */
-    }
-    
-    /* 닫기 버튼 상호작용 상태 */
-    .btn-close:hover,
-    .btn-close:focus,
-    .btn-close:active {
-      background: none;
-      outline: none;
-      color: inherit;
-    }
-
-    /* 오버레이 */
+/* 오버레이 */
 .sidebar-overlay {
   position: fixed;
   top: 0;
@@ -79,6 +40,34 @@
   transform: translateX(300px);
 }
 
+.sidebar-close-button {
+  position: relative;  /* absolute 제거 */
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  outline: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 15%;
+  width: var(--btn-size);
+  height: var(--btn-size);
+  margin: 0;
+}
+
+.sidebar-icon-button {
+  height: var(--btn-iconsize);
+  width: var(--btn-iconsize);
+  filter: var(--icon-filter);
+  transition: opacity 0.2s;
+}
+
+.sidebar-icon-button:hover {
+  background-color: var(--hover-bg);
+  opacity: 0.7;
+}
+
 /* 사이드바 헤더 */
 .sidebar-header {
   padding: 45px;
@@ -86,6 +75,13 @@
   justify-content: space-between;
   align-items: center;
   position: relative;
+}
+
+.sidebar-header h2 {
+  color: var(--text-color);
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 500;
 }
 
 .sidebar-header h3 {

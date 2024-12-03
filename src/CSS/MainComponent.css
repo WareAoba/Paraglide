@@ -123,9 +123,16 @@
     margin: 0;
 }
 
-
 .button-group-controls .btn-icon:hover {
   background-color: var(--hover-bg); 
+}
+
+.button-group-controls .btn-icon img[alt="Settings Icon"] {
+  transition: transform 0.2s ease;
+}
+
+.button-group-controls .btn-icon:hover img[alt="Settings Icon"] {
+  transform: rotate(30deg);
 }
 
 .icon{

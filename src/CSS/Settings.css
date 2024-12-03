@@ -193,16 +193,8 @@
   border-radius: 50%;
 }
 
-input:checked + .slider {
-  background-color: var(--primary-color);
-}
-
 input:focus + .slider {
   box-shadow: 0 0 1px var(--primary-color);
-}
-
-input:checked + .slider:before {
-  transform: translateX(26px);
 }
 
 .toggle-switch {
@@ -214,13 +206,6 @@ input:checked + .slider:before {
 .toggle-label {
   font-size: 0.95em;
   color: var(--text-color);
-}
-
-.settings-group label.checkbox-label {
-  flex-direction: row;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
 }
 
 .settings-group input[type="range"] {
@@ -246,12 +231,6 @@ input:checked + .slider:before {
   cursor: pointer;
 }
 
-.settings-group input[type="checkbox"] {
-  margin-left: 16px;
-  width: 16px;
-  height: 16px;
-}
-
 .settings-group input[type="color"] {
   width: 60px;
   height: 30px;
@@ -259,6 +238,55 @@ input:checked + .slider:before {
   margin-left: 16px;
   border: 1px solid var(--border-color);
   border-radius: 4px;
+}
+
+.slider-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+/* 라벨 텍스트 스타일 추가 */
+.slider-wrapper span {
+  color: var(--text-color); /* 테마 색상 적용 */
+  font-size: 0.95em; /* settings-group label과 동일한 크기 */
+  flex-shrink: 0; /* 텍스트 줄바꿈 방지 */
+}
+
+.settings-group label.checkbox-label {
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+/* 체크박스 우측 여백 조정 */
+.settings-group .checkbox-wrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 0;  /* 기존 마진 제거 */
+  padding: 0;  /* 기존 패딩 제거 */
+  margin-bottom: 20px;  /* 슬라이더와 동일한 간격 */
+}
+
+.settings-group .checkbox-wrapper .checkbox {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.settings-group .checkbox-wrapper .checkbox span:last-child {
+  order: 0;  /* 기본 순서 */
+  padding-left: 0;  /* 왼쪽 패딩 제거 */
+}
+
+.settings-group .checkbox-wrapper .checkbox span:first-child {
+  order: 1;  /* 오른쪽으로 이동 */
+  margin-left: 16px;  /* 텍스트와의 간격 */
 }
 
 .settings-button-group {

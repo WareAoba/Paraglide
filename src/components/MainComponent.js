@@ -44,6 +44,7 @@ function MainComponent() {
   const [eyeIcon, setEyeIcon] = useState(null);
   const [eyeOffIcon, setEyeOffIcon] = useState(null);
   const [listIcon, setListIcon] = useState(null);
+  const [menuUnfoldIcon, setMenuUnfoldIcon] = useState(null);
 
 
   useEffect(() => {
@@ -205,6 +206,7 @@ function MainComponent() {
         const eyeIcon = await ipcRenderer.invoke('get-icon-path', 'eyes.svg')
         const eyeOffIcon = await ipcRenderer.invoke('get-icon-path', 'eyes-off.svg')
         const listIconPath = await ipcRenderer.invoke('get-icon-path', 'list.svg');
+        const menuUnfoldIcon = await ipcRenderer.invoke('get-icon-path', 'menu-unfold.svg');
 
         setPlayIcon(playIconPath);
         setPauseIcon(pauseIconPath);
@@ -215,6 +217,7 @@ function MainComponent() {
         setEyeIcon(eyeIcon);
         setEyeOffIcon(eyeOffIcon);
         setListIcon(listIconPath);
+        setMenuUnfoldIcon(menuUnfoldIcon);
       } catch (error) {
         console.error('아이콘 로드 실패:', error);
       }
@@ -360,6 +363,9 @@ function MainComponent() {
           onFileSelect={handleSidebarFileSelect}
           theme={theme}
           onClose={handleCloseSidebar}
+          icons={{
+            menuUnfold: menuUnfoldIcon
+          }}
           currentFilePath={state.programStatus === 'PROCESS' ? state.currentFilePath : null}
         />
         <DragDropOverlay isVisible={isDragging} />
@@ -373,7 +379,7 @@ function MainComponent() {
               className="btn-icon"
               onClick={() => setIsSettingsVisible(true)}
             >
-              <img src={settingsIcon} alt="설정" className="icon"/>
+              <img src={settingsIcon} alt="Settings Icon" className="icon"/>
             </button>
           </div>          
   
@@ -425,6 +431,9 @@ function MainComponent() {
         onFileSelect={handleSidebarFileSelect}
         theme={theme}
         onClose={handleCloseSidebar}
+        icons={{
+          menuUnfold: menuUnfoldIcon
+        }}
       />
       <DragDropOverlay isVisible={isDragging} />
 
@@ -439,7 +448,7 @@ function MainComponent() {
             className="btn-icon"
             onClick={() => setIsSettingsVisible(true)}
           >
-            <img src={settingsIcon} alt="Sidebar Icon" className="icon"/>
+            <img src={settingsIcon} alt="Settings Icon" className="icon"/>
           </button>
           
           <button 
