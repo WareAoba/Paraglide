@@ -10,7 +10,9 @@ module.exports = {
     asar: {
       unpack: "**/{node_modules/node-global-key-listener,public}/**/*"
     },
-    icon: path.resolve(__dirname, 'public/icons/mac/icon.icns'),
+    icon: process.platform === 'darwin' 
+    ? path.resolve(__dirname, 'public/icons/mac/icon.icns')
+    : path.resolve(__dirname, 'public/icons/win/icon.ico'),
     appBundleId: 'com.paraglide.app',
     appCategoryType: "public.app-category.productivity",
     extendInfo: path.resolve(__dirname, 'public/mac/Info.plist'),
@@ -18,9 +20,12 @@ module.exports = {
       // 불필요한 파일 제외
       /\.git/,
       /node_modules[\/\\].*[/\\]test[/\\].*/,
-      /node_modules[\/\\].*[/\\]__tests__[/\\].*/,
-      /src[/\\].*\.test\.js$/,
-      /src[/\\].*\.spec\.js$/
+      /node_modules[\/\\].*[/\\]docs[/\\].*/,
+      /node_modules[\/\\].*[/\\]example[/\\].*/,
+      /\.map$/,
+      /\.md$/,
+      /\.test\.js$/,
+      /\.spec\.js$/
     ],
     protocols: [{
         name: "Paraglide URL",
@@ -46,6 +51,17 @@ module.exports = {
       config: {
         icon: path.resolve(__dirname, 'public/icons/mac/icon.icns'),
         format: 'ULFO'
+      }
+    },
+    {
+      // Windows용 portable exe
+      name: '@electron-forge/maker-zip',
+      platforms: ['win32'],
+      config: {
+        // Windows 설정
+        options: {
+          icon: path.resolve(__dirname, 'public/icons/win/icon.ico')
+        }
       }
     },
     {

@@ -62,6 +62,7 @@
   },
   "scripts": {
     "make-dmg": "create-dmg 'dist/mac/Paraglide.app' --overwrite --dmgTitle='Paraglide' --icon='public/icons/mac/icon.icns' --background='public/dmg/background.png' --window-size=540,380 --icon-size=100 --app-drop-link-size=130 --app-drop-link-x=600 --app-drop-link-y=400",
+    "make-win": "electron-forge make --platform win32 --targets @electron-forge/maker-zip",
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
