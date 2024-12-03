@@ -8,3 +8,4 @@ Paraglide.code-workspace
 out/
 releases/
 *.iss
+package-lock.json

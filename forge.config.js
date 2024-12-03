@@ -44,7 +44,7 @@ module.exports = {
      /\.DS_Store$/, // macOS 메타데이터
      /node_modules[\/\\].*[/\\]CHANGELOG.*/, // 변경 로그
      /node_modules[\/\\].*[/\\]LICENSE.*/, // 라이선스 파일
-     /node_modules[\/\\].*[/\\]README.*/, // README 파일
+     /node_modules[\/\\].*[/\\]README*.*/, // README 파일
      /\.npmignore$/,
      /\.gitignore$/,
      /\.yarn-integrity$/,
