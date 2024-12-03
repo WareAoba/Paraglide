@@ -8,6 +8,7 @@ import Overview from './Views/Overview';
 import ListView from './Views/ListView';
 import DragDropOverlay from './DragDropOverlay';
 
+const path = window.require('path');
 const { ipcRenderer } = window.require('electron');
 
 // MainComponent.js 수정
@@ -507,7 +508,7 @@ function MainComponent() {
        <div className="file-info-container">
        <div className="file-info-group">
          <span className="file-name">
-           {state.currentFilePath.split('/').pop()}
+          {path.basename(state.currentFilePath)}
          </span>
          <span className="paragraph-info">
            - {state.currentParagraph + 1}
