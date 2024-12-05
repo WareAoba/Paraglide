@@ -6,6 +6,61 @@
   overflow-x: hidden;
   padding: 1rem;
   position: relative;
+  
+  /* Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  transition: all 0.3s ease;
+}
+
+/* Webkit 기본 스크롤바 스타일 */
+.listview-container::-webkit-scrollbar {
+  width: 6px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.listview-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.listview-container::-webkit-scrollbar-thumb {
+  background-color: var(--primary-color);
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background-clip: padding-box;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+/* 호버, 스크롤 중 스크롤바 표시 */
+.listview-container:hover::-webkit-scrollbar,
+.listview-container.scrolling::-webkit-scrollbar {
+  display: block;
+  opacity: 1;
+}
+
+.listview-container:hover::-webkit-scrollbar-thumb,
+.listview-container.scrolling::-webkit-scrollbar-thumb {
+  opacity: 1;
+}
+
+
+/* 다크모드 */
+[data-theme="dark"] .listview-container::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Firefox 호버/스크롤 상태 */
+.listview-container:hover,
+.listview-container.scrolling {
+  scrollbar-color: var(--primary-color) transparent;
+  transition: scrollbar-color 0.3s ease;
+}
+
+[data-theme="dark"] .listview-container:hover,
+[data-theme="dark"] .listview-container.scrolling {
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
 }
 
 .listview-header {
