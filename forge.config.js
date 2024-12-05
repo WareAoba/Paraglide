@@ -54,7 +54,6 @@ module.exports = {
      /yarn-debug\.log$/,
      /yarn-error\.log$/,
      /npm-debug\.log$/,
-     /node_modules[\/\\].*[/\\]bin[/\\].*/, // 실행 파일
      /node_modules[\/\\].*[/\\]obj[/\\].*/, // 중간 빌드 파일
      /\.zip$/,  // 압축 파일
      /\.tar$/,
@@ -66,6 +65,7 @@ module.exports = {
      /releases/, // 릴리즈 파일
      /out/, // 빌드 결과 파일
      /\.lock$/, // 락 파일 (yarn.lock, package-lock.json 등)
+     /\lock.json$/, // 락 파일
      /\.log$/, // 모든 로그 파일
      /\.tmp$/, // 임시 파일
      /\.cache$/, // 캐시 파일
