@@ -6,7 +6,7 @@ import Settings from './Settings';
 
 import Overview from './Views/Overview';
 import ListView from './Views/ListView';
-import DragDropOverlay from './DragDropOverlay';
+import DragDropOverlay from './Views/DragDropOverlay';
 
 const path = window.require('path');
 const { ipcRenderer } = window.require('electron');

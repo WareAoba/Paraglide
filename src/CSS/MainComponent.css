@@ -93,6 +93,7 @@
     box-sizing: border-box;
     gap: var(--spacing-md);
     padding-bottom: 50px;
+    overflow: hidden;
 }
 
 .button-group-controls{

@@ -90,15 +90,6 @@ body,
               color var(--transition-default);
 }
 
-/* 스크롤바 제거 */
-::-webkit-scrollbar {
-  display: none;
-}
-
-* {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
 
 /* 앱 기본 레이아웃 */
 .App {

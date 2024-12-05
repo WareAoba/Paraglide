@@ -1,11 +1,19 @@
 /* src/CSS/Views/ListView.css */
 .listview-container {
-  height: 100%;
+  flex: 1; /* 남은 공간 모두 차지 */
+  height: 0; /* flex-grow가 작동하게 함 */
+  min-height: 0; /* 스크롤을 위해 필요 */
   width: 95%;
-  overflow-y: auto;
+  overflow-y: scroll;
   overflow-x: hidden;
   padding: 1rem;
   position: relative;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+.listview-container::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
 }
 
 .listview-header {
@@ -40,32 +48,34 @@
 }
 
 /* 이동하는 배경 박스 */
-.listview-container:before {
-    content: '';
-    position: absolute;
-    left: 3.5rem;
-    width: calc(100% - 4rem);
-    height: 36px;
-    background-color: var(--primary-color);
-    border-radius: 4px;
-    transition: transform 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
-    transform: translateY(var(--current-element-top, 0));
-    z-index: 1;
+.simplebar-content-wrapper:before {
+  content: '';
+  position: absolute;
+  left: 3.5rem;
+  width: calc(100% - 4rem);
+  height: 36px;
+  background-color: var(--primary-color);
+  border-radius: 4px;
+  transition: transform 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
+  transform: translateY(calc(var(--current-element-top) + 16px));
+  z-index: 1;
+  pointer-events: none;
 }
 
 /* 이동하는 화살표 */
-.listview-container:after {
-    content: '➤';
-    position: absolute;
-    left: 1.5rem;
-    top: 16px;
-    font-size: 24px;
-    color: var(--primary-color);
-    text-align: center;    /* 추가: 텍스트 중앙 정렬 */
-    line-height: 36px;     /* 수직 중앙 정렬 */
-    transition: transform 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
-    transform: translateY(var(--current-element-top, 0));
-    z-index: 2;
+.simplebar-content-wrapper:after {
+  content: '➤';
+  position: absolute;
+  left: 1.5rem;
+  top: 16px;
+  font-size: 24px;
+  color: var(--primary-color);
+  text-align: center;
+  line-height: 36px;
+  transition: transform 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
+  transform: translateY(var(--current-element-top, 0));
+  z-index: 2;
+  pointer-events: none;
 }
 
 .listview-item.current {
