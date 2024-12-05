@@ -1,4 +1,4 @@
-/* src/CSS/ListView.css */
+/* src/CSS/Views/ListView.css */
 .listview-container {
   height: 100%;
   width: 95%;
@@ -6,77 +6,14 @@
   overflow-x: hidden;
   padding: 1rem;
   position: relative;
-  
-  /* Firefox */
-  scrollbar-width: thin;
-  scrollbar-color: transparent transparent;
-  transition: all 0.3s ease;
-}
-
-/* Webkit 기본 스크롤바 스타일 */
-.listview-container::-webkit-scrollbar {
-  width: 6px;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.listview-container::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.listview-container::-webkit-scrollbar-thumb {
-  background-color: var(--primary-color);
-  border-radius: 6px;
-  border: 1px solid transparent;
-  background-clip: padding-box;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-/* 호버, 스크롤 중 스크롤바 표시 */
-.listview-container:hover::-webkit-scrollbar,
-.listview-container.scrolling::-webkit-scrollbar {
-  display: block;
-  opacity: 1;
-}
-
-.listview-container:hover::-webkit-scrollbar-thumb,
-.listview-container.scrolling::-webkit-scrollbar-thumb {
-  opacity: 1;
-}
-
-
-/* 다크모드 */
-[data-theme="dark"] .listview-container::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.3);
-}
-
-/* Firefox 호버/스크롤 상태 */
-.listview-container:hover,
-.listview-container.scrolling {
-  scrollbar-color: var(--primary-color) transparent;
-  transition: scrollbar-color 0.3s ease;
-}
-
-[data-theme="dark"] .listview-container:hover,
-[data-theme="dark"] .listview-container.scrolling {
-  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
 }
 
 .listview-header {
-  height: 2rem;
-  margin: 1rem 0;
+  height: 2rem;          /* 헤더 높이 설정 */
+  margin: 1rem 0;        /* 상하 마진 */
   padding-bottom: 0.5rem;
   border-bottom: 1px solid var(--border-color);
   color: var(--text-color);
-  display: flex;
-  align-items: center;
-}
-
-/* 페이지 번호 없음 헤더 스타일 */
-.listview-header[data-no-page-number] {
-  font-style: italic;
-  color: color-mix(in srgb, var(--text-color) 25%, transparent);
 }
 
 .listview-section {
@@ -145,24 +82,4 @@
 
 [data-theme="dark"] .listview-item {
   color: var(--dark-text);
-}
-
-.complete-work-button {
-  width: 50%;
-  padding: 10px;
-  margin-top: 20px;
-  margin-left: auto;
-  margin-right: auto;
-  display: block;
-  background-color: var(--success-color);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 1em;
-  transition: filter 0.2s ease;
-}
-
-.complete-work-button:hover {
-  filter: brightness(1.1);
 }

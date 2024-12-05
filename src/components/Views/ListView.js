@@ -1,5 +1,5 @@
 // src/components/ListView.js
-import React, { useEffect, useState, useRef, useMemo } from 'react';
+import React, { useEffect, useRef, useMemo } from 'react';
 import '../../CSS/Views/ListView.css';
 
 function ListView({ paragraphs, metadata, currentParagraph, onParagraphSelect, theme, onCompleteWork }) {
@@ -49,47 +49,8 @@ function ListView({ paragraphs, metadata, currentParagraph, onParagraphSelect, t
     }
   }, [currentParagraph]);
 
-  const [isScrolling, setIsScrolling] = useState(false);
-  const scrollTimeout = useRef(null);
-
-  useEffect(() => { // 스크롤 바
-    const handleScroll = () => {
-      setIsScrolling(true);
-      
-      // 기존 타이머 클리어
-      if (scrollTimeout.current) {
-        clearTimeout(scrollTimeout.current);
-      }
-      
-      // 1초 후 스크롤바 숨김
-      scrollTimeout.current = setTimeout(() => {
-        setIsScrolling(false);
-      }, 1000);
-    };
-
-    const container = listRef.current;
-    if (container) {
-      container.addEventListener('scroll', handleScroll);
-      container.addEventListener('mousemove', handleScroll);
-    }
-
-    return () => {
-      if (container) {
-        container.removeEventListener('scroll', handleScroll);
-        container.removeEventListener('mousemove', handleScroll);
-      }
-      if (scrollTimeout.current) {
-        clearTimeout(scrollTimeout.current);
-      }
-    };
-  }, []);
-
   return (
-    <div 
-      className={`listview-container ${isScrolling ? 'scrolling' : ''}`}
-      ref={listRef}
-      data-theme={theme?.mode}
-    >
+    <div className="listview-container" ref={listRef} data-theme={theme?.mode}>
       {Object.entries(groupedParagraphs).map(([pageKey, items], groupIndex, groupArray) => (
         <div key={pageKey} className="listview-section">
           <h2
