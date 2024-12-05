@@ -3,9 +3,9 @@ import React, { useState, useEffect, useCallback } from 'react';
 import '../CSS/MainComponent.css';
 import Sidebar from './Sidebar';
 import Settings from './Settings';
-
 import Overview from './Views/Overview';
 import ListView from './Views/ListView';
+import Search from './Views/Search';
 import DragDropOverlay from './Views/DragDropOverlay';
 
 const path = window.require('path');
@@ -30,8 +30,10 @@ function MainComponent() {
     mode: 'light',
     accentColor: '#007bff'
   });
-
+  const [isSettingsVisible, setIsSettingsVisible] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [isSearchVisible, setIsSearchVisible] = useState(false);
   const [dragCounter, setDragCounter] = useState(0);
 
   const [hoveredSection, setHoveredSection] = useState(null);
@@ -43,11 +45,9 @@ function MainComponent() {
   const [homeIcon, setHomeIcon] = useState(null);
   const [eyeIcon, setEyeIcon] = useState(null);
   const [eyeOffIcon, setEyeOffIcon] = useState(null);
-  const [menuUnfoldIcon, setMenuUnfoldIcon] = useState(null);
+  const [sidebarUnfoldIcon, setsidebarUnfoldIcon] = useState(null);
   const [menuIcon, setMenuIcon] = useState(null);
-
-  const [isSettingsVisible, setIsSettingsVisible] = useState(false);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [searchIcon, setSearchIcon] = useState(null);
 
   useEffect(() => {
 
@@ -204,13 +204,13 @@ function MainComponent() {
           ipcRenderer.invoke('get-icon-path', 'terminal-tag.svg'),
           ipcRenderer.invoke('get-icon-path', 'settings.svg'),
         ]);
-        const sidebarIcon = await ipcRenderer.invoke('get-icon-path', 'menu.svg');
+        const sidebarIcon = await ipcRenderer.invoke('get-icon-path', 'sidebar.svg');
         const homeIcon = await ipcRenderer.invoke('get-icon-path', 'home.svg')
         const eyeIcon = await ipcRenderer.invoke('get-icon-path', 'eyes.svg')
         const eyeOffIcon = await ipcRenderer.invoke('get-icon-path', 'eyes-off.svg')
-        const listIconPath = await ipcRenderer.invoke('get-icon-path', 'list.svg');
-        const menuUnfoldIcon = await ipcRenderer.invoke('get-icon-path', 'menu-unfold.svg');
+        const sidebarUnfoldIcon = await ipcRenderer.invoke('get-icon-path', 'sidebar-unfold.svg');
         const menuIcon = await ipcRenderer.invoke('get-icon-path', 'menu.svg');
+        const searchIcon = await ipcRenderer.invoke('get-icon-path', 'search.svg');
 
         setPlayIcon(playIconPath);
         setPauseIcon(pauseIconPath);
@@ -220,9 +220,10 @@ function MainComponent() {
         setHomeIcon(homeIcon);
         setEyeIcon(eyeIcon);
         setEyeOffIcon(eyeOffIcon);
-        setMenuUnfoldIcon(menuUnfoldIcon);
+        setsidebarUnfoldIcon(sidebarUnfoldIcon);
         setMenuIcon(menuIcon);
-        
+        setSearchIcon(searchIcon);
+
       } catch (error) {
         console.error('아이콘 로드 실패:', error);
       }
@@ -373,7 +374,7 @@ function MainComponent() {
           theme={theme}
           onClose={handleCloseSidebar}
           icons={{
-            menuUnfold: menuUnfoldIcon
+            sidebarUnfold: sidebarUnfoldIcon
           }}
           currentFilePath={state.programStatus === 'PROCESS' ? state.currentFilePath : null}
         />
@@ -441,7 +442,7 @@ function MainComponent() {
         theme={theme}
         onClose={handleCloseSidebar}
         icons={{
-          menuUnfold: menuUnfoldIcon
+          sidebarUnfold: sidebarUnfoldIcon
         }}
       />
       <DragDropOverlay isVisible={isDragging} />
@@ -494,6 +495,10 @@ function MainComponent() {
         {state.isOverlayVisible ? '오버레이 숨김' : '오버레이 표시'}
       </span>
     </button>
+    <button className="menu-item" onClick={() => setIsSearchVisible(!isSearchVisible)}>
+    <img src={searchIcon} alt="Search" className="menu-icon" />
+    <span>검색</span>
+  </button>
     <button className="menu-item" onClick={handleShowDebugConsole}>
       <img src={terminalIcon} alt="Debug" className="menu-icon" />
       <span>디버그 콘솔</span>
@@ -524,6 +529,14 @@ function MainComponent() {
             theme={theme}
           />
         )}
+            {state.paragraphs.length > 0 && (
+      <Search 
+        paragraphs={state.paragraphs}
+        onSelect={handleParagraphSelect}
+        isVisible={isSearchVisible}
+        onClose={() => setIsSearchVisible(false)}
+      />
+    )}
       </div>
       {state.currentFilePath && (
        <div className="file-info-container">

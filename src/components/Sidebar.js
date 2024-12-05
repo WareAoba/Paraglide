@@ -112,7 +112,7 @@ function Sidebar({ isVisible, onClose, currentFilePath, isDarkMode, icons }) {
           <h2>최근 작업 파일</h2>
           <button className="sidebar-close-button" onClick={onClose}>
             <img 
-              src={icons?.menuUnfold} 
+              src={icons?.sidebarUnfold} 
               alt="닫기" 
               className="sidebar-icon-button"
             />
