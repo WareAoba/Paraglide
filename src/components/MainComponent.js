@@ -39,14 +39,15 @@ function MainComponent() {
   const [pauseIcon, setPauseIcon] = useState(null);
   const [terminalIcon, setTerminalIcon] = useState(null);
   const [settingsIcon, setSettingsIcon] = useState(null);
-  const [isSettingsVisible, setIsSettingsVisible] = useState(false);
   const [sidebarIcon, setSidebarIcon] = useState(null);
   const [homeIcon, setHomeIcon] = useState(null);
   const [eyeIcon, setEyeIcon] = useState(null);
   const [eyeOffIcon, setEyeOffIcon] = useState(null);
-  const [listIcon, setListIcon] = useState(null);
   const [menuUnfoldIcon, setMenuUnfoldIcon] = useState(null);
+  const [menuIcon, setMenuIcon] = useState(null);
 
+  const [isSettingsVisible, setIsSettingsVisible] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   useEffect(() => {
 
@@ -209,6 +210,7 @@ function MainComponent() {
         const eyeOffIcon = await ipcRenderer.invoke('get-icon-path', 'eyes-off.svg')
         const listIconPath = await ipcRenderer.invoke('get-icon-path', 'list.svg');
         const menuUnfoldIcon = await ipcRenderer.invoke('get-icon-path', 'menu-unfold.svg');
+        const menuIcon = await ipcRenderer.invoke('get-icon-path', 'menu.svg');
 
         setPlayIcon(playIconPath);
         setPauseIcon(pauseIconPath);
@@ -218,8 +220,9 @@ function MainComponent() {
         setHomeIcon(homeIcon);
         setEyeIcon(eyeIcon);
         setEyeOffIcon(eyeOffIcon);
-        setListIcon(listIconPath);
         setMenuUnfoldIcon(menuUnfoldIcon);
+        setMenuIcon(menuIcon);
+        
       } catch (error) {
         console.error('아이콘 로드 실패:', error);
       }
@@ -296,6 +299,10 @@ function MainComponent() {
       ...prev,
       isSidebarVisible: false
     }));
+  };
+
+  const handleMenuToggle = () => {
+    setIsMenuOpen(!isMenuOpen);
   };
 
   // 파일 선택 핸들러 수정
@@ -440,47 +447,59 @@ function MainComponent() {
       <DragDropOverlay isVisible={isDragging} />
 
       <div className="main-container" data-theme={theme.mode}>
+        <div className="button-group-controls">{/* 왼쪽 버튼 */}
+        <button className="btn-icon" onClick={handleToggleSidebar}>
+          <img src={sidebarIcon} alt="Sidebar Icon" className="icon" />
+        </button>
 
-        <div className="button-group-controls">
-          <button className="btn-icon" onClick={handleToggleSidebar}>
-            <img src={sidebarIcon} alt="Sidebar Icon" className="icon" />
-          </button>
+        <button 
+          className="btn-icon"
+          onClick={() => setIsSettingsVisible(true)}
+        >
+          <img src={settingsIcon} alt="Settings Icon" className="icon"/>
+        </button>
 
-          <button 
-            className="btn-icon"
-            onClick={() => setIsSettingsVisible(true)}
-          >
-            <img src={settingsIcon} alt="Settings Icon" className="icon"/>
-          </button>
-          
-          <button 
-            className="btn-icon"
-            onClick={handleCompleteWork}
-          >
-            <img src={homeIcon} alt="작업 종료" className="icon"/>
-          </button>
-          
-          <button 
-            className={`btn-icon ${state.isPaused ? 'btn-danger' : 'btn-success'}`}
-            onClick={handleTogglePause}
-          >
-            {state.isPaused ? (
-              <img src={playIcon} alt="재생" className="icon" />
-            ) : (
-              <img src={pauseIcon} alt="일시정지" className="icon" />
-            )}
-          </button>
-          <button 
-            className={`btn-icon ${state.isOverlayVisible ? 'btn-active' : 'btn-outline'}`}
-            onClick={handleToggleOverlay}
-          >
-            {state.isOverlayVisible ?
-              <img src={eyeIcon} alt="일시정지" className="icon" />
-               : 
-              <img src={eyeOffIcon} alt="일시정지" className="icon" /> }
-          </button>
+        <button 
+          className="btn-icon"
+          onClick={handleCompleteWork}
+        >
+          <img src={homeIcon} alt="작업 종료" className="icon"/>
+        </button>
 
-        </div>
+        <button 
+          className={`btn-icon ${state.isPaused ? 'btn-danger' : 'btn-success'}`}
+          onClick={handleTogglePause}
+        >
+          {state.isPaused ? (
+            <img src={playIcon} alt="재생" className="icon" />
+          ) : (
+            <img src={pauseIcon} alt="일시정지" className="icon" />
+          )}
+        </button>
+      </div>
+
+      <div className="menu-controls">
+  <button className="btn-icon" onClick={handleMenuToggle}>
+    <img src={menuIcon} alt="Menu" className="icon" />
+  </button>
+  
+  <div className={`menu-dropdown ${isMenuOpen ? 'visible' : ''}`}>
+    <button className="menu-item" onClick={handleToggleOverlay}>
+      <img 
+        src={state.isOverlayVisible ? eyeIcon : eyeOffIcon} 
+        alt="Toggle Overlay" 
+        className="menu-icon" 
+      />
+      <span>
+        {state.isOverlayVisible ? '오버레이 숨김' : '오버레이 표시'}
+      </span>
+    </button>
+    <button className="menu-item" onClick={handleShowDebugConsole}>
+      <img src={terminalIcon} alt="Debug" className="menu-icon" />
+      <span>디버그 콘솔</span>
+    </button>
+  </div>
+</div>
       
         <div className="page-number">
           {state.currentNumber?.display || '\u00A0'}
