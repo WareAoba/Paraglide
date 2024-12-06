@@ -306,6 +306,11 @@ function MainComponent() {
     setIsMenuOpen(!isMenuOpen);
   };
 
+  const handleSearchToggle = () => {
+    setIsSearchVisible(prev => !prev);
+    setIsMenuOpen(false);  // 메뉴 닫기
+  };
+
   // 파일 선택 핸들러 수정
   const handleSidebarFileSelect = async (filePath, lastPosition) => {
     try {
@@ -495,7 +500,7 @@ function MainComponent() {
         {state.isOverlayVisible ? '오버레이 숨김' : '오버레이 표시'}
       </span>
     </button>
-    <button className="menu-item" onClick={() => setIsSearchVisible(!isSearchVisible)}>
+    <button className="menu-item" onClick={handleSearchToggle}>
     <img src={searchIcon} alt="Search" className="menu-icon" />
     <span>검색</span>
   </button>
@@ -535,6 +540,7 @@ function MainComponent() {
         onSelect={handleParagraphSelect}
         isVisible={isSearchVisible}
         onClose={() => setIsSearchVisible(false)}
+        metadata={state.paragraphsMetadata}
       />
     )}
       </div>

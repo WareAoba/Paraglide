@@ -1,52 +1,126 @@
 /* CSS/Views/Search.css */
 .search-overlay {
-    position: absolute;
-    top: 60px;
-    left: 50%;
-    width: 90%;
-    height: 100%;
-    align-items: center;
-    transform: translateX(-50%);
-    backdrop-filter: blur(2px);
-    background: rgba(0, 0, 0, 0.3);
-    border-radius: 8px;
-    display: flex;
-    flex-direction: column;
-    z-index: 1000;
+  position: fixed;  /* absolute에서 fixed로 변경 */
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 60px;
+  z-index: 1000;
+  backdrop-filter: blur(3px);
+  background: rgba(0, 0, 0, 0.3);
+  }
+
+  .search-header {
+    padding: 16px 24px;
+    text-align: center;
+  }
+  
+  .search-header h2 {
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--text-color);
+    margin: 0;
+  }
+  
+  .search-count {
+    font-size: 28px;  /* h2와 동일한 크기 */
+    font-weight: 600;
+    color: var(--text-color);
+    margin: 0;
   }
   
   .search-box {
-    position: sticky;
-    top: 0;
-    padding: 12px;
-    border-radius: 8px 8px 0 0;
-    z-index: 1;
+    position: fixed;
+    top: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 360px;  /* 고정 너비 설정 */
+    max-width: 90%;  /* 반응형 제한 */
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100vh - 120px); /* 화면 높이에서 상단 여백 제외 */
+    background: var(--background-color);
+    border-radius: 8px;
+    z-index: 1001;
   }
   
   .search-box input {
-    width: 100%;
+    width: 90%;
     padding: 8px 12px;
-    border: 1px solid var(--border-color);
+    border: 2px solid rgba(0, 0, 0, 0.2);
     border-radius: 4px;
     background: var(--bg-color);
     color: var(--text-color);
     font-size: 14px;
+    margin: 0 auto;  /* 좌우 마진 auto로 중앙 정렬 */
+    display: block;  /* block 요소로 변경 */
+  }
+
+  .search-input-container {
+    display: flex;
+    align-items: center;
+    position: relative;
+    padding: 12px;
+  }
+  
+  .search-input-container input {
+    flex: 1;
+    width: 100%;
+  }
+  
+  .clear-button {
+    position: absolute;
+    right: 20px;
+    background: none;
+    border: none;
+    font-size: 20px;
+    color: var(--secondary-text-color);
+    cursor: pointer;
+    padding: 0 8px;
+  }
+  
+  .clear-button:hover {
+    color: var(--text-color);
   }
   
   .search-results {
     flex: 1;
-    overflow-y: scroll;
-    padding: 12px;
+    overflow-y: auto;
+    padding: 24px 12px;  /* 상하 패딩 추가 */
+    margin: 0 -24px;
+    position: relative;
+    mask-image: linear-gradient(
+      to bottom,
+      transparent 0%,
+      black 24px,      /* 상단 그라데이션 */
+      black calc(100% - 24px),  /* 중간 부분 완전 불투명 */
+      transparent 100% /* 하단 그라데이션 */
+    );
+    -webkit-mask-image: linear-gradient(
+      to bottom,
+      transparent 0%,
+      black 24px,
+      black calc(100% - 24px),
+      transparent 100%
+    );
   }
   
   .search-result-item {
-    padding: 20px;
-    margin-bottom: 20px;
+    padding: 16px 24px;
+    margin-bottom: 16px;
     cursor: pointer;
     background: var(--dark-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    transition: all 0.2s ease;
+    border-radius: 16px;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    font-family: inherit;
+    gap: 4px;
+    height: 80px;  /* 고정 높이 */
   }
   
   .search-result-item:last-child {
@@ -54,23 +128,25 @@
   }
   
   .search-result-item:hover {
-    filter:brightness(1.2);
+    filter:brightness(1.1);
     transform: translateY(-1px);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
   }
   
   .result-info {
     color: var(--primary-color);
-    font-size: 12px;
-    min-width: 80px;
+    font-size: 15px;
+    opacity: 0.8;
   }
   
   .result-text {
-    flex: 1;
+    font-size: 18px;
+    line-height: 1.4;
+    color: var(--text-color);
     overflow: hidden;
     text-overflow: ellipsis;
-    color: var(--dark-text);
-    white-space: nowrap;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    word-break: break-all;
   }
   
   .no-results {
@@ -79,10 +155,29 @@
     color: var(--secondary-text-color);
   }
 
-.search-highlight {
+  .search-highlight {
     background-color: var(--accent-color);
     color: var(--background-color);
     padding: 0 2px;
     border-radius: 2px;
+  }
+
+  .page-jump-container {
+    padding: 1rem;
+  }
+  
+  .page-jump-button {
+    width: 100%;
+    padding: 0.75rem;
+    background-color: var(--primary-color, #007bff);
+    color: white;
+    border: none;
+    border-radius: 4px;
     font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  
+  .page-jump-button:hover {
+    background-color: var(--primary-color-dark, #0056b3);
   }

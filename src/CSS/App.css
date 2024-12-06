@@ -90,6 +90,10 @@ body,
               color var(--transition-default);
 }
 
+*:focus {
+  outline: none !important; /* 노란 포커스 테두리 제거 */
+}
+
 
 /* 앱 기본 레이아웃 */
 .App {
@@ -106,17 +110,4 @@ body,
   background-color: var(--bg-color);
   min-height: 100vh;
   transition: background-color var(--transition-default);
-}
-
-/* 애니메이션 */
-@keyframes App-logo-spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  * {
-    transition: none !important;
-    animation: none !important;
-  }
 }
