@@ -154,15 +154,13 @@ const handlePageJump = (pageNum) => {
   }
 };
 
-  if (!isVisible) return null;
-
   return (
-    <div
-      className="search-overlay"
+    <div 
+      className={`search-overlay ${isVisible ? 'active' : ''}`}
       onMouseDown={handleMouseDown}
       onMouseUp={handleMouseUp}
     >
-     <div className="search-box">
+      <div className="search-box">
   <div className="search-header">
     {searchTerm.trim() && results.length > 0 ? (
       <h2 className="search-count">{results.length}개의 검색 결과</h2>

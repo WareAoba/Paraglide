@@ -1,18 +1,28 @@
 /* CSS/Views/Search.css */
 .search-overlay {
-  position: fixed;  /* absolute에서 fixed로 변경 */
+  position: fixed;
   top: 0;
   left: 0;
-  right: 0;
-  bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0);
   display: flex;
   justify-content: center;
   align-items: flex-start;
   padding-top: 60px;
   z-index: 1000;
-  backdrop-filter: blur(3px);
-  background: rgba(0, 0, 0, 0.3);
-  }
+  visibility: hidden;  /* pointer-events 대신 visibility 사용 */
+  opacity: 0;
+  transition: visibility 0.3s ease,
+              opacity 0.3s ease,
+              background-color 0.3s ease;
+}
+
+.search-overlay.active {
+  visibility: visible;
+  opacity: 1;
+  background-color: rgba(0, 0, 0, 0.5);
+}
 
   .search-header {
     padding: 16px 24px;
@@ -34,18 +44,17 @@
   }
   
   .search-box {
-    position: fixed;
-    top: 80px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 360px;  /* 고정 너비 설정 */
-    max-width: 90%;  /* 반응형 제한 */
-    display: flex;
-    flex-direction: column;
-    max-height: calc(100vh - 120px); /* 화면 높이에서 상단 여백 제외 */
-    background: var(--background-color);
-    border-radius: 8px;
-    z-index: 1001;
+    width: min(90%, 360px);
+    background-color: var(--background-color);
+    border-radius: 12px;
+    transform: translateY(-20px);
+    opacity: 0;
+    transition: all 0.3s ease;
+  }
+  
+  .search-overlay.active .search-box {
+    transform: translateY(0);
+    opacity: 1;
   }
   
   .search-box input {
