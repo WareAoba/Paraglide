@@ -1,11 +1,15 @@
 // components/Views/Search.js
 import React, { useState, useEffect } from 'react';
+import Hangul from 'hangul-js';
 import '../../CSS/Views/Search.css';
 
 const Search = ({ paragraphs, metadata, onSelect, isVisible, onClose }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [results, setResults] = useState([]);
   const [dragStart, setDragStart] = useState(null);
+  const [removingIndexes, setRemovingIndexes] = useState(new Set());
+  const [prevResults, setPrevResults] = useState([]);
+  const [filteredResults, setFilteredResults] = useState([]);
 
   const handleMouseDown = (e) => {
     // search-box를 클릭한 경우는 무시
@@ -33,37 +37,55 @@ const Search = ({ paragraphs, metadata, onSelect, isVisible, onClose }) => {
   // 검색어 하이라이트 함수 추가
   const highlightMatch = (text, term) => {
     if (!term.trim()) return text;
-
+  
     try {
-      // 검색어를 정규식으로 변환 (특수문자 이스케이프)
-      const escapedTerm = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const regex = new RegExp(`(${escapedTerm})`, 'gi');
-
-      // 텍스트를 검색어 기준으로 분할하고 하이라이트 적용
-      const parts = text.split(regex);
-
-      return parts.map((part, i) =>
-        regex.test(part) ? (
-          <mark key={i} className="search-highlight">{part}</mark>
-        ) : (
-          part
-        )
-      );
+      // 초성 검색어인지 확인
+      const isChosung = Hangul.isChosung(term);
+      
+      if (isChosung) {
+        // 초성 검색일 경우 단어 단위로 분리하여 하이라이트
+        const words = text.split(/(\s+)/);
+        return words.map((word, i) => {
+          const wordChosung = Hangul.disassemble(word, true)
+            .map(arr => arr[0]).join('');
+          return wordChosung.includes(term) ? 
+            <mark key={i} className="search-highlight">{word}</mark> : word;
+        });
+      } else {
+        // 일반 검색의 경우 기존 로직 사용
+        const escapedTerm = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regex = new RegExp(`(${escapedTerm})`, 'gi');
+        const parts = text.split(regex);
+        return parts.map((part, i) =>
+          regex.test(part) ? 
+            <mark key={i} className="search-highlight">{part}</mark> : part
+        );
+      }
     } catch (e) {
-      // 정규식 오류 발생시 원본 텍스트 반환
       return text;
     }
   };
 
+  const normalizeText = (text) => {
+    return text
+      .trim()
+      .replace(/\s+/g, ' ') // 연속된 공백을 하나로
+      .toLowerCase();
+  };
+
+  const isChosung = (str) => { // 초성 체크
+    const chosungRegex = /^[ㄱ-ㅎ]+$/;
+    return chosungRegex.test(str);
+  };
+  
   useEffect(() => {
     if (!searchTerm.trim() || !paragraphs) {
       setResults([]);
       return;
     }
   
-    const searchNormalized = searchTerm.trim()
-      .replace(/[\s\n]+/g, '')
-      .toLowerCase();
+    const normalizedSearchTerm = normalizeText(searchTerm);
+    const isChosungSearch = isChosung(normalizedSearchTerm.replace(/\s+/g, '')); 
   
     const searchResults = paragraphs
       .map((paragraph, index) => {
@@ -71,15 +93,35 @@ const Search = ({ paragraphs, metadata, onSelect, isVisible, onClose }) => {
           ? paragraph
           : paragraph?.text || paragraph?.content || '';
   
-        const targetNormalized = paragraphText.toString()
-          .replace(/[\s\n]+/g, '')
-          .toLowerCase();
+        const normalizedText = normalizeText(paragraphText.toString());
   
-        if (targetNormalized.includes(searchNormalized)) {
+        let matches = false;
+  
+        if (isChosungSearch) {
+          // 초성 검색 (초성일 때만)
+          const searchChosung = normalizedSearchTerm.replace(/\s+/g, '');
+          const textChosung = Hangul.disassemble(normalizedText.replace(/\s+/g, ''), true)
+            .map(arr => arr[0]).join('');
+          matches = textChosung.includes(searchChosung);
+        } else {
+          // 일반 검색 (초성이 아닐 때)
+          // 1. 일반 텍스트 매칭
+          const normalMatch = normalizedText.includes(normalizedSearchTerm);
+          
+          // 2. 자모 분리 매칭
+          const searchDecomposed = Hangul.disassemble(normalizedSearchTerm).join('');
+          const textDecomposed = Hangul.disassemble(normalizedText).join('');
+          const decomposedMatch = textDecomposed.includes(searchDecomposed);
+  
+          matches = normalMatch || decomposedMatch;
+        }
+  
+        if (matches) {
           return {
             index,
             text: paragraphText,
-            pageInfo: metadata[index]?.pageInfo?.number || index + 1
+            pageInfo: metadata[index]?.pageInfo?.number || index + 1,
+            matchType: isChosung ? 'chosung' : 'normal'
           };
         }
         return null;
@@ -154,6 +196,30 @@ const handlePageJump = (pageNum) => {
   }
 };
 
+// 검색 결과 필터링 처리
+useEffect(() => {
+  // 새로 추가/제거된 항목 찾기
+  const removedItems = prevResults.filter(
+    prev => !results.some(curr => curr.index === prev.index)
+  );
+
+  if (removedItems.length > 0) {
+    // 제거될 항목들 마킹
+    setRemovingIndexes(new Set(removedItems.map(item => item.index)));
+    
+    // 애니메이션 후 실제 결과 업데이트
+    setTimeout(() => {
+      setFilteredResults(results);
+      setRemovingIndexes(new Set());
+    }, 300);
+  } else {
+    // 변경사항이 없거나 새로운 결과만 있는 경우
+    setFilteredResults(results);
+  }
+
+  setPrevResults(results);
+}, [results]);
+
   return (
     <div 
       className={`search-overlay ${isVisible ? 'active' : ''}`}
@@ -185,44 +251,51 @@ const handlePageJump = (pageNum) => {
   <div className="search-results" data-testid="search-results">
   {(() => {
     const pageNum = checkPagePattern(searchTerm.trim());
-    if (pageNum && isValidPage(pageNum)) {
-      return (
-        <div className="page-jump-container">
-          <button 
-            className="page-jump-button"
-            onClick={() => handlePageJump(pageNum)}
-          >
-            {pageNum}페이지로 이동
-          </button>
-        </div>
-      );
-    }
     
-    // 검색어가 있고 페이지 이동 버튼이 없을 때만 결과/no-results 표시
-    return searchTerm.trim() ? (
-      results.length > 0 ? (
-        results.map((result) => (
-          <div
-            key={result.index}
-            className="search-result-item"
-            onClick={() => {
-              onSelect(result.index);
-              onClose();
-            }}
-            data-testid={`search-result-${result.index}`}
-          >
-            <span className="result-info">{result.pageInfo}페이지</span>
-            <span className="result-text">
-              {highlightMatch(result.text, searchTerm)}
-            </span>
-          </div>
-        ))
-      ) : (
-        <div className="no-results" data-testid="no-results">
-          검색 결과가 없습니다
-        </div>
-      )
-    ) : null;
+    return (
+      <>
+       {/* 페이지 이동 버튼 (조건 충족 시 표시) */}
+{pageNum && isValidPage(pageNum) && (
+  <div className="page-jump-container">
+    <button 
+      className="page-jump-button"
+      onClick={() => handlePageJump(pageNum)}
+    >
+      {pageNum}페이지로 이동
+    </button>
+  </div>
+)}
+
+{/* 검색 결과 항상 표시 */}
+{searchTerm.trim() && filteredResults.length > 0 && 
+ filteredResults.map((result) => (
+  <div
+    key={result.index}
+    className={`search-result-item ${removingIndexes.has(result.index) ? 'removing' : ''}`}
+    onClick={() => {
+      onSelect(result.index);  // 선택한 단락으로 이동
+      onClose();  // 검색창 닫기
+    }}
+    data-testid={`search-result-${result.index}`}
+  >
+    <span className="result-info">{result.pageInfo}페이지</span>
+    <span className="result-text">
+      {highlightMatch(result.text, searchTerm)}
+    </span>
+  </div>
+  ))
+}
+
+{/* 검색어 있고 결과 없고 페이지 이동 버튼도 없을 때만 "검색 결과 없음" 표시 */}
+{searchTerm.trim() && 
+ filteredResults.length === 0 && 
+ !(pageNum && isValidPage(pageNum)) && (
+  <div className="no-results" data-testid="no-results">
+    검색 결과가 없습니다
+  </div>
+)}
+      </>
+    );
   })()}
 </div>
 </div>

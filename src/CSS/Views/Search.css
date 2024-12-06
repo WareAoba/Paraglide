@@ -98,25 +98,34 @@
   
   .search-results {
     flex: 1;
-    overflow-y: auto;
-    padding: 24px 12px;  /* 상하 패딩 추가 */
-    margin: 0 -24px;
     position: relative;
-    mask-image: linear-gradient(
-      to bottom,
-      transparent 0%,
-      black 24px,      /* 상단 그라데이션 */
-      black calc(100% - 24px),  /* 중간 부분 완전 불투명 */
-      transparent 100% /* 하단 그라데이션 */
-    );
-    -webkit-mask-image: linear-gradient(
-      to bottom,
-      transparent 0%,
-      black 24px,
-      black calc(100% - 24px),
-      transparent 100%
-    );
+    overflow-y: auto;
+    padding: 24px; /* 모든 방향 동일한 패딩 */
+    margin: 0 -24px; /* 좌우 네거티브 마진 유지 */
+    max-height: calc(85vh - 180px);
+    overflow-y: auto;
+    margin: 0 -24px;
+    padding: 24px 12px;
+
   }
+  
+/* 그라데이션 마스크 개선 */
+.search-results {
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    black 24px,
+    black calc(100% - 24px),
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    black 24px,
+    black calc(100% - 24px),
+    transparent 100%
+  );
+}
   
   .search-result-item {
     padding: 16px 24px;
@@ -130,6 +139,13 @@
     font-family: inherit;
     gap: 4px;
     height: 80px;  /* 고정 높이 */
+    opacity: 0;
+    transform: translateX(-20px);
+    animation: slideIn 0.3s ease forwards;
+    will-change: transform, opacity;
+    transition: transform 0.3s ease,
+                opacity 0.3s ease,
+                margin-top 0.3s ease; /* 여백 변화도 애니메이션 */
   }
   
   .search-result-item:last-child {
@@ -140,6 +156,50 @@
     filter:brightness(1.1);
     transform: translateY(-1px);
   }
+
+  .search-result-item.removing {
+    animation: none; /* 기존 애니메이션 제거 */
+    transform: translateX(20px); /* 오른쪽으로 이동 */
+    opacity: 0;
+    margin-bottom: 0; /* 공간 제거 */
+    height: 0; /* 높이를 0으로 */
+    padding-top: 0;
+    padding-bottom: 0;
+    transition: transform 0.3s ease,
+                opacity 0.3s ease,
+                margin-bottom 0.3s ease,
+                height 0.3s ease,
+                padding 0.3s ease;
+  }
+
+  .search-result-item:nth-child(1) { animation-delay: 0.05s; }
+.search-result-item:nth-child(2) { animation-delay: 0.1s; }
+.search-result-item:nth-child(3) { animation-delay: 0.15s; }
+.search-result-item:nth-child(4) { animation-delay: 0.2s; }
+.search-result-item:nth-child(5) { animation-delay: 0.25s; }
+
+/* 애니메이션 키프레임 */
+@keyframes slideIn {
+  0% {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideOut {
+  0% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+}
   
   .result-info {
     color: var(--primary-color);
