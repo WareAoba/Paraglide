@@ -108,21 +108,17 @@ const Search = ({ paragraphs, metadata, onSelect, isVisible, onClose }) => {
   const highlightPartialMatches = (text, term) => {
     const tokens = [];
     const decomposedTerm = Hangul.disassemble(term);
-    const maxSearchLength = Hangul.disassemble(term).length / 3 + 1; // 검색어 길이 + 1
+    const maxSearchLength = Hangul.disassemble(term).length / 3 + 1;
     let currentIndex = 0;
-
+  
     while (currentIndex < text.length) {
       let matchFound = false;
-
-      // 현재 위치부터 검색어 길이+1 까지만 검사
+  
       for (let i = 1; i <= maxSearchLength && currentIndex + i <= text.length; i++) {
         const current = text.slice(currentIndex, currentIndex + i);
         const decomposedCurrent = Hangul.disassemble(current);
-
+  
         if (decomposedCurrent.join('').includes(decomposedTerm.join(''))) {
-          if (currentIndex > 0) {
-            tokens.push(text.slice(0, currentIndex));
-          }
           tokens.push(
             <mark key={`partial-${currentIndex}`} className="search-highlight-partial">
               {current}
@@ -133,13 +129,13 @@ const Search = ({ paragraphs, metadata, onSelect, isVisible, onClose }) => {
           break;
         }
       }
-
+  
       if (!matchFound) {
         tokens.push(text[currentIndex]);
         currentIndex++;
       }
     }
-
+  
     return tokens;
   };
 
@@ -175,16 +171,29 @@ const Search = ({ paragraphs, metadata, onSelect, isVisible, onClose }) => {
       }
 
       const searchResults = paragraphs
-        .map((paragraph, index) => {
-          const paragraphText = typeof paragraph === 'string'
-            ? paragraph
-            : paragraph?.text || paragraph?.content || '';
-
-          const normalizedText = normalizeText(paragraphText.toString());
-
-          let matches = false;
-
-          if (isChosungSearch) {
+      .map((paragraph, index) => {
+        // 1. 먼저 paragraph 타입 체크
+        const isParagraphMode = typeof paragraph === 'object' && paragraph?.text;
+        const isLineMode = typeof paragraph === 'string' || paragraph?.content;
+    
+        // 2. 모드에 따라 텍스트와 페이지 정보 추출
+        let paragraphText, pageInfo;
+        
+        if (isParagraphMode) {
+          paragraphText = paragraph.text;
+          pageInfo = metadata[index]?.pageInfo?.start || metadata[index]?.pageNumber;
+        } else if (isLineMode) {
+          paragraphText = typeof paragraph === 'string' ? paragraph : paragraph.content;
+          pageInfo = metadata[index]?.lineNumber || metadata[index]?.pageNumber;
+        } else {
+          return null; // 유효하지 않은 형식
+        }
+    
+        // 이하 기존 검색 로직...
+        const normalizedText = normalizeText(paragraphText.toString());
+        let matches = false;
+        
+        if (isChosungSearch) {
             // 초성 검색 (초성일 때만)
             const searchChosung = removeSpaces(normalizedSearchTerm);
             const textChosung = Hangul.disassemble(removeSpaces(normalizedText), true)
@@ -208,8 +217,9 @@ const Search = ({ paragraphs, metadata, onSelect, isVisible, onClose }) => {
             return {
               index,
               text: paragraphText,
-              pageInfo: metadata[index]?.pageInfo?.number || index + 1,
-              matchType: isChosungSearch ? 'chosung' : 'normal'
+              pageInfo: pageInfo || '페이지 정보 없음',
+              matchType: isChosungSearch ? 'chosung' : 'normal',
+              mode: isParagraphMode ? 'paragraph' : 'line'
             };
           }
           return null;

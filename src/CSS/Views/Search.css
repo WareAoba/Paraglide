@@ -6,6 +6,7 @@
   width: 100vw;
   height: 100vh;
   background-color: rgba(0, 0, 0, 0);
+  backdrop-filter: blur(0);
   display: flex;
   justify-content: center;
   align-items: flex-start;
@@ -15,6 +16,7 @@
   opacity: 0;
   transition: visibility 0.3s ease,
               opacity 0.3s ease,
+              backdrop-filter 0.3s ease,
               background-color 0.3s ease;
 }
 
@@ -22,6 +24,7 @@
   visibility: visible;
   opacity: 1;
   background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
 }
 
   .search-header {
@@ -249,17 +252,23 @@
   }
 
   .page-jump-container {
-    padding: 1rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
   }
   
   .page-jump-button {
-    width: 100%;
-    padding: 0.75rem;
+    width: 80%;
+    padding: 0.5rem;
     background-color: var(--primary-color, #007bff);
     color: white;
     border: none;
+    margin: 0 auto; /* 수평 중앙 정렬을 위한 마진 자동 설정 */
     border-radius: 4px;
     font-weight: 500;
+    font-size: 16px;
+    font-family: inherit;
     cursor: pointer;
     transition: background-color 0.2s;
   }
