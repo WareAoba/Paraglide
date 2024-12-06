@@ -224,11 +224,28 @@
     color: var(--secondary-text-color);
   }
 
-  .search-highlight {
-    background-color: var(--accent-color);
-    color: var(--background-color);
-    padding: 0 2px;
+  .search-highlight-exact {
+    background-color: rgba(144, 238, 144, 0.3); /* 연한 초록색 */
+    color: var(--text-color);
+    border: 1px solid rgba(144, 238, 144, 0.5);
     border-radius: 2px;
+    padding: 0 2px;
+  }
+  
+  .search-highlight-partial {
+    background-color: rgba(135, 206, 250, 0.3); /* 연한 파란색 */
+    color: var(--text-color);
+    border: 1px solid rgba(135, 206, 250, 0.5);
+    border-radius: 2px;
+    padding: 0 2px;
+  }
+  
+  .search-highlight-chosung {
+    background-color: rgba(255, 215, 0, 0.3); /* 연한 노란색 */
+    color: var(--text-color);
+    border: 1px solid rgba(255, 215, 0, 0.5);
+    border-radius: 2px;
+    padding: 0 2px;
   }
 
   .page-jump-container {
