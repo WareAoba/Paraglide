@@ -150,6 +150,10 @@
   z-index: 1000; /* button-group-controls보다 위에 */
 }
 
+.menu-controls .btn-icon {
+  filter: var(--icon-filter);
+}
+
 /* 메뉴 드롭다운 스타일 */
 .menu-dropdown {
   position: absolute;

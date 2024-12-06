@@ -67,9 +67,12 @@
     border-radius: 4px;
     background: var(--bg-color);
     color: var(--text-color);
-    font-size: 14px;
+    font-size: 16px;
     margin: 0 auto;  /* 좌우 마진 auto로 중앙 정렬 */
     display: block;  /* block 요소로 변경 */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); /* 입력창 미세한 그림자 */
+    font-family: inherit;
+    font-weight: 200;
   }
 
   .search-input-container {
@@ -146,9 +149,7 @@
     transform: translateX(-20px);
     animation: slideIn 0.3s ease forwards;
     will-change: transform, opacity;
-    transition: transform 0.3s ease,
-                opacity 0.3s ease,
-                margin-top 0.3s ease; /* 여백 변화도 애니메이션 */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06); /* 기본 그림자 */
   }
   
   .search-result-item:last-child {
@@ -158,6 +159,7 @@
   .search-result-item:hover {
     filter:brightness(1.1);
     transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12); /* 호버 시 더 강한 그림자 */
   }
 
   .search-result-item.removing {
@@ -224,7 +226,11 @@
   .no-results {
     padding: 12px;
     text-align: center;
-    color: var(--secondary-text-color);
+    color: var(--text-color);
+  }
+
+  [data-theme='dark'] .no-results {
+    color: var(--dark-text);
   }
 
   .search-highlight-exact {
