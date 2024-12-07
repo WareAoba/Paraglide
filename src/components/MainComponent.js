@@ -19,6 +19,7 @@ function MainComponent() {
     currentNumber: null,
     isOverlayVisible: false,
     logoPath: null,
+    titlePath: null,
     isSidebarVisible: false,
     programStatus: 'READY',
     isPaused: false,
@@ -61,12 +62,18 @@ function MainComponent() {
     // 로고 로드 함수 수정
     const loadLogo = async () => {
       try {
-        const logoData = await ipcRenderer.invoke('get-logo-path');
-        if (logoData) {
-          setState((prev) => ({ ...prev, logoPath: logoData }));
-        }
+        const [logoData, titleData] = await Promise.all([
+          ipcRenderer.invoke('get-logo-path', 'logo'),
+          ipcRenderer.invoke('get-logo-path', 'title')
+        ]);
+    
+        setState(prev => ({
+          ...prev,
+          logoPath: logoData,
+          titlePath: titleData
+        }));
       } catch (error) {
-        console.error('로고 로드 실패:', error);
+        console.error('로고/타이틀 로드 실패:', error);
       }
     };
 
@@ -109,6 +116,7 @@ function MainComponent() {
     // 테마 변경 핸들러
     const handleThemeUpdate = (_, newTheme) => {
       setTheme(newTheme);
+      loadLogo(newTheme);
       document.documentElement.style.setProperty('--primary-color', newTheme.accentColor);
     };
 
@@ -414,19 +422,31 @@ function MainComponent() {
           </div>
 
           <div className="logo-container">
-            {state.logoPath && (
-              <img
-                src={state.logoPath}
-                alt="Paraglide Logo"
-                className="logo"
-                onError={(e) => {
-                  console.error('로고 렌더링 실패:', e);
-                  e.target.style.display = 'none';
-                }}
-              />
-            )}
-            <h1 className="title">Paraglide</h1>
-          </div>
+  {state.logoPath && (
+    <img
+      src={state.logoPath}
+      alt="Paraglide Logo"
+      className="logo"
+      onError={(e) => {
+        console.error('로고 렌더링 실패:', e);
+        e.target.style.display = 'none';
+      }}
+    />
+  )}
+  {state.titlePath ? (
+    <img
+      src={state.titlePath}
+      alt="Paraglide Title"
+      className="title-image"
+      onError={(e) => {
+        console.error('타이틀 렌더링 실패:', e);
+        e.target.style.display = 'none';
+      }}
+    />
+  ) : (
+    <h1 className="title">Paraglide</h1>
+  )}
+</div>
           <div className="button-container">
             <button className="btn-primary" onClick={handleLoadFile}>
               파일 불러오기

@@ -81,6 +81,14 @@ const FILE_PATHS = {
       ? path.join(appPath, 'public', 'logo-dark.png')
       : path.join(process.resourcesPath, './app.asar.unpacked/public', 'logo-dark.png')
   },
+  titles: {
+    light: isDev
+      ? path.join(appPath, 'public', 'TitleLight.png')
+      : path.join(process.resourcesPath, './app.asar.unpacked/public', 'TitleLight.png'),
+    dark: isDev
+      ? path.join(appPath, 'public', 'TitleDark.png')
+      : path.join(process.resourcesPath, './app.asar.unpacked/public', 'TitleDark.png')
+  },
   icon: isDev
     ? path.join(appPath, 'public', 'icons', 'mac', 'icon.icns')
     : path.join(process.resourcesPath, './app.asar.unpacked/public', 'icons', 'mac', 'icon.icns'),
@@ -904,7 +912,7 @@ const IPCManager = {
     ipcMain.handle('read-file', async (event, filePath) => fs.readFile(filePath, 'utf8'));
 
     // 리소스 관련 핸들러
-    ipcMain.handle('get-logo-path', async () => this.handleGetLogoPath());
+    ipcMain.handle('get-logo-path', async (_, type) => this.handleGetLogoPath(type));
     ipcMain.handle('get-icon-path', async (event, iconName) => this.handleGetIconPath(iconName));
 
     // 클립보드 관련 핸들러
@@ -981,14 +989,25 @@ const IPCManager = {
     handlersInitialized = true;
   },
 
-  async handleGetLogoPath() {
+  async handleGetLogoPath(type = 'logo') {
     try {
-      const logoPath = nativeTheme.shouldUseDarkColors ?
-        FILE_PATHS.logos.dark : FILE_PATHS.logos.light;
-      const imageBuffer = await fs.readFile(logoPath);
+      let imagePath;
+      if (type === 'logo') {
+        imagePath = nativeTheme.shouldUseDarkColors ? 
+          FILE_PATHS.logos.dark : 
+          FILE_PATHS.logos.light;
+      } else if (type === 'title') {
+        imagePath = nativeTheme.shouldUseDarkColors ? 
+          FILE_PATHS.titles.dark : 
+          FILE_PATHS.titles.light;
+      } else {
+        throw new Error('Unknown image type');
+      }
+  
+      const imageBuffer = await fs.readFile(imagePath);
       return `data:image/png;base64,${imageBuffer.toString('base64')}`;
     } catch (error) {
-      console.error('로고 로드 실패:', error);
+      console.error(`${type} 로드 실패:`, error);
       return null;
     }
   },

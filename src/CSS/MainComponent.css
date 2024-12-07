@@ -46,6 +46,12 @@
     cursor: default; /* 커서 기본값으로 변경 */
 }
 
+.welcome-screen .title-image {
+  max-width: 300px;
+  height: auto;
+  margin-bottom: 20px;
+}
+
 .welcome-screen .title {
     font-size: 2.5rem;
     font-weight: bold; /* 700에서 500으로 감소 */
