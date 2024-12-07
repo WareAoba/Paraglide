@@ -17,22 +17,22 @@
 }
 
 .listview-header {
-  height: 2rem;          /* 헤더 높이 설정 */
-  margin: 1rem 0;        /* 상하 마진 */
+  height: 2rem; /* 헤더 높이 설정 */
+  margin: 1rem 0; /* 상하 마진 */
   padding-bottom: 0.5rem;
   border-bottom: 1px solid var(--border-color);
   color: var(--text-color);
 }
 
 .listview-section {
-  margin-bottom: 1rem;   /* 섹션 간격 */
+  margin-bottom: 1rem; /* 섹션 간격 */
 }
 
 .listview-item {
   position: relative;
-  height: 36px;          /* 아이템 높이 고정 */
+  height: 36px; /* 아이템 높이 고정 */
   padding: 0.5rem;
-  margin: 0.25rem auto;     /* 아이템 간격 */
+  margin: 0.25rem auto; /* 아이템 간격 */
   cursor: pointer;
   white-space: nowrap;
   overflow: hidden;
@@ -44,9 +44,9 @@
   color: var(--text-color);
   opacity: 0.5;
   user-select: none;
-  transform: translateX(0);  /* 초기 위치 */
+  transform: translateX(0); /* 초기 위치 */
   transition: padding-left 0.2s cubic-bezier(0.4, 0.0, 0.2, 1),
-              opacity 0.2s ease;  /* transform 대신 padding 전환 */
+              opacity 0.2s ease; /* transform 대신 padding 전환 */
   border-radius: 4px;
 }
 
@@ -83,20 +83,20 @@
 
 .listview-container .simplebar-content-wrapper::-webkit-scrollbar,
 .listview-container .simplebar-hide-scrollbar::-webkit-scrollbar {
-    display: block;
-    width: 10px;
+  display: block;
+  width: 10px;
 }
 
 .listview-item.current {
   opacity: 1;
   color: white;
-  padding-left: 3.5rem;  /* transform 대신 padding으로 이동 효과 */
+  padding-left: 3.5rem; /* transform 대신 padding으로 이동 효과 */
   z-index: 5;
 }
 
 .listview-item:hover:not(.current) {
   opacity: 0.7;
-  padding-left: 1.5rem;  /* transform 대신 padding으로 이동 효과 */
+  padding-left: 1.5rem; /* transform 대신 padding으로 이동 효과 */
 }
 
 [data-theme="dark"] .listview-item {

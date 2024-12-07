@@ -22,13 +22,13 @@ function MainComponent() {
     isSidebarVisible: false,
     programStatus: 'READY',
     isPaused: false,
-    viewMode: 'overview' 
+    viewMode: 'overview',
   });
 
   const [theme, setTheme] = useState({
     isDarkMode: false,
     mode: 'light',
-    accentColor: '#007bff'
+    accentColor: '#007bff',
   });
   const [isSettingsVisible, setIsSettingsVisible] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -53,7 +53,6 @@ function MainComponent() {
   const searchRef = useRef(null);
 
   useEffect(() => {
-
     const initializeTheme = async () => {
       const initialTheme = await ipcRenderer.invoke('get-current-theme');
       setTheme(initialTheme);
@@ -64,7 +63,7 @@ function MainComponent() {
       try {
         const logoData = await ipcRenderer.invoke('get-logo-path');
         if (logoData) {
-          setState(prev => ({ ...prev, logoPath: logoData }));
+          setState((prev) => ({ ...prev, logoPath: logoData }));
         }
       } catch (error) {
         console.error('로고 로드 실패:', error);
@@ -77,10 +76,10 @@ function MainComponent() {
         const initialState = await ipcRenderer.invoke('get-state');
         const savedSettings = await ipcRenderer.invoke('load-settings');
 
-        setState(prev => ({
+        setState((prev) => ({
           ...prev,
           isOverlayVisible: initialState.isOverlayVisible,
-          viewMode: savedSettings.viewMode || 'overview'
+          viewMode: savedSettings.viewMode || 'overview',
         }));
         initializeTheme();
         loadLogo();
@@ -91,14 +90,17 @@ function MainComponent() {
 
     // 상태 업데이트 핸들러
     const handleStateUpdate = (event, updatedState) => {
-      setState(prev => ({
+      setState((prev) => ({
         ...prev,
         ...updatedState,
-        currentNumber: updatedState.paragraphsMetadata?.[updatedState.currentParagraph]?.pageInfo || null
+        currentNumber:
+          updatedState.paragraphsMetadata?.[updatedState.currentParagraph]?.pageInfo ||
+          null,
       }));
     };
 
-    const clearSearchHandler = () => { // 검색창 초기화 핸들러
+    const clearSearchHandler = () => {
+      // 검색창 초기화 핸들러
       if (searchRef.current) {
         searchRef.current.clearSearch(); // Search 컴포넌트의 clearSearch 메서드 호출
       }
@@ -111,9 +113,9 @@ function MainComponent() {
     };
 
     const handleViewModeUpdate = (event, newViewMode) => {
-      setState(prev => ({
+      setState((prev) => ({
         ...prev,
-        viewMode: newViewMode
+        viewMode: newViewMode,
       }));
     };
 
@@ -122,7 +124,7 @@ function MainComponent() {
     ipcRenderer.on('theme-update', handleThemeUpdate);
     ipcRenderer.on('view-mode-update', handleViewModeUpdate);
     ipcRenderer.on('clear-search', clearSearchHandler);
-    
+
     // 초기화
     initializeState();
 
@@ -150,7 +152,7 @@ function MainComponent() {
   const handleDragEnter = useCallback((e) => {
     e.preventDefault();
     e.stopPropagation();
-    setDragCounter(prev => {
+    setDragCounter((prev) => {
       // 카운터를 증가시키고 그 값으로 상태 업데이트
       const newCount = prev + 1;
       if (newCount === 1) {
@@ -163,7 +165,7 @@ function MainComponent() {
   const handleDragLeave = useCallback((e) => {
     e.preventDefault();
     e.stopPropagation();
-    setDragCounter(prev => {
+    setDragCounter((prev) => {
       const newCount = prev - 1;
       if (newCount === 0) {
         setIsDragging(false);
@@ -179,22 +181,22 @@ function MainComponent() {
     setIsDragging(false);
 
     const files = Array.from(e.dataTransfer.files);
-    const txtFile = files.find(file => file.name.endsWith('.txt'));
+    const txtFile = files.find((file) => file.name.endsWith('.txt'));
 
     if (txtFile) {
       try {
         // 파일 경로 추출 (Electron의 경우)
         const filePath = txtFile.path;
-        
+
         // 기존 open-file 핸들러 재사용
         const result = await ipcRenderer.invoke('open-file', {
           filePath,
-          source: 'drag-drop'
+          source: 'drag-drop',
         });
 
         if (result.success) {
           const newState = await ipcRenderer.invoke('get-state');
-          setState(prev => ({ ...prev, ...newState }));
+          setState((prev) => ({ ...prev, ...newState }));
         }
       } catch (error) {
         console.error('파일 로드 실패:', error);
@@ -210,12 +212,23 @@ function MainComponent() {
     const loadIcons = async () => {
       try {
         const iconNames = [
-          'play.svg', 'pause.svg', 'terminal-tag.svg', 'settings.svg',
-          'sidebar.svg', 'home.svg', 'eyes.svg', 'eyes-off.svg',
-          'sidebar-unfold.svg', 'menu.svg', 'search.svg', 'page-jump.svg'
+          'play.svg',
+          'pause.svg',
+          'terminal-tag.svg',
+          'settings.svg',
+          'sidebar.svg',
+          'home.svg',
+          'eyes.svg',
+          'eyes-off.svg',
+          'sidebar-unfold.svg',
+          'menu.svg',
+          'search.svg',
+          'page-jump.svg',
         ];
 
-        const iconPaths = await Promise.all(iconNames.map(name => ipcRenderer.invoke('get-icon-path', name)));
+        const iconPaths = await Promise.all(
+          iconNames.map((name) => ipcRenderer.invoke('get-icon-path', name))
+        );
 
         setPlayIcon(iconPaths[0]);
         setPauseIcon(iconPaths[1]);
@@ -229,12 +242,11 @@ function MainComponent() {
         setMenuIcon(iconPaths[9]);
         setSearchIcon(iconPaths[10]);
         setPageJumpIcon(iconPaths[11]);
-
       } catch (error) {
         console.error('아이콘 로드 실패:', error);
       }
     };
-    
+
     loadIcons();
   }, []);
 
@@ -257,9 +269,9 @@ function MainComponent() {
   };
 
   const handleToggleOverlay = () => {
-    setState(prev => ({
+    setState((prev) => ({
       ...prev,
-      isOverlayVisible: !prev.isOverlayVisible
+      isOverlayVisible: !prev.isOverlayVisible,
     }));
     ipcRenderer.send('toggle-overlay');
   };
@@ -269,12 +281,12 @@ function MainComponent() {
     try {
       // 통합된 open-file 핸들러 사용
       const result = await ipcRenderer.invoke('open-file', {
-        source: 'dialog'  // 다이얼로그를 통한 파일 열기임을 명시
+        source: 'dialog', // 다이얼로그를 통한 파일 열기임을 명시
       });
-  
+
       if (result.success) {
         const newState = await ipcRenderer.invoke('get-state');
-        setState(prev => ({ ...prev, ...newState }));
+        setState((prev) => ({ ...prev, ...newState }));
       }
     } catch (error) {
       console.error('파일 로드 실패:', error);
@@ -294,17 +306,17 @@ function MainComponent() {
 
   // 사이드바 토글 함수
   const handleToggleSidebar = () => {
-    setState(prev => ({
+    setState((prev) => ({
       ...prev,
-      isSidebarVisible: !prev.isSidebarVisible
+      isSidebarVisible: !prev.isSidebarVisible,
     }));
   };
 
   // 사이드바 닫기 함수
   const handleCloseSidebar = () => {
-    setState(prev => ({
+    setState((prev) => ({
       ...prev,
-      isSidebarVisible: false
+      isSidebarVisible: false,
     }));
   };
 
@@ -313,8 +325,8 @@ function MainComponent() {
   };
 
   const handleSearchToggle = () => {
-    setIsSearchVisible(prev => !prev);
-    setIsMenuOpen(false);  // 메뉴 닫기
+    setIsSearchVisible((prev) => !prev);
+    setIsMenuOpen(false); // 메뉴 닫기
   };
 
   // 파일 선택 핸들러 수정
@@ -327,9 +339,9 @@ function MainComponent() {
       if (result.success) {
         // 파일 로드 후 저장된 위치로 이동
         ipcRenderer.send('move-to-position', lastPosition);
-        setState(prev => ({ 
+        setState((prev) => ({
           ...prev,
-          isSidebarVisible: false
+          isSidebarVisible: false,
         }));
       }
     } catch (error) {
@@ -347,11 +359,11 @@ function MainComponent() {
       currentNumber: null,
       currentFilePath: null,
       isPaused: false,
-      isOverlayVisible: false
+      isOverlayVisible: false,
     });
-  
+
     // 그 다음 로컬 상태 업데이트 - isSidebarVisible 유지
-    setState(prevState => ({
+    setState((prevState) => ({
       ...prevState,
       paragraphs: [],
       currentParagraph: 0,
@@ -377,33 +389,30 @@ function MainComponent() {
         onDragOver={handleDragOver}
         onDragEnter={handleDragEnter}
         onDragLeave={handleDragLeave}
-        onDrop={handleDrop}>
-          
-        <Sidebar 
+        onDrop={handleDrop}
+      >
+        <Sidebar
           isVisible={state.isSidebarVisible}
           onFileSelect={handleSidebarFileSelect}
           theme={theme}
           onClose={handleCloseSidebar}
           icons={{
-            sidebarUnfold: sidebarUnfoldIcon
+            sidebarUnfold: sidebarUnfoldIcon,
           }}
           currentFilePath={state.programStatus === 'PROCESS' ? state.currentFilePath : null}
         />
         <DragDropOverlay isVisible={isDragging} />
-        
+
         <div className="welcome-screen" data-theme={theme.mode}>
           <div className="button-group-controls">
             <button className="btn-icon" onClick={handleToggleSidebar}>
               <img src={sidebarIcon} alt="Sidebar Icon" className="icon" />
             </button>
-            <button 
-              className="btn-icon"
-              onClick={() => setIsSettingsVisible(true)}
-            >
-              <img src={settingsIcon} alt="Settings Icon" className="icon"/>
+            <button className="btn-icon" onClick={() => setIsSettingsVisible(true)}>
+              <img src={settingsIcon} alt="Settings Icon" className="icon" />
             </button>
-          </div>          
-  
+          </div>
+
           <div className="logo-container">
             {state.logoPath && (
               <img
@@ -419,16 +428,13 @@ function MainComponent() {
             <h1 className="title">Paraglide</h1>
           </div>
           <div className="button-container">
-            <button 
-              className="btn-primary"
-              onClick={handleLoadFile}
-            >
+            <button className="btn-primary" onClick={handleLoadFile}>
               파일 불러오기
             </button>
           </div>
         </div>
-  
-        <Settings 
+
+        <Settings
           isVisible={isSettingsVisible}
           onClose={() => setIsSettingsVisible(false)}
           theme={theme}
@@ -445,134 +451,120 @@ function MainComponent() {
       onDragOver={handleDragOver}
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
-      onDrop={handleDrop}>
-
-      <Sidebar 
+      onDrop={handleDrop}
+    >
+      <Sidebar
         isVisible={state.isSidebarVisible}
         onFileSelect={handleSidebarFileSelect}
         theme={theme}
         onClose={handleCloseSidebar}
         icons={{
-          sidebarUnfold: sidebarUnfoldIcon
+          sidebarUnfold: sidebarUnfoldIcon,
         }}
       />
       <DragDropOverlay isVisible={isDragging} />
 
       <div className="main-container" data-theme={theme.mode}>
-        <div className="button-group-controls">{/* 왼쪽 버튼 */}
-        <button className="btn-icon" onClick={handleToggleSidebar}>
-          <img src={sidebarIcon} alt="Sidebar Icon" className="icon" />
-        </button>
+        <div className="button-group-controls">
+          {/* 왼쪽 버튼 */}
+          <button className="btn-icon" onClick={handleToggleSidebar}>
+            <img src={sidebarIcon} alt="Sidebar Icon" className="icon" />
+          </button>
 
-        <button 
-          className="btn-icon"
-          onClick={() => setIsSettingsVisible(true)}
-        >
-          <img src={settingsIcon} alt="Settings Icon" className="icon"/>
-        </button>
+          <button className="btn-icon" onClick={() => setIsSettingsVisible(true)}>
+            <img src={settingsIcon} alt="Settings Icon" className="icon" />
+          </button>
 
-        <button 
-          className="btn-icon"
-          onClick={handleCompleteWork}
-        >
-          <img src={homeIcon} alt="작업 종료" className="icon"/>
-        </button>
+          <button className="btn-icon" onClick={handleCompleteWork}>
+            <img src={homeIcon} alt="작업 종료" className="icon" />
+          </button>
 
-        <button 
-          className={`btn-icon ${state.isPaused ? 'btn-danger' : 'btn-success'}`}
-          onClick={handleTogglePause}
-        >
-          {state.isPaused ? (
-            <img src={playIcon} alt="재생" className="icon" />
-          ) : (
-            <img src={pauseIcon} alt="일시정지" className="icon" />
-          )}
-        </button>
-      </div>
-
-      <div className="menu-controls">
-  <button className="btn-icon" onClick={handleMenuToggle}>
-    <img src={menuIcon} alt="Menu" className="icon" />
-  </button>
-  
-  <div className={`menu-dropdown ${isMenuOpen ? 'visible' : ''}`}>
-    <button className="menu-item" onClick={handleToggleOverlay}>
-      <img 
-        src={state.isOverlayVisible ? eyeIcon : eyeOffIcon} 
-        alt="Toggle Overlay" 
-        className="menu-icon" 
-      />
-      <span>
-        {state.isOverlayVisible ? '오버레이 숨김' : '오버레이 표시'}
-      </span>
-    </button>
-    <button className="menu-item" onClick={handleSearchToggle}>
-    <img src={searchIcon} alt="Search" className="menu-icon" />
-    <span>검색</span>
-  </button>
-    <button className="menu-item" onClick={handleShowDebugConsole}>
-      <img src={terminalIcon} alt="Debug" className="menu-icon" />
-      <span>디버그 콘솔</span>
-    </button>
-  </div>
-</div>
-      
-        <div className="page-number">
-          {state.currentNumber?.display || '\u00A0'}
+          <button
+            className={`btn-icon ${state.isPaused ? 'btn-danger' : 'btn-success'}`}
+            onClick={handleTogglePause}
+          >
+            {state.isPaused ? (
+              <img src={playIcon} alt="재생" className="icon" />
+            ) : (
+              <img src={pauseIcon} alt="일시정지" className="icon" />
+            )}
+          </button>
         </div>
-      
+
+        <div className="menu-controls">
+          <button className="btn-icon" onClick={handleMenuToggle}>
+            <img src={menuIcon} alt="Menu" className="icon" />
+          </button>
+
+          <div className={`menu-dropdown ${isMenuOpen ? 'visible' : ''}`}>
+            <button className="menu-item" onClick={handleToggleOverlay}>
+              <img
+                src={state.isOverlayVisible ? eyeIcon : eyeOffIcon}
+                alt="Toggle Overlay"
+                className="menu-icon"
+              />
+              <span>{state.isOverlayVisible ? '오버레이 숨김' : '오버레이 표시'}</span>
+            </button>
+            <button className="menu-item" onClick={handleSearchToggle}>
+              <img src={searchIcon} alt="Search" className="menu-icon" />
+              <span>검색</span>
+            </button>
+            <button className="menu-item" onClick={handleShowDebugConsole}>
+              <img src={terminalIcon} alt="Debug" className="menu-icon" />
+              <span>디버그 콘솔</span>
+            </button>
+          </div>
+        </div>
+
         {state.viewMode === 'overview' ? (
-          <Overview 
-            paragraphs={state.paragraphs}
-            currentParagraph={state.currentParagraph}
-            onParagraphClick={handleParagraphClick}
-            theme={theme}
-            hoveredSection={hoveredSection}
-            onHoverChange={setHoveredSection}
-          />
+          <div className="page-number">
+            {state.currentNumber?.display || '\u00A0'}
+            <Overview
+              paragraphs={state.paragraphs}
+              currentParagraph={state.currentParagraph}
+              onParagraphClick={handleParagraphClick}
+              theme={theme}
+              hoveredSection={hoveredSection}
+              onHoverChange={setHoveredSection}
+            />
+          </div>
         ) : (
           <ListView
             paragraphs={state.paragraphs}
             metadata={state.paragraphsMetadata}
             currentParagraph={state.currentParagraph}
             onParagraphSelect={handleParagraphSelect}
-            onCompleteWork={handleCompleteWork} 
+            onCompleteWork={handleCompleteWork}
             theme={theme}
           />
         )}
-            {state.paragraphs.length > 0 && (
-      <Search
-        ref={searchRef}
-        paragraphs={state.paragraphs}
-        onSelect={handleParagraphSelect}
-        isVisible={isSearchVisible}
-        onClose={() => setIsSearchVisible(false)}
-        metadata={state.paragraphsMetadata}
-        icons={{
-          searchIcon: searchIcon,
-          pageJumpIcon: pageJumpIcon
-        }}
-      />
-    )}
+        {state.paragraphs.length > 0 && (
+          <Search
+            ref={searchRef}
+            paragraphs={state.paragraphs}
+            onSelect={handleParagraphSelect}
+            isVisible={isSearchVisible}
+            onClose={() => setIsSearchVisible(false)}
+            metadata={state.paragraphsMetadata}
+            icons={{
+              searchIcon: searchIcon,
+              pageJumpIcon: pageJumpIcon,
+            }}
+          />
+        )}
       </div>
       {state.currentFilePath && (
-       <div className="file-info-container">
-       <div className="file-info-group">
-         <span className="file-name">
-          {path.basename(state.currentFilePath)}
-         </span>
-         <span className="paragraph-info">
-           - {state.currentParagraph + 1}
-         </span>
-       </div>
-       <div className="path-group">
-         <span className="file-path">
-           | {formatPath(state.currentFilePath)}
-         </span>
-       </div>
-     </div>
+        <div className="file-info-container">
+          <div className="file-info-group">
+            <span className="file-name">{path.basename(state.currentFilePath)}</span>
+            <span className="paragraph-info">- {state.currentParagraph + 1}</span>
+          </div>
+          <div className="path-group">
+            <span className="file-path">| {formatPath(state.currentFilePath)}</span>
+          </div>
+        </div>
       )}
-      <Settings 
+      <Settings
         isVisible={isSettingsVisible}
         onClose={() => setIsSettingsVisible(false)}
         theme={theme}

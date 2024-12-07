@@ -60,7 +60,7 @@ function ListView({ paragraphs, metadata, currentParagraph, onParagraphSelect, t
 
   return (
     <SimpleBar className="listview-container" ref={listRef} data-theme={theme?.mode}>
-{Object.entries(groupedParagraphs).map(([pageKey, items], groupIndex, groupArray) => (
+      {Object.entries(groupedParagraphs).map(([pageKey, items], groupIndex, groupArray) => (
         <div key={pageKey} className="listview-section">
           <h2
             className="listview-header"

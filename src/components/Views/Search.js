@@ -4,7 +4,7 @@ import Hangul from 'hangul-js';
 import '../../CSS/Views/Search.css';
 import { debounce } from 'lodash'; // 상단에 추가
 
-const Search = forwardRef(( props, ref ) => {
+const Search = forwardRef((props, ref) => {
   const { paragraphs, metadata, onSelect, isVisible, onClose, icons } = props;
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -112,14 +112,14 @@ const Search = forwardRef(( props, ref ) => {
     const decomposedTerm = Hangul.disassemble(term);
     const maxSearchLength = Hangul.disassemble(term).length / 3 + 1;
     let currentIndex = 0;
-  
+
     while (currentIndex < text.length) {
       let matchFound = false;
-  
+
       for (let i = 1; i <= maxSearchLength && currentIndex + i <= text.length; i++) {
         const current = text.slice(currentIndex, currentIndex + i);
         const decomposedCurrent = Hangul.disassemble(current);
-  
+
         if (decomposedCurrent.join('').includes(decomposedTerm.join(''))) {
           tokens.push(
             <mark key={`partial-${currentIndex}`} className="search-highlight-partial">
@@ -131,13 +131,13 @@ const Search = forwardRef(( props, ref ) => {
           break;
         }
       }
-  
+
       if (!matchFound) {
         tokens.push(text[currentIndex]);
         currentIndex++;
       }
     }
-  
+
     return tokens;
   };
 
@@ -173,29 +173,29 @@ const Search = forwardRef(( props, ref ) => {
       }
 
       const searchResults = paragraphs
-      .map((paragraph, index) => {
-        // 1. 먼저 paragraph 타입 체크
-        const isParagraphMode = typeof paragraph === 'object' && paragraph?.text;
-        const isLineMode = typeof paragraph === 'string' || paragraph?.content;
-    
-        // 2. 모드에 따라 텍스트와 페이지 정보 추출
-        let paragraphText, pageInfo;
-        
-        if (isParagraphMode) {
-          paragraphText = paragraph.text;
-          pageInfo = metadata[index]?.pageInfo?.start || metadata[index]?.pageNumber;
-        } else if (isLineMode) {
-          paragraphText = typeof paragraph === 'string' ? paragraph : paragraph.content;
-          pageInfo = metadata[index]?.lineNumber || metadata[index]?.pageNumber;
-        } else {
-          return null; // 유효하지 않은 형식
-        }
-    
-        // 이하 기존 검색 로직...
-        const normalizedText = normalizeText(paragraphText.toString());
-        let matches = false;
-        
-        if (isChosungSearch) {
+        .map((paragraph, index) => {
+          // 1. 먼저 paragraph 타입 체크
+          const isParagraphMode = typeof paragraph === 'object' && paragraph?.text;
+          const isLineMode = typeof paragraph === 'string' || paragraph?.content;
+
+          // 2. 모드에 따라 텍스트와 페이지 정보 추출
+          let paragraphText, pageInfo;
+
+          if (isParagraphMode) {
+            paragraphText = paragraph.text;
+            pageInfo = metadata[index]?.pageInfo?.start || metadata[index]?.pageNumber;
+          } else if (isLineMode) {
+            paragraphText = typeof paragraph === 'string' ? paragraph : paragraph.content;
+            pageInfo = metadata[index]?.lineNumber || metadata[index]?.pageNumber;
+          } else {
+            return null; // 유효하지 않은 형식
+          }
+
+          // 이하 기존 검색 로직...
+          const normalizedText = normalizeText(paragraphText.toString());
+          let matches = false;
+
+          if (isChosungSearch) {
             // 초성 검색 (초성일 때만)
             const searchChosung = removeSpaces(normalizedSearchTerm);
             const textChosung = Hangul.disassemble(removeSpaces(normalizedText), true)
@@ -338,7 +338,6 @@ const Search = forwardRef(( props, ref ) => {
     clearSearch
   }), [clearSearch]);
 
-
   return (
     <div
       className={`search-overlay ${isVisible ? 'active' : ''}`}
@@ -354,7 +353,7 @@ const Search = forwardRef(( props, ref ) => {
           )}
         </div>
         <div className="search-input-container">
-         <img src={icons?.searchIcon} alt="" className="search-icon" />
+          <img src={icons?.searchIcon} alt="" className="search-icon" />
           <input
             type="text"
             value={searchTerm}
@@ -377,10 +376,10 @@ const Search = forwardRef(( props, ref ) => {
                 {/* 페이지 이동 버튼 (조건 충족 시 표시) */}
                 {pageNum && isValidPage(pageNum) && (
                   <div className="page-jump-container">
-<button className="page-jump-button" onClick={() => handlePageJump(pageNum)}>
-  <img src={icons?.pageJumpIcon} alt="" className="page-jump-icon" />
-  <span>{pageNum}페이지로 이동</span>
-</button>
+                    <button className="page-jump-button" onClick={() => handlePageJump(pageNum)}>
+                      <img src={icons?.pageJumpIcon} alt="" className="page-jump-icon" />
+                      <span>{pageNum}페이지로 이동</span>
+                    </button>
                   </div>
                 )}
 
