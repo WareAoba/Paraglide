@@ -5,13 +5,16 @@ import '../CSS/Controllers/Checkbox.css';
 import '../CSS/Controllers/RangeSlider.css';
 const { ipcRenderer } = window.require('electron');
 
-function Settings({ isVisible, onClose, isDarkMode }) {
+function Settings({ isVisible, onClose }) {
   const [settings, setSettings] = useState({
     windowOpacity: 1.0,      // 창 전체 투명도
     contentOpacity: 0.8,     // 배경 투명도
     overlayFixed: false,
     loadLastOverlayBounds: true,
-    accentColor: '#007bff',
+    theme: {
+      mode: 'auto',     // 테마 모드 추가
+      accentColor: '#007bff'
+    },
     processMode: 'paragraph',  // 기본 텍스트 처리 방식
     viewMode: 'overview'
   });
@@ -146,7 +149,7 @@ function Settings({ isVisible, onClose, isDarkMode }) {
 
   return (
     <div className={`settings-modal ${isVisible ? 'visible' : ''}`}
-      data-theme={isDarkMode ? 'dark' : 'light'}
+      data-theme={settings.theme.mode}
     >
       <div className="settings-content">
         <h2>설정</h2>

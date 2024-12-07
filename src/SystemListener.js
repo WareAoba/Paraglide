@@ -1,7 +1,7 @@
 // SystemListener.js
 const { app, dialog, clipboard, systemPreferences, ipcMain, nativeTheme } = require('electron');
 const { GlobalKeyboardListener } = require('node-global-key-listener');
-const { configActions } = require('./store/slices/configSlice');
+const { configActions, THEME } = require('./store/slices/configSlice');
 const store = require('./store/store');
 const path = require('path');
 const fs = require('fs');
@@ -112,18 +112,28 @@ class SystemListener {
     console.log('[클립보드] 외부 복사 감지');
   }
 
-  // 테마 감지 메서드 추가
   setupThemeListener() {
+    console.log('[SystemListener] 테마 리스너 초기화');  // 리스너 등록 확인
+    
     nativeTheme.on('updated', () => {
-      const isDark = nativeTheme.shouldUseDarkColors;
-      store.dispatch(configActions.updateTheme(isDark));
+      console.log('[SystemListener] nativeTheme 이벤트 발생');  // 이벤트 발생 확인
+      console.log('[SystemListener] 현재 시스템 테마:', nativeTheme.shouldUseDarkColors ? 'dark' : 'light');
+  
+      const config = store.getState().config;
+      console.log('[SystemListener] 현재 설정된 테마 모드:', config.theme.mode);  // 현재 모드 확인
+  
+      if (config.theme.mode === THEME.AUTO) {
+        const effectiveMode = nativeTheme.shouldUseDarkColors ? 
+          THEME.DARK : THEME.LIGHT;
+        store.dispatch(configActions.setEffectiveTheme(effectiveMode));
+        console.log('[SystemListener] 테마 변경 감지:', effectiveMode);
+      } else {
+        console.log('[SystemListener] AUTO 모드가 아니어서 변경 무시');
+      }
     });
-  }
-
-  // 테마 업데이트 메서드
-  updateTheme(isDark) {
-    console.log('[SystemListener] 테마 변경 감지:', isDark);
-    store.dispatch(configActions.updateTheme(isDark));
+  
+    // 초기 상태 확인을 위한 로그
+    console.log('[SystemListener] 현재 시스템 테마:', nativeTheme.shouldUseDarkColors ? 'dark' : 'light');
   }
 
   // 내부 클립보드 변경 알림

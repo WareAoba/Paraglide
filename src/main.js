@@ -4,7 +4,7 @@ const path = require('path');
 const store = require('./store/store');
 const { TextProcessUtils } = require('./store/utils/TextProcessUtils');
 const { textProcessActions } = require('./store/slices/textProcessSlice');
-const { configActions } = require('./store/slices/configSlice');
+const { configActions, THEME } = require('./store/slices/configSlice');
 const { ConfigManager } = require('./store/utils/ConfigManager');
 const { logActions } = require('./store/slices/logSlice');
 const fs = require('fs').promises;
@@ -108,7 +108,6 @@ let globalState = {
   paragraphs: [],
   currentParagraph: 0,
   currentNumber: null,
-  isDarkMode: nativeTheme.shouldUseDarkColors,
   paragraphsMetadata: [],
   isPaused: true,
   timestamp: Date.now(),
@@ -216,13 +215,12 @@ const FileManager = {
       // 테마 설정 처리
       if (config.theme) {
         newConfig.theme = {
-          isDarkMode: config.theme.isDarkMode ?? state.theme.isDarkMode,
-          mode: config.theme.isDarkMode ? 'dark' : 'light',
+          mode: config.theme.mode ?? state.theme.mode,
           accentColor: config.theme.accentColor ?? state.theme.accentColor
         };
       }
   
-      // 오버레이 설정 처리 - Settings.js와 호환되도록 수정
+      // 오버레이 설정 처리
       if (config.windowOpacity !== undefined) {
         newConfig.overlay.windowOpacity = config.windowOpacity;
       }
@@ -628,37 +626,42 @@ const FileManager = {
 };
 
 const ThemeManager = {
-  currentTheme: {
-    isDarkMode: nativeTheme.shouldUseDarkColors,
-    mode: nativeTheme.shouldUseDarkColors ? 'dark' : 'light',
-    accentColor: '#007bff'
-  },
-
   initialize() {
-    // 설정에서 테마 정보 가져오기
-    const config = store.getState().config;
-    this.currentTheme = {
-      isDarkMode: config.theme.isDarkMode,
-      mode: config.theme.isDarkMode ? 'dark' : 'light',
-      accentColor: config.theme.accentColor
-    };
-    
-    // 변경사항 구독
+    // store 구독만 담당
     store.subscribe(() => {
-      const state = store.getState();
-      this.currentTheme = state.config.theme;
-      this.broadcastTheme(this.currentTheme);
+      const prevTheme = this.getCurrentTheme();
+      const currentTheme = store.getState().config.theme;
+      
+      // 테마 설정이 변경된 경우에만 broadcast
+      if (prevTheme.mode !== currentTheme.mode || 
+          prevTheme.accentColor !== currentTheme.accentColor) {
+        this.broadcastTheme();
+      }
     });
   },
 
   getCurrentTheme() {
-    return this.currentTheme;
+    const config = store.getState().config;
+    return {
+      mode: this.getEffectiveMode(), // 실제 적용될 테마만 반환
+      accentColor: config.theme.accentColor
+    };
   },
 
-  broadcastTheme(theme) {
+  getEffectiveMode() {
+    const config = store.getState().config;
+    return config.theme.mode === THEME.AUTO ? 
+      (nativeTheme.shouldUseDarkColors ? THEME.DARK : THEME.LIGHT) : 
+      config.theme.mode;
+  },
+
+  broadcastTheme() {
+    const theme = this.getCurrentTheme();
+    
     BrowserWindow.getAllWindows().forEach(window => {
       if (!window.isDestroyed()) {
         window.webContents.send('theme-update', theme);
+        window.webContents.send('update-logos');
       }
     });
   }
@@ -823,7 +826,7 @@ const WindowManager = {
         currentParagraph: state.currentParagraph,
         paragraphsMetadata: state.paragraphsMetadata,
         currentNumber: { ...pageInfo, display }, // display 속성 덮어쓰기
-        theme: ThemeManager.currentTheme
+        theme: ThemeManager.getEffectiveMode(),
       });
     } else if (window === overlayWindow) {
       const startIdx = Math.max(0, currentParagraph - 5);
@@ -852,7 +855,10 @@ const WindowManager = {
         // currentNumber를 전체 pageInfo 객체로 전달
         currentNumber: { ...pageInfo, display } || null,
         isPaused: globalState.isPaused,
-        isDarkMode: ThemeManager.currentTheme.isDarkMode,
+        theme: {
+          mode: ThemeManager.getEffectiveMode(),
+          accentColor: store.getState().config.theme.accentColor
+        },
         processMode: state.processMode,
         totalParagraphs: state.paragraphs.length
       });
@@ -965,7 +971,10 @@ const IPCManager = {
           contentOpacity: config.overlay.contentOpacity,
           overlayFixed: config.overlay.overlayFixed,
           loadLastOverlayBounds: config.overlay.loadLastOverlayBounds,
-          accentColor: config.theme.accentColor,
+          theme: {
+            mode: config.theme.mode,
+            accentColor: config.theme.accentColor
+          },
           processMode: config.processMode,
           viewMode: config.viewMode
         };
@@ -991,13 +1000,15 @@ const IPCManager = {
 
   async handleGetLogoPath(type = 'logo') {
     try {
+      const effectiveMode = ThemeManager.getEffectiveMode();
       let imagePath;
+      
       if (type === 'logo') {
-        imagePath = nativeTheme.shouldUseDarkColors ? 
+        imagePath = effectiveMode === THEME.DARK ? 
           FILE_PATHS.logos.dark : 
           FILE_PATHS.logos.light;
       } else if (type === 'title') {
-        imagePath = nativeTheme.shouldUseDarkColors ? 
+        imagePath = effectiveMode === THEME.DARK ? 
           FILE_PATHS.titles.dark : 
           FILE_PATHS.titles.light;
       } else {
@@ -1030,6 +1041,10 @@ const IPCManager = {
       const state = store.getState().config;
       const newConfig = {
         ...state,
+        theme: {
+          mode: settings.theme?.mode ?? state.theme.mode,
+          accentColor: settings.theme?.accentColor ?? state.theme.accentColor
+        },
         overlay: {
           ...state.overlay,
           windowOpacity: settings.windowOpacity ?? state.overlay.windowOpacity,

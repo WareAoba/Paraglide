@@ -27,8 +27,7 @@ function MainComponent() {
   });
 
   const [theme, setTheme] = useState({
-    isDarkMode: false,
-    mode: 'light',
+    mode: null,
     accentColor: '#007bff',
   });
   const [isSettingsVisible, setIsSettingsVisible] = useState(false);

@@ -11,7 +11,10 @@ function OverlayComponent() {
     next: [],
     currentNumber: null,
     currentParagraph: null,
-    isDarkMode: false,
+    theme: {
+      mode: 'light',  // 기본값
+      accentColor: '#007bff'
+    },
     isPaused: false,
   });
   const [hoveredIndex, setHoveredIndex] = useState(null);
@@ -25,7 +28,7 @@ function OverlayComponent() {
       setState(prevState => ({
         ...prevState,
         ...data,
-        isDarkMode: data.isDarkMode ?? prevState.isDarkMode
+        theme: data.theme ?? prevState.theme
       }));
     };
 
@@ -35,7 +38,10 @@ function OverlayComponent() {
       
       setState(prevState => ({
         ...prevState,
-        isDarkMode: theme.isDarkMode ?? prevState.isDarkMode
+        theme: {
+          mode: theme.mode,
+          accentColor: theme.accentColor
+        }
       }));
     };
 
@@ -82,7 +88,7 @@ function OverlayComponent() {
       <div
         ref={containerRef}
         className="overlay-window"
-        data-theme={state.isDarkMode ? "dark" : "light"}
+        data-theme={state.theme.mode}
       >
         <div className="overlay-header">
           <span className="overlay-page-number">

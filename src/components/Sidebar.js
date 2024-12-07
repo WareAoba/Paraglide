@@ -7,7 +7,7 @@ const { ipcRenderer } = window.require('electron');
 const path = window.require('path');
 
 // icons prop 추가
-function Sidebar({ isVisible, onClose, currentFilePath, isDarkMode, icons }) {
+function Sidebar({ isVisible, onClose, currentFilePath, theme, icons }) {
   const [files, setFiles] = React.useState([]);
 
   React.useEffect(() => {
@@ -105,8 +105,8 @@ function Sidebar({ isVisible, onClose, currentFilePath, isDarkMode, icons }) {
   return (
     <>
       <div 
-        className={`sidebar ${isVisible ? 'visible' : ''} ${isDarkMode ? 'dark' : ''}`}
-        data-theme={isDarkMode ? 'dark' : 'light'}
+        className={`sidebar ${isVisible ? 'visible' : ''}`}
+        data-theme={theme.mode}
       >
         <div className="sidebar-header">
           <h2>최근 작업 파일</h2>
