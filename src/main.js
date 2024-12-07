@@ -607,6 +607,8 @@ const FileManager = {
       if (overlayWindow && !overlayWindow.isDestroyed()) {
         WindowManager.updateWindowContent(overlayWindow, 'paragraphs-updated');
       }
+
+      mainWindow.webContents.send('clear-search'); // 검색창 초기화
   
       return { success: true };
     } catch (error) {
@@ -1088,6 +1090,8 @@ const IPCManager = {
     if (canMove) {
       this.handleResume();
       store.dispatch(textProcessActions.updateCurrentParagraph(newPosition));
+
+      mainWindow.webContents.send('clear-search');
       
       const currentContent = state.paragraphs[newPosition];
       if (currentContent) {

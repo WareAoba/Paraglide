@@ -122,6 +122,8 @@
     border-radius: 8px;
     pointer-events: none !important; /* 호버 이벤트 무시 */
     overflow: hidden;
+    pointer-events: all !important; /* 항상 이벤트 감지 */
+    overflow: visible; /* 영역 밖으로 확장 허용 */
     transition: background-color 0.3s ease-out 1000ms;
 }
 
@@ -154,7 +156,7 @@
     left: 0;
     right: 0;
     min-height: 50px;
-    pointer-events: all; /* 호버 이벤트 감지 */
+    pointer-events: none;
 }
 
 .simplebar-scrollbar:before {
@@ -169,6 +171,33 @@
     transform: translateZ(0) scale(1);
     transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     transform-origin: center;
+    z-index: 1;
+    pointer-events: none;
+}
+
+.simplebar-scrollbar::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: -12px; /* 양쪽으로 8px씩 확장 */
+    right: -12px;
+    cursor: pointer;
+    pointer-events: auto;
+    z-index: 2;
+}
+
+/* 드래그 상태 처리 개선 */
+[data-simplebar].simplebar-dragging .simplebar-track,
+[data-simplebar].simplebar-dragging .simplebar-scrollbar,
+[data-simplebar].simplebar-dragging .simplebar-scrollbar::after {
+    pointer-events: all !important; /* 드래그 중에는 모든 요소가 이벤트 감지 */
+}
+
+/* 드래그 중인 콘텐츠는 이벤트 차단 */
+[data-simplebar].simplebar-dragging .simplebar-content {
+    pointer-events: none;
+    user-select: none;
 }
 
 .simplebar-scrollbar.simplebar-visible:before {

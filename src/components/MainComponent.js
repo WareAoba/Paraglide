@@ -1,5 +1,5 @@
 // src/MainComponent.js
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import '../CSS/MainComponent.css';
 import Sidebar from './Sidebar';
 import Settings from './Settings';
@@ -49,6 +49,8 @@ function MainComponent() {
   const [menuIcon, setMenuIcon] = useState(null);
   const [searchIcon, setSearchIcon] = useState(null);
 
+  const searchRef = useRef(null);
+
   useEffect(() => {
 
     const initializeTheme = async () => {
@@ -95,6 +97,12 @@ function MainComponent() {
       }));
     };
 
+    const clearSearchHandler = () => { // 검색창 초기화 핸들러
+      if (searchRef.current) {
+        searchRef.current.clearSearch(); // Search 컴포넌트의 clearSearch 메서드 호출
+      }
+    };
+
     // 테마 변경 핸들러
     const handleThemeUpdate = (_, newTheme) => {
       setTheme(newTheme);
@@ -112,6 +120,7 @@ function MainComponent() {
     ipcRenderer.on('state-update', handleStateUpdate);
     ipcRenderer.on('theme-update', handleThemeUpdate);
     ipcRenderer.on('view-mode-update', handleViewModeUpdate);
+    ipcRenderer.on('clear-search', clearSearchHandler);
     
     // 초기화
     initializeState();
@@ -121,6 +130,7 @@ function MainComponent() {
       ipcRenderer.removeListener('state-update', handleStateUpdate);
       ipcRenderer.removeListener('theme-update', handleThemeUpdate);
       ipcRenderer.removeListener('view-mode-update', handleViewModeUpdate);
+      ipcRenderer.removeListener('clear-search', clearSearchHandler);
     };
   }, []);
 
@@ -198,31 +208,25 @@ function MainComponent() {
   useEffect(() => {
     const loadIcons = async () => {
       try {
-        const [playIconPath, pauseIconPath, terminalIconPath, settingsIcon ] = await Promise.all([
-          ipcRenderer.invoke('get-icon-path', 'play.svg'),
-          ipcRenderer.invoke('get-icon-path', 'pause.svg'),
-          ipcRenderer.invoke('get-icon-path', 'terminal-tag.svg'),
-          ipcRenderer.invoke('get-icon-path', 'settings.svg'),
-        ]);
-        const sidebarIcon = await ipcRenderer.invoke('get-icon-path', 'sidebar.svg');
-        const homeIcon = await ipcRenderer.invoke('get-icon-path', 'home.svg')
-        const eyeIcon = await ipcRenderer.invoke('get-icon-path', 'eyes.svg')
-        const eyeOffIcon = await ipcRenderer.invoke('get-icon-path', 'eyes-off.svg')
-        const sidebarUnfoldIcon = await ipcRenderer.invoke('get-icon-path', 'sidebar-unfold.svg');
-        const menuIcon = await ipcRenderer.invoke('get-icon-path', 'menu.svg');
-        const searchIcon = await ipcRenderer.invoke('get-icon-path', 'search.svg');
+        const iconNames = [
+          'play.svg', 'pause.svg', 'terminal-tag.svg', 'settings.svg',
+          'sidebar.svg', 'home.svg', 'eyes.svg', 'eyes-off.svg',
+          'sidebar-unfold.svg', 'menu.svg', 'search.svg'
+        ];
 
-        setPlayIcon(playIconPath);
-        setPauseIcon(pauseIconPath);
-        setTerminalIcon(terminalIconPath);
-        setSettingsIcon(settingsIcon);
-        setSidebarIcon(sidebarIcon);
-        setHomeIcon(homeIcon);
-        setEyeIcon(eyeIcon);
-        setEyeOffIcon(eyeOffIcon);
-        setsidebarUnfoldIcon(sidebarUnfoldIcon);
-        setMenuIcon(menuIcon);
-        setSearchIcon(searchIcon);
+        const iconPaths = await Promise.all(iconNames.map(name => ipcRenderer.invoke('get-icon-path', name)));
+
+        setPlayIcon(iconPaths[0]);
+        setPauseIcon(iconPaths[1]);
+        setTerminalIcon(iconPaths[2]);
+        setSettingsIcon(iconPaths[3]);
+        setSidebarIcon(iconPaths[4]);
+        setHomeIcon(iconPaths[5]);
+        setEyeIcon(iconPaths[6]);
+        setEyeOffIcon(iconPaths[7]);
+        setsidebarUnfoldIcon(iconPaths[8]);
+        setMenuIcon(iconPaths[9]);
+        setSearchIcon(iconPaths[10]);
 
       } catch (error) {
         console.error('아이콘 로드 실패:', error);
@@ -535,7 +539,8 @@ function MainComponent() {
           />
         )}
             {state.paragraphs.length > 0 && (
-      <Search 
+      <Search
+        ref={searchRef}
         paragraphs={state.paragraphs}
         onSelect={handleParagraphSelect}
         isVisible={isSearchVisible}

@@ -1,10 +1,12 @@
 // components/Views/Search.js
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react';
 import Hangul from 'hangul-js';
 import '../../CSS/Views/Search.css';
 import { debounce } from 'lodash'; // 상단에 추가
 
-const Search = ({ paragraphs, metadata, onSelect, isVisible, onClose }) => {
+const Search = forwardRef(( props, ref ) => {
+  const { paragraphs, metadata, onSelect, isVisible, onClose } = props;
+
   const [searchTerm, setSearchTerm] = useState('');
   const [results, setResults] = useState([]);
   const [dragStart, setDragStart] = useState(null);
@@ -316,6 +318,27 @@ const Search = ({ paragraphs, metadata, onSelect, isVisible, onClose }) => {
     }
   }, [results]);
 
+  const clearSearch = useCallback(() => { // 검색 초기화
+    setSearchTerm('');
+    setResults([]);
+    setFilteredResults([]);
+    setPrevResults([]);
+    setRemovingIndexes(new Set());
+    setIsAnimating(false);
+  }, []);
+
+  // 컴포넌트 반환문 앞에 ref 추가
+  useEffect(() => {
+    if (!isVisible) {
+      setIsAnimating(false); // 애니메이션만 리셋
+    }
+  }, [isVisible]);
+
+  useImperativeHandle(ref, () => ({
+    clearSearch
+  }), [clearSearch]);
+
+
   return (
     <div
       className={`search-overlay ${isVisible ? 'active' : ''}`}
@@ -397,6 +420,6 @@ const Search = ({ paragraphs, metadata, onSelect, isVisible, onClose }) => {
       </div>
     </div>
   );
-};
+});
 
 export default Search;
