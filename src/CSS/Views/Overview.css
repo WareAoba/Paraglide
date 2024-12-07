@@ -80,7 +80,8 @@
   position: relative;  /* 마스크 위치 기준 */
 }
 
-[data-theme="dark"] .paragraph-current,
+[data-theme="dark"]
+.paragraph-current,
 .paragraph-prev,
 .paragraph-next  {
   color: var(--text-color);
@@ -104,7 +105,24 @@
   pointer-events: none;
   border-bottom-left-radius: 8px;
   border-bottom-right-radius: 8px;
-  transition: opacity 0.3s ease;  /* opacity로 전환 */
+  transition: opacity 0.3s ease;
+}
+
+[data-theme="dark"]
+.paragraph-current::after,
+.paragraph-prev::after,
+.paragraph-next::after {
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    var(--bg-color) 70%
+  );
+}
+
+.paragraph-current:hover::after,
+.paragraph-prev:hover::after,
+.paragraph-next:hover::after {
+  opacity: 0.5;
 }
 
 .paragraph-current {

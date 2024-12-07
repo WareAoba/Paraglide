@@ -5,7 +5,7 @@ import '../../CSS/Views/Search.css';
 import { debounce } from 'lodash'; // 상단에 추가
 
 const Search = forwardRef((props, ref) => {
-  const { paragraphs, metadata, onSelect, isVisible, onClose, icons } = props;
+  const { paragraphs, metadata, onSelect, isVisible, onClose, icons, theme } = props;
 
   const [searchTerm, setSearchTerm] = useState('');
   const [results, setResults] = useState([]);
@@ -341,6 +341,7 @@ const Search = forwardRef((props, ref) => {
   return (
     <div
       className={`search-overlay ${isVisible ? 'active' : ''}`}
+      data-theme={theme.mode}
       onMouseDown={handleMouseDown}
       onMouseUp={handleMouseUp}
     >

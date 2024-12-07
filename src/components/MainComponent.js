@@ -571,6 +571,7 @@ function MainComponent() {
               searchIcon: searchIcon,
               pageJumpIcon: pageJumpIcon,
             }}
+            theme={theme}
           />
         )}
       </div>

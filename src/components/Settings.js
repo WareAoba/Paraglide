@@ -157,6 +157,7 @@ function Settings({ isVisible, onClose }) {
         <div className="settings-scroll-area">
         <div className="settings-group">
           {/* 텍스트 처리 방식 그룹 */}
+          <h3>텍스트 처리 방식</h3>
           <div className="segment-control" data-mode={settings.processMode}>
             <button 
               className={settings.processMode === 'paragraph' ? 'active' : ''}
@@ -285,6 +286,14 @@ function Settings({ isVisible, onClose }) {
               로그 파일 정리
             </button>
           </div>
+
+                {/* 정보 그룹 */}
+                <div className="settings-group">
+          <h3>정보</h3>
+          <p>Paraglide 0.2.3 beta</p>
+          <p>Made by WareAoba</p>
+          <p>Contribute.. Rinna, Latte</p>
+        </div>
         </div>
         
         <div className="settings-button-group">
