@@ -662,7 +662,7 @@ const WindowManager = {
     mainWindow = new BrowserWindow({
       width: 600,
       height: 660,
-      minWidth: 600,
+      minWidth: 400,
       minHeight: 660,
       show: false,
       title: 'Paraglide',
@@ -671,9 +671,10 @@ const WindowManager = {
         nodeIntegration: true,
         contextIsolation: false,
         enableRemoteModule: true
-      },
-      autoHideMenuBar: true
+      }
     });
+
+    mainWindow.setMenu(null);
 
     const startUrl = isDev
       ? 'http://localhost:3000'

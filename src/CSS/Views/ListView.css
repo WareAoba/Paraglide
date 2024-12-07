@@ -36,7 +36,8 @@
   cursor: pointer;
   white-space: nowrap;
   overflow: hidden;
-  font-family: 'KoPubWorld Dotum', sans-serif;
+  font-family: inherit;
+  font-size: 17px;
   font-weight: 300;
   text-align: left;
   text-overflow: ellipsis;

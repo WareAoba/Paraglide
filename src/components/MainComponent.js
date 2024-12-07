@@ -48,6 +48,7 @@ function MainComponent() {
   const [sidebarUnfoldIcon, setsidebarUnfoldIcon] = useState(null);
   const [menuIcon, setMenuIcon] = useState(null);
   const [searchIcon, setSearchIcon] = useState(null);
+  const [pageJumpIcon, setPageJumpIcon] = useState(null);
 
   const searchRef = useRef(null);
 
@@ -211,7 +212,7 @@ function MainComponent() {
         const iconNames = [
           'play.svg', 'pause.svg', 'terminal-tag.svg', 'settings.svg',
           'sidebar.svg', 'home.svg', 'eyes.svg', 'eyes-off.svg',
-          'sidebar-unfold.svg', 'menu.svg', 'search.svg'
+          'sidebar-unfold.svg', 'menu.svg', 'search.svg', 'page-jump.svg'
         ];
 
         const iconPaths = await Promise.all(iconNames.map(name => ipcRenderer.invoke('get-icon-path', name)));
@@ -227,6 +228,7 @@ function MainComponent() {
         setsidebarUnfoldIcon(iconPaths[8]);
         setMenuIcon(iconPaths[9]);
         setSearchIcon(iconPaths[10]);
+        setPageJumpIcon(iconPaths[11]);
 
       } catch (error) {
         console.error('아이콘 로드 실패:', error);
@@ -546,6 +548,10 @@ function MainComponent() {
         isVisible={isSearchVisible}
         onClose={() => setIsSearchVisible(false)}
         metadata={state.paragraphsMetadata}
+        icons={{
+          searchIcon: searchIcon,
+          pageJumpIcon: pageJumpIcon
+        }}
       />
     )}
       </div>

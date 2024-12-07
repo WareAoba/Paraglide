@@ -5,7 +5,7 @@ import '../../CSS/Views/Search.css';
 import { debounce } from 'lodash'; // 상단에 추가
 
 const Search = forwardRef(( props, ref ) => {
-  const { paragraphs, metadata, onSelect, isVisible, onClose } = props;
+  const { paragraphs, metadata, onSelect, isVisible, onClose, icons } = props;
 
   const [searchTerm, setSearchTerm] = useState('');
   const [results, setResults] = useState([]);
@@ -354,6 +354,7 @@ const Search = forwardRef(( props, ref ) => {
           )}
         </div>
         <div className="search-input-container">
+         <img src={icons?.searchIcon} alt="" className="search-icon" />
           <input
             type="text"
             value={searchTerm}
@@ -376,12 +377,10 @@ const Search = forwardRef(( props, ref ) => {
                 {/* 페이지 이동 버튼 (조건 충족 시 표시) */}
                 {pageNum && isValidPage(pageNum) && (
                   <div className="page-jump-container">
-                    <button
-                      className="page-jump-button"
-                      onClick={() => handlePageJump(pageNum)}
-                    >
-                      {pageNum}페이지로 이동
-                    </button>
+<button className="page-jump-button" onClick={() => handlePageJump(pageNum)}>
+  <img src={icons?.pageJumpIcon} alt="" className="page-jump-icon" />
+  <span>{pageNum}페이지로 이동</span>
+</button>
                   </div>
                 )}
 
