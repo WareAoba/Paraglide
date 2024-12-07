@@ -536,17 +536,19 @@ function MainComponent() {
         </div>
 
         {state.viewMode === 'overview' ? (
-          <div className="page-number">
-            {state.currentNumber?.display || '\u00A0'}
-            <Overview
-              paragraphs={state.paragraphs}
-              currentParagraph={state.currentParagraph}
-              onParagraphClick={handleParagraphClick}
-              theme={theme}
-              hoveredSection={hoveredSection}
-              onHoverChange={setHoveredSection}
-            />
-          </div>
+  <>
+  <div className="page-number">
+    {state.currentNumber?.display || '\u00A0'}
+  </div>
+  <Overview
+    paragraphs={state.paragraphs}
+    currentParagraph={state.currentParagraph}
+    onParagraphClick={handleParagraphClick}
+    theme={theme}
+    hoveredSection={hoveredSection}
+    onHoverChange={setHoveredSection}
+  />
+</>
         ) : (
           <ListView
             paragraphs={state.paragraphs}
@@ -576,7 +578,14 @@ function MainComponent() {
         <div className="file-info-container">
           <div className="file-info-group">
             <span className="file-name">{path.basename(state.currentFilePath)}</span>
-            <span className="paragraph-info">- {state.currentParagraph + 1}</span>
+            <span className="paragraph-info">
+        {` - ${state.paragraphsMetadata[state.currentParagraph]?.pageNumber || '?'}`}
+        /
+        {`${Math.max(...state.paragraphsMetadata
+          .filter(meta => meta?.pageNumber != null)
+          .map(meta => meta.pageNumber)) || '?'}`}P.{' '}{' '}
+        {`(${state.currentParagraph + 1})`}
+      </span>
           </div>
           <div className="path-group">
             <span className="file-path">| {formatPath(state.currentFilePath)}</span>

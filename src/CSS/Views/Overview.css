@@ -6,21 +6,22 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  border: 2px solid var(--border-color);
   border-radius: 15px;
-  background-color: var(--bg-color);
+  background-color: rgba(0, 0, 0, 0.15);
   box-sizing: border-box; /* Include padding and border in width calculation */
   overflow-y: auto;
-  max-height: 380px;
-  width: 94vw;
+  max-height: calc(60vh - 10px);
+  width: min(90vw, 800px);  /* 뷰포트의 90% 또는 최대 800px */
+  margin: 0 auto;           /* 좌우 중앙 정렬 */
   padding: var(--spacing-md);
 }
 
 .paragraph-header {
   display: grid;
   grid-template-columns: 1fr 1.2fr 1fr;
-  background-color: transparent;
-  border: none;
+  border-radius: 6px;
+  align-content: center;
+  height: 40px;
   padding: var(--spacing-xs), var(--spacing-xs), 0px, var(--spacing-xs);  /* 패딩 감소 */
   gap: var(--spacing-sm);
 }
@@ -49,7 +50,7 @@
   flex: 1 1 auto;
   min-height: 200px;
   width: 100%;
-  max-height: 250px;
+  padding-bottom: 5vh;
   overflow-y: auto;
   gap: var(--spacing-md);  /* 단락 간 간격 확대 */
   margin-top: var(--spacing-sm);
@@ -64,16 +65,19 @@
   background-color: var(--bg-color);
   border-radius: 8px;  /* 단락별 라운드 처리 */
   overflow-y: auto;  /* 내용이 넘칠 경우 스크롤 */
-  font-size: 11pt;
+  font-size: 14pt;
   line-height: 1.6;  /* 행간 조정 */
-  text-align: left;
+  text-align: center;
   text-overflow: ellipsis;
-  user-select: none;
+  font-family: inherit;
+  white-space: pre-wrap;      /* 원본 개행 유지 */
+  word-break: keep-all;       /* 단어 중간 분리 방지 */
+  overflow-wrap: break-word;  /* 컨테이너를 넘어갈 때만 줄바꿈 */
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);  /* 미묘한 그림자 */
   overflow: hidden;         /* 넘치는 텍스트 숨김 */
   display: -webkit-box;    /* 웹킷 기반 다중 라인 ellipsis */
   -webkit-box-orient: vertical;
-  word-break: break-word;  /* 긴 단어 처리 */
+  position: relative;  /* 마스크 위치 기준 */
 }
 
 [data-theme="dark"] .paragraph-current,
@@ -82,15 +86,38 @@
   color: var(--text-color);
 }
 
+.paragraph-current::after,
+.paragraph-prev::after,
+.paragraph-next::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 40px;
+  opacity: 1;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    var(--bg-color) 70%
+  );
+  pointer-events: none;
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
+  transition: opacity 0.3s ease;  /* opacity로 전환 */
+}
+
 .paragraph-current {
   background-color: var(--bg-color);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);  /* 더 강한 그림자로 강조 */
   border: 2px solid var(--primary-color);  
+  font-weight: 700;
   transition: all 0.3s ease;  /* 부드러운 전환 */
 }
 
 .paragraph-prev, .paragraph-next {
-  opacity: 0.8;
+  opacity: 0.7;
+  font-weight: 300;
   transition: all 0.3s ease;  /* 부드러운 전환 */
 }
 

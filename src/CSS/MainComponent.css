@@ -246,11 +246,15 @@
 }
 
 .main-container .page-number {
+  display: flex;          /* 추가 */
+  flex-direction: column; /* 추가 */
     font-size: 2.1em;  
     text-align: left;
     font-weight: 700; 
     color: var(--text-color);
     margin-left: var(--spacing-sm);
+    padding-bottom: 3vh;
+    padding-top: 10px;
 }
 
 .sidebar.visible {
