@@ -6,6 +6,7 @@ const { TextProcessUtils } = require('./store/utils/TextProcessUtils');
 const { textProcessActions } = require('./store/slices/textProcessSlice');
 const { configActions } = require('./store/slices/configSlice');
 const { ConfigManager } = require('./store/utils/ConfigManager');
+const { logActions } = require('./store/slices/logSlice');
 const fs = require('fs').promises;
 const os = require('os');
 const crypto = require('crypto');
@@ -912,6 +913,10 @@ const IPCManager = {
       clipboard.writeText(content);
     });
 
+    ipcMain.handle('get-logs', () => { // 로그 메시지 반환
+      return store.getState().log.logs;
+    });
+
     // 네비게이션 핸들러
     ipcMain.on('move-to-next', () => IPCManager.handleMove('next'));
     ipcMain.on('move-to-prev', () => IPCManager.handleMove('prev'));
@@ -1169,61 +1174,84 @@ const IPCManager = {
   handleShowDebugConsole() {
     if (logWindow && !logWindow.isDestroyed()) {
       logWindow.focus();
-      // 기존 창이 있다면 내용 업데이트
-      logWindow.webContents.send('update-logs', logMessages.join(''));
+      // 포커스할 때도 최신 로그 전송
+      const logs = store.getState().log.logs;
+      logWindow.webContents.send('update-logs', logs);
       return;
     }
-
+  
     logWindow = new BrowserWindow({
-      width: 800,
-      height: 600,
       backgroundColor: '#1e1e1e',
       frame: false,
+      movable: true,
       webPreferences: {
         nodeIntegration: true,
         contextIsolation: false
       }
     });
 
-    const htmlContent = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <style>/* 기존 스타일 유지 */</style>
-        </head>
-        <body>
-          <div class="title-bar">
-            <div class="title">Terminal Logs</div>
-            <button class="close-button" onclick="closeWindow()">×</button>
-          </div>
-          <div id="logContent" class="log-content"></div>
-          <script>
-            const { ipcRenderer } = require('electron');
-            
-            function closeWindow() {
-              window.close();
-            }
-            
-            // 로그 업데이트 수신 및 표시
-            const logContent = document.getElementById('logContent');
-            ipcRenderer.on('update-logs', (_, logs) => {
-              logContent.textContent = logs;
-              logContent.scrollTop = logContent.scrollHeight;
-            });
-          </script>
-        </body>
-      </html>
-    `;
-
-    logWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}`);
-    logWindow.webContents.on('did-finish-load', () => {
-      logWindow.webContents.send('update-logs', logMessages.join(''));
+  // 초기 로그 전송
+  logWindow.webContents.on('did-finish-load', () => {
+    const logs = store.getState().log?.logs || [];
+    logWindow.webContents.send('update-logs', logs);
+  });
+  
+    // Redux 스토어 구독 설정
+    const unsubscribe = store.subscribe(() => {
+      if (logWindow && !logWindow.isDestroyed()) {
+        const logs = store.getState().log.logs;
+        logWindow.webContents.send('update-logs', logs);
+      }
     });
-
+  
+    // React 라우팅
+    const consoleUrl = isDev
+      ? 'http://localhost:3000/#/console'
+      : url.format({
+          pathname: path.join(__dirname, '../build/index.html'),
+          protocol: 'file:',
+          slashes: true,
+          hash: '/console'
+        });
+  
+    logWindow.loadURL(consoleUrl);
+  
+    // 구독 해제 추가
     logWindow.on('closed', () => {
+      unsubscribe();
       logWindow = null;
     });
   }
+};
+
+const setupLogCapture = () => {
+  if (!store.getState().log) {
+    console.error('log reducer가 없습니다!');
+    return;
+  }
+
+  ['stdout', 'stderr'].forEach(output => {
+    const original = process[output].write;
+    process[output].write = (...args) => {
+      // 1. 원본 출력 먼저 실행
+      const result = original.apply(process[output], args);
+      
+      // 2. 로그 저장
+      const logEntry = {
+        type: output,
+        content: args[0].toString(),
+        timestamp: new Date().toISOString()
+      };
+      
+      // 3. 동기적으로 저장 (setImmediate 제거)
+      store.dispatch(logActions.addLog(logEntry));
+
+      return result;
+    };
+  });
+
+  // 4. 초기화 확인 로그
+  console.log('로그 캡처 시스템 초기화됨');
 };
 
 // ApplicationManager 정의
@@ -1249,6 +1277,7 @@ const ApplicationManager = {
       // 5. 시스템 리스너 초기화
       systemListener = new SystemListener(mainWindow);
       await systemListener.initialize();
+      setupLogCapture(); // 로그 캡처
 
       await StatusManager.transition(ProgramStatus.READY);
       console.log('메인 프로세스 초기화 성공');

@@ -36,6 +36,8 @@
   cursor: pointer;
   white-space: nowrap;
   overflow: hidden;
+  font-family: 'KoPubWorld Dotum', sans-serif;
+  font-weight: 300;
   text-align: left;
   text-overflow: ellipsis;
   color: var(--text-color);
@@ -48,7 +50,7 @@
 }
 
 /* 이동하는 배경 박스 */
-.simplebar-content-wrapper:before {
+.listview-container .simplebar-content-wrapper:before {
   content: '';
   position: absolute;
   left: 3.5rem;
@@ -63,7 +65,7 @@
 }
 
 /* 이동하는 화살표 */
-.simplebar-content-wrapper:after {
+.listview-container .simplebar-content-wrapper:after {
   content: '➤';
   position: absolute;
   left: 1.5rem;
@@ -76,6 +78,12 @@
   transform: translateY(var(--current-element-top, 0));
   z-index: 2;
   pointer-events: none;
+}
+
+.listview-container .simplebar-content-wrapper::-webkit-scrollbar,
+.listview-container .simplebar-hide-scrollbar::-webkit-scrollbar {
+    display: block;
+    width: 10px;
 }
 
 .listview-item.current {
