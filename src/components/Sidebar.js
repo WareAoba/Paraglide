@@ -3,17 +3,18 @@
 import React from 'react';
 import '../CSS/App.css';
 import '../CSS/Sidebar.css';
+import { Menu, Item, useContextMenu } from 'react-contexify';
+import '../CSS/Controllers/ReactContexify.css';
 const { ipcRenderer } = window.require('electron');
 const path = window.require('path');
 
 // icons prop 추가
-function Sidebar({ 
-  isVisible, 
-  onClose, 
+function Sidebar({
+  isVisible,
+  onClose,
   currentFilePath,
   theme,
   icons,
-  // 추가되는 props
   titlePath,
   currentFile,
   onToggleOverlay,
@@ -27,17 +28,17 @@ function Sidebar({
     if (isVisible) {
       loadFileHistory();
     }
-  }, [isVisible, currentFilePath]); 
+  }, [isVisible, currentFilePath]);
 
   const loadFileHistory = async () => {
     try {
       const { logData, currentFile } = await ipcRenderer.invoke('get-file-history');
-      
+
       const processedFiles = Object.entries(logData)
         .filter(([filePath, data]) => {
           // currentFile이 없으면 모든 파일 표시
           if (!currentFile || !currentFile.path) return true;
-          
+
           // 현재 작업 중인 파일만 제외
           return filePath !== currentFile.path;
         })
@@ -46,7 +47,7 @@ function Sidebar({
           filePath: filePath,
           currentPageNumber: data.lastPosition?.pageNumber || null,
           currentParagraph: data.lastPosition?.currentParagraph,
-          timestamp: data.timestamp
+          timestamp: data.timestamp,
         }))
         .sort((a, b) => b.timestamp - a.timestamp);
 
@@ -61,21 +62,21 @@ function Sidebar({
     const date = new Date(timestamp);
     const now = new Date();
     const isThisYear = date.getFullYear() === now.getFullYear();
-    
+
     if (isThisYear) {
       return new Intl.DateTimeFormat('ko-KR', {
         month: '2-digit',
         day: '2-digit',
         hour: '2-digit',
         minute: '2-digit',
-        hour12: false
+        hour12: false,
       }).format(date);
     }
-    
+
     return new Intl.DateTimeFormat('ko-KR', {
       year: '2-digit',
       month: '2-digit',
-      day: '2-digit'
+      day: '2-digit',
     }).format(date);
   };
 
@@ -88,11 +89,21 @@ function Sidebar({
   };
 
   // 로그 삭제 핸들러 - 단순히 삭제 요청만
-  const handleRemoveFile = async (e, filePath) => {
-    e.stopPropagation(); // 클릭 이벤트 전파 방지
+  const handleRemoveFile = async (filePath) => {
+    // 매개변수 수정
     try {
+      // 1. DOM 요소 찾기 (filePath로 찾도록 변경)
+      const element = document.querySelector(`[data-filepath="${filePath}"]`);
+      if (!element) return;
+
+      element.classList.add('removing');
+
+      // 2. 애니메이션 완료 대기
+      await new Promise((resolve) => setTimeout(resolve, 200));
+
+      // 3. 실제 삭제 수행
       await ipcRenderer.invoke('clear-log-files', filePath);
-      loadFileHistory(); // 목록 새로고침
+      loadFileHistory();
     } catch (error) {
       console.error('파일 기록 삭제 실패:', error);
     }
@@ -104,15 +115,31 @@ function Sidebar({
       // 통합된 open-file 핸들러 사용
       const result = await ipcRenderer.invoke('open-file', {
         filePath,
-        source: 'history'
+        source: 'history',
       });
-      
+
       if (result.success) {
         onClose();
       }
     } catch (error) {
       console.error('파일 열기 실패:', error);
     }
+  };
+
+  const MENU_ID = 'recent-file-menu';
+  const { show } = useContextMenu({
+    id: MENU_ID,
+  });
+
+  const handleContextMenu = (event, file) => {
+    // 우클릭 메뉴 표시
+    event.preventDefault();
+    show({
+      event,
+      props: {
+        file,
+      },
+    });
   };
 
   return (
@@ -156,23 +183,26 @@ function Sidebar({
           <div className="sidebar-section controls">
             <div className="control-grid">
               <button className="control-button" onClick={onToggleOverlay}>
-                <img 
-                  src={isOverlayVisible ? icons?.eyeIcon : icons?.eyeOffIcon} 
-                  alt="오버레이" 
-                />
+                <img src={isOverlayVisible ? icons?.eyeIcon : icons?.eyeOffIcon} alt="오버레이" />
                 <span>{isOverlayVisible ? '오버레이' : '오버레이'}</span>
               </button>
-              <button className="control-button" onClick={() => {
-                onToggleSearch();
-                onClose();
-              }}>
+              <button
+                className="control-button"
+                onClick={() => {
+                  onToggleSearch();
+                  onClose();
+                }}
+              >
                 <img src={icons?.searchIcon} alt="검색" />
                 <span>검색</span>
               </button>
-              <button className="control-button" onClick={() => {
-                onShowDebugConsole();
-                onClose();
-              }}>
+              <button
+                className="control-button"
+                onClick={() => {
+                  onShowDebugConsole();
+                  onClose();
+                }}
+              >
                 <img src={icons?.terminalIcon} alt="콘솔" />
                 <span>콘솔</span>
               </button>
@@ -183,44 +213,38 @@ function Sidebar({
           <div className="sidebar-section recent-files">
             <h3>최근 작업 파일</h3>
             <div className="recent-file-list">
-              {files.length > 0 ? (
-                files.map((file, index) => (
-                  <div 
-                    key={index} 
-                    className="recent-file-item"
-                    onClick={() => handleFileSelect(file.filePath)}
-                  >
-                    <div className="recent-file-main-info">
-                      <span className="recent-file-name">{file.fileName}</span>
-                      <span className="recent-file-page">
-                        {file.currentPageNumber != null && 
-                          `${file.currentPageNumber}페이지`}
-                      </span>
-                      <button 
-                        className="btn-remove"
-                        onClick={(e) => handleRemoveFile(e, file.filePath)}
-                      >
-                        ×
-                      </button>
-                    </div>
-                    <div className="recent-file-sub-info">
-                      <span className="recent-file-path">
-                        {formatPath(file.filePath)}
-                      </span>
-                      <span className="recent-file-date">
-                        {formatDate(file.timestamp)}
-                      </span>
-                    </div>
+              {files.map((file) => (
+                <div
+                  key={file.filePath}
+                  data-filepath={file.filePath}
+                  className="recent-file-item"
+                  onClick={() => handleFileSelect(file.filePath)} // 추가
+                  onContextMenu={(e) => handleContextMenu(e, file)}
+                >
+                  <div className="recent-file-main-info">
+                    <span className="recent-file-name">{file.fileName}</span>
+                    <span className="recent-file-page">
+                      {file.currentPageNumber != null && `${file.currentPageNumber}페이지`}
+                    </span>
                   </div>
-                ))
-              ) : (
-                <div className="empty-message">최근 작업 기록이 없습니다.</div>
-              )}
+                  <div className="recent-file-sub-info">
+                    <span className="recent-file-path">{formatPath(file.filePath)}</span>
+                    <span className="recent-file-date">{formatDate(file.timestamp)}</span>
+                  </div>
+                </div>
+              ))}
+              {files.length === 0 && <div className="empty-message">최근 작업 기록이 없습니다.</div>}
             </div>
           </div>
         </div>
       </div>
       {isVisible && <div className="sidebar-overlay" onClick={onClose} />}
+      <Menu id={MENU_ID}>
+        <Item onClick={({ props }) => handleRemoveFile(props.file.filePath)}>
+          <img src={icons?.deleteIcon} alt="삭제" />
+          <span>기록 삭제</span>
+        </Item>
+      </Menu>
     </>
   );
 }

@@ -232,23 +232,62 @@
 
 /* 파일 목록 */
 .recent-file-list {
+  flex: 1 1 auto;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  overflow-y: auto;
-  flex: 1;
+  gap: 16px;
 }
 
 /* 파일 항목 */
 .recent-file-item {
+  flex: 0 0 auto; 
   padding: 12px 20px;
   border-radius: 6px;
   background-color: var(--bg-secondary, var(--bg-color));
   border: none;
   cursor: pointer;
-  transition: all var(--transition-default);
-  margin-bottom: 8px;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
+  flex-shrink: 0; /* 높이 고정만 필요 */
+  will-change: transform, opacity, height;
+  overflow: hidden;
+  animation: slideIn 0.2s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.recent-file-item.removing {
+  animation: slideOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
+  pointer-events: none;
+}
+
+@keyframes slideOut {
+  0% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+}
+
+.recent-file-item:last-child {
+  height: fit-content !important;
+  min-height: fit-content !important;
+  max-height: fit-content !important;
+  flex: 0 0 auto !important;
 }
 
 .recent-file-item:hover {
@@ -313,6 +352,7 @@
   min-height: 0; /* 필수: flex item 오버플로우 허용 */
   display: flex;
   flex-direction: column;
+  overflow: hidden; /* 추가 */
 }
 
 /* 파일 경로 */
@@ -330,8 +370,48 @@
 
 /* 빈 메시지 */
 .empty-message {
+  flex: 0 0 auto; /* 크기 고정 */
   text-align: center;
   color: var(--text-secondary);
   padding: var(--spacing-md);
   font-size: 0.9em;
+}
+
+.contexify {
+  font-family: 'Prentendard Variable', sans-serif;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  z-index: 1001 !important;
+  width: 100px; /* 기본값 220px에서 축소 */
+}
+
+.contexify_item {
+  background: var(--background-color) !important;
+}
+
+.contexify_submenu {
+  background: var(--background-color) !important;
+}
+
+.contexify_itemContent {
+  background: var(--background-color) !important;
+  padding-right: 12px !important;
+  padding-left: 12px !important;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.contexify_itemContent img {
+  width: 16px;
+  height: 16px;
+  filter: invert(28%) sepia(45%) saturate(6152%) hue-rotate(340deg) brightness(93%) contrast(84%)
+}
+
+.contexify_itemContent span {
+  color: var(--danger-color);
+  transform: translateY(2px);
+}
+
+.contexify_item:hover > .contexify_itemContent {
+  background: var(--hover-color) !important;
 }

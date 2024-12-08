@@ -50,6 +50,7 @@ function MainComponent() {
   const [searchIcon, setSearchIcon] = useState(null);
   const [pageJumpIcon, setPageJumpIcon] = useState(null);
   const [textFileIcon, setTextFileIcon] = useState(null);
+  const [deleteIcon, setDeleteIcon] = useState(null);
 
   const searchRef = useRef(null);
 
@@ -233,6 +234,7 @@ function MainComponent() {
           'search.svg',
           'page-jump.svg',
           'text-file.svg',
+          'delete.svg',
         ];
 
         const iconPaths = await Promise.all(
@@ -252,6 +254,7 @@ function MainComponent() {
         setSearchIcon(iconPaths[10]);
         setPageJumpIcon(iconPaths[11]);
         setTextFileIcon(iconPaths[12]);
+        setDeleteIcon(iconPaths[13]);
       } catch (error) {
         console.error('아이콘 로드 실패:', error);
       }
@@ -408,6 +411,7 @@ function MainComponent() {
             eyeOff: eyeOffIcon,
             searchIcon: searchIcon,
             terminalIcon: terminalIcon,
+            deleteIcon: deleteIcon
           }}
           titlePath={state.titlePath}
           currentFilePath={state.programStatus === 'PROCESS' ? state.currentFilePath : null}
@@ -492,6 +496,7 @@ function MainComponent() {
           searchIcon: searchIcon,
           terminalIcon: terminalIcon,
           textFileIcon: textFileIcon,
+          deleteIcon: deleteIcon,
         }}
         titlePath={state.titlePath}
         currentFilePath={state.currentFilePath} // programStatus 대신 currentFilePath

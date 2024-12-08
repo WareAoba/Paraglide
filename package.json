@@ -56,8 +56,10 @@
     "hangul-js": "^0.2.6",
     "node-global-key-listener": "^0.3.0",
     "react": "^18.2.0",
+    "react-contexify": "^6.0.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.28.0",
+    "react-spring": "^9.7.4",
     "simplebar-react": "^3.2.6"
   },
   "scripts": {
