@@ -122,6 +122,12 @@
   flex-direction: column;
 }
 
+.current-file-info-header {
+  display: flex;
+  min-width: 0; /* 추가 */
+  flex-direction: column;
+}
+
 .current-file-info {
   padding: 16px;
   background: var(--bg-secondary);
@@ -130,6 +136,7 @@
   display: flex;
   align-items: center;  /* flex-start에서 center로 변경 */
   gap: 16px;
+  position: relative; /* 추가 */
 }
 
 .current-file-icon {
@@ -137,26 +144,33 @@
   height: 60px;
   filter: var(--icon-filter);
   flex-shrink: 0;
+  position: relative; /* 추가 */
+  z-index: 1; /* 추가 */
 }
 
 .current-file-content {
   flex: 1;
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
+  align-items: stretch;
   gap: 4px;
   text-align: right;
   min-width: 0;
+  max-width: calc(100% - 76px); /* 아이콘 너비(60px) + gap(16px) */
 }
 
 .current-file-name {
   font-size: 16px;
   font-weight: 500;
   color: var(--text-color);
+  width: 100%;
+  min-width: 0;
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  text-align: right;
+  direction: ltr;
 }
 
 .current-page-info {
@@ -169,8 +183,8 @@
   font-size: 13px;
   color: var(--text-color);
   opacity: 0.5;
-  direction: rtl; /* 오른쪽부터 텍스트 시작 */
-  text-align: left; /* RTL에서도 올바른 정렬을 위해 필요 */
+  direction: rtl;
+  text-align: left;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
