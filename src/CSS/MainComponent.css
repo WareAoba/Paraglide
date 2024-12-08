@@ -160,91 +160,6 @@
   filter: var(--icon-filter);
 }
 
-/* 메뉴 드롭다운 스타일 */
-.menu-dropdown {
-  position: absolute;
-  top: calc(100% + 4px); /* 상단 간격 축소 */
-  right: 0;
-  background: var(--hover-bg);
-  border-radius: 8px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-  min-width: 180px;
-  padding: 4px; /* 패딩 감소 */
-
-  /* 애니메이션 추가 */
-  visibility: hidden;
-  opacity: 0;
-  transform: scale(0.95);
-  transform-origin: top right;
-  transition: 
-      transform 0.2s ease,
-      opacity 0.2s ease,
-      visibility 0.2s ease;
-  pointer-events: none;
-}
-
-.menu-dropdown.visible {
-  visibility: visible;
-  opacity: 1;
-  transform: scale(1);
-  pointer-events: all;
-}
-
-/* 메뉴 아이템 스타일 */
-.menu-item {
-  margin: 4px;
-  display: flex;
-  align-items: center;
-  font-family: inherit;
-  padding: 4px; /* 패딩 조정 */
-  width: calc(100% - 8px);
-  border: none;
-  background: var(--bg-color);
-  color: var(--text-color);
-  cursor: pointer;
-  border-radius: 4px;
-  transition: all 0.2s ease;
-}
-
-.menu-item + .menu-item {
-  margin-top: 8px;
-}
-
-.menu-icon {
-  width: var(--btn-iconsize); /* 기존 아이콘과 동일한 크기 */
-  height: var(--btn-iconsize);
-  flex-shrink: 0;
-  margin-right: 20px;
-  filter: var(--icon-filter);
-}
-
-.menu-item span {
-  flex-grow: 1;
-  font-size: 16px;
-  font-weight: 500;
-  font-family: inherit;
-  text-align: left; /* 좌측 정렬 명시 */
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* 구분선 */
-.menu-divider {
-  margin: 4px 0;
-  opacity: 0.4; /* 구분선 더 진하게 */
-}
-
-/* 호버 효과 */
-.menu-item:hover {
-  background-color: var(--hover-bg);
-  opacity: 1;
-}
-
-.menu-item:hover .menu-icon {
-  opacity: 1;
-}
-
 .main-container .page-number {
   display: flex;          /* 추가 */
   flex-direction: column; /* 추가 */
@@ -294,6 +209,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  color: var(--text-color);
   font-weight: 500;
   flex: 0 1 auto; /* grow 0, shrink 1 */
   width: min-content; /* calc 없이 사용 */

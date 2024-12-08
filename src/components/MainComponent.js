@@ -49,6 +49,7 @@ function MainComponent() {
   const [menuIcon, setMenuIcon] = useState(null);
   const [searchIcon, setSearchIcon] = useState(null);
   const [pageJumpIcon, setPageJumpIcon] = useState(null);
+  const [textFileIcon, setTextFileIcon] = useState(null);
 
   const searchRef = useRef(null);
 
@@ -231,6 +232,7 @@ function MainComponent() {
           'menu.svg',
           'search.svg',
           'page-jump.svg',
+          'text-file.svg',
         ];
 
         const iconPaths = await Promise.all(
@@ -249,6 +251,7 @@ function MainComponent() {
         setMenuIcon(iconPaths[9]);
         setSearchIcon(iconPaths[10]);
         setPageJumpIcon(iconPaths[11]);
+        setTextFileIcon(iconPaths[12]);
       } catch (error) {
         console.error('아이콘 로드 실패:', error);
       }
@@ -327,10 +330,6 @@ function MainComponent() {
     }));
   };
 
-  const handleMenuToggle = () => {
-    setIsMenuOpen(!isMenuOpen);
-  };
-
   const handleSearchToggle = () => {
     setIsSearchVisible((prev) => !prev);
     setIsMenuOpen(false); // 메뉴 닫기
@@ -405,8 +404,17 @@ function MainComponent() {
           onClose={handleCloseSidebar}
           icons={{
             sidebarUnfold: sidebarUnfoldIcon,
+            eye: eyeIcon,
+            eyeOff: eyeOffIcon,
+            searchIcon: searchIcon,
+            terminalIcon: terminalIcon,
           }}
+          titlePath={state.titlePath}
           currentFilePath={state.programStatus === 'PROCESS' ? state.currentFilePath : null}
+          onToggleOverlay={handleToggleOverlay}
+          onToggleSearch={handleSearchToggle}
+          onShowDebugConsole={handleShowDebugConsole}
+          isOverlayVisible={state.isOverlayVisible}
         />
         <DragDropOverlay isVisible={isDragging} />
 
@@ -479,7 +487,26 @@ function MainComponent() {
         onClose={handleCloseSidebar}
         icons={{
           sidebarUnfold: sidebarUnfoldIcon,
+          eye: eyeIcon,
+          eyeOff: eyeOffIcon,
+          searchIcon: searchIcon,
+          terminalIcon: terminalIcon,
+          textFileIcon: textFileIcon,
         }}
+        titlePath={state.titlePath}
+        currentFilePath={state.currentFilePath} // programStatus 대신 currentFilePath
+        currentFile={{                         // currentFile prop 추가
+          name: path.basename(state.currentFilePath || ''),
+          path: state.currentFilePath,
+          currentPage: state.paragraphsMetadata[state.currentParagraph]?.pageNumber || 1,
+          totalPages: Math.max(...state.paragraphsMetadata
+            .filter(meta => meta?.pageNumber != null)
+            .map(meta => meta.pageNumber)) || 1
+        }}
+        onToggleOverlay={handleToggleOverlay}
+        onToggleSearch={handleSearchToggle}
+        onShowDebugConsole={handleShowDebugConsole}
+        isOverlayVisible={state.isOverlayVisible}
       />
       <DragDropOverlay isVisible={isDragging} />
 
@@ -508,31 +535,6 @@ function MainComponent() {
               <img src={pauseIcon} alt="일시정지" className="icon" />
             )}
           </button>
-        </div>
-
-        <div className="menu-controls">
-          <button className="btn-icon" onClick={handleMenuToggle}>
-            <img src={menuIcon} alt="Menu" className="icon" />
-          </button>
-
-          <div className={`menu-dropdown ${isMenuOpen ? 'visible' : ''}`}>
-            <button className="menu-item" onClick={handleToggleOverlay}>
-              <img
-                src={state.isOverlayVisible ? eyeIcon : eyeOffIcon}
-                alt="Toggle Overlay"
-                className="menu-icon"
-              />
-              <span>{state.isOverlayVisible ? '오버레이 숨김' : '오버레이 표시'}</span>
-            </button>
-            <button className="menu-item" onClick={handleSearchToggle}>
-              <img src={searchIcon} alt="Search" className="menu-icon" />
-              <span>검색</span>
-            </button>
-            <button className="menu-item" onClick={handleShowDebugConsole}>
-              <img src={terminalIcon} alt="Debug" className="menu-icon" />
-              <span>디버그 콘솔</span>
-            </button>
-          </div>
         </div>
 
         {state.viewMode === 'overview' ? (

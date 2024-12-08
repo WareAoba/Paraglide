@@ -7,7 +7,20 @@ const { ipcRenderer } = window.require('electron');
 const path = window.require('path');
 
 // icons prop 추가
-function Sidebar({ isVisible, onClose, currentFilePath, theme, icons }) {
+function Sidebar({ 
+  isVisible, 
+  onClose, 
+  currentFilePath,
+  theme,
+  icons,
+  // 추가되는 props
+  titlePath,
+  currentFile,
+  onToggleOverlay,
+  onToggleSearch,
+  onShowDebugConsole,
+  isOverlayVisible,
+}) {
   const [files, setFiles] = React.useState([]);
 
   React.useEffect(() => {
@@ -104,55 +117,111 @@ function Sidebar({ isVisible, onClose, currentFilePath, theme, icons }) {
 
   return (
     <>
-      <div 
-        className={`sidebar ${isVisible ? 'visible' : ''}`}
-        data-theme={theme.mode}
-      >
+      <div className={`sidebar ${isVisible ? 'visible' : ''}`} data-theme={theme.mode}>
+        {/* 헤더 섹션 */}
         <div className="sidebar-header">
-          <h2>최근 작업 파일</h2>
+          <div className="header-title-group">
+            {titlePath ? (
+              <img src={titlePath} alt="Paraglide" className="header-title-image" />
+            ) : (
+              <h2>Paraglide</h2>
+            )}
+          </div>
           <button className="sidebar-close-button" onClick={onClose}>
-            <img 
-              src={icons?.sidebarUnfold} 
-              alt="닫기" 
-              className="sidebar-icon-button"
-            />
+            <img src={icons?.sidebarUnfold} alt="닫기" className="sidebar-icon-button" />
           </button>
         </div>
+
         <div className="sidebar-content">
-          <div className="file-list">
-            {files.length > 0 ? (
-              files.map((file, index) => (
-                <div 
-                  key={index} 
-                  className="file-item"
-                  onClick={() => handleFileSelect(file.filePath)}
-                >
-                  <div className="file-main-info">
-                    <span className="file-name">{file.fileName}</span>
-                    <span className="file-page">
-                      {file.currentPageNumber != null && `${file.currentPageNumber}페이지`}
-                    </span>
-                    <button 
-                      className="btn-remove"
-                      onClick={(e) => handleRemoveFile(e, file.filePath)}
-                    >
-                      ×
-                    </button>
+          {/* 파일 정보 섹션 */}
+          {currentFile && (
+            <div className="sidebar-section">
+              <h3>현재 파일</h3>
+              <div className="section-content current-file-info">
+                <img src={icons?.textFileIcon} alt="파일" className="current-file-icon" />
+                <div className="current-file-content">
+                  <div className="current-file-info-header">
+                    <span className="current-file-name">{path.basename(currentFilePath)}</span>
                   </div>
-                  <div className="file-sub-info">
-                    <span className="file-path">{formatPath(file.filePath)}</span>
-                    <span className="file-date">{formatDate(file.timestamp)}</span>
+                  <div className="current-page-info">
+                    {currentFile.currentPage}/{currentFile.totalPages}페이지
                   </div>
+                  <div className="current-file-path">{formatPath(currentFilePath)}</div>
                 </div>
-              ))
-            ) : (
-              <div className="empty-message">최근 작업 기록이 없습니다.</div>
-            )}
+              </div>
+            </div>
+          )}
+
+          {/* 컨트롤 섹션 */}
+          <div className="sidebar-section controls">
+            <div className="control-grid">
+              <button className="control-button" onClick={onToggleOverlay}>
+                <img 
+                  src={isOverlayVisible ? icons?.eyeIcon : icons?.eyeOffIcon} 
+                  alt="오버레이" 
+                />
+                <span>{isOverlayVisible ? '오버레이' : '오버레이'}</span>
+              </button>
+              <button className="control-button" onClick={() => {
+                onToggleSearch();
+                onClose();
+              }}>
+                <img src={icons?.searchIcon} alt="검색" />
+                <span>검색</span>
+              </button>
+              <button className="control-button" onClick={() => {
+                onShowDebugConsole();
+                onClose();
+              }}>
+                <img src={icons?.terminalIcon} alt="콘솔" />
+                <span>콘솔</span>
+              </button>
+            </div>
+          </div>
+
+          {/* 최근 파일 섹션 */}
+          <div className="sidebar-section recent-files">
+            <h3>최근 작업 파일</h3>
+            <div className="recent-file-list">
+              {files.length > 0 ? (
+                files.map((file, index) => (
+                  <div 
+                    key={index} 
+                    className="recent-file-item"
+                    onClick={() => handleFileSelect(file.filePath)}
+                  >
+                    <div className="recent-file-main-info">
+                      <span className="recent-file-name">{file.fileName}</span>
+                      <span className="recent-file-page">
+                        {file.currentPageNumber != null && 
+                          `${file.currentPageNumber}페이지`}
+                      </span>
+                      <button 
+                        className="btn-remove"
+                        onClick={(e) => handleRemoveFile(e, file.filePath)}
+                      >
+                        ×
+                      </button>
+                    </div>
+                    <div className="recent-file-sub-info">
+                      <span className="recent-file-path">
+                        {formatPath(file.filePath)}
+                      </span>
+                      <span className="recent-file-date">
+                        {formatDate(file.timestamp)}
+                      </span>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="empty-message">최근 작업 기록이 없습니다.</div>
+              )}
+            </div>
           </div>
         </div>
       </div>
       {isVisible && <div className="sidebar-overlay" onClick={onClose} />}
-      </>
+    </>
   );
 }
 

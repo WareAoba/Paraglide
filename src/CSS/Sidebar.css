@@ -10,7 +10,7 @@
   border-radius: 0 16px 16px 0;  /* 우측 상/하단만 둥글게 */
   transition: transform var(--transition-default);
   z-index: 1000;
-  overflow-y: auto;
+  overflow-y: hidden;
 }
 
 /* 오버레이 */
@@ -71,11 +71,25 @@
 
 /* 사이드바 헤더 */
 .sidebar-header {
-  padding: 45px;
+  padding: 20px 30px 10px 30px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   position: relative;
+}
+
+.header-title-group {
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+
+.header-title-image {
+  height: 20px;
+  width: auto;
+  object-fit: contain;
+  display: block; /* 이미지 기본 여백 제거 */
+  padding-left: 30px;
 }
 
 .sidebar-header h2 {
@@ -85,28 +99,148 @@
   font-weight: 500;
 }
 
-.sidebar-header h3 {
+.sidebar-section h3 {
   color: var(--text-color);
-  margin: 0;
-  font-size: 1.75em;
+  font-size: 1.1em;
   font-weight: 500;
-  text-align: left;
+  margin: 0 0 12px 4px;
+}
+
+/* 구분선 스타일 추가 */
+.sidebar-divider {
+  margin: 15px 4px;
+  height: 1px;
+  background-color: var(--text-color);
+  opacity: 0.1;
 }
 
 /* 사이드바 컨텐츠 */
 .sidebar-content {
   padding: 15px;
+  height: calc(100vh - 80px); /* 헤더 높이 제외 */
+  display: flex;
+  flex-direction: column;
+}
+
+.current-file-info {
+  padding: 16px;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;  /* flex-start에서 center로 변경 */
+  gap: 16px;
+}
+
+.current-file-icon {
+  width: 60px;
+  height: 60px;
+  filter: var(--icon-filter);
+  flex-shrink: 0;
+}
+
+.current-file-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  text-align: right;
+  min-width: 0;
+}
+
+.current-file-name {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text-color);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.current-page-info {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.current-file-path {
+  font-size: 13px;
+  color: var(--text-color);
+  opacity: 0.5;
+  direction: rtl; /* 오른쪽부터 텍스트 시작 */
+  text-align: left; /* RTL에서도 올바른 정렬을 위해 필요 */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 100%;
+}
+
+/* 컨트롤 섹션 업데이트 */
+.sidebar-section.controls {
+  margin: 15px 0;
+  background: var(--bg-color);
+  border-radius: 8px;
+  padding: 4px;
+}
+
+.control-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* 2열 그리드 */
+  gap: 8px;
+}
+
+/* 메인의 menu-item 스타일을 control-button으로 통합 */
+.control-button {
+  margin: 4px;
+  display: flex;
+  align-items: center;
+  width: calc(100% - 8px);
+  padding: 12px;
+  border: none;
+  background: var(--bg-secondary);
+  color: var(--text-color);
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.control-button:hover {
+  background-color: var(--hover-bg);
+  opacity: 1;
+}
+
+.control-button img {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  margin-right: 20px;
+  filter: var(--icon-filter);
+}
+
+.control-button span {
+  flex-grow: 1;
+  font-size: 16px;
+  font-weight: 500;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* 파일 목록 */
-.file-list {
+.recent-file-list {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 8px;
+  overflow-y: auto;
+  flex: 1;
 }
 
 /* 파일 항목 */
-.file-item {
+.recent-file-item {
   padding: 12px 20px;
   border-radius: 6px;
   background-color: var(--bg-secondary, var(--bg-color));
@@ -117,13 +251,13 @@
   position: relative;
 }
 
-.file-item:hover {
+.recent-file-item:hover {
   background-color: var(--hover-bg);
   transform: translateY(-1px);
 }
 
 /* 파일 메인 정보 */
-.file-main-info {
+.recent-file-main-info {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -132,7 +266,7 @@
 }
 
 /* 파일명 */
-.file-name {
+.recent-file-name {
   font-size: 1.1em;
   color: var(--text-color);
   font-weight: 500;
@@ -143,7 +277,7 @@
 }
 
 /* 페이지 번호 */
-.file-page {
+.recent-file-page {
   font-size: 0.9em;
   color: var(--primary-color);
   margin-left: auto;  /* 우측 정렬 */
@@ -162,20 +296,27 @@
   transition: opacity 0.2s;
 }
 
-.file-item:hover .btn-remove {
+.recent-file-item:hover .btn-remove {
   opacity: 1;
 }
 
 /* 파일 부가 정보 */
-.file-sub-info {
+.recent-file-sub-info {
   display: flex;
   justify-content: space-between;
   font-size: 0.85em;
   color: var(--text-secondary);
 }
 
+.sidebar-section.recent-files {
+  flex: 1;
+  min-height: 0; /* 필수: flex item 오버플로우 허용 */
+  display: flex;
+  flex-direction: column;
+}
+
 /* 파일 경로 */
-.file-path {
+.recent-file-path {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -183,7 +324,7 @@
 }
 
 /* 파일 날짜 */
-.file-date {
+.recent-file-date {
   white-space: nowrap;
 }
 
