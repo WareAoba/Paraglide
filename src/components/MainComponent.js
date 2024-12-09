@@ -69,6 +69,25 @@ function MainComponent() {
     }));
   }, [state.programStatus]);
 
+  const handleCloseEsc = useCallback(() => {
+    // 사이드바
+    setState(prev => ({
+      ...prev,
+      isSidebarVisible: false
+    }));
+    
+    // 검색창
+    setIsSearchVisible(false);
+    
+    // 설정창
+    setIsSettingsVisible(false);
+    
+    // 검색 내용 초기화 (필요한 경우)
+    if (searchRef.current) {
+      searchRef.current.clearSearch();
+    }
+  }, []);
+
   useEffect(() => {
     const initializeTheme = async () => {
       const initialTheme = await ipcRenderer.invoke('get-current-theme');
@@ -150,8 +169,9 @@ function MainComponent() {
     ipcRenderer.on('view-mode-update', handleViewModeUpdate);
     ipcRenderer.on('clear-search', clearSearchHandler);
     ipcRenderer.on('trigger-load-file', handleLoadFile);
-    ipcRenderer.on('toggle-search', handleSearchToggle);    // 수정
-    ipcRenderer.on('toggle-settings', handleSettingsToggle); // 수정
+    ipcRenderer.on('toggle-search', handleSearchToggle);
+    ipcRenderer.on('toggle-settings', handleSettingsToggle);
+    ipcRenderer.on('close-esc', handleCloseEsc);
 
     // 초기화
     initializeState();
@@ -163,8 +183,9 @@ function MainComponent() {
       ipcRenderer.removeListener('view-mode-update', handleViewModeUpdate);
       ipcRenderer.removeListener('clear-search', clearSearchHandler);
       ipcRenderer.removeListener('trigger-load-file', handleLoadFile);
-      ipcRenderer.removeListener('toggle-search', handleSearchToggle);    // 수정
-      ipcRenderer.removeListener('toggle-settings', handleSettingsToggle); // 수정
+      ipcRenderer.removeListener('toggle-search', handleSearchToggle);
+      ipcRenderer.removeListener('toggle-settings', handleSettingsToggle);
+      ipcRenderer.removeListener('close-esc', handleCloseEsc);
     };
   }, [handleSearchToggle]);
 

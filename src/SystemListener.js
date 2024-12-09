@@ -253,6 +253,10 @@ class SystemListener {
         this.mainWindow?.webContents.send('toggle-settings');
       });
 
+      register(this.mainWindow, 'Escape', () => {
+        this.mainWindow?.webContents.send('close-esc');
+      });
+
       console.log('[SystemListener] 앱 단축키 설정 완료');
     } catch (error) {
       console.error('[SystemListener] 앱 단축키 설정 실패:', error);
