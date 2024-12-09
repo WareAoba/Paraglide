@@ -110,43 +110,45 @@ const Search = forwardRef((props, ref) => {
     const tokens = [];
     let lastIndex = 0;
     
-    // 검색어의 첫/끝 글자
-    const firstChar = term[0];
-    const lastChar = term[term.length - 1];
-    
-    // 공백 제거된 검색어
     const cleanTerm = removeSpaces(term);
     
     for (let i = 0; i < text.length; i++) {
-      // 첫 글자 발견
-      if (text[i] === firstChar) {
-        // 해당 위치부터 뒤로 검색하여 마지막 글자 위치 찾기
-        for (let j = i + 1; j < text.length; j++) {
-          if (text[j] === lastChar) {
-            // 추출한 텍스트에서 공백을 제거하고 비교
-            const extracted = text.slice(i, j + 1);
-            const cleanExtracted = removeSpaces(extracted);
-            
-            // 공백 제거한 텍스트가 검색어와 일치하면 하이라이트
-            if (cleanExtracted === cleanTerm) {
-              if (i > lastIndex) {
-                tokens.push(text.substring(lastIndex, i));
-              }
-              tokens.push(
-                <mark key={`exact-${i}`} className="search-highlight-exact">
-                  {extracted}
-                </mark>
-              );
-              lastIndex = j + 1;
-              i = j; // 다음 검색을 현재 찾은 위치 이후부터 시작
-              break;
-            }
-          }
+      const remainingText = text.slice(i);
+      const cleanRemaining = removeSpaces(remainingText);
+      
+      if (cleanRemaining.startsWith(cleanTerm)) {
+        // 실제 매칭 시작 위치 계산 (앞쪽 공백 제거)
+        let startOffset = 0;
+        while (startOffset < remainingText.length && !remainingText[startOffset].trim()) {
+          startOffset++;
         }
+        
+        // 매칭된 길이 계산
+        let realLength = startOffset;  // 시작점을 공백 이후로 조정
+        let cleanLength = 0;
+        
+        while (cleanLength < cleanTerm.length && realLength < remainingText.length) {
+          if (remainingText[realLength].trim()) {
+            cleanLength++;
+          }
+          realLength++;
+        }
+        
+        if (i > lastIndex) {
+          tokens.push(text.substring(lastIndex, i));
+        }
+        
+        tokens.push(
+          <mark key={`exact-${i}`} className="search-highlight-exact">
+            {text.substring(i + startOffset, i + realLength)}
+          </mark>
+        );
+        
+        lastIndex = i + realLength;
+        i = lastIndex - 1;
       }
     }
     
-    // 남은 텍스트 처리
     if (lastIndex < text.length) {
       tokens.push(text.substring(lastIndex));
     }
@@ -156,49 +158,58 @@ const Search = forwardRef((props, ref) => {
 
   // 부분 일치 하이라이트 헬퍼 함수
   const highlightPartialMatches = (text, term) => {
+    // 완전일치 검사 먼저 시도
+    const exactTokens = exactMatch(text, term);
+    if (exactTokens.some(token => token.type === 'mark')) {
+      return exactTokens;
+    }
+    
+    // 이후 부분일치 검사
     const tokens = [];
     let lastIndex = 0;
     
-    // 검색어 자모 분리
     const searchTerm = removeSpaces(term);
-    const decomposedTerm = Hangul.disassemble(searchTerm).join('');
+    const searchJamo = Hangul.disassemble(searchTerm);
     
     for (let i = 0; i < text.length; i++) {
-      // 공백으로 시작하는 경우 건너뛰기
-      if (text[i].trim() === '') {
-        if (i >= lastIndex) {
-          tokens.push(text[i]);
-          lastIndex = i + 1;
-        }
-        continue;
-      }
-
-      let matchFound = false;
+      if (text[i].trim() === '') continue;
       
-      // 검색어 길이부터 시작해서 점점 늘려가며 검사
-      for (let len = searchTerm.length; len <= searchTerm.length * 1.5 && i + len <= text.length; len++) {
-        const extracted = text.slice(i, i + len);
-        const decomposedExtracted = Hangul.disassemble(removeSpaces(extracted)).join('');
+      let matchFound = false;
+      const remainingText = text.slice(i);
+      const cleanRemaining = removeSpaces(remainingText);
+      
+      const maxLen = Math.min(searchTerm.length + 2, cleanRemaining.length);
+      
+      for (let len = 1; len <= maxLen; len++) {
+        const target = cleanRemaining.slice(0, len);
+        const targetJamo = Hangul.disassemble(target);
         
-        // 정확한 자모 일치 검사
-        if (decomposedExtracted.includes(decomposedTerm)) {
-          // 최소 길이로 매칭되는 부분 찾기
-          const startPos = decomposedExtracted.indexOf(decomposedTerm);
-          const endPos = startPos + decomposedTerm.length;
+        if (targetJamo.length >= searchJamo.length && 
+            searchJamo.every((char, idx) => targetJamo[idx] === char)) {
           
-          // 해당 위치의 원본 텍스트 찾기
-          const matchedText = extracted;
+          // 실제 매칭된 길이 계산 (공백 제외)
+          let realLength = 0;
+          let cleanLength = 0;
+          
+          while (cleanLength < len && realLength < remainingText.length) {
+            if (remainingText[realLength].trim()) {
+              cleanLength++;
+            }
+            realLength++;
+          }
           
           if (i > lastIndex) {
             tokens.push(text.substring(lastIndex, i));
           }
+          
           tokens.push(
             <mark key={`partial-${i}`} className="search-highlight-partial">
-              {matchedText}
+              {remainingText.slice(0, realLength)}
             </mark>
           );
-          lastIndex = i + len;
-          i = i + len - 1;
+          
+          lastIndex = i + realLength;
+          i = lastIndex - 1;
           matchFound = true;
           break;
         }
@@ -206,15 +217,16 @@ const Search = forwardRef((props, ref) => {
       
       if (!matchFound && i >= lastIndex) {
         tokens.push(text[i]);
+        lastIndex = i + 1;
       }
     }
-  
+    
     if (lastIndex < text.length) {
       tokens.push(text.substring(lastIndex));
     }
     
     return tokens;
-};
+  };
 
   // 공백 제거 함수 분리
   const removeSpaces = (text) => text.replace(/\s+/g, '');
