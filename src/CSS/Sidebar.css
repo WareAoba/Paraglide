@@ -9,6 +9,7 @@
   border-right: none;
   border-radius: 0 16px 16px 0;  /* 우측 상/하단만 둥글게 */
   transition: transform var(--transition-default);
+  box-shadow: 0 0 0 transparent, 40px 0 80px rgba(0, 0, 0, 0.1);
   z-index: 1000;
   overflow-y: hidden;
 }
