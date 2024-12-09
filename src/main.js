@@ -570,17 +570,17 @@ const FileManager = {
           processMode: processMode,
           currentNumber: result.paragraphsMetadata[restoredPosition]?.pageNumber || null
         });
+        
+        const formatFileName = (filePath, maxLength = 30) => {
+          const fileName = path.basename(filePath);
+          if (fileName.length > maxLength) {
+            return fileName.slice(0, maxLength - 3) + '...';
+          }
+          return fileName;
+        };
 
-const formatFileName = (filePath, maxLength = 30) => {
-  const fileName = path.basename(filePath);
-  if (fileName.length > maxLength) {
-    return fileName.slice(0, maxLength - 3) + '...';
-  }
-  return fileName;
-};
-
-// 사용할 때
-mainWindow.setTitle(`${formatFileName(filePath)} - Paraglide`);
+        // 사용할 때
+        mainWindow.setTitle(`${formatFileName(filePath)} - Paraglide`);
 
         const currentContent = result.paragraphsToDisplay[restoredPosition];
         if (currentContent) {
