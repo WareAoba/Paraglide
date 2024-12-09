@@ -86,13 +86,13 @@
   align-items: center;
   justify-content: space-between;
   margin-bottom: 20px;
-  color: var(--text-color);
+  color: var(--text-secondary);
   font-size: 0.95em;
 }
 
 .segment-control {
   display: flex;
-  background-color: var(--border-color);
+  background-color: rgba(0, 0, 0, 0.15);
   padding: 2px; /* 4px에서 3px로 줄임 */
   border-radius: 6px; /* 8px에서 6px로 줄임 */
   width: 100%;

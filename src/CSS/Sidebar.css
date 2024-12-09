@@ -40,22 +40,6 @@
   transform: translateX(300px);
 }
 
-.sidebar-close-button {
-  position: relative;  /* absolute 제거 */
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  outline: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 15%;
-  width: var(--btn-size);
-  height: var(--btn-size);
-  margin: 0;
-}
-
 .sidebar-icon-button {
   height: var(--btn-iconsize);
   width: var(--btn-iconsize);
@@ -71,17 +55,19 @@
 
 /* 사이드바 헤더 */
 .sidebar-header {
-  padding: 20px 30px 10px 30px;
+  padding: 20px 30px 10px 20px;
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start; /* space-between에서 변경 */
   align-items: center;
   position: relative;
+  gap: 20px; /* 버튼과 타이틀 사이 간격 */
 }
 
 .header-title-group {
   display: flex;
   align-items: center;
   height: 100%;
+  justify-content: center;
 }
 
 .header-title-image {
@@ -89,7 +75,22 @@
   width: auto;
   object-fit: contain;
   display: block; /* 이미지 기본 여백 제거 */
-  padding-left: 30px;
+}
+
+.sidebar-close-button {
+  position: relative;  /* absolute 제거 */
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  outline: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 15%;
+  width: var(--btn-size);
+  height: var(--btn-size);
+  margin: 0;
 }
 
 .sidebar-header h2 {
@@ -130,7 +131,7 @@
 
 .current-file-info {
   padding: 16px;
-  background: var(--bg-secondary);
+  background: var(--container-bg);
   border-radius: 8px;
   margin-bottom: 16px;
   display: flex;
@@ -194,7 +195,7 @@
 /* 컨트롤 섹션 업데이트 */
 .sidebar-section.controls {
   margin: 15px 0;
-  background: var(--bg-color);
+  background: transparent;
   border-radius: 8px;
   padding: 4px;
 }
@@ -213,7 +214,7 @@
   width: calc(100% - 8px);
   padding: 12px;
   border: none;
-  background: var(--bg-secondary);
+  background: var(--container-bg);
   color: var(--text-color);
   cursor: pointer;
   border-radius: 4px;
@@ -258,11 +259,12 @@
   flex: 0 0 auto; 
   padding: 12px 20px;
   border-radius: 6px;
-  background-color: var(--bg-secondary, var(--bg-color));
+  background-color: var(--container-bg);
   border: none;
   cursor: pointer;
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-              opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+              opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   flex-shrink: 0; /* 높이 고정만 필요 */
   will-change: transform, opacity, height;
@@ -306,7 +308,6 @@
 
 .recent-file-item:hover {
   background-color: var(--hover-bg);
-  transform: translateY(-1px);
 }
 
 /* 파일 메인 정보 */

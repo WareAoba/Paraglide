@@ -90,18 +90,18 @@ function Sidebar({
 
   // 로그 삭제 핸들러 - 단순히 삭제 요청만
   const handleRemoveFile = async (filePath) => {
-    // 매개변수 수정
     try {
-      // 1. DOM 요소 찾기 (filePath로 찾도록 변경)
-      const element = document.querySelector(`[data-filepath="${filePath}"]`);
-      if (!element) return;
-
-      element.classList.add('removing');
-
-      // 2. 애니메이션 완료 대기
-      await new Promise((resolve) => setTimeout(resolve, 200));
-
-      // 3. 실제 삭제 수행
+      // 1. CSS 선택자 이스케이프 처리
+      const escapedPath = CSS.escape(filePath);
+      const element = document.querySelector(`[data-filepath="${escapedPath}"]`);
+      
+      // 2. 요소를 못찾아도 삭제는 진행
+      if (element) {
+        element.classList.add('removing');
+        await new Promise((resolve) => setTimeout(resolve, 200));
+      }
+      
+      // 3. 파일 삭제 진행
       await ipcRenderer.invoke('clear-log-files', filePath);
       loadFileHistory();
     } catch (error) {
@@ -147,6 +147,9 @@ function Sidebar({
       <div className={`sidebar ${isVisible ? 'visible' : ''}`} data-theme={theme.mode}>
         {/* 헤더 섹션 */}
         <div className="sidebar-header">
+        <button className="sidebar-close-button" onClick={onClose}>
+            <img src={icons?.sidebarUnfold} alt="닫기" className="sidebar-icon-button" />
+          </button>
           <div className="header-title-group">
             {titlePath ? (
               <img src={titlePath} alt="Paraglide" className="header-title-image" />
@@ -154,9 +157,6 @@ function Sidebar({
               <h2>Paraglide</h2>
             )}
           </div>
-          <button className="sidebar-close-button" onClick={onClose}>
-            <img src={icons?.sidebarUnfold} alt="닫기" className="sidebar-icon-button" />
-          </button>
         </div>
 
         <div className="sidebar-content">
@@ -182,10 +182,6 @@ function Sidebar({
           {/* 컨트롤 섹션 */}
           <div className="sidebar-section controls">
             <div className="control-grid">
-              <button className="control-button" onClick={onToggleOverlay}>
-                <img src={isOverlayVisible ? icons?.eyeIcon : icons?.eyeOffIcon} alt="오버레이" />
-                <span>{isOverlayVisible ? '오버레이' : '오버레이'}</span>
-              </button>
               <button
                 className="control-button"
                 onClick={() => {

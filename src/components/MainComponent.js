@@ -582,6 +582,15 @@ function MainComponent() {
               <img src={pauseIcon} alt="일시정지" className="icon" />
             )}
           </button>
+          <button 
+            className={`btn-icon ${state.isOverlayVisible ? 'btn-active' : 'btn-outline'}`}
+            onClick={handleToggleOverlay}
+          >
+            {state.isOverlayVisible ?
+              <img src={eyeIcon} alt="일시정지" className="icon" />
+               : 
+              <img src={eyeOffIcon} alt="일시정지" className="icon" /> }
+          </button>
         </div>
 
         {state.viewMode === 'overview' ? (
