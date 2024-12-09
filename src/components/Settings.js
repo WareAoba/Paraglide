@@ -1,11 +1,12 @@
 // src/components/Settings.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import '../CSS/Settings.css';
 import '../CSS/Controllers/Checkbox.css';
 import '../CSS/Controllers/RangeSlider.css';
+import '../CSS/Controllers/Dropdown.css';
 const { ipcRenderer } = window.require('electron');
 
-function Settings({ isVisible, onClose }) {
+function Settings({ isVisible, onClose, icons }) {
   const [settings, setSettings] = useState({
     windowOpacity: 1.0,      // 창 전체 투명도
     contentOpacity: 0.8,     // 배경 투명도
@@ -19,6 +20,8 @@ function Settings({ isVisible, onClose }) {
     viewMode: 'overview'
   });
   const [originalSettings, setOriginalSettings] = useState(null);
+  const [showThemeDropdown, setShowThemeDropdown] = useState(false);
+  const dropdownRef = useRef(null);
 
   // 초기 설정 로드
   useEffect(() => {
@@ -71,7 +74,11 @@ function Settings({ isVisible, onClose }) {
         loadLastOverlayBounds: newSettings.loadLastOverlayBounds,
         accentColor: newSettings.accentColor,
         processMode: newSettings.processMode,
-        viewMode: newSettings.viewMode
+        viewMode: newSettings.viewMode,
+        theme: {
+          mode: newSettings.theme.mode,
+          accentColor: newSettings.theme.accentColor
+        }
       });
 
       if (newSettings.viewMode && newSettings.viewMode !== settings.viewMode) {
@@ -79,10 +86,10 @@ function Settings({ isVisible, onClose }) {
       }
   
       if (!result) {
-        console.error('설정 적용 실패');
+        console.error('[Settings] 설정 적용 실패');
       }
     } catch (error) {
-      console.error('설정 변경 중 오류:', error);
+      console.error('[Settings] 설정 변경 중 오류:', error);
     }
   };
 
@@ -115,6 +122,29 @@ function Settings({ isVisible, onClose }) {
       // 오류 시 이전 상태로 복구
       setSettings(originalSettings);
     }
+  };
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        
+        setShowThemeDropdown(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  const handleThemeItemClick = async (mode) => {
+    // setTimeout 제거하고 즉시 실행하도록 변경
+    await handleSettingChange({
+      ...settings,
+      theme: { ...settings.theme, mode }
+    });
+    setShowThemeDropdown(false);
   };
 
   const handleViewModeChange = async () => {
@@ -277,6 +307,63 @@ function Settings({ isVisible, onClose }) {
                 })}
               />
             </label>
+            <label className="settings-label">
+  테마
+  <div className="dropdown-wrapper" ref={dropdownRef}>
+  <button 
+        className="dropdown-button"
+        onClick={(e) => {
+          e.stopPropagation();
+          setShowThemeDropdown(!showThemeDropdown);
+        }}
+      >
+        <img 
+    src={
+      settings.theme.mode === 'auto' ? icons?.themeAuto :
+      settings.theme.mode === 'light' ? icons?.themeLight : 
+      icons?.themeDark
+    } 
+    alt="" 
+    className="dropdown-icon" 
+  />
+      {settings.theme.mode === 'auto' ? '자동' :
+       settings.theme.mode === 'light' ? '라이트' : '다크'}
+      <svg width="10" height="6" viewBox="0 0 10 6">
+        <path 
+          d="M1 1L5 5L9 1" 
+          stroke="currentColor" 
+          strokeWidth="1.5" 
+          fill="none"
+        />
+      </svg>
+    </button>
+    <div className={`dropdown-menu ${showThemeDropdown ? 'show' : ''}`}>
+    <div
+          className={`dropdown-item ${settings.theme.mode === 'auto' ? 'active' : ''}`}
+          onClick={() => handleThemeItemClick('auto')}
+        >
+          <img src={icons?.themeAuto} alt="자동" className="dropdown-icon" />
+          자동
+        </div>
+
+<div
+  className={`dropdown-item ${settings.theme.mode === 'light' ? 'active' : ''}`}
+  onClick={() => handleThemeItemClick('light')}
+>
+  <img src={icons?.themeLight} alt="라이트" className="dropdown-icon" />
+  라이트
+</div>
+
+<div
+  className={`dropdown-item ${settings.theme.mode === 'dark' ? 'active' : ''}`}
+  onClick={() => handleThemeItemClick('dark')}
+>
+  <img src={icons?.themeDark} alt="다크" className="dropdown-icon" />
+  다크
+</div>
+    </div>
+  </div>
+</label>
           </div>
 
           {/* 데이터 관리 그룹 */}

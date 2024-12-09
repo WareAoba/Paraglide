@@ -1114,6 +1114,8 @@ const IPCManager = {
         overlayWindow.setIgnoreMouseEvents(newConfig.overlay.overlayFixed);
         overlayWindow.webContents.send('update-content-opacity', newConfig.overlay.contentOpacity);
       }
+
+      ThemeManager.broadcastTheme();
       
       await FileManager.saveConfig(newConfig);
       return true;

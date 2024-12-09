@@ -55,6 +55,9 @@ function MainComponent() {
   const [pageJumpIcon, setPageJumpIcon] = useState(null);
   const [textFileIcon, setTextFileIcon] = useState(null);
   const [deleteIcon, setDeleteIcon] = useState(null);
+  const [themeAutoIcon, setThemeAutoIcon] = useState(null);
+  const [themeLightIcon, setThemeLightIcon] = useState(null);
+  const [themeDarkIcon, setThemeDarkIcon] = useState(null);
 
   const searchRef = useRef(null);
 
@@ -277,6 +280,9 @@ function MainComponent() {
           'page-jump.svg',
           'text-file.svg',
           'delete.svg',
+          'theme-auto.svg',
+          'theme-light.svg',
+          'theme-dark.svg',
         ];
 
         const iconPaths = await Promise.all(
@@ -296,6 +302,9 @@ function MainComponent() {
         setPageJumpIcon(iconPaths[10]);
         setTextFileIcon(iconPaths[11]);
         setDeleteIcon(iconPaths[12]);
+        setThemeAutoIcon(iconPaths[13]);
+        setThemeLightIcon(iconPaths[14]);
+        setThemeDarkIcon(iconPaths[15]);
       } catch (error) {
         console.error('아이콘 로드 실패:', error);
       }
@@ -511,6 +520,11 @@ function MainComponent() {
           isVisible={isSettingsVisible}
           onClose={() => setIsSettingsVisible(false)}
           theme={theme}
+          icons={{
+            themeAuto: themeAutoIcon,
+            themeLight: themeLightIcon,
+            themeDark: themeDarkIcon,
+          }}
         />
       </div>
     );
@@ -655,6 +669,11 @@ function MainComponent() {
         isVisible={isSettingsVisible}
         onClose={() => setIsSettingsVisible(false)}
         theme={theme}
+        icons={{
+            themeAuto: themeAutoIcon,
+            themeLight: themeLightIcon,
+            themeDark: themeDarkIcon,
+          }}
       />
     </div>
   );
