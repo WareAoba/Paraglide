@@ -128,7 +128,7 @@
   width: 70vw;  /* 뷰포트 기준 70% */
   max-height: calc(95vh - 180px); /* 뷰포트 높이의 85%에서 여유 공간 확보 */
   margin-left: calc((360px - 70vw) / 2);  /* 중앙 정렬을 위한 마진 */
-  padding: 24px 0; /* 상하 패딩만 유지 */
+  padding: 24px 40px; /* 상하 패딩만 유지 */
   box-sizing: border-box;
 }
 
@@ -151,6 +151,7 @@
 }
 
 .search-result-item {
+  position: relative;
   padding: 16px 24px;
   margin-bottom: 16px;
   cursor: pointer;
@@ -165,7 +166,7 @@
   opacity: 0;
   transform: translateX(-20px);
   animation: slideIn 0.3s ease forwards;
-  will-change: transform, opacity;
+  will-change: transform, opacity, border;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
 }
 
@@ -332,4 +333,44 @@
 
 .page-jump-button:hover {
   background-color: var(--primary-color-dark, #0056b3);
+}
+
+/* 포인터 */
+
+.pointer-arrow {
+  position: absolute;
+  top: 50%;
+  font-size: 24px;
+  color: var(--primary-color);
+  opacity: 0;
+  visibility: hidden;
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* 왼쪽 화살표 */
+.pointer-arrow.left {
+  left: -40px;
+  transform: translateY(-50%) translateX(-20px);
+  transition: all 0.3s ease;
+}
+
+/* 오른쪽 화살표 */
+.pointer-arrow.right {
+  right: -40px;
+  transform: translateY(-50%) translateX(20px);
+  transition: all 0.3s ease;
+}
+
+/* 포인터 상태일 때 화살표 표시 */
+.search-result-item.pointed .pointer-arrow {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(-50%) translateX(0);
+}
+
+/* 포인터 상태일 때 배경색 */
+.search-result-item.pointed {
+  background: var(--bg-color);
+  border: 1px solid var(--primary-color);
 }

@@ -1,5 +1,5 @@
 // components/Views/Search.js
-import React, { useState, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react';
+import React, { useState, useEffect, useCallback, useRef, forwardRef, useImperativeHandle } from 'react';
 import Hangul from 'hangul-js';
 import '../../CSS/Views/Search.css';
 import { debounce } from 'lodash';
@@ -120,16 +120,12 @@ const highlightPartialMatch = (text, term) => {
   const searchJamo = Hangul.disassemble(searchTerm);
 
   for (let i = 0; i < text.length; i++) {
-    // 공백 건너뛰기 제거 - 공백도 포함하여 처리
     let matchFound = false;
     const remainingText = text.slice(i);
-    
-    // 검색을 위한 정규화된 텍스트만 공백 제거
     const cleanRemaining = SearchUtils.removeSpaces(remainingText);
     const maxLen = Math.min(searchTerm.length + 2, cleanRemaining.length);
 
     for (let len = 1; len <= maxLen; len++) {
-      // 정규화된 텍스트로 검색
       const cleanTarget = cleanRemaining.slice(0, len);
       const targetJamo = Hangul.disassemble(cleanTarget);
 
@@ -137,16 +133,14 @@ const highlightPartialMatch = (text, term) => {
         targetJamo.length >= searchJamo.length &&
         searchJamo.every((char, idx) => targetJamo[idx] === char)
       ) {
-        // 시작 위치 조정 - 첫 비공백 문자 찾기
         let startOffset = 0;
         while (startOffset < remainingText.length && !remainingText[startOffset].trim()) {
           startOffset++;
         }
 
-        // 실제 길이 계산 (공백 포함)
         let realLength = startOffset;
         let cleanCount = 0;
-        
+
         while (cleanCount < len && realLength < remainingText.length) {
           if (remainingText[realLength].trim()) {
             cleanCount++;
@@ -154,12 +148,11 @@ const highlightPartialMatch = (text, term) => {
           realLength++;
         }
 
-        // 원본 텍스트 자르기 (공백 포함)
         if (i > lastIndex) {
           tokens.push(text.substring(lastIndex, i + startOffset));
         }
-        
-        tokens.push( // startOffset부터 시작
+
+        tokens.push(
           <mark key={`partial-${i}`} className="search-highlight-partial">
             {remainingText.slice(startOffset, realLength)}
           </mark>
@@ -187,7 +180,6 @@ const highlightPartialMatch = (text, term) => {
 const Search = forwardRef((props, ref) => {
   const { paragraphs, metadata, onSelect, isVisible, onClose, icons, theme } = props;
 
-  // 상태 변수 선언
   const [searchTerm, setSearchTerm] = useState('');
   const [results, setResults] = useState([]);
   const [filteredResults, setFilteredResults] = useState([]);
@@ -195,9 +187,10 @@ const Search = forwardRef((props, ref) => {
   const [removingIndexes, setRemovingIndexes] = useState(new Set());
   const [prevResults, setPrevResults] = useState([]);
   const [dragStart, setDragStart] = useState(null);
+  const [pointer, setPointer] = useState(-1);
+  const searchInputRef = useRef(null);
 
   const handleMouseDown = (e) => {
-    // search-box를 클릭한 경우는 무시
     if (!e.target.closest('.search-box')) {
       setDragStart({
         x: e.clientX,
@@ -207,7 +200,6 @@ const Search = forwardRef((props, ref) => {
   };
 
   const handleMouseUp = (e) => {
-    // search-box를 클릭한 경우는 무시
     if (!e.target.closest('.search-box') && dragStart) {
       const dx = Math.abs(e.clientX - dragStart.x);
       const dy = Math.abs(e.clientY - dragStart.y);
@@ -219,13 +211,11 @@ const Search = forwardRef((props, ref) => {
     setDragStart(null);
   };
 
-  // 검색어 변경 핸들러
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
     debouncedSearch(e.target.value);
   };
 
-  // 디바운스된 검색 함수
   const debouncedSearch = useCallback(
     debounce((term) => {
       if (isAnimating || !term.trim() || !paragraphs) {
@@ -277,7 +267,6 @@ const Search = forwardRef((props, ref) => {
     [paragraphs, metadata, isAnimating]
   );
 
-  // 검색 결과 하이라이트 처리 함수
   const highlightMatch = (text, term) => {
     if (!term.trim()) return text;
 
@@ -302,14 +291,12 @@ const Search = forwardRef((props, ref) => {
 
   const checkPagePattern = (text) => {
     const pagePatterns = {
-      // 1. 단순 숫자 ("123")
-      numberOnly: /^(\d+)$/,
+      numberOnly: /^(\d+)$/
     };
 
     for (const pattern of Object.values(pagePatterns)) {
       const match = text.match(pattern);
       if (match) {
-        // 모든 캡처 그룹 중 첫 번째 유효한 숫자 반환
         const number = match.slice(1).find(n => n !== undefined);
         return number ? parseInt(number, 10) : null;
       }
@@ -318,36 +305,24 @@ const Search = forwardRef((props, ref) => {
   };
 
   const isValidPage = (pageNum) => {
-    // 기본 유효성 검사
     if (!pageNum || !metadata) return false;
 
-    // metadata가 배열이 아닌 경우 처리
     const metadataArray = Array.isArray(metadata) ? metadata : [metadata];
 
     return metadataArray.some(meta => {
-      // pageNumber 속성을 직접 사용
       const metaPageNum = meta.pageNumber;
-
-      // null/undefined 체크
       if (metaPageNum == null) return false;
-
-      // 문자열로 변환하여 비교
       return String(metaPageNum) === String(pageNum);
     });
   };
 
-  // 페이지 번호로 해당 단락 찾기
   const findParagraphByPage = (pageNum) => {
-    // 메타데이터가 없으면 -1 반환
     if (!metadata) return -1;
-
-    // pageNumber를 사용하여 해당 페이지의 첫 번째 단락 찾기
     return metadata.findIndex(meta =>
       meta.pageNumber === Number(pageNum)
     );
   };
 
-  // 페이지 이동 버튼 클릭 핸들러
   const handlePageJump = (pageNum) => {
     const paragraphIndex = findParagraphByPage(pageNum);
     if (paragraphIndex !== -1) {
@@ -356,7 +331,60 @@ const Search = forwardRef((props, ref) => {
     }
   };
 
-  // 결과 업데이트 및 애니메이션 처리
+  const resultItemsRef = useRef([]);
+
+  const handleKeyDown = useCallback((e) => {
+    if (!isVisible || !filteredResults.length) return;
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setPointer(prev => {
+          if (prev === filteredResults.length - 1) {
+            return -1;
+          }
+          const newPointer = prev + 1;
+          resultItemsRef.current[newPointer]?.scrollIntoView({
+            behavior: 'smooth',
+            block: 'nearest'
+          });
+          return newPointer;
+        });
+        break;
+
+      case 'ArrowUp':
+        e.preventDefault();
+        setPointer(prev => {
+          if (prev === -1) {
+            const lastIndex = filteredResults.length - 1;
+            resultItemsRef.current[lastIndex]?.scrollIntoView({
+              behavior: 'smooth',
+              block: 'nearest'
+            });
+            return lastIndex;
+          }
+          if (prev === 0) {
+            return -1;
+          }
+          const newPointer = prev - 1;
+          resultItemsRef.current[newPointer]?.scrollIntoView({
+            behavior: 'smooth',
+            block: 'nearest'
+          });
+          return newPointer;
+        });
+        break;
+
+      case 'Enter':
+        e.preventDefault();
+        if (pointer >= 0) {
+          onSelect(filteredResults[pointer].index);
+          onClose();
+        }
+        break;
+    }
+  }, [isVisible, filteredResults, pointer, onSelect, onClose]);
+
   useEffect(() => {
     if (removingIndexes.size > 0) {
       setIsAnimating(true);
@@ -364,13 +392,13 @@ const Search = forwardRef((props, ref) => {
         setFilteredResults(results);
         setRemovingIndexes(new Set());
         setIsAnimating(false);
-      }, 300); // 애니메이션 시간과 동일하게
+      }, 300);
     } else {
       setFilteredResults(results);
     }
   }, [results]);
 
-  const clearSearch = useCallback(() => { // 검색 초기화
+  const clearSearch = useCallback(() => {
     setSearchTerm('');
     setResults([]);
     setFilteredResults([]);
@@ -379,16 +407,40 @@ const Search = forwardRef((props, ref) => {
     setIsAnimating(false);
   }, []);
 
-  // 컴포넌트 반환문 앞에 ref 추가
   useEffect(() => {
     if (!isVisible) {
-      setIsAnimating(false); // 애니메이션만 리셋
+      setIsAnimating(false);
     }
   }, [isVisible]);
 
   useImperativeHandle(ref, () => ({
     clearSearch
   }), [clearSearch]);
+
+  useEffect(() => {
+    if (isVisible) {
+      const timer = setTimeout(() => {
+        if (searchInputRef.current) {
+          searchInputRef.current.focus();
+          const length = searchInputRef.current.value.length;
+          searchInputRef.current.setSelectionRange(length, length);
+        }
+      }, 200);
+
+      return () => clearTimeout(timer);
+    }
+  }, [isVisible]);
+
+  useEffect(() => {
+    if (isVisible) {
+      window.addEventListener('keydown', handleKeyDown);
+      return () => window.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [isVisible, handleKeyDown]);
+
+  useEffect(() => {
+    setPointer(-1);
+  }, [searchTerm, filteredResults, isVisible]);
 
   return (
     <div
@@ -408,11 +460,11 @@ const Search = forwardRef((props, ref) => {
         <div className="search-input-container">
           <img src={icons?.searchIcon} alt="" className="search-icon" />
           <input
+            ref={searchInputRef}
             type="text"
             value={searchTerm}
             onChange={handleSearchChange}
             placeholder={`검색어를 입력하세요… (${paragraphs?.length || 0}개 단락)`}
-            autoFocus
           />
           {searchTerm && (
             <button className="clear-button" onClick={() => setSearchTerm('')}>
@@ -426,7 +478,6 @@ const Search = forwardRef((props, ref) => {
 
             return (
               <>
-                {/* 페이지 이동 버튼 (조건 충족 시 표시) */}
                 {pageNum && isValidPage(pageNum) && (
                   <div className="page-jump-container">
                     <button className="page-jump-button" onClick={() => handlePageJump(pageNum)}>
@@ -436,18 +487,22 @@ const Search = forwardRef((props, ref) => {
                   </div>
                 )}
 
-                {/* 검색 결과 항상 표시 */}
                 {searchTerm.trim() && filteredResults.length > 0 &&
-                  filteredResults.map((result) => (
+                  filteredResults.map((result, index) => (
                     <div
                       key={result.index}
-                      className={`search-result-item ${removingIndexes.has(result.index) ? 'removing' : ''}`}
+                      ref={el => resultItemsRef.current[index] = el}
+                      className={`search-result-item ${
+                        removingIndexes.has(result.index) ? 'removing' : ''
+                      } ${pointer === index ? 'pointed' : ''}`}
                       onClick={() => {
-                        onSelect(result.index);  // 선택한 단락으로 이동
-                        onClose();  // 검색창 닫기
+                        onSelect(result.index);
+                        onClose();
                       }}
                       data-testid={`search-result-${result.index}`}
                     >
+                      <span className="pointer-arrow left" aria-hidden="true">⮞</span>
+                      <span className="pointer-arrow right" aria-hidden="true">⮜</span>
                       <span className="result-info">{result.pageInfo}페이지</span>
                       <span className="result-text">
                         {highlightMatch(result.text, searchTerm)}
@@ -456,7 +511,6 @@ const Search = forwardRef((props, ref) => {
                   ))
                 }
 
-                {/* 검색어 있고 결과 없고 페이지 이동 버튼도 없을 때만 "검색 결과 없음" 표시 */}
                 {searchTerm.trim() &&
                   filteredResults.length === 0 &&
                   !(pageNum && isValidPage(pageNum)) && (
