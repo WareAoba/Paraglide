@@ -1325,6 +1325,10 @@ const ApplicationManager = {
   async exit() {
     try {
 
+      if (systemListener) { // globalShortcut 해제
+        systemListener.clearAppShortcuts();
+      }
+
       if (overlayWindow && !overlayWindow.isDestroyed()) {
         overlayWindow.destroy();
         overlayWindow = null;

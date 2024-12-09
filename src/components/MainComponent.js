@@ -11,6 +11,13 @@ import DragDropOverlay from './Views/DragDropOverlay';
 const path = window.require('path');
 const { ipcRenderer } = window.require('electron');
 
+const ProgramStatus = {
+  READY: 'Ready',
+  PROCESS: 'Process',
+  PAUSE: 'Pause',
+  LOADING: 'Loading'
+};
+
 // MainComponent.js 수정
 function MainComponent() {
   const [state, setState] = useState({
@@ -21,7 +28,7 @@ function MainComponent() {
     logoPath: null,
     titlePath: null,
     isSidebarVisible: false,
-    programStatus: 'READY',
+    programStatus: ProgramStatus.READY,
     isPaused: false,
     viewMode: 'overview',
   });
@@ -31,11 +38,9 @@ function MainComponent() {
     accentColor: '#007bff',
   });
   const [isSettingsVisible, setIsSettingsVisible] = useState(false);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [isSearchVisible, setIsSearchVisible] = useState(false);
   const [dragCounter, setDragCounter] = useState(0);
-
   const [hoveredSection, setHoveredSection] = useState(null);
   const [playIcon, setPlayIcon] = useState(null);
   const [pauseIcon, setPauseIcon] = useState(null);
@@ -46,13 +51,23 @@ function MainComponent() {
   const [eyeIcon, setEyeIcon] = useState(null);
   const [eyeOffIcon, setEyeOffIcon] = useState(null);
   const [sidebarUnfoldIcon, setsidebarUnfoldIcon] = useState(null);
-  const [menuIcon, setMenuIcon] = useState(null);
   const [searchIcon, setSearchIcon] = useState(null);
   const [pageJumpIcon, setPageJumpIcon] = useState(null);
   const [textFileIcon, setTextFileIcon] = useState(null);
   const [deleteIcon, setDeleteIcon] = useState(null);
 
   const searchRef = useRef(null);
+
+  const handleSearchToggle = useCallback(() => { // 검색 토글, 위치가 여기 있는게 마음에 안들긴 한데 뭐......
+    if (state.programStatus !== ProgramStatus.PROCESS) {
+      return;
+    }
+    setIsSearchVisible(prev => !prev);
+    setState(prev => ({
+      ...prev,
+      isSidebarVisible: false,
+    }));
+  }, [state.programStatus]);
 
   useEffect(() => {
     const initializeTheme = async () => {
@@ -86,6 +101,7 @@ function MainComponent() {
 
         setState((prev) => ({
           ...prev,
+          programStatus: initialState.programStatus,
           isOverlayVisible: initialState.isOverlayVisible,
           viewMode: savedSettings.viewMode || 'overview',
         }));
@@ -133,6 +149,9 @@ function MainComponent() {
     ipcRenderer.on('theme-update', handleThemeUpdate);
     ipcRenderer.on('view-mode-update', handleViewModeUpdate);
     ipcRenderer.on('clear-search', clearSearchHandler);
+    ipcRenderer.on('trigger-load-file', handleLoadFile);
+    ipcRenderer.on('toggle-search', handleSearchToggle);    // 수정
+    ipcRenderer.on('toggle-settings', handleSettingsToggle); // 수정
 
     // 초기화
     initializeState();
@@ -143,8 +162,11 @@ function MainComponent() {
       ipcRenderer.removeListener('theme-update', handleThemeUpdate);
       ipcRenderer.removeListener('view-mode-update', handleViewModeUpdate);
       ipcRenderer.removeListener('clear-search', clearSearchHandler);
+      ipcRenderer.removeListener('trigger-load-file', handleLoadFile);
+      ipcRenderer.removeListener('toggle-search', handleSearchToggle);    // 수정
+      ipcRenderer.removeListener('toggle-settings', handleSettingsToggle); // 수정
     };
-  }, []);
+  }, [handleSearchToggle]);
 
   const formatPath = (fullPath) => {
     if (!fullPath) return '';
@@ -230,7 +252,6 @@ function MainComponent() {
           'eyes.svg',
           'eyes-off.svg',
           'sidebar-unfold.svg',
-          'menu.svg',
           'search.svg',
           'page-jump.svg',
           'text-file.svg',
@@ -250,11 +271,10 @@ function MainComponent() {
         setEyeIcon(iconPaths[6]);
         setEyeOffIcon(iconPaths[7]);
         setsidebarUnfoldIcon(iconPaths[8]);
-        setMenuIcon(iconPaths[9]);
-        setSearchIcon(iconPaths[10]);
-        setPageJumpIcon(iconPaths[11]);
-        setTextFileIcon(iconPaths[12]);
-        setDeleteIcon(iconPaths[13]);
+        setSearchIcon(iconPaths[9]);
+        setPageJumpIcon(iconPaths[10]);
+        setTextFileIcon(iconPaths[11]);
+        setDeleteIcon(iconPaths[12]);
       } catch (error) {
         console.error('아이콘 로드 실패:', error);
       }
@@ -333,9 +353,12 @@ function MainComponent() {
     }));
   };
 
-  const handleSearchToggle = () => {
-    setIsSearchVisible((prev) => !prev);
-    setIsMenuOpen(false); // 메뉴 닫기
+  const handleSettingsToggle = () => { // 설정 토글
+    setIsSettingsVisible((prev) => !prev);
+    setState(prev => ({
+      ...prev,
+      isSidebarVisible: false,
+    }));
   };
 
   // 파일 선택 핸들러 수정
@@ -360,9 +383,8 @@ function MainComponent() {
 
   // handleCompleteWork 함수 수정
   const handleCompleteWork = () => {
-    // 먼저 메인 프로세스에 상태 변경을 알림
     ipcRenderer.send('update-state', {
-      programStatus: 'READY',
+      programStatus: ProgramStatus.READY,  // 수정
       paragraphs: [],
       currentParagraph: 0,
       currentNumber: null,
@@ -371,8 +393,7 @@ function MainComponent() {
       isOverlayVisible: false,
     });
 
-    // 그 다음 로컬 상태 업데이트 - isSidebarVisible 유지
-    setState((prevState) => ({
+    setState(prevState => ({
       ...prevState,
       paragraphs: [],
       currentParagraph: 0,
@@ -380,7 +401,7 @@ function MainComponent() {
       currentFilePath: null,
       isPaused: false,
       isOverlayVisible: false,
-      programStatus: 'READY',
+      programStatus: ProgramStatus.READY,  // 수정
     }));
   };
 
@@ -390,7 +411,7 @@ function MainComponent() {
   };
 
   // MainComponent.js의 웰컴 스크린 return문 수정
-  if (state.paragraphs.length === 0 || state.programStatus === 'READY') {
+  if (state.paragraphs.length === 0 || state.programStatus === ProgramStatus.READY) {
     return (
       <div
         className="app-container"
@@ -414,7 +435,7 @@ function MainComponent() {
             deleteIcon: deleteIcon
           }}
           titlePath={state.titlePath}
-          currentFilePath={state.programStatus === 'PROCESS' ? state.currentFilePath : null}
+          currentFilePath={state.programStatus === ProgramStatus.PROCESS ? state.currentFilePath : null}
           onToggleOverlay={handleToggleOverlay}
           onToggleSearch={handleSearchToggle}
           onShowDebugConsole={handleShowDebugConsole}

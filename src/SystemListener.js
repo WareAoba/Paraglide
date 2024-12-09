@@ -1,5 +1,6 @@
 // SystemListener.js
 const { app, dialog, clipboard, systemPreferences, ipcMain, nativeTheme } = require('electron');
+const { register, unregisterAll } = require('electron-localshortcut');
 const { GlobalKeyboardListener } = require('node-global-key-listener');
 const { configActions, THEME } = require('./store/slices/configSlice');
 const store = require('./store/store');
@@ -45,6 +46,7 @@ class SystemListener {
       this.setupKeyboardListener();
       this.setupClipboardMonitor();
       this.setupThemeListener();
+      this.setupAppShortcuts();
       return true;
     } catch (error) {
       console.error('[SystemListener] 초기화 실패:', error);
@@ -230,6 +232,38 @@ class SystemListener {
       this.mainWindow.webContents.send(eventName);
       ipcMain.emit(eventName);
     }
+  }
+
+  // 앱 globalShortcut
+  setupAppShortcuts() {
+    try {
+      if (!this.mainWindow) {
+        throw new Error('메인 윈도우가 초기화되지 않았습니다.');
+      }
+
+      register(this.mainWindow, 'CommandOrControl+O', () => {
+        this.mainWindow?.webContents.send('trigger-load-file');
+      });
+
+      register(this.mainWindow, 'CommandOrControl+F', () => {
+        this.mainWindow?.webContents.send('toggle-search');
+      });
+
+      register(this.mainWindow, 'CommandOrControl+,', () => {
+        this.mainWindow?.webContents.send('toggle-settings');
+      });
+
+      console.log('[SystemListener] 앱 단축키 설정 완료');
+    } catch (error) {
+      console.error('[SystemListener] 앱 단축키 설정 실패:', error);
+    }
+  }
+
+  clearAppShortcuts() {
+    if (this.mainWindow) {
+      unregisterAll(this.mainWindow);
+    }
+    console.log('[SystemListener] 모든 단축키 해제됨');
   }
 
   // 네비게이션 메서드
