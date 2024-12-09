@@ -115,10 +115,9 @@
     filter: var(--icon-filter);
 }
 
-.button-group-controls .btn-icon,
-.menu-controls .btn-icon {
-    background: none;
+.button-group-controls .btn-icon {
     border: none;
+    background: none;
     padding: 0;
     cursor: pointer;
     outline: none;
@@ -126,14 +125,17 @@
     align-items: center;
     justify-content: center;
     border-radius: 15%;
+    box-shadow: 0 0 0 transparent, 0 0 0 transparent;
+    transition: all 0.3s ease;
     width: var(--btn-size); 
     height: var(--btn-size);
     margin: 0;
 }
 
-.button-group-controls .btn-icon:hover,
-.menu-controls .btn-icon:hover{
-  background-color: var(--hover-bg); 
+.button-group-controls .btn-icon:hover{
+    scale: 1.1;
+    box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.1),
+                2px 2px 6px rgba(0, 0, 0, 0.2);
 }
 
 .button-group-controls .btn-icon img[alt="Settings Icon"] {

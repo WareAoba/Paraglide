@@ -26,7 +26,9 @@
   --dark-bg-rgb: 30, 30, 30;
   --active-color: rgba(188, 188, 188, 1.0);
   --btn-bg: rgba(255, 255, 255, 0.025);
-  --icon-filter: brightness(0) saturate(100%) invert(37%) sepia(1%) saturate(0%) hue-rotate(19deg) brightness(96%) contrast(93%)
+  --icon-filter: brightness(0) saturate(100%) invert(37%) sepia(1%) saturate(0%) hue-rotate(19deg) brightness(96%) contrast(93%);
+  --container-shadow-up: #c7c7c7;
+  --container-shadow-down: #eeeeee; 
 
   /* 크기 */
   --container-width: 100vw;
@@ -63,6 +65,8 @@
   --active-color: rgba(48, 48, 48, 1.0);
   --btn-bg: rgba(0, 0, 0, 0.025);
   --icon-filter: brightness(0) saturate(100%) invert(61%) sepia(2%) saturate(0%) hue-rotate(327deg) brightness(95%) contrast(84%);
+  --container-shadow-up: #161616;
+  --container-shadow-down: #131313;
   
   /* 단락 관련 */
   --paragraph-bg: #262626;

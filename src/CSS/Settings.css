@@ -35,7 +35,8 @@
   border-radius: 12px;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
+  box-shadow: 12px 24px 48px rgba(0, 0, 0, 0.1),
+              12px 24px 48px rgba(0, 0, 0, 0.2);
   padding: 32px;
   opacity: 0;
   transition: transform 0.3s ease,
@@ -92,11 +93,13 @@
 
 .segment-control {
   display: flex;
-  background-color: rgba(0, 0, 0, 0.15);
+  background-color: rgba(0, 0, 0, 0.1);
   padding: 2px; /* 4px에서 3px로 줄임 */
   border-radius: 6px; /* 8px에서 6px로 줄임 */
   width: 100%;
   position: relative;
+  box-shadow: inset 4px 4px 8px var(--container-shadow-up),
+              inset 4px 4px 8px var(--container-shadow-down);
   height: 28px; /* 높이 명시적 지정 */
 }
 
@@ -137,7 +140,7 @@
   position: relative;
   z-index: 1;
   font-family: inherit;
-  opacity: 0.2; /* 기본 상태는 흐리게 */
+  opacity: 0.4; /* 기본 상태는 흐리게 */
 }
 
 .segment-control button.active {

@@ -234,7 +234,7 @@ function Sidebar({
           </div>
         </div>
       </div>
-      {isVisible && <div className="sidebar-overlay" onClick={onClose} />}
+      <div className={`sidebar-overlay ${isVisible ? 'visible' : ''}`} onClick={onClose} />
       <Menu id={MENU_ID}>
         <Item onClick={({ props }) => handleRemoveFile(props.file.filePath)}>
           <img src={icons?.deleteIcon} alt="삭제" />

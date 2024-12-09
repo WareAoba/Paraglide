@@ -13,15 +13,22 @@
     padding: 8px 12px;
     font-size: 0.95em;
     color: var(--text-color);
-    background: var(--bg-color);
-    border: 1px solid var(--border-color);
+    background: var(--container-bg);
+    border: none;
+    box-shadow: 0px 3px 8px var(--container-shadow-up),
+                0px 3px 8px var(--container-shadow-down),
+                inset 0 0 0 transparent,
+                inset 0 0 0 transparent;
     border-radius: 6px;
     cursor: pointer;
-    transition: all 0.2s ease;
+    opacity: 1;
+    transition: box-shadow 0.3s ease;
   }
-  
+
   .dropdown-button:hover {
-    background: var(--hover-bg);
+    box-shadow: 0 0 0 transparent, 0 0 0 transparent,
+                inset 4px 4px 16px var(--container-shadow-up),
+                inset 4px 4px 16px var(--container-shadow-down);
   }
   
   .dropdown-menu {
@@ -32,9 +39,9 @@
     width: 158px;
     gap: 6px;
     background: var(--bg-color);
-    border: 1px solid var(--border-color);
     border-radius: 6px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    box-shadow: 0px 16px 32px var(--container-shadow-up),
+                0px 16px 16px var(--container-shadow-down);
     opacity: 0;
     visibility: hidden;
     transform: translateY(-10px);

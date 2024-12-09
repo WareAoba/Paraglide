@@ -20,16 +20,17 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0);
   z-index: 999;
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
-  transition: opacity var(--transition-default);  /* App.css의 트랜지션 변수 재사용 */
+  transition: all 0.3s ease;  /* App.css의 트랜지션 변수 재사용 */
 }
 
 /* 사이드바가 열릴 때 오버레이 표시 */
-.sidebar.visible ~ .sidebar-overlay {
+.sidebar-overlay.visible {
+  background-color: rgba(0, 0, 0, 0.5);
   opacity: 1;
   visibility: visible;
   pointer-events: auto;  /* 클릭 이벤트 활성화 */
@@ -46,11 +47,6 @@
   filter: var(--icon-filter);
   border-radius: 15%;
   transition: opacity 0.2s;
-}
-
-.sidebar-icon-button:hover {
-  background-color: var(--hover-bg);
-  opacity: 0.7;
 }
 
 /* 사이드바 헤더 */
@@ -71,7 +67,7 @@
 }
 
 .header-title-image {
-  height: 20px;
+  height: 24px;
   width: auto;
   object-fit: contain;
   display: block; /* 이미지 기본 여백 제거 */
@@ -88,9 +84,17 @@
   align-items: center;
   justify-content: center;
   border-radius: 15%;
+  box-shadow: 0 0 0 transparent, 0 0 0 transparent;
+  transition: all 0.3s ease;
   width: var(--btn-size);
   height: var(--btn-size);
   margin: 0;
+}
+
+.sidebar-close-button:hover {
+  scale: 1.1;
+  box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.1),
+              2px 2px 6px rgba(0, 0, 0, 0.2);
 }
 
 .sidebar-header h2 {
@@ -132,6 +136,8 @@
 .current-file-info {
   padding: 16px;
   background: var(--container-bg);
+  box-shadow: 0 8px 16px var(--container-shadow-up),
+              0 8px 16px var(--container-shadow-down);
   border-radius: 8px;
   margin-bottom: 16px;
   display: flex;
@@ -216,6 +222,9 @@
   padding: 12px;
   border: none;
   background: var(--container-bg);
+  box-shadow: 2px 2px 8px var(--container-shadow-up),
+              2px 2px 8px var(--container-shadow-down),
+              inset 0 0 0 transparent, inset 0 0 0 transparent;
   color: var(--text-color);
   cursor: pointer;
   border-radius: 8px;
@@ -224,8 +233,9 @@
 }
 
 .control-button:hover {
-  background-color: var(--hover-bg);
-  opacity: 1;
+  box-shadow: 0 0 0 transparent, 0 0 0 transparent,
+              inset 2px 2px 8px var(--container-shadow-up),
+              inset 2px 2px 8px var(--container-shadow-down);
 }
 
 .control-button img {

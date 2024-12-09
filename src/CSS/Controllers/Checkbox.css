@@ -30,7 +30,10 @@
     border-radius: 3px;
     transform: scale(1);
     vertical-align: middle;
-    border: 1px solid var(--border-color);
+    background: var(--container-bg);
+    box-shadow: 0 4px 8px var(--container-shadow-up),
+                0 4px 8px var(--container-shadow-down),
+                inset 0 0 0 transparent, inset 0 0 0 transparent;
     transition: all 0.2s ease;
   }
   
@@ -71,7 +74,9 @@
   
   .checkbox-wrapper input[type="checkbox"]:checked + .checkbox span:first-child {
     background: var(--primary-color);
-    border-color: var(--primary-color);
+    box-shadow: 0 0 0 transparent, 0 0 0 transparent,
+                inset 0 -1px 2px var(--container-shadow-up),
+                inset 0 -1px 2px var(--container-shadow-down);
     animation: checkbox-wave 0.4s ease;
   }
   
