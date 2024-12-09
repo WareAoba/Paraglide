@@ -226,33 +226,45 @@ function Settings({ isVisible, onClose, icons }) {
           <div className="settings-group">
             <h3>오버레이</h3>
             <div className="slider-wrapper">
-              <span>전체 투명도</span>
-              <input 
-                type="range" 
-                min="0"
-                max="100"
-                step="1"
-                value={settings.windowOpacity * 100}
-                onChange={e => handleSettingChange({
-                  ...settings, 
-                  windowOpacity: parseFloat(e.target.value) / 100
-                })}
-              />
-            </div>
-            <div className="slider-wrapper">
-              <span>배경 투명도</span>
-              <input 
-                type="range" 
-                min="0"
-                max="100"
-                step="1"
-                value={settings.contentOpacity * 100}
-                onChange={e => handleSettingChange({
-                  ...settings, 
-                  contentOpacity: parseFloat(e.target.value) / 100
-                })}
-              />
-            </div>
+  <span>전체 투명도</span>
+  <input 
+    type="range" 
+    min="0"
+    max="100"
+    step="1"
+    value={settings.windowOpacity * 100}
+    onChange={e => {
+      const value = e.target.value;
+      // CSS 변수 업데이트
+      e.target.style.setProperty('--slider-value', `${value}%`);
+      // 기존 설정 업데이트
+      handleSettingChange({
+        ...settings, 
+        windowOpacity: parseFloat(value) / 100
+      });
+    }}
+  />
+</div>
+<div className="slider-wrapper">
+  <span>배경 투명도</span>
+  <input 
+    type="range" 
+    min="0"
+    max="100"
+    step="1"
+    value={settings.contentOpacity * 100}
+    onChange={e => {
+      const value = e.target.value;
+      // CSS 변수 업데이트
+      e.target.style.setProperty('--slider-value', `${value}%`);
+      // 기존 설정 업데이트
+      handleSettingChange({
+        ...settings, 
+        contentOpacity: parseFloat(value) / 100
+      });
+    }}
+  />
+</div>
             <div className="checkbox-wrapper">
               <input 
                 type="checkbox"

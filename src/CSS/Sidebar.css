@@ -222,8 +222,8 @@
   padding: 12px;
   border: none;
   background: var(--container-bg);
-  box-shadow: 2px 2px 8px var(--container-shadow-up),
-              2px 2px 8px var(--container-shadow-down),
+  box-shadow: 0px 4px 8px var(--container-shadow-up),
+              0px 4px 8px var(--container-shadow-down),
               inset 0 0 0 transparent, inset 0 0 0 transparent;
   color: var(--text-color);
   cursor: pointer;
@@ -262,6 +262,7 @@
   overflow-y: auto;
   display: flex;
   flex-direction: column;
+  width: 100%;
   gap: 16px;
 }
 
@@ -271,11 +272,14 @@
   padding: 12px 20px;
   border-radius: 6px;
   background-color: var(--container-bg);
+  box-shadow: 4px 4px 8px var(--container-shadow-up),
+              4px 4px 8px var(--container-shadow-down),
+              inset 0 0 0 transparent, inset 0 0 0 transparent;
   border: none;
   cursor: pointer;
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
               opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-              background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+              box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   flex-shrink: 0; /* 높이 고정만 필요 */
   will-change: transform, opacity, height;
@@ -318,7 +322,9 @@
 }
 
 .recent-file-item:hover {
-  background-color: var(--hover-bg);
+  box-shadow: 0 0 0 transparent, 0 0 0 transparent,
+              inset 2px 2px 8px var(--container-shadow-up),
+              inset 2px 2px 8px var(--container-shadow-down);
 }
 
 /* 파일 메인 정보 */
@@ -378,6 +384,7 @@
   min-height: 0; /* 필수: flex item 오버플로우 허용 */
   display: flex;
   flex-direction: column;
+  width: 100%;
   overflow: hidden; /* 추가 */
 }
 

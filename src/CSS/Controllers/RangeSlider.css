@@ -1,5 +1,4 @@
 /* src/CSS/RangeSlider.css */
-
 .slider-wrapper {
     display: flex;
     align-items: center;
@@ -11,27 +10,40 @@
   .slider-wrapper input[type="range"] {
     --thumb-size: 16px;
     --track-height: 4px;
-    --track-color: var(--border-color);
+    --track-color: #e0e0e0;
     --track-active-color: var(--primary-color);
-    --thumb-color: var(--bg-color);
+    --thumb-color: #ffffff;
     --thumb-border: 2px solid var(--primary-color);
     --thumb-shadow: 0 0 4px rgba(0, 0, 0, 0.1);
     --thumb-shadow-hover: 0 0 0 7px var(--primary-color) inset, 
-                         0 0 0 99px var(--bg-color) inset;
+                         0 0 0 99px #ffffff inset;
     --thumb-shadow-active: 0 0 0 13px var(--primary-color) inset;
-    --track-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1) inset;
-  
+    --track-shadow: 2px 2px 4px rgba(0, 0, 0, 0.05) inset;
+
     width: 160px;
     margin-left: 16px;
     background: transparent;
     height: var(--track-height);
-  }
+}
+
+[data-theme="dark"] .slider-wrapper input[type="range"] {
+  --track-color: var(--border-color);
+  --thumb-color: var(--bg-color);
+  --thumb-shadow-hover: 0 0 0 7px var(--primary-color) inset, 
+                       0 0 0 99px var(--bg-color) inset;
+  --track-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1) inset;
+}
   
   /* 트랙 스타일 */
   .slider-wrapper input[type="range"]::-webkit-slider-runnable-track {
     width: 100%;
     height: var(--track-height);
-    background: var(--track-color);
+    background: linear-gradient(
+      to right,
+      var(--track-active-color) 0%,
+      var(--track-active-color) var(--slider-value, 50%),
+      var(--track-color) var(--slider-value, 50%)
+    );
     border-radius: 2px;
     box-shadow: var(--track-shadow);
   }
