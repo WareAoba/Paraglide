@@ -184,7 +184,7 @@
   color: var(--text-color);
   opacity: 0.5;
   direction: rtl;
-  text-align: left;
+  text-align: right;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
