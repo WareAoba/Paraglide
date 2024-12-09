@@ -125,6 +125,19 @@ function Settings({ isVisible, onClose, icons }) {
   };
 
   useEffect(() => {
+    // 설정이 로드되면 슬라이더 값 초기화
+    const windowOpacitySlider = document.querySelector('input[type="range"][value="' + (settings.windowOpacity * 100) + '"]');
+    const contentOpacitySlider = document.querySelector('input[type="range"][value="' + (settings.contentOpacity * 100) + '"]');
+  
+    if (windowOpacitySlider) {
+      windowOpacitySlider.style.setProperty('--slider-value', `${settings.windowOpacity * 100}%`);
+    }
+    if (contentOpacitySlider) {
+      contentOpacitySlider.style.setProperty('--slider-value', `${settings.contentOpacity * 100}%`);
+    }
+  }, [settings.windowOpacity, settings.contentOpacity]);
+
+  useEffect(() => {
     function handleClickOutside(event) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         
@@ -233,14 +246,18 @@ function Settings({ isVisible, onClose, icons }) {
     max="100"
     step="1"
     value={settings.windowOpacity * 100}
+    style={{
+      // CSS 변수 대신 직접 background 속성 사용
+      background: `linear-gradient(to right, 
+        var(--primary-color) 0%, 
+        var(--primary-color) ${settings.windowOpacity * 100}%, 
+        #e0e0e0 ${settings.windowOpacity * 100}%)`
+    }}
     onChange={e => {
-      const value = e.target.value;
-      // CSS 변수 업데이트
-      e.target.style.setProperty('--slider-value', `${value}%`);
-      // 기존 설정 업데이트
+      const value = parseFloat(e.target.value);
       handleSettingChange({
         ...settings, 
-        windowOpacity: parseFloat(value) / 100
+        windowOpacity: value / 100
       });
     }}
   />
