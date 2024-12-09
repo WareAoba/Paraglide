@@ -260,10 +260,14 @@ class SystemListener {
   }
 
   clearAppShortcuts() {
-    if (this.mainWindow) {
-      unregisterAll(this.mainWindow);
+    try {
+      if (this.mainWindow && !this.mainWindow.isDestroyed()) {
+        unregisterAll(this.mainWindow);
+        console.log('[SystemListener] 모든 단축키 해제됨');
+      }
+    } catch (error) {
+      console.error('[SystemListener] 단축키 해제 중 오류:', error);
     }
-    console.log('[SystemListener] 모든 단축키 해제됨');
   }
 
   // 네비게이션 메서드
