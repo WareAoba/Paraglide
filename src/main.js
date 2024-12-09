@@ -141,6 +141,7 @@ const updateState = async (newState) => {
       timestamp: Date.now(),
       processMode: DEFAULT_PROCESS_MODE
     };
+    mainWindow.setTitle('Paraglide');
   } else if (newState.programStatus === ProgramStatus.PROCESS && globalState.programStatus !== ProgramStatus.PROCESS) {
     // PROCESS 상태로 처음 전환될 때 (파일 열기)
     globalState = {
@@ -190,6 +191,11 @@ const StatusManager = {
     if (!this.validateTransition(globalState.programStatus, newStatus)) {
       throw new Error(`Invalid transition: ${globalState.programStatus} -> ${newStatus}`);
     }
+
+    if (newStatus === ProgramStatus.READY && mainWindow) {
+      mainWindow.setTitle('Paraglide');
+    }
+
     await updateState({ programStatus: newStatus, timestamp: Date.now() });
   },
 
@@ -564,6 +570,17 @@ const FileManager = {
           processMode: processMode,
           currentNumber: result.paragraphsMetadata[restoredPosition]?.pageNumber || null
         });
+
+const formatFileName = (filePath, maxLength = 30) => {
+  const fileName = path.basename(filePath);
+  if (fileName.length > maxLength) {
+    return fileName.slice(0, maxLength - 3) + '...';
+  }
+  return fileName;
+};
+
+// 사용할 때
+mainWindow.setTitle(`${formatFileName(filePath)} - Paraglide`);
 
         const currentContent = result.paragraphsToDisplay[restoredPosition];
         if (currentContent) {

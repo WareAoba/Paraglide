@@ -413,25 +413,24 @@ function MainComponent() {
 
   // handleCompleteWork 함수 수정
   const handleCompleteWork = () => {
-    ipcRenderer.send('update-state', {
-      programStatus: ProgramStatus.READY,  // 수정
+    // 공통 상태 객체 정의
+    const resetState = {
       paragraphs: [],
       currentParagraph: 0,
       currentNumber: null,
       currentFilePath: null,
       isPaused: false,
       isOverlayVisible: false,
-    });
-
-    setState(prevState => ({
-      ...prevState,
-      paragraphs: [],
-      currentParagraph: 0,
-      currentNumber: null,
-      currentFilePath: null,
-      isPaused: false,
-      isOverlayVisible: false,
-      programStatus: ProgramStatus.READY,  // 수정
+      programStatus: ProgramStatus.READY
+    };
+  
+    // IPC로 상태 업데이트 전송
+    ipcRenderer.send('update-state', resetState);
+  
+    // 로컬 상태 업데이트
+    setState(prev => ({
+      ...prev,
+      ...resetState
     }));
   };
 
