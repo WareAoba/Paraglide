@@ -2,18 +2,199 @@
 import React, { useState, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react';
 import Hangul from 'hangul-js';
 import '../../CSS/Views/Search.css';
-import { debounce } from 'lodash'; // 상단에 추가
+import { debounce } from 'lodash';
+
+// 검색 유틸리티 함수 모음
+const SearchUtils = {
+  removeSpaces: (text) => text.replace(/\s+/g, ''),
+  normalizeText: (text) => text.trim().toLowerCase(),
+  isChosung: (str) => /^[ㄱ-ㅎ]+$/.test(str)
+};
+
+// 1. 초성 검색 함수
+const searchChosung = (text, term) => {
+  const termChosung = SearchUtils.removeSpaces(term);
+  const textChosung = Hangul.disassemble(SearchUtils.removeSpaces(text), true)
+    .map(char => char[0])
+    .join('');
+  return textChosung.includes(termChosung);
+};
+
+// 2. 완전 일치 검색 함수
+const searchExactMatch = (text, term) => {
+  const cleanText = SearchUtils.removeSpaces(text);
+  const cleanTerm = SearchUtils.removeSpaces(term);
+  return cleanText.includes(cleanTerm);
+};
+
+// 3. 부분 일치 검색 함수
+const searchPartialMatch = (text, term) => {
+  const termDecomposed = Hangul.disassemble(SearchUtils.removeSpaces(term)).join('');
+  const textDecomposed = Hangul.disassemble(SearchUtils.removeSpaces(text)).join('');
+  return textDecomposed.includes(termDecomposed);
+};
+
+// 4. 초성 하이라이트 함수
+const highlightChosung = (text, term) => {
+  const tokens = [];
+  let lastIndex = 0;
+  const termChosung = SearchUtils.removeSpaces(term);
+
+  for (let i = 0; i < text.length; i++) {
+    if (text[i].trim() === '') continue;
+
+    let extractedChars = 0;
+
+    for (let j = i; j < text.length && extractedChars < termChosung.length; j++) {
+      if (text[j].trim() === '') continue;
+      extractedChars++;
+
+      if (extractedChars === termChosung.length) {
+        const extracted = text.slice(i, j + 1);
+        const extractedChosung = Hangul.disassemble(SearchUtils.removeSpaces(extracted), true)
+          .map(char => char[0])
+          .join('');
+
+        if (extractedChosung === termChosung) {
+          if (i > lastIndex) tokens.push(text.substring(lastIndex, i));
+          tokens.push(
+            <mark key={`chosung-${i}`} className="search-highlight-chosung">
+              {extracted}
+            </mark>
+          );
+          lastIndex = j + 1;
+          i = j;
+          break;
+        }
+      }
+    }
+  }
+  if (lastIndex < text.length) tokens.push(text.substring(lastIndex));
+  return tokens;
+};
+
+// 5. 완전 일치 하이라이트 함수
+const highlightExactMatch = (text, term) => {
+  const tokens = [];
+  let lastIndex = 0;
+  const cleanTerm = SearchUtils.removeSpaces(term);
+
+  for (let i = 0; i < text.length; i++) {
+    const remainingText = text.slice(i);
+    const cleanRemaining = SearchUtils.removeSpaces(remainingText);
+
+    if (cleanRemaining.startsWith(cleanTerm)) {
+      let startOffset = 0;
+      while (startOffset < remainingText.length && !remainingText[startOffset].trim()) {
+        startOffset++;
+      }
+
+      let realLength = startOffset;
+      let cleanLength = 0;
+
+      while (cleanLength < cleanTerm.length && realLength < remainingText.length) {
+        if (remainingText[realLength].trim()) cleanLength++;
+        realLength++;
+      }
+
+      if (i > lastIndex) tokens.push(text.substring(lastIndex, i));
+      tokens.push(
+        <mark key={`exact-${i}`} className="search-highlight-exact">
+          {text.substring(i + startOffset, i + realLength)}
+        </mark>
+      );
+      lastIndex = i + realLength;
+      i = lastIndex - 1;
+    }
+  }
+
+  if (lastIndex < text.length) tokens.push(text.substring(lastIndex));
+  return tokens;
+};
+
+// 6. 부분 일치 하이라이트 함수
+const highlightPartialMatch = (text, term) => {
+  const tokens = [];
+  let lastIndex = 0;
+  const searchTerm = SearchUtils.removeSpaces(term);
+  const searchJamo = Hangul.disassemble(searchTerm);
+
+  for (let i = 0; i < text.length; i++) {
+    // 공백 건너뛰기 제거 - 공백도 포함하여 처리
+    let matchFound = false;
+    const remainingText = text.slice(i);
+    
+    // 검색을 위한 정규화된 텍스트만 공백 제거
+    const cleanRemaining = SearchUtils.removeSpaces(remainingText);
+    const maxLen = Math.min(searchTerm.length + 2, cleanRemaining.length);
+
+    for (let len = 1; len <= maxLen; len++) {
+      // 정규화된 텍스트로 검색
+      const cleanTarget = cleanRemaining.slice(0, len);
+      const targetJamo = Hangul.disassemble(cleanTarget);
+
+      if (
+        targetJamo.length >= searchJamo.length &&
+        searchJamo.every((char, idx) => targetJamo[idx] === char)
+      ) {
+        // 시작 위치 조정 - 첫 비공백 문자 찾기
+        let startOffset = 0;
+        while (startOffset < remainingText.length && !remainingText[startOffset].trim()) {
+          startOffset++;
+        }
+
+        // 실제 길이 계산 (공백 포함)
+        let realLength = startOffset;
+        let cleanCount = 0;
+        
+        while (cleanCount < len && realLength < remainingText.length) {
+          if (remainingText[realLength].trim()) {
+            cleanCount++;
+          }
+          realLength++;
+        }
+
+        // 원본 텍스트 자르기 (공백 포함)
+        if (i > lastIndex) {
+          tokens.push(text.substring(lastIndex, i + startOffset));
+        }
+        
+        tokens.push( // startOffset부터 시작
+          <mark key={`partial-${i}`} className="search-highlight-partial">
+            {remainingText.slice(startOffset, realLength)}
+          </mark>
+        );
+
+        lastIndex = i + realLength;
+        i = lastIndex - 1;
+        matchFound = true;
+        break;
+      }
+    }
+
+    if (!matchFound && i >= lastIndex) {
+      tokens.push(text[i]);
+      lastIndex = i + 1;
+    }
+  }
+
+  if (lastIndex < text.length) {
+    tokens.push(text.substring(lastIndex));
+  }
+  return tokens;
+};
 
 const Search = forwardRef((props, ref) => {
   const { paragraphs, metadata, onSelect, isVisible, onClose, icons, theme } = props;
 
+  // 상태 변수 선언
   const [searchTerm, setSearchTerm] = useState('');
   const [results, setResults] = useState([]);
-  const [dragStart, setDragStart] = useState(null);
-  const [removingIndexes, setRemovingIndexes] = useState(new Set());
-  const [prevResults, setPrevResults] = useState([]);
   const [filteredResults, setFilteredResults] = useState([]);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [removingIndexes, setRemovingIndexes] = useState(new Set());
+  const [prevResults, setPrevResults] = useState([]);
+  const [dragStart, setDragStart] = useState(null);
 
   const handleMouseDown = (e) => {
     // search-box를 클릭한 경우는 무시
@@ -38,222 +219,23 @@ const Search = forwardRef((props, ref) => {
     setDragStart(null);
   };
 
-  const highlightMatch = (text, term) => {
-    if (!term.trim()) return text;
-  
-    try {
-      const normalizedTerm = normalizeText(term);
-      const isChosungSearch = isChosung(normalizedTerm);
-  
-      if (isChosungSearch) {
-        const tokens = [];
-        let lastIndex = 0;
-      
-        for (let i = 0; i < text.length; i++) {
-          // 공백은 그냥 건너뛰기만 함
-          if (text[i].trim() === '') {
-            continue;
-          }
-      
-          let extractedChars = 0;
-          
-          for (let j = i; j < text.length && extractedChars < normalizedTerm.length; j++) {
-            if (text[j].trim() === '') {
-              continue;
-            }
-            extractedChars++;
-            
-            if (extractedChars === normalizedTerm.length) {
-              const extracted = text.slice(i, j + 1);
-              const extractedChosung = Hangul.disassemble(removeSpaces(extracted), true)
-                .map(arr => arr[0])
-                .join('');
-      
-              if (extractedChosung === normalizedTerm) {
-                if (i > lastIndex) {
-                  tokens.push(text.substring(lastIndex, i));
-                }
-                tokens.push(
-                  <mark key={`chosung-${i}`} className="search-highlight-chosung">
-                    {extracted}
-                  </mark>
-                );
-                lastIndex = j + 1;
-                i = j;
-                break;
-              }
-            }
-          }
-        }
-      
-        if (lastIndex < text.length) {
-          tokens.push(text.substring(lastIndex));
-        }
-      
-        return tokens;
-      } else {
-        // 완전 일치와 부분 일치를 동시에 시도
-        const exactTokens = exactMatch(text, term);
-        if (exactTokens.some(token => token.type === 'mark')) { // 완전 일치가 있는 경우
-          return exactTokens;
-        }
-        return highlightPartialMatches(text, term); // 항상 부분 일치도 시도
-      }
-    } catch (e) {
-      console.error('Highlight error:', e);
-      return text;
-    }
+  // 검색어 변경 핸들러
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+    debouncedSearch(e.target.value);
   };
 
-  // 완전 일치 검사 (초록색)
-  const exactMatch = (text, term) => {
-    const tokens = [];
-    let lastIndex = 0;
-    
-    const cleanTerm = removeSpaces(term);
-    
-    for (let i = 0; i < text.length; i++) {
-      const remainingText = text.slice(i);
-      const cleanRemaining = removeSpaces(remainingText);
-      
-      if (cleanRemaining.startsWith(cleanTerm)) {
-        // 실제 매칭 시작 위치 계산 (앞쪽 공백 제거)
-        let startOffset = 0;
-        while (startOffset < remainingText.length && !remainingText[startOffset].trim()) {
-          startOffset++;
-        }
-        
-        // 매칭된 길이 계산
-        let realLength = startOffset;  // 시작점을 공백 이후로 조정
-        let cleanLength = 0;
-        
-        while (cleanLength < cleanTerm.length && realLength < remainingText.length) {
-          if (remainingText[realLength].trim()) {
-            cleanLength++;
-          }
-          realLength++;
-        }
-        
-        if (i > lastIndex) {
-          tokens.push(text.substring(lastIndex, i));
-        }
-        
-        tokens.push(
-          <mark key={`exact-${i}`} className="search-highlight-exact">
-            {text.substring(i + startOffset, i + realLength)}
-          </mark>
-        );
-        
-        lastIndex = i + realLength;
-        i = lastIndex - 1;
-      }
-    }
-    
-    if (lastIndex < text.length) {
-      tokens.push(text.substring(lastIndex));
-    }
-    
-    return tokens;
-  };
-
-  // 부분 일치 하이라이트 헬퍼 함수
-  const highlightPartialMatches = (text, term) => {
-    // 완전일치 검사 먼저 시도
-    const exactTokens = exactMatch(text, term);
-    if (exactTokens.some(token => token.type === 'mark')) {
-      return exactTokens;
-    }
-    
-    // 이후 부분일치 검사
-    const tokens = [];
-    let lastIndex = 0;
-    
-    const searchTerm = removeSpaces(term);
-    const searchJamo = Hangul.disassemble(searchTerm);
-    
-    for (let i = 0; i < text.length; i++) {
-      if (text[i].trim() === '') continue;
-      
-      let matchFound = false;
-      const remainingText = text.slice(i);
-      const cleanRemaining = removeSpaces(remainingText);
-      
-      const maxLen = Math.min(searchTerm.length + 2, cleanRemaining.length);
-      
-      for (let len = 1; len <= maxLen; len++) {
-        const target = cleanRemaining.slice(0, len);
-        const targetJamo = Hangul.disassemble(target);
-        
-        if (targetJamo.length >= searchJamo.length && 
-            searchJamo.every((char, idx) => targetJamo[idx] === char)) {
-          
-          // 실제 매칭된 길이 계산 (공백 제외)
-          let realLength = 0;
-          let cleanLength = 0;
-          
-          while (cleanLength < len && realLength < remainingText.length) {
-            if (remainingText[realLength].trim()) {
-              cleanLength++;
-            }
-            realLength++;
-          }
-          
-          if (i > lastIndex) {
-            tokens.push(text.substring(lastIndex, i));
-          }
-          
-          tokens.push(
-            <mark key={`partial-${i}`} className="search-highlight-partial">
-              {remainingText.slice(0, realLength)}
-            </mark>
-          );
-          
-          lastIndex = i + realLength;
-          i = lastIndex - 1;
-          matchFound = true;
-          break;
-        }
-      }
-      
-      if (!matchFound && i >= lastIndex) {
-        tokens.push(text[i]);
-        lastIndex = i + 1;
-      }
-    }
-    
-    if (lastIndex < text.length) {
-      tokens.push(text.substring(lastIndex));
-    }
-    
-    return tokens;
-  };
-
-  // 공백 제거 함수 분리
-  const removeSpaces = (text) => text.replace(/\s+/g, '');
-
-  // 텍스트 정규화 함수 수정
-  const normalizeText = (text) => {
-    return text.trim().toLowerCase();
-  };
-
-  const isChosung = (str) => { // 초성 체크
-    const chosungRegex = /^[ㄱ-ㅎ]+$/;
-    return chosungRegex.test(str);
-  };
-
+  // 디바운스된 검색 함수
   const debouncedSearch = useCallback(
     debounce((term) => {
-      if (isAnimating) return;
-
-      if (!term.trim() || !paragraphs) {
+      if (isAnimating || !term.trim() || !paragraphs) {
         setResults([]);
         return;
       }
 
-      const normalizedSearchTerm = normalizeText(term);
-      const isChosungSearch = isChosung(normalizedSearchTerm);
+      const normalizedSearchTerm = SearchUtils.normalizeText(term);
+      const isChosungSearch = SearchUtils.isChosung(normalizedSearchTerm);
 
-      // 초성 한 글자 검색 방지
       if (isChosungSearch && normalizedSearchTerm.length === 1) {
         setResults([]);
         return;
@@ -261,52 +243,27 @@ const Search = forwardRef((props, ref) => {
 
       const searchResults = paragraphs
         .map((paragraph, index) => {
-          // 1. 먼저 paragraph 타입 체크
           const isParagraphMode = typeof paragraph === 'object' && paragraph?.text;
-          const isLineMode = typeof paragraph === 'string' || paragraph?.content;
+          const paragraphText = isParagraphMode ? paragraph.text : paragraph;
+          const pageInfo = metadata[index]?.pageNumber || '페이지 정보 없음';
 
-          // 2. 모드에 따라 텍스트와 페이지 정보 추출
-          let paragraphText, pageInfo;
+          const normalizedText = SearchUtils.normalizeText(paragraphText.toString());
 
-          if (isParagraphMode) {
-            paragraphText = paragraph.text;
-            pageInfo = metadata[index]?.pageInfo?.start || metadata[index]?.pageNumber;
-          } else if (isLineMode) {
-            paragraphText = typeof paragraph === 'string' ? paragraph : paragraph.content;
-            pageInfo = metadata[index]?.lineNumber || metadata[index]?.pageNumber;
-          } else {
-            return null; // 유효하지 않은 형식
-          }
-
-          // 이하 기존 검색 로직...
-          const normalizedText = normalizeText(paragraphText.toString());
           let matches = false;
 
           if (isChosungSearch) {
-            // 초성 검색 (초성일 때만)
-            const searchChosung = removeSpaces(normalizedSearchTerm);
-            const textChosung = Hangul.disassemble(removeSpaces(normalizedText), true)
-              .map(arr => arr[0]).join('');
-            matches = textChosung.includes(searchChosung);
+            matches = searchChosung(normalizedText, normalizedSearchTerm);
           } else {
-            // 일반 검색 (초성이 아닐 때)
-            // 1. 일반 텍스트 매칭 (공백 무시)
-            const normalMatch = removeSpaces(normalizedText)
-              .includes(removeSpaces(normalizedSearchTerm));
-
-            // 2. 자모 분리 매칭 (공백 무시)
-            const searchDecomposed = Hangul.disassemble(removeSpaces(normalizedSearchTerm)).join('');
-            const textDecomposed = Hangul.disassemble(removeSpaces(normalizedText)).join('');
-            const decomposedMatch = textDecomposed.includes(searchDecomposed);
-
-            matches = normalMatch || decomposedMatch;
+            matches =
+              searchExactMatch(normalizedText, normalizedSearchTerm) ||
+              searchPartialMatch(normalizedText, normalizedSearchTerm);
           }
 
           if (matches) {
             return {
               index,
               text: paragraphText,
-              pageInfo: pageInfo || '페이지 정보 없음',
+              pageInfo,
               matchType: isChosungSearch ? 'chosung' : 'normal',
               mode: isParagraphMode ? 'paragraph' : 'line'
             };
@@ -320,19 +277,33 @@ const Search = forwardRef((props, ref) => {
     [paragraphs, metadata, isAnimating]
   );
 
+  // 검색 결과 하이라이트 처리 함수
+  const highlightMatch = (text, term) => {
+    if (!term.trim()) return text;
+
+    const normalizedTerm = SearchUtils.normalizeText(term);
+    const isChosungSearch = SearchUtils.isChosung(normalizedTerm);
+
+    try {
+      if (isChosungSearch) {
+        return highlightChosung(text, term);
+      } else {
+        const exactTokens = highlightExactMatch(text, term);
+        if (exactTokens.some(token => token.props && token.props.className.includes('search-highlight-exact'))) {
+          return exactTokens;
+        }
+        return highlightPartialMatch(text, term);
+      }
+    } catch (e) {
+      console.error('Highlight error:', e);
+      return text;
+    }
+  };
+
   const checkPagePattern = (text) => {
     const pagePatterns = {
       // 1. 단순 숫자 ("123")
       numberOnly: /^(\d+)$/,
-
-      // 2. 한글 스타일 - 캡처 그룹 수정 필요
-      koreanStyle: /^\s*(\d+)\s*(?:페이지|페)$|^(?:페이지|페)\s*(\d+)\s*$/,
-
-      // 3. 영문 스타일 - 캡처 그룹 수정 필요
-      englishStyle: /^\s*(\d+)\s*(?:page|p)$|^(?:page|p)\s*(\d+)\s*$/i,
-
-      // 4. 범위 스타일 - 첫 번째 숫자만 필요
-      rangeStyle: /^(?:(?:페이지|페|page|p)\s*)?(\d+)(?:\s*[-~]\s*\d+)?$/i
     };
 
     for (const pattern of Object.values(pagePatterns)) {
@@ -383,12 +354,6 @@ const Search = forwardRef((props, ref) => {
       onSelect(paragraphIndex);
       onClose();
     }
-  };
-
-  // 검색어 변경 핸들러
-  const handleSearchChange = (e) => {
-    setSearchTerm(e.target.value);
-    debouncedSearch(e.target.value);
   };
 
   // 결과 업데이트 및 애니메이션 처리
