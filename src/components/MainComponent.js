@@ -745,7 +745,7 @@ function MainComponent() {
 
                     return ` - ${currentPage || '?'}/${maxPage}P.`;
                   })()}
-                  {` (${state.currentParagraph + 1})`}
+                  {` (${Math.round((state.currentParagraph + 1) / state.paragraphs.length * 100)}%)`}
                 </span>
               </div>
               <div className="path-group">
