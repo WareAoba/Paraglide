@@ -210,7 +210,11 @@
   transition: transform 1s ease-out;
 }
 
-.current-file-name-container:hover .current-file-name-wrapper {
+.current-file-name-container[data-needs-animation="true"] .current-file-name-wrapper {
+  transition: transform 0.3s ease-out;
+}
+
+.current-file-name-container[data-needs-animation="true"]:hover .current-file-name-wrapper {
   transform: translateX(calc(var(--container-width) - 100%));
   transition: transform 4s ease-in;
   transition-delay: 1s;

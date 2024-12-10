@@ -95,12 +95,15 @@ function Sidebar({
       const containerWidth = container.offsetWidth;
       const wrapperWidth = wrapper.offsetWidth;
       
-      // 텍스트가 컨테이너보다 길 경우에만 애니메이션에 필요한 거리 계산
+      // 텍스트가 컨테이너보다 길 경우에만 애니메이션 활성화
       if (wrapperWidth > containerWidth) {
+        container.setAttribute('data-needs-animation', 'true');
         container.style.setProperty('--container-width', `${containerWidth}px`);
+      } else {
+        container.setAttribute('data-needs-animation', 'false');
       }
     }
-  }, [currentFilePath]); // 파일 경로가 변경될 때마다 재계산
+  }, [currentFilePath]);
 
   // 로그 삭제 핸들러 - 단순히 삭제 요청만
   const handleRemoveFile = async (filePath) => {
