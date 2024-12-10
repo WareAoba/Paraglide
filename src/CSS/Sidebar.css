@@ -276,12 +276,15 @@
 /* 파일 목록 */
 .recent-file-list {
   flex: 1 1 auto;
-  overflow-y: auto;
   display: flex;
   flex-direction: column;
-  overflow-x: visible;
   width: 100%;
   gap: 16px;
+  overflow: overlay; /* 세로 스크롤만 허용 */
+}
+
+.recent-file-list::-webkit-scrollbar {
+  display: none;
 }
 
 /* 파일 항목 */
