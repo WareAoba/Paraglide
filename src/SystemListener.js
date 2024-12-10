@@ -178,7 +178,8 @@ class SystemListener {
         const isAlt = down["LEFT ALT"] || down["RIGHT ALT"]
         const keyName = e.name;
         
-        if(isShift) {
+        // Ctrl/Meta 키가 눌려있으면 Shift 조합 단축키 무시
+        if(isShift && !isCtrlOrCmd) {
           if(isAlt) {
             // Shift + Alt 조합
             switch(keyName) {

@@ -489,6 +489,21 @@ const FileManager = {
 
   async openFile(filePath, content = null) {
     try {
+      // 파일 확장자 검사
+      const fileExtension = path.extname(filePath).toLowerCase();
+      if (fileExtension !== '.txt') {
+        dialog.showMessageBoxSync(mainWindow, {
+          type: 'warning',
+          buttons: ['확인'],
+          defaultId: 1,
+          title: '파일 형식 오류',
+          message: '지원하지 않는 파일 형식입니다.\n(.txt 파일만 지원됩니다)',
+          cancelId: 1,
+          noLink: true,
+          normalizeAccessKeys: true,
+        });
+        return { success: false };
+      }
       // content가 직접 제공되지 않은 경우 파일 존재 여부 확인
       if (!content) {
         try {
@@ -496,11 +511,15 @@ const FileManager = {
         } catch (error) {
           if (error.code === 'ENOENT') {
             // 파일이 존재하지 않는 경우
-            dialog.showMessageBox(mainWindow, {
+            dialog.showMessageBoxSync(mainWindow, {
               type: 'warning',
-              title: '파일 오류',
-              message: '파일을 찾을 수 없습니다.\ 기록을 삭제합니다.',
-              buttons: ['확인']
+              buttons: ['확인'],
+              defaultId: 1,
+              title: '파일 열기 오류',
+              message: '파일이 존재하지 않습니다.\n 기록을 삭제합니다.',
+              cancelId: 1,
+              noLink: true, // 버튼을 링크 스타일로 표시하지 않음
+              normalizeAccessKeys: true, // 단축키 정규화
             });
   
             // 로그에서 해당 파일 기록 삭제
@@ -519,6 +538,16 @@ const FileManager = {
       const fileContent = content || await fs.readFile(filePath, 'utf8');
       if (!fileContent) {
         console.error('[Main] 파일 내용 없음:', filePath);
+        dialog.showMessageBoxSync(mainWindow, {
+          type: 'warning',
+          buttons: ['확인'],
+          defaultId: 1,
+          title: '잘못된 파일',
+          message: '파일 내용이 비어있습니다.',
+          cancelId: 1,
+          noLink: true, // 버튼을 링크 스타일로 표시하지 않음
+          normalizeAccessKeys: true, // 단축키 정규화
+        });
         return { success: false };
       }
   
@@ -780,7 +809,7 @@ const WindowManager = {
           buttons: ['종료', '취소'],
           defaultId: 1,
           title: '작업 종료',
-          message: '작업 중인 파일이 있습니다. 정말 종료하시겠습니까?',
+          message: '작업 중인 파일이 있습니다.\n 정말 종료하시겠습니까?',
           cancelId: 1,
           noLink: true, // 버튼을 링크 스타일로 표시하지 않음
           normalizeAccessKeys: true, // 단축키 정규화

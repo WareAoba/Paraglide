@@ -189,6 +189,31 @@
   white-space: nowrap;
   text-align: right;
   direction: ltr;
+  position: relative;
+  display: inline-block; /* 추가 */
+}
+
+/* 호버 시 애니메이션을 위한 컨테이너 */
+.current-file-name-container {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  text-align: right;
+}
+
+.current-file-name-wrapper {
+  display: inline-block;
+  position: relative;
+  white-space: nowrap;
+  text-align: right;
+  transform: translateX(0);
+  transition: transform 1s ease-out;
+}
+
+.current-file-name-container:hover .current-file-name-wrapper {
+  transform: translateX(calc(var(--container-width) - 100%));
+  transition: transform 4s ease-in;
+  transition-delay: 1s;
 }
 
 .current-page-info {

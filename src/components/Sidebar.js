@@ -87,6 +87,21 @@ function Sidebar({
     return truncatedPath;
   };
 
+  useEffect(() => {
+    const container = document.querySelector('.current-file-name-container');
+    const wrapper = document.querySelector('.current-file-name-wrapper');
+    
+    if (container && wrapper) {
+      const containerWidth = container.offsetWidth;
+      const wrapperWidth = wrapper.offsetWidth;
+      
+      // 텍스트가 컨테이너보다 길 경우에만 애니메이션에 필요한 거리 계산
+      if (wrapperWidth > containerWidth) {
+        container.style.setProperty('--container-width', `${containerWidth}px`);
+      }
+    }
+  }, [currentFilePath]); // 파일 경로가 변경될 때마다 재계산
+
   // 로그 삭제 핸들러 - 단순히 삭제 요청만
   const handleRemoveFile = async (filePath) => {
     try {
@@ -184,7 +199,11 @@ function Sidebar({
                 <img src={icons?.textFileIcon} alt="파일" className="current-file-icon" />
                 <div className="current-file-content">
                   <div className="current-file-info-header">
+                  <div className="current-file-name-container">
+                  <div className="current-file-name-wrapper">
                     <span className="current-file-name">{path.basename(currentFilePath)}</span>
+                  </div>
+                  </div>
                   </div>
                   <div className="current-page-info">
                     {(() => { // 페이지 정보 유효성 검사
