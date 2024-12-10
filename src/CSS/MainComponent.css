@@ -72,6 +72,10 @@
 }
 
   .welcome-screen .btn-primary {
+    display: flex;
+    align-items: center;
+    justify-content: center; /* 추가: 가로축 중앙 정렬 */
+    gap: 10px;
     min-width: 200px;
     height: 48px;
     padding: 0 var(--spacing-xl);
@@ -79,6 +83,9 @@
     font-weight: 500;
     font-family: inherit;
     background-color: var(--primary-color);
+    box-shadow: 4px 4px 12px var(--primary-color-shadow-up),
+                4px 4px 12px var(--primary-color-shadow-down),
+                inset 0 0 0 transparent, inset 0 0 0 transparent;
     color: var(--primary-text);
     border: none;
     border-radius: 6px;
@@ -87,7 +94,15 @@
 }
 
 .welcome-screen .btn-primary:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 0 0 transparent, 0 0 0 transparent,
+                inset 4px 4px 12px var(--primary-color-shadow-up),
+                inset 4px 4px 12px var(--primary-color-shadow-down);
+}
+
+.welcome-screen .icon-primary {
+    width: 24px;
+    height: 24px;
+    filter: var(--primary-filter);
 }
 
 .main-container {
@@ -108,9 +123,10 @@
   top: var(--spacing-md); /* 상단 여백 */
   left: var(--spacing-md); /* 좌측 여백 */
   z-index: 100; /* 다른 요소들보다 위에 표시 */
-    width: 100%;
-    filter: var(--icon-filter);
-    gap: var(--spacing-xs);
+  width: 100%;
+  filter: var(--icon-filter);
+  display: flex;
+  gap: var(--spacing-xs);
 }
 
 [data-theme="dark"] .button-group-controls {

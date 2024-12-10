@@ -310,15 +310,18 @@
   width: 80%;
   max-width: 400px;     /* 최대 너비 제한 */
   height: 40px;
-  background-color: var(--primary-color, #007bff);
-  color: white;
+  background-color: var(--primary-color);
+  color: var(--primary-text);
+  box-shadow: 0 4px 12px var(--primary-color-shadow-up),
+              0 4px 12px var(--primary-color-shadow-down),
+              inset 0 0 0 transparent, inset 0 0 0 transparent;
   border: none;
   border-radius: 16px;
   font-weight: 500;
   font-size: 16px; /* 아이콘 크기의 기준이 됨 */
   font-family: inherit;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.2s ease;
   padding: 0 16px; /* 좌우 패딩만 설정 */
 }
 
@@ -327,12 +330,14 @@
   width: 24px;
   height: 24px;
   flex-shrink: 0;
-  filter: brightness(0) invert(1); /* SVG를 흰색으로 변환 */
+  filter: var(--primary-filter);
   object-fit: contain;
 }
 
 .page-jump-button:hover {
-  background-color: var(--primary-color-dark, #0056b3);
+  box-shadow: 0 0 0 transparent, 0 0 0 transparent,
+              inset 0 2px 6px var(--primary-color-shadow-up),
+              inset 0 2px 6px var(--primary-color-shadow-down);
 }
 
 /* 포인터 */

@@ -181,20 +181,41 @@ function Sidebar({
           {/* 컨트롤 섹션 */}
           <div className="sidebar-section controls">
             <div className="control-grid">
-            <button
-  className={`control-button ${status === 'ready' ? 'disabled' : ''}`}
-  onClick={() => {
-    onToggleSearch();
-    onClose();
-  }}
-  disabled={status === 'ready'}
->
-  <img src={icons?.searchIcon} alt="검색" />
-  <span>검색</span>
-</button>
               <button
-                className="control-button"
+              className="control-button"
+              data-action="open"
+              onClick={() => {
+                ipcRenderer.invoke('open-file')
+              }}
+              >
+                <img src={icons?.openIcon} data-action="open" alt="열기" />
+                <span>열기</span>
+              </button>
+              <button
+                className={`control-button ${status === 'ready' ? 'disabled' : ''}`}
+                data-action="edit"
                 onClick={() => {
+                  onClose();
+                  }}
+                  disabled={true}
+                >
+                  <img src={icons?.editIcon} data-action="edit" alt="편집" />
+                  <span>편집</span>
+                </button>
+                <button
+                  className={`control-button ${status === 'ready' ? 'disabled' : ''}`}
+                  onClick={() => {
+                  onToggleSearch();
+                  onClose();
+                  }}
+                  disabled={status === 'ready'}
+                >
+                  <img src={icons?.searchIcon} alt="검색" />
+                  <span>검색</span>
+                </button>
+                <button
+                  className="control-button"
+                  onClick={() => {
                   onShowDebugConsole();
                   onClose();
                 }}

@@ -271,9 +271,10 @@ input:focus + .slider {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin: 0;  /* 기존 마진 제거 */
-  padding: 0;  /* 기존 패딩 제거 */
+  padding: 0 12px; /* 여유 공간 증가 */
+  margin: 0 -12px;
   margin-bottom: 20px;  /* 슬라이더와 동일한 간격 */
+  z-index: 1; /* 상위 레이어로 올림 */
 }
 
 .settings-group .checkbox-wrapper .checkbox {
@@ -281,6 +282,9 @@ input:focus + .slider {
   justify-content: space-between;
   align-items: center;
   width: 100%;
+  position: relative; /* ripple이 잘리지 않도록 */
+  overflow: visible; /* ripple이 잘리지 않도록 */
+  z-index: 2; /* 더 높은 z-index */
 }
 
 .settings-group .checkbox-wrapper .checkbox span:last-child {

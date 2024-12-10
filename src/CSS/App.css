@@ -9,6 +9,7 @@
   /* 색상 */
   --primary-color: #007bff;
   --primary-text: #333;
+  --primary-filter: invert(19%) sepia(0%) saturate(2%) hue-rotate(82deg) brightness(96%) contrast(96%);
   --text-color: #333;
   --text-secondary: #484848;
   --bg-color: rgba(240, 240, 240, 1);
@@ -29,8 +30,10 @@
   --active-color: rgba(188, 188, 188, 1.0);
   --btn-bg: rgba(255, 255, 255, 0.025);
   --icon-filter: brightness(0) saturate(100%) invert(37%) sepia(1%) saturate(0%) hue-rotate(19deg) brightness(96%) contrast(93%);
-  --container-shadow-up: #c7c7c7;
-  --container-shadow-down: #eeeeee; 
+  --container-shadow-up: #c7c7c7af;
+  --container-shadow-down: #eeeeeec7; 
+  --primary-color-shadow-up: #007bffaf;
+  --primary-color-shadow-up: #007bffaf;
   --logo-filter: none;
 
   /* 크기 */
@@ -67,8 +70,8 @@
   --active-color: rgba(48, 48, 48, 1.0);
   --btn-bg: rgba(0, 0, 0, 0.025);
   --icon-filter: brightness(0) saturate(100%) invert(61%) sepia(2%) saturate(0%) hue-rotate(327deg) brightness(95%) contrast(84%);
-  --container-shadow-up: #161616;
-  --container-shadow-down: #131313;
+  --container-shadow-up: #161616bb;
+  --container-shadow-down: #131313a9;
   
   /* 단락 관련 */
   --paragraph-bg: #262626;

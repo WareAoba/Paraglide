@@ -220,7 +220,7 @@
 .control-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr); /* 2열 그리드 */
-  gap: 8px;
+  gap: 12px;
 }
 
 /* 메인의 menu-item 스타일을 control-button으로 통합 */
@@ -249,6 +249,25 @@
               inset 2px 2px 8px var(--container-shadow-down);
 }
 
+[data-action="open"].control-button {
+  background: var(--primary-color);
+  color: var(--primary-text);
+  box-shadow: 0 4px 8px var(--primary-color-shadow-up),
+              0 4px 8px var(--primary-color-shadow-down),
+              inset 0 0 0 transparent, inset 0 0 0 transparent;
+}
+
+[data-action="open"].control-button:hover {
+  box-shadow: 0 0 0 transparent, 0 0 0 transparent,
+              inset 2px 2px 8px var(--primary-color-shadow-up),
+              inset 2px 2px 8px var(--primary-color-shadow-down);
+}
+
+[data-action="edit"].control-button {
+  background: var(--success-color);
+  color: white;
+}
+
 .control-button:disabled {
   opacity: 0.5;
   box-shadow: none;
@@ -261,6 +280,14 @@
   flex-shrink: 0;
   margin-right: 20px;
   filter: var(--icon-filter);
+}
+
+.control-button img[data-action="open"] {
+  filter: var(--primary-filter);
+}
+
+.control-button img[data-action="edit"] {
+  filter:invert(99%) sepia(0%) saturate(1144%) hue-rotate(173deg) brightness(114%) contrast(100%);
 }
 
 .control-button span {
@@ -278,25 +305,22 @@
   flex: 1 1 auto;
   display: flex;
   flex-direction: column;
-  width: 100%;
   gap: 16px;
-  overflow: overlay; /* 세로 스크롤만 허용 */
-}
-
-.recent-file-list::-webkit-scrollbar {
-  display: none;
+  padding: 8px; /* 그림자를 위한 여유 공간 */
+  margin: -8px; /* 패딩만큼 네거티브 마진으로 상쇄 */
+  overflow-y: auto; /* 스크롤 허용 */
+  overflow-x: hidden; /* 가로 스크롤 방지 */
 }
 
 /* 파일 항목 */
 .recent-file-item {
-  overflow-x: visible;
-  flex: 0 0 auto; 
   padding: 12px 20px;
   border-radius: 6px;
   background-color: var(--container-bg);
   box-shadow: 4px 4px 8px var(--container-shadow-up),
               4px 4px 8px var(--container-shadow-down),
               inset 0 0 0 transparent, inset 0 0 0 transparent;
+  margin: 0; /* 마진 초기화 */
   border: none;
   cursor: pointer;
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),

@@ -60,6 +60,8 @@ function MainComponent() {
   const [themeAutoIcon, setThemeAutoIcon] = useState(null);
   const [themeLightIcon, setThemeLightIcon] = useState(null);
   const [themeDarkIcon, setThemeDarkIcon] = useState(null);
+  const [fileOpenIcon, setFileOpenIcon] = useState(null);
+  const [editIcon, setEditIcon] = useState(null);
 
   const searchRef = useRef(null);
 
@@ -292,6 +294,8 @@ function MainComponent() {
           'theme-auto.svg',
           'theme-light.svg',
           'theme-dark.svg',
+          'file-open.svg',
+          'edit.svg',
         ];
 
         const iconPaths = await Promise.all(
@@ -314,6 +318,8 @@ function MainComponent() {
         setThemeAutoIcon(iconPaths[13]);
         setThemeLightIcon(iconPaths[14]);
         setThemeDarkIcon(iconPaths[15]);
+        setFileOpenIcon(iconPaths[16]);
+        setEditIcon(iconPaths[17]);
       } catch (error) {
         console.error('아이콘 로드 실패:', error);
       }
@@ -450,13 +456,32 @@ function MainComponent() {
       // accent color 설정
       root.style.setProperty('--primary-color', accentColor);
       
-      // 텍스트 색상 계산 & 설정
+      // 텍스트 색상 & 필터 계산 & 설정
       const rgb = hexToRgb(accentColor);
       const brightness = (rgb.r * 299 + rgb.g * 587 + rgb.b * 114) / 1000;
-      const textColor = brightness > 160 ? '#333' : '#f5f5f5';
-      root.style.setProperty('--primary-text', textColor);
       
-      // 로고 필터 계산 & 설정
+      if (brightness > 160) {
+        root.style.setProperty('--primary-text', '#333');
+        root.style.setProperty('--primary-filter', 
+          'invert(19%) sepia(0%) saturate(2%) hue-rotate(82deg) brightness(96%) contrast(96%)');
+      } else {
+        root.style.setProperty('--primary-text', '#f5f5f5');
+        root.style.setProperty('--primary-filter',
+          'invert(99%) sepia(15%) saturate(70%) hue-rotate(265deg) brightness(113%) contrast(92%)');
+      }
+      
+      // HSL 변환
+      const hsl = hexToHSL(accentColor);
+      
+      // 그림자 색상 계산 (HSL에서 밝기만 조정)
+      const shadowUp = `hsla(${hsl.h}, ${hsl.s}%, ${Math.min(hsl.l + 5, 100)}%, 0.2)`;
+      const shadowDown = `hsla(${hsl.h}, ${hsl.s}%, ${Math.max(hsl.l - 5, 0)}%, 0.2)`;
+      
+      // 그림자 색상 설정
+      root.style.setProperty('--primary-color-shadow-up', shadowUp);
+      root.style.setProperty('--primary-color-shadow-down', shadowDown);
+      
+      // 로고 필터 계산 & 설정 (기존 코드)
       const defaultHsl = hexToHSL(defaultColor);
       const newHsl = hexToHSL(accentColor);
       
@@ -539,6 +564,8 @@ function MainComponent() {
           terminalIcon: terminalIcon,
           textFileIcon: textFileIcon,
           deleteIcon: deleteIcon,
+          openIcon: fileOpenIcon,
+          editIcon: editIcon
         }}
         titlePath={state.titlePath}
         currentFilePath={state.currentFilePath}
@@ -631,7 +658,8 @@ function MainComponent() {
           </div>
           <div className="button-container">
             <button className="btn-primary" onClick={handleLoadFile}>
-              파일 불러오기
+              <img src={fileOpenIcon} alt="파일 불러오기" className="icon-primary" />
+              <span>파일 불러오기</span>
             </button>
           </div>
         </div>

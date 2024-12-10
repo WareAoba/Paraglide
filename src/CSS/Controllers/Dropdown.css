@@ -5,6 +5,7 @@
   }
   
   .dropdown-button {
+    /* 기존 레이아웃 속성 유지 */
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -12,25 +13,39 @@
     width: 160px;
     padding: 8px 12px;
     font-size: 0.95em;
+    border-radius: 6px;
+    cursor: pointer;
+
+    /* 기본 상태 (1단계) */
     color: var(--text-color);
     background: var(--container-bg);
     border: none;
+    opacity: 1;
     box-shadow: 0px 3px 8px var(--container-shadow-up),
                 0px 3px 8px var(--container-shadow-down),
                 inset 0 0 0 transparent,
                 inset 0 0 0 transparent;
-    border-radius: 6px;
-    cursor: pointer;
-    opacity: 1;
-    transition: box-shadow 0.3s ease;
-  }
+    transition: all 0.2s ease;
+}
 
-  .dropdown-button:hover {
-    box-shadow: 0 0 0 transparent, 0 0 0 transparent,
+/* 호버링 상태 (2단계) */
+.dropdown-button:hover:not(:active) {
+    opacity: 1;
+    box-shadow: 0px 2px 2px var(--container-shadow-up),
+                0px 2px 2px var(--container-shadow-down),
+                inset 0 0 0 transparent,
+                inset 0 0 0 transparent;
+}
+
+/* 활성화/클릭 상태 (3단계) */
+.dropdown-button:active,
+.dropdown-button.active {
+    opacity: 0.85;
+    box-shadow: 0 0 0 transparent,
+                0 0 0 transparent,
                 inset 4px 4px 16px var(--container-shadow-up),
                 inset 4px 4px 16px var(--container-shadow-down);
-  }
-  
+}
   .dropdown-menu {
     position: absolute;
     top: 100%;
