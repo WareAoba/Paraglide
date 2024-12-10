@@ -22,6 +22,7 @@
      - **Shift + Alt (Opt) + Arrow Keys (←→)**: Navigate to the previous/next page.
    - **Shift + Arrow Keys (↑↓)**: Pause/Resume the program.
      - **Shift + Alt (Opt) + Arrow Key (↑)**: Toggle overlay.
+   - and, there are also many other **in-app shortcuts**.
  3. Process text based on **paragraph** or **line** depending on the style of the .TXT file.
  4. Display the **current paragraph in progress** with an overlay window and allow navigation between paragraphs.
  5. Save logs to restore the **last position** when reloading a previously processed file.
@@ -150,36 +151,42 @@ Download the appropriate precompiled binary from the [Release Page](https://gith
 ## Recent Updates
 
  1. **UI Overhaul**: Redesigned with a mix of Material and Neumorphism design. Additionally, various UI animations have been added.
+   - The **Sidebar** functionality has been greatly enhanced.
+   - The highlight color feature has been enabled in the settings.
+   - You can directly select the app theme in the settings.
+
  2. **Search Function Added**: Currently supports Korean the best, at least for now.
-   - Supports initial consonant search, partial match search, and exact match search.
+   - Supports initial consonant search, partial match search, and exact match search(Korean Only).
    - Highlight colors vary depending on the search type.
    - You can move the pointer and select using the keyboard.
 
  3. **Various Shortcuts Added**: The following shortcuts can be used in combination with the Ctrl (Cmd) key.
    - **O**: Open file
    - **F**: Open search window (only available when a file is loaded)
+   - **M**: Sidebar
    - **,** : Open settings window
- 4. **Theme Selection Available**: You can choose between **Auto, Light, Dark** in the settings.
- 5. **Internal Logic Improvements**: Various internal changes have been made.
- 6. Add Console Display: You can check internal massages the program sends.
+
+ 4. **Internal Logic Improvements**: Various internal changes have been made.
+
+ 5. Add Console Display: You can check internal massages the program sends.
 
 
 
 
 ## Features in Development
 
- 1. Photoshop Mode: Automatically input text layer creation using Photoshop API.
- 2. Click-to-Jump in the overlay window.
- 3. User Guide: Plan to write a detailed manual for the program.
- 4. File Editing: Simple modifications like renaming files or editing paragraph content.
- 5. Multilingual Support: Planned to support English and Japanese first.
+ 1. **Photoshop Mode**: Automatically input text layer creation using Photoshop API.
+ 2. **Overlay refactoring**: Planning to significantly improve functionality.
+ 3. **User Guide**: Plan to write a detailed manual for the program.
+ 4. **Multilingual Support**: Planned to support English and Japanese first.
 
 ## Known Issues
 
- 1. Overlay layout misalignment: All paragraphs should have equal spacing, but the gaps between previous/current and current/next are unusually wide. I'm currently unsure how to fix this.
- 2. Unexpected bugs may have occurred during logic modification. Please report any issues!
+ 1. Unexpected bugs may have occurred during logic modification. Please report any issues!
 
 ## License
+
+ **All uses are permitted except for direct sales.**
 
  The majority of the code for this program was generated using **GitHub Copilot Chat**.
 
