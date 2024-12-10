@@ -454,45 +454,34 @@ function MainComponent() {
   const themeCalc = (accentColor, defaultColor = '#007bff') => {
     try {
       const root = document.documentElement;
-      
-      // accent color 설정
-      root.style.setProperty('--primary-color', accentColor);
-      
-      // 텍스트 색상 & 필터 계산 & 설정
       const rgb = hexToRgb(accentColor);
       const brightness = (rgb.r * 299 + rgb.g * 587 + rgb.b * 114) / 1000;
-      
-      if (brightness > 160) {
-        root.style.setProperty('--primary-text', '#333');
-        root.style.setProperty('--primary-filter', 
-          'invert(19%) sepia(0%) saturate(2%) hue-rotate(82deg) brightness(96%) contrast(96%)');
-      } else {
-        root.style.setProperty('--primary-text', '#f5f5f5');
-        root.style.setProperty('--primary-filter',
-          'invert(99%) sepia(15%) saturate(70%) hue-rotate(265deg) brightness(113%) contrast(92%)');
-      }
-      
-      // HSL 변환
       const hsl = hexToHSL(accentColor);
       
-      // 그림자 색상 계산 (HSL에서 밝기만 조정)
-      const shadowUp = `hsla(${hsl.h}, ${hsl.s}%, ${Math.min(hsl.l + 5, 100)}%, 0.2)`;
-      const shadowDown = `hsla(${hsl.h}, ${hsl.s}%, ${Math.max(hsl.l - 5, 0)}%, 0.2)`;
-      
-      // 그림자 색상 설정
-      root.style.setProperty('--primary-color-shadow-up', shadowUp);
-      root.style.setProperty('--primary-color-shadow-down', shadowDown);
-      
-      // 로고 필터 계산 & 설정 (기존 코드)
+      // 모든 테마 변수 계산
+      const themeVars = {
+        '--primary-color': accentColor,
+        '--primary-text': brightness > 160 ? '#333' : '#f5f5f5',
+        '--primary-filter': brightness > 160 
+          ? 'invert(19%) sepia(0%) saturate(2%) hue-rotate(82deg) brightness(96%) contrast(96%)'
+          : 'invert(99%) sepia(15%) saturate(70%) hue-rotate(265deg) brightness(113%) contrast(92%)',
+        '--primary-color-shadow-up': `hsla(${hsl.h}, ${hsl.s}%, ${Math.min(hsl.l + 5, 100)}%, 0.2)`,
+        '--primary-color-shadow-down': `hsla(${hsl.h}, ${hsl.s}%, ${Math.max(hsl.l - 5, 0)}%, 0.2)`
+      };
+  
+      // 로고 필터 계산 추가
       const defaultHsl = hexToHSL(defaultColor);
       const newHsl = hexToHSL(accentColor);
-      
-      const hueDiff = newHsl.h - defaultHsl.h;
-      const satDiff = (newHsl.s / defaultHsl.s) * 100;
-      const lightDiff = (newHsl.l / defaultHsl.l) * 100;
-      
-      const filter = `hue-rotate(${hueDiff}deg) saturate(${satDiff}%) brightness(${lightDiff}%)`;
-      root.style.setProperty('--logo-filter', filter);
+      themeVars['--logo-filter'] = `hue-rotate(${newHsl.h - defaultHsl.h}deg) saturate(${(newHsl.s / defaultHsl.s) * 100}%) brightness(${(newHsl.l / defaultHsl.l) * 100}%)`;
+  
+      // 현재 창에 적용
+      Object.entries(themeVars).forEach(([key, value]) => {
+        root.style.setProperty(key, value);
+      });
+  
+      // 오버레이 창으로 전달
+      ipcRenderer.send('update-theme-variables', themeVars);
+  
     } catch (error) {
       console.error('[MainComponent] CSS 변수 업데이트 실패:', error);
     }

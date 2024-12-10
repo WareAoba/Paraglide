@@ -77,6 +77,32 @@ function OverlayComponent() {
     };
   }, []);
 
+  useEffect(() => {
+    // 디버깅을 위한 로그 추가
+    const handleThemeVariablesUpdate = (_, variables) => {
+      
+      const root = document.documentElement;
+      if (variables && typeof variables === 'object') {
+        Object.entries(variables).forEach(([key, value]) => {
+          root.style.setProperty(key, value);
+        });
+        setState(prev => ({
+          ...prev,
+          theme: {
+            ...prev.theme,
+            accentColor: variables['--primary-color'] || prev.theme.accentColor
+          }
+        }));
+      }
+    };
+
+    ipcRenderer.on("update-theme-variables", handleThemeVariablesUpdate);
+  
+    return () => {
+      ipcRenderer.removeListener("update-theme-variables", handleThemeVariablesUpdate);
+    };
+  }, []);
+
   const handleParagraphClick = (index) => {
     if (index !== undefined) {
       ipcRenderer.send("set-current-paragraph", index);

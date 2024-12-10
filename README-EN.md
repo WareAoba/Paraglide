@@ -176,9 +176,10 @@ Download the appropriate precompiled binary from the [Release Page](https://gith
 ## Features in Development
 
  1. **Photoshop Mode**: Automatically input text layer creation using Photoshop API.
- 2. **Overlay refactoring**: Planning to significantly improve functionality.
- 3. **User Guide**: Plan to write a detailed manual for the program.
- 4. **Multilingual Support**: Planned to support English and Japanese first.
+ 2. **built-in Text Editor**: Planned to be equipped with convenient features for tasks like translation work.
+ 3. **Overlay refactoring**: Planning to significantly improve functionality.
+ 4. **User Guide**: Plan to write a detailed manual for the program.
+ 5. **Multilingual Support**: Planned to support English and Japanese first.
 
 ## Known Issues
 
