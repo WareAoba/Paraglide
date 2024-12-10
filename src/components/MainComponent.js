@@ -154,9 +154,26 @@ function MainComponent() {
 
     // 테마 변경 핸들러
     const handleThemeUpdate = (_, newTheme) => {
+      if (!newTheme) {
+        console.log('[MainComponent] 테마 데이터 없음');
+        return;
+      }
+
+      console.log('[MainComponent] 테마 업데이트 수신:', newTheme);
+
       setTheme(newTheme);
       loadLogo(newTheme);
-      document.documentElement.style.setProperty('--primary-color', newTheme.accentColor);
+
+      try {
+        const root = document.documentElement;
+        const beforeValue = getComputedStyle(root).getPropertyValue('--primary-color');
+        console.log('[MainComponent] 현재 --primary-color:', beforeValue.trim());
+
+        root.style.setProperty('--primary-color', newTheme.accentColor);
+        console.log('[MainComponent] --primary-color 업데이트됨:', newTheme.accentColor);
+      } catch (error) {
+        console.error('[MainComponent] CSS 변수 업데이트 실패:', error);
+      }
     };
 
     const handleViewModeUpdate = (event, newViewMode) => {

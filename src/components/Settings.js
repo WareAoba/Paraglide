@@ -63,16 +63,23 @@ function Settings({ isVisible, onClose, icons }) {
 
   const handleSettingChange = async (newSettings) => {
     try {
-      // 설정 상태 업데이트
+      // 1. 로컬 상태 업데이트
       setSettings(newSettings);
   
-      // 설정 적용 요청
+      // 2. CSS 변수 즉시 업데이트 (accentColor가 변경된 경우)
+      if (newSettings.theme?.accentColor !== settings.theme?.accentColor) {
+        document.documentElement.style.setProperty(
+          '--primary-color', 
+          newSettings.theme.accentColor
+        );
+      }
+  
+      // 3. IPC로 설정 저장 요청
       const result = await ipcRenderer.invoke('apply-settings', {
         windowOpacity: newSettings.windowOpacity,
         contentOpacity: newSettings.contentOpacity,
         overlayFixed: newSettings.overlayFixed,
         loadLastOverlayBounds: newSettings.loadLastOverlayBounds,
-        accentColor: newSettings.accentColor,
         processMode: newSettings.processMode,
         viewMode: newSettings.viewMode,
         theme: {
@@ -80,10 +87,6 @@ function Settings({ isVisible, onClose, icons }) {
           accentColor: newSettings.theme.accentColor
         }
       });
-
-      if (newSettings.viewMode && newSettings.viewMode !== settings.viewMode) {
-        ipcRenderer.send('update-view-mode', newSettings.viewMode);
-      }
   
       if (!result) {
         console.error('[Settings] 설정 적용 실패');
@@ -241,26 +244,20 @@ function Settings({ isVisible, onClose, icons }) {
             <div className="slider-wrapper">
   <span>전체 투명도</span>
   <input 
-    type="range" 
-    min="0"
-    max="100"
-    step="1"
-    value={settings.windowOpacity * 100}
-    style={{
-      // CSS 변수 대신 직접 background 속성 사용
-      background: `linear-gradient(to right, 
-        var(--primary-color) 0%, 
-        var(--primary-color) ${settings.windowOpacity * 100}%, 
-        #e0e0e0 ${settings.windowOpacity * 100}%)`
-    }}
-    onChange={e => {
-      const value = parseFloat(e.target.value);
-      handleSettingChange({
-        ...settings, 
-        windowOpacity: value / 100
-      });
-    }}
-  />
+  type="range" 
+  min="0"
+  max="100"
+  step="1"
+  value={settings.windowOpacity * 100}
+  onChange={e => {
+    const value = parseFloat(e.target.value);
+    e.target.style.setProperty('--slider-value', `${value}%`);
+    handleSettingChange({
+      ...settings, 
+      windowOpacity: value / 100
+    });
+  }}
+/>
 </div>
 <div className="slider-wrapper">
   <span>배경 투명도</span>
@@ -329,10 +326,13 @@ function Settings({ isVisible, onClose, icons }) {
               강조색
               <input 
                 type="color"
-                value={settings.accentColor}
+                value={settings.theme.accentColor}
                 onChange={e => handleSettingChange({
                   ...settings, 
-                  accentColor: e.target.value
+                  theme: {
+                    ...settings.theme,
+                    accentColor: e.target.value  // theme 객체 내부의 accentColor를 업데이트
+                  }
                 })}
               />
             </label>

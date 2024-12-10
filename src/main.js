@@ -693,14 +693,24 @@ const ThemeManager = {
     
     BrowserWindow.getAllWindows().forEach(window => {
       if (!window.isDestroyed()) {
-        window.webContents.send('theme-update', theme);
-        window.webContents.send('update-logos');
+        try {
+          console.log('[Main] 테마 업데이트 발송:', {
+            id: window.id,
+            theme
+          });
+
+          window.webContents.send('theme-update', theme);
+          window.webContents.send('update-logos');
+        } catch (error) {
+          console.error('[ThemeManager] 테마 업데이트 실패:', error);
+        }
       }
     });
   }
 };
 
 // WindowManager 정의
+
 const WindowManager = {
   createMainWindow() {
     mainWindow = new BrowserWindow({
@@ -1126,12 +1136,14 @@ const IPCManager = {
   
       store.dispatch(configActions.loadConfig(newConfig));
       
+      // 오버레이 창 설정 적용
       if (overlayWindow) {
         overlayWindow.setOpacity(newConfig.overlay.windowOpacity);
         overlayWindow.setIgnoreMouseEvents(newConfig.overlay.overlayFixed);
         overlayWindow.webContents.send('update-content-opacity', newConfig.overlay.contentOpacity);
       }
-
+  
+      // ThemeManager를 통해 테마 업데이트 브로드캐스트 
       ThemeManager.broadcastTheme();
       
       await FileManager.saveConfig(newConfig);

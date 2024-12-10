@@ -1,75 +1,85 @@
-/* src/CSS/RangeSlider.css */
 .slider-wrapper {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
-    margin-bottom: 20px;
-  }
-  
-  .slider-wrapper input[type="range"] {
-    --thumb-size: 16px;
-    --track-height: 4px;
-    --track-color: #e0e0e0;
-    --track-active-color: var(--primary-color);
-    --thumb-color: #ffffff;
-    --thumb-border: 2px solid var(--primary-color);
-    --thumb-shadow: 0 0 4px rgba(0, 0, 0, 0.1);
-    --thumb-shadow-hover: 0 0 0 7px var(--primary-color) inset, 
-                         0 0 0 99px #ffffff inset;
-    --thumb-shadow-active: 0 0 0 13px var(--primary-color) inset;
-    --track-shadow: 2px 2px 4px rgba(0, 0, 0, 0.05) inset;
-
-    width: 160px;
-    margin-left: 16px;
-    background: transparent;
-    height: var(--track-height);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 20px;
 }
 
-[data-theme="dark"] .slider-wrapper input[type="range"] {
+.slider-wrapper input[type="range"] {
+  /* 기본 변수 정의 */
+  --thumb-size: 16px;
+  --track-height: 4px;
   --track-color: var(--border-color);
+  --track-active-color: var(--primary-color);
+  --thumb-color: #ffffff;
+  --thumb-border: 2px solid var(--primary-color);
+  --thumb-shadow: 0 0 4px rgba(0, 0, 0, 0.1);
+  --thumb-shadow-hover: 0 0 0 7px var(--primary-color) inset, 
+                       0 0 0 99px #ffffff inset;
+  --thumb-shadow-active: 0 0 0 13px var(--primary-color) inset;
+  
+  /* 기본 스타일 */
+  -webkit-appearance: none;
+  width: 160px;
+  height: var(--track-height);
+  margin-left: 16px;
+  background: transparent;
+  cursor: pointer;
+}
+
+/* 트랙 스타일 - Webkit */
+.slider-wrapper input[type="range"]::-webkit-slider-runnable-track {
+  height: var(--track-height);
+  border-radius: 2px;
+  background: linear-gradient(
+    to right,
+    var(--track-active-color) 0%,
+    var(--track-active-color) var(--slider-value),
+    var(--track-color) var(--slider-value),
+    var(--track-color) 100%
+  );
+}
+
+/* 썸네일 스타일 - Webkit */
+.slider-wrapper input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  height: var(--thumb-size);
+  width: var(--thumb-size);
+  margin-top: calc((var(--track-height) - var(--thumb-size)) / 2);
+  border-radius: 50%;
+  background: var(--thumb-color);
+  border: var(--thumb-border);
+  box-shadow: var(--thumb-shadow);
+  transition: all 0.2s ease;
+}
+
+/* 호버 효과 */
+.slider-wrapper input[type="range"]:hover::-webkit-slider-thumb {
+  transform: scale(1.2);
+  box-shadow: var(--thumb-shadow-hover);
+}
+
+.slider-wrapper input[type="range"]:hover::-moz-range-thumb {
+  transform: scale(1.2);
+  box-shadow: var(--thumb-shadow-hover);
+}
+
+/* 활성화 효과 */
+.slider-wrapper input[type="range"]:active::-webkit-slider-thumb {
+  transform: scale(1);
+  box-shadow: var(--thumb-shadow-active);
+}
+
+.slider-wrapper input[type="range"]:active::-moz-range-thumb {
+  transform: scale(1);
+  box-shadow: var(--thumb-shadow-active);
+}
+
+/* 다크모드 */
+[data-theme="dark"] .slider-wrapper input[type="range"] {
+  --track-color: rgba(255, 255, 255, 0.2);
   --thumb-color: var(--bg-color);
   --thumb-shadow-hover: 0 0 0 7px var(--primary-color) inset, 
                        0 0 0 99px var(--bg-color) inset;
-  --track-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1) inset;
 }
-  
-  /* 트랙 스타일 */
-  .slider-wrapper input[type="range"]::-webkit-slider-runnable-track {
-    width: 100%;
-    height: var(--track-height);
-    background: linear-gradient(
-      to right,
-      var(--track-active-color) 0%,
-      var(--track-active-color) var(--slider-value, 50%),
-      var(--track-color) var(--slider-value, 50%)
-    );
-    border-radius: 2px;
-    box-shadow: var(--track-shadow);
-  }
-  
-  /* 썸네일 스타일 */
-  .slider-wrapper input[type="range"]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    height: var(--thumb-size);
-    width: var(--thumb-size);
-    border-radius: 50%;
-    background: var(--thumb-color);
-    margin-top: calc((var(--track-height) - var(--thumb-size)) / 2);
-    cursor: pointer;
-    border: var(--thumb-border);
-    box-shadow: var(--thumb-shadow);
-    transition: all 0.2s ease;
-  }
-  
-  /* 호버 효과 */
-  .slider-wrapper input[type="range"]::-webkit-slider-thumb:hover {
-    transform: scale(1.2);
-    box-shadow: var(--thumb-shadow-hover);
-  }
-  
-  /* 활성화 효과 */
-  .slider-wrapper input[type="range"]:active::-webkit-slider-thumb {
-    transform: scale(1);
-    box-shadow: var(--thumb-shadow-active);
-  }

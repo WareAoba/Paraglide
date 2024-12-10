@@ -1,4 +1,8 @@
 /* 사이드바 */
+.sidebar * {
+  box-sizing: border-box;
+}
+
 .sidebar {
   position: fixed;
   left: -301px;
@@ -9,9 +13,14 @@
   border-right: none;
   border-radius: 0 16px 16px 0;  /* 우측 상/하단만 둥글게 */
   transition: transform var(--transition-default);
-  box-shadow: 0 0 0 transparent, 40px 0 80px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 0 0 transparent, 0 0 0 transparent;
   z-index: 1000;
   overflow-y: hidden;
+  overflow-x: visible;
+}
+
+.sidebar.visible {
+  box-shadow: 0 0 0 transparent, 40px 0 80px rgba(0, 0, 0, 0.1);
 }
 
 /* 오버레이 */
@@ -126,6 +135,7 @@
   height: calc(100vh - 80px); /* 헤더 높이 제외 */
   display: flex;
   flex-direction: column;
+  overflow-x: visible;
 }
 
 .current-file-info-header {
@@ -263,12 +273,14 @@
   overflow-y: auto;
   display: flex;
   flex-direction: column;
+  overflow-x: visible;
   width: 100%;
   gap: 16px;
 }
 
 /* 파일 항목 */
 .recent-file-item {
+  overflow-x: visible;
   flex: 0 0 auto; 
   padding: 12px 20px;
   border-radius: 6px;
@@ -386,7 +398,6 @@
   display: flex;
   flex-direction: column;
   width: 100%;
-  overflow: hidden; /* 추가 */
 }
 
 /* 파일 경로 */
