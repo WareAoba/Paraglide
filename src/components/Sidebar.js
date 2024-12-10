@@ -14,13 +14,12 @@ function Sidebar({
   onClose,
   currentFilePath,
   theme,
+  status,
   icons,
   titlePath,
   currentFile,
-  onToggleOverlay,
   onToggleSearch,
   onShowDebugConsole,
-  isOverlayVisible,
 }) {
   const [files, setFiles] = React.useState([]);
 
@@ -182,16 +181,17 @@ function Sidebar({
           {/* 컨트롤 섹션 */}
           <div className="sidebar-section controls">
             <div className="control-grid">
-              <button
-                className="control-button"
-                onClick={() => {
-                  onToggleSearch();
-                  onClose();
-                }}
-              >
-                <img src={icons?.searchIcon} alt="검색" />
-                <span>검색</span>
-              </button>
+            <button
+  className={`control-button ${status === 'ready' ? 'disabled' : ''}`}
+  onClick={() => {
+    onToggleSearch();
+    onClose();
+  }}
+  disabled={status === 'ready'}
+>
+  <img src={icons?.searchIcon} alt="검색" />
+  <span>검색</span>
+</button>
               <button
                 className="control-button"
                 onClick={() => {

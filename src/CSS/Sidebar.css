@@ -249,6 +249,12 @@
               inset 2px 2px 8px var(--container-shadow-down);
 }
 
+.control-button:disabled {
+  opacity: 0.5;
+  box-shadow: none;
+  cursor: default;
+}
+
 .control-button img {
   width: 20px;
   height: 20px;

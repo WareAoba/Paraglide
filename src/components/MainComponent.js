@@ -529,6 +529,7 @@ function MainComponent() {
           onFileSelect={handleSidebarFileSelect}
           theme={theme}
           onClose={handleCloseSidebar}
+          status='ready'
           icons={{
             sidebarUnfold: sidebarUnfoldIcon,
             eye: eyeIcon,
@@ -618,6 +619,7 @@ function MainComponent() {
         onFileSelect={handleSidebarFileSelect}
         theme={theme}
         onClose={handleCloseSidebar}
+        status='process'
         icons={{
           sidebarUnfold: sidebarUnfoldIcon,
           eye: eyeIcon,
