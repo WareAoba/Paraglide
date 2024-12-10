@@ -249,6 +249,10 @@ class SystemListener {
         this.mainWindow?.webContents.send('toggle-search');
       });
 
+      register(this.mainWindow, 'CommandOrControl+M', () => {
+        this.mainWindow?.webContents.send('toggle-sidebar');
+      });
+
       register(this.mainWindow, 'CommandOrControl+,', () => {
         this.mainWindow?.webContents.send('toggle-settings');
       });

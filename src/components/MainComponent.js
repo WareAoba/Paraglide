@@ -184,6 +184,7 @@ function MainComponent() {
     ipcRenderer.on('clear-search', clearSearchHandler);
     ipcRenderer.on('trigger-load-file', handleLoadFile);
     ipcRenderer.on('toggle-search', handleSearchToggle);
+    ipcRenderer.on('toggle-sidebar', handleToggleSidebar);
     ipcRenderer.on('toggle-settings', handleSettingsToggle);
     ipcRenderer.on('close-esc', handleCloseEsc);
 
@@ -198,6 +199,7 @@ function MainComponent() {
       ipcRenderer.removeListener('clear-search', clearSearchHandler);
       ipcRenderer.removeListener('trigger-load-file', handleLoadFile);
       ipcRenderer.removeListener('toggle-search', handleSearchToggle);
+      ipcRenderer.removeListener('toggle-sidebar', handleToggleSidebar);
       ipcRenderer.removeListener('toggle-settings', handleSettingsToggle);
       ipcRenderer.removeListener('close-esc', handleCloseEsc);
     };
