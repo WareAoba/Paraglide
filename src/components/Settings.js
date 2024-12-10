@@ -1,5 +1,6 @@
 // src/components/Settings.js
 import React, { useState, useEffect, useRef } from 'react';
+import { HexColorPicker } from 'react-colorful';
 import '../CSS/Settings.css';
 import '../CSS/Controllers/Checkbox.css';
 import '../CSS/Controllers/RangeSlider.css';
@@ -22,6 +23,8 @@ function Settings({ isVisible, onClose, icons }) {
   const [originalSettings, setOriginalSettings] = useState(null);
   const [showThemeDropdown, setShowThemeDropdown] = useState(false);
   const dropdownRef = useRef(null);
+  const [showColorPicker, setShowColorPicker] = useState(false);
+  const colorPickerRef = useRef(null);
 
   // 초기 설정 로드
   useEffect(() => {
@@ -63,18 +66,10 @@ function Settings({ isVisible, onClose, icons }) {
 
   const handleSettingChange = async (newSettings) => {
     try {
-      // 1. 로컬 상태 업데이트
+      // 설정 상태 업데이트
       setSettings(newSettings);
   
-      // 2. CSS 변수 즉시 업데이트 (accentColor가 변경된 경우)
-      if (newSettings.theme?.accentColor !== settings.theme?.accentColor) {
-        document.documentElement.style.setProperty(
-          '--primary-color', 
-          newSettings.theme.accentColor
-        );
-      }
-  
-      // 3. IPC로 설정 저장 요청
+      // 설정 적용 요청
       const result = await ipcRenderer.invoke('apply-settings', {
         windowOpacity: newSettings.windowOpacity,
         contentOpacity: newSettings.contentOpacity,
@@ -87,6 +82,10 @@ function Settings({ isVisible, onClose, icons }) {
           accentColor: newSettings.theme.accentColor
         }
       });
+
+      if (newSettings.viewMode && newSettings.viewMode !== settings.viewMode) {
+        ipcRenderer.send('update-view-mode', newSettings.viewMode);
+      }
   
       if (!result) {
         console.error('[Settings] 설정 적용 실패');
@@ -141,17 +140,28 @@ function Settings({ isVisible, onClose, icons }) {
   }, [settings.windowOpacity, settings.contentOpacity]);
 
   useEffect(() => {
-    function handleClickOutside(event) {
+    function handleDropdownOutside(event) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         
         setShowThemeDropdown(false);
       }
     }
 
-    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('mousedown', handleDropdownOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('mousedown', handleDropdownOutside);
     };
+  }, []);
+
+  useEffect(() => {
+    function handleColorpickerOutside(event) {
+      if (colorPickerRef.current && !colorPickerRef.current.contains(event.target)) {
+        setShowColorPicker(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handleColorpickerOutside);
+    return () => document.removeEventListener('mousedown', handleColorpickerOutside);
   }, []);
 
   const handleThemeItemClick = async (mode) => {
@@ -323,19 +333,69 @@ function Settings({ isVisible, onClose, icons }) {
           <div className="settings-group">
             <h3>앱 설정</h3>
             <label>
-              강조색
-              <input 
-                type="color"
-                value={settings.theme.accentColor}
-                onChange={e => handleSettingChange({
-                  ...settings, 
-                  theme: {
-                    ...settings.theme,
-                    accentColor: e.target.value  // theme 객체 내부의 accentColor를 업데이트
-                  }
-                })}
-              />
-            </label>
+    강조색
+    <div className="color-picker-container" ref={colorPickerRef}>
+    <div 
+      className="color-preview"
+      onClick={() => setShowColorPicker(!showColorPicker)}
+      style={{ 
+        backgroundColor: settings.theme.accentColor,
+        width: '32px',
+        height: '32px',
+        borderRadius: '4px',
+        border: '2px solid var(--border-color)',
+        cursor: 'pointer'
+      }}
+    />
+    <div className={`color-picker-popup ${showColorPicker ? 'visible' : ''}`}>
+      <HexColorPicker
+        color={settings.theme.accentColor}
+        onChange={(color) => {
+          handleSettingChange({
+            ...settings,
+            theme: {
+              ...settings.theme,
+              accentColor: color
+            }
+          });
+        }}
+      />
+      <div className="color-presets">
+        {[
+          '#007bff',
+          '#dc3545',
+          '#28a745',
+          '#ffc107',
+          '#17a2b8',
+          '#6f42c1'
+        ].map(color => (
+          <div
+            key={color}
+            className="color-preset"
+            style={{
+              backgroundColor: color,
+              width: '24px',
+              height: '24px',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              margin: '4px'
+            }}
+            onClick={() => {
+              handleSettingChange({
+                ...settings,
+                theme: {
+                  ...settings.theme,
+                  accentColor: color
+                }
+              });
+              setShowColorPicker(false);
+            }}
+          />
+        ))}
+      </div>
+    </div>
+  </div>
+  </label>
             <label className="settings-label">
   테마
   <div className="dropdown-wrapper" ref={dropdownRef}>

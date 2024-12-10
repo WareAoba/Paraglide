@@ -660,14 +660,18 @@ const FileManager = {
 
 const ThemeManager = {
   initialize() {
-    // store 구독만 담당
     store.subscribe(() => {
       const prevTheme = this.getCurrentTheme();
-      const currentTheme = store.getState().config.theme;
+      const currentState = store.getState().config.theme;
       
-      // 테마 설정이 변경된 경우에만 broadcast
-      if (prevTheme.mode !== currentTheme.mode || 
-          prevTheme.accentColor !== currentTheme.accentColor) {
+      // accentColor 변경은 mode와 무관하게 항상 broadcast
+      if (currentState.accentColor !== prevTheme.accentColor) {
+        this.broadcastTheme();
+        return;
+      }
+
+      // mode 변경은 기존 로직 유지
+      if (prevTheme.mode !== this.getEffectiveMode()) {
         this.broadcastTheme();
       }
     });

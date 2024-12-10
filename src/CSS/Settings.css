@@ -51,6 +51,7 @@
 .settings-scroll-area {
   flex: 1;
   overflow-y: auto;         /* 스크롤 활성화 */
+  overflow-x: visible;
   padding: 0 16px;  /* 좌우 패딩만 유지 */
   padding-bottom: 80px;      /* 버튼 영역 확보 */
   margin-bottom: 60px;      /* 버튼 그룹 공간 확보 */
@@ -292,6 +293,11 @@ input:focus + .slider {
   margin-left: 16px;  /* 텍스트와의 간격 */
 }
 
+.dropdown-wrapper {
+  position: relative;
+  z-index: 999;
+}
+
 .settings-button-group {
   position: absolute;
   bottom: 0;
@@ -321,7 +327,7 @@ input:focus + .slider {
 
 .settings-button-group button.btn-primary {
   background-color: var(--primary-color);
-  color: white;
+  color: var(--primary-text);
   border: none;
 }
 
@@ -399,4 +405,57 @@ input:focus + .slider {
 .settings-group.danger-zone button:hover {
   background-color: var(--danger-color);
   color: white;
+}
+
+.color-picker-container {
+  position: relative;
+  display: inline-block;
+  scale: 0.8;
+  z-index: 1002;
+  transition: all 0.2s ease;
+}
+
+.color-picker-popup {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;  /* 왼쪽 정렬 */
+  z-index: 1002;
+  background: var(--bg-color);
+  padding: 12px;
+  border-radius: 8px;
+  box-shadow: 0 16px 16px var(--container-shadow-up),
+              0 16px 16px var(--container-shadow-down);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(10px);
+  transition: all 0.2s ease;
+}
+
+.color-picker-popup.visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.color-presets {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  gap: 6px;
+  margin-top: 12px;
+  justify-content: flex-start;
+}
+
+.color-preset {
+  flex: 0 0 24px;
+  transition: transform 0.2s ease;
+}
+
+.color-preset:hover {
+  transform: scale(1.1);
+}
+
+.react-colorful {
+  width: 220px !important;
+  height: 200px !important;
 }

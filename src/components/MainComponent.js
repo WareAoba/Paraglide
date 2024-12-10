@@ -93,10 +93,15 @@ function MainComponent() {
 
   useEffect(() => {
     const initializeTheme = async () => {
-      const initialTheme = await ipcRenderer.invoke('get-current-theme');
-      setTheme(initialTheme);
+      try {
+        const initialTheme = await ipcRenderer.invoke('get-current-theme');
+        setTheme(initialTheme);
+        themeCalc(initialTheme.accentColor);
+        loadLogo(initialTheme);
+      } catch (error) {
+        console.error('[MainComponent] 초기 테마 설정 실패:', error);
+      }
     };
-
     // 로고 로드 함수 수정
     const loadLogo = async () => {
       try {
@@ -154,26 +159,11 @@ function MainComponent() {
 
     // 테마 변경 핸들러
     const handleThemeUpdate = (_, newTheme) => {
-      if (!newTheme) {
-        console.log('[MainComponent] 테마 데이터 없음');
-        return;
-      }
-
-      console.log('[MainComponent] 테마 업데이트 수신:', newTheme);
-
+      if (!newTheme) return;
+      
       setTheme(newTheme);
       loadLogo(newTheme);
-
-      try {
-        const root = document.documentElement;
-        const beforeValue = getComputedStyle(root).getPropertyValue('--primary-color');
-        console.log('[MainComponent] 현재 --primary-color:', beforeValue.trim());
-
-        root.style.setProperty('--primary-color', newTheme.accentColor);
-        console.log('[MainComponent] --primary-color 업데이트됨:', newTheme.accentColor);
-      } catch (error) {
-        console.error('[MainComponent] CSS 변수 업데이트 실패:', error);
-      }
+      themeCalc(newTheme.accentColor);
     };
 
     const handleViewModeUpdate = (event, newViewMode) => {
@@ -449,6 +439,73 @@ function MainComponent() {
       ...prev,
       ...resetState
     }));
+  };
+
+  const themeCalc = (accentColor, defaultColor = '#007bff') => {
+    try {
+      const root = document.documentElement;
+      
+      // accent color 설정
+      root.style.setProperty('--primary-color', accentColor);
+      
+      // 텍스트 색상 계산 & 설정
+      const rgb = hexToRgb(accentColor);
+      const brightness = (rgb.r * 299 + rgb.g * 587 + rgb.b * 114) / 1000;
+      const textColor = brightness > 160 ? '#333' : '#f5f5f5';
+      root.style.setProperty('--primary-text', textColor);
+      
+      // 로고 필터 계산 & 설정
+      const defaultHsl = hexToHSL(defaultColor);
+      const newHsl = hexToHSL(accentColor);
+      
+      const hueDiff = newHsl.h - defaultHsl.h;
+      const satDiff = (newHsl.s / defaultHsl.s) * 100;
+      const lightDiff = (newHsl.l / defaultHsl.l) * 100;
+      
+      const filter = `hue-rotate(${hueDiff}deg) saturate(${satDiff}%) brightness(${lightDiff}%)`;
+      root.style.setProperty('--logo-filter', filter);
+    } catch (error) {
+      console.error('[MainComponent] CSS 변수 업데이트 실패:', error);
+    }
+  };
+
+  const hexToRgb = (hex) => {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+      r: parseInt(result[1], 16),
+      g: parseInt(result[2], 16),
+      b: parseInt(result[3], 16)
+    } : null;
+  };
+
+  const hexToHSL = (hex) => {
+    const rgb = hexToRgb(hex);
+    const r = rgb.r / 255;
+    const g = rgb.g / 255;
+    const b = rgb.b / 255;
+  
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    let h, s, l = (max + min) / 2;
+  
+    if (max === min) {
+      h = s = 0;
+    } else {
+      const d = max - min;
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+      switch (max) {
+        case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+        case g: h = (b - r) / d + 2; break;
+        case b: h = (r - g) / d + 4; break;
+      }
+      h /= 6;
+    }
+  
+    return {
+      h: h * 360,
+      s: s * 100,
+      l: l * 100
+    };
   };
 
   // 디버그 콘솔 표시 핸들러 추가

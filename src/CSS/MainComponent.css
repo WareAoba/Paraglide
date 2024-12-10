@@ -43,6 +43,7 @@
     max-width: 300px;
     max-height: 300px;
     object-fit: contain;
+    filter: var(--logo-filter);
     cursor: default; /* 커서 기본값으로 변경 */
 }
 
@@ -78,7 +79,7 @@
     font-weight: 500;
     font-family: inherit;
     background-color: var(--primary-color);
-    color: #fff;
+    color: var(--primary-text);
     border: none;
     border-radius: 6px;
     cursor: pointer;

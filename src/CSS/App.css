@@ -8,6 +8,7 @@
 :root {
   /* 색상 */
   --primary-color: #007bff;
+  --primary-text: #333;
   --text-color: #333;
   --text-secondary: #484848;
   --bg-color: rgba(240, 240, 240, 1);
@@ -30,6 +31,7 @@
   --icon-filter: brightness(0) saturate(100%) invert(37%) sepia(1%) saturate(0%) hue-rotate(19deg) brightness(96%) contrast(93%);
   --container-shadow-up: #c7c7c7;
   --container-shadow-down: #eeeeee; 
+  --logo-filter: none;
 
   /* 크기 */
   --container-width: 100vw;
@@ -53,7 +55,6 @@
 
 /* 다크모드 */
 [data-theme="dark"] {
-  --primary-color: #0066cc;
   --text-color: #f5f5f5;
   --text-secondary: #ccc;
   --bg-color: #1e1e1e;
