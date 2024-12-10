@@ -94,7 +94,3 @@
     margin-right: 8px;
     filter: var(--icon-filter);
   }
-
-  .dropdown-item.active .dropdown-icon {
-    filter: invert(30%) sepia(90%) saturate(2779%) hue-rotate(200deg) brightness(103%) contrast(106%);
-  }

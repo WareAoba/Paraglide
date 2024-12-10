@@ -372,7 +372,7 @@ input:focus + .slider {
 
 [data-theme="dark"] .settings-button-group button.btn-primary {
   background-color: var(--primary-color);
-  color: var(--dark-text);
+  color: var(--primary-text);
 }
 
 /* 새로운 설정 그룹 스타일 추가 */

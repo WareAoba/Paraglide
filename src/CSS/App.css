@@ -10,6 +10,7 @@
   --primary-color: #007bff;
   --primary-text: #333;
   --primary-filter: invert(19%) sepia(0%) saturate(2%) hue-rotate(82deg) brightness(96%) contrast(96%);
+  --primary-color-filter: invert(19%) sepia(0%) saturate(2%) hue-rotate(82deg) brightness(96%) contrast(96%);
   --text-color: #333;
   --text-secondary: #484848;
   --bg-color: rgba(240, 240, 240, 1);

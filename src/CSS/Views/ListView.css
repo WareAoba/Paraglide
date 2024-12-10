@@ -23,6 +23,7 @@
   padding-bottom: 0.5rem;
   border-bottom: 1px solid var(--border-color);
   color: var(--text-color);
+  filter: brightness(0.8);
 }
 
 .listview-section {
@@ -52,7 +53,7 @@
 }
 
 [data-theme="dark"] .listview-item {
-  opacity: 0.25;
+  opacity: 0.4;
 }
 
 /* 이동하는 배경 박스 */
@@ -94,7 +95,7 @@
 
 .listview-item.current {
   opacity: 1;
-  color: white;
+  color: var(--primary-text) !important;
   padding-left: 3.5rem; /* transform 대신 padding으로 이동 효과 */
   z-index: 5;
 }

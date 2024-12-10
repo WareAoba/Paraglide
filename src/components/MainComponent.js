@@ -455,14 +455,18 @@ function MainComponent() {
     try {
       const root = document.documentElement;
       const rgb = hexToRgb(accentColor);
-      const brightness = (rgb.r * 299 + rgb.g * 587 + rgb.b * 114) / 1000;
       const hsl = hexToHSL(accentColor);
       
-      // 모든 테마 변수 계산
+      // 인간의 시각 인식에 더 가까운 상대 휘도(Relative Luminance) 계산
+      const luminance = (0.2126 * rgb.r + 0.7152 * rgb.g + 0.0722 * rgb.b) / 255;
+      
+      // HSL의 명도(L)도 함께 고려
+      const combinedBrightness = (luminance + (hsl.l / 100)) / 2;
+  
       const themeVars = {
         '--primary-color': accentColor,
-        '--primary-text': brightness > 160 ? '#333' : '#f5f5f5',
-        '--primary-filter': brightness > 160 
+        '--primary-text': combinedBrightness > 0.6 ? '#333' : '#f5f5f5',
+        '--primary-filter': combinedBrightness > 0.6 
           ? 'invert(19%) sepia(0%) saturate(2%) hue-rotate(82deg) brightness(96%) contrast(96%)'
           : 'invert(99%) sepia(15%) saturate(70%) hue-rotate(265deg) brightness(113%) contrast(92%)',
         '--primary-color-shadow-up': `hsla(${hsl.h}, ${hsl.s}%, ${Math.min(hsl.l + 5, 100)}%, 0.2)`,
