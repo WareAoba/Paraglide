@@ -101,6 +101,14 @@ body,
               color var(--transition-default);
 }
 
+img {
+  -webkit-user-drag: none;
+  user-select: none;
+  -moz-user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+}
+
 *:focus {
   outline: none !important; /* 노란 포커스 테두리 제거 */
 }

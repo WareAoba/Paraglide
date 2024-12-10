@@ -489,6 +489,33 @@ const FileManager = {
 
   async openFile(filePath, content = null) {
     try {
+      // content가 직접 제공되지 않은 경우 파일 존재 여부 확인
+      if (!content) {
+        try {
+          await fs.access(filePath);
+        } catch (error) {
+          if (error.code === 'ENOENT') {
+            // 파일이 존재하지 않는 경우
+            dialog.showMessageBox(mainWindow, {
+              type: 'warning',
+              title: '파일 오류',
+              message: '파일을 찾을 수 없습니다.\ 기록을 삭제합니다.',
+              buttons: ['확인']
+            });
+  
+            // 로그에서 해당 파일 기록 삭제
+            await this.clearLogs(filePath);
+            const updatedHistory = await this.getFileHistory();
+            mainWindow?.webContents.send('state-update', {
+              ...globalState,
+              fileHistory: updatedHistory
+            });
+            
+            return { success: false };
+          }
+        }
+      }
+
       const fileContent = content || await fs.readFile(filePath, 'utf8');
       if (!fileContent) {
         console.error('[Main] 파일 내용 없음:', filePath);

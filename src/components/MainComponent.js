@@ -728,12 +728,24 @@ function MainComponent() {
               <div className="file-info-group">
                 <span className="file-name">{path.basename(state.currentFilePath)}</span>
                 <span className="paragraph-info">
-                  {` - ${state.paragraphsMetadata[state.currentParagraph]?.pageNumber || '?'}`}
-                  /
-                  {`${Math.max(...state.paragraphsMetadata
-                    .filter(meta => meta?.pageNumber != null)
-                    .map(meta => meta.pageNumber)) || '?'}`}P.{' '}{' '}
-                  {`(${state.currentParagraph + 1})`}
+                  {(() => {
+                    // 페이지 메타데이터 유효성 검사
+                    const hasPageNumbers = state.paragraphsMetadata.some(meta => meta?.pageNumber != null);
+                    const currentPage = state.paragraphsMetadata[state.currentParagraph]?.pageNumber;
+                    
+                    if (!hasPageNumbers) {
+                      return " - 페이지 정보 없음 ";
+                    }
+
+                    const maxPage = Math.max(
+                      ...state.paragraphsMetadata
+                        .filter(meta => meta?.pageNumber != null)
+                        .map(meta => meta.pageNumber)
+                    );
+
+                    return ` - ${currentPage || '?'}/${maxPage}P.`;
+                  })()}
+                  {` (${state.currentParagraph + 1})`}
                 </span>
               </div>
               <div className="path-group">

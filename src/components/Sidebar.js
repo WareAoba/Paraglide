@@ -1,6 +1,6 @@
 // src/components/Sidebar.js
 
-import React from 'react';
+import React, {useEffect} from 'react';
 import '../CSS/App.css';
 import '../CSS/Sidebar.css';
 import { Menu, Item, useContextMenu } from 'react-contexify';
@@ -125,6 +125,23 @@ function Sidebar({
     }
   };
 
+  useEffect(() => {
+    // 파일 기록 변경 감지
+    const handleStateUpdate = (_, newState) => {
+      if (newState.fileHistory) {
+        loadFileHistory(); // 기존 loadFileHistory 함수 재사용
+      }
+    };
+
+    // 리스너 등록
+    ipcRenderer.on('state-update', handleStateUpdate);
+
+    // 클린업
+    return () => {
+      ipcRenderer.removeListener('state-update', handleStateUpdate);
+    };
+  }, []);
+
   const MENU_ID = 'recent-file-menu';
   const { show } = useContextMenu({
     id: MENU_ID,
@@ -170,7 +187,15 @@ function Sidebar({
                     <span className="current-file-name">{path.basename(currentFilePath)}</span>
                   </div>
                   <div className="current-page-info">
-                    {currentFile.currentPage}/{currentFile.totalPages}페이지
+                    {(() => { // 페이지 정보 유효성 검사
+                      const isValidPage = (page) => page && Number.isFinite(page) && page > 0;
+
+                      if (!isValidPage(currentFile.totalPages) || !isValidPage(currentFile.currentPage)) {
+                        return "페이지 정보 없음";
+                      }
+
+                      return `${currentFile.currentPage}/${currentFile.totalPages}페이지`;
+                    })()}
                   </div>
                   <div className="current-file-path">{formatPath(currentFilePath)}</div>
                 </div>
