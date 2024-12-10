@@ -117,17 +117,23 @@ let globalState = {
 
 // 상태 업데이트 함수
 const updateState = async (newState) => {
+
+  const state = store.getState().textProcess;
+  const config = store.getState().config;
+  
   // Redux store 업데이트
+  if (newState.programStatus !== undefined) {
+    store.dispatch(textProcessActions.updateContent({
+      ...state,
+      programStatus: newState.programStatus
+    }));
+  }
   if (newState.content) {
     store.dispatch(textProcessActions.updateContent(newState.content));
   }
   if (newState.currentParagraph !== undefined) {
     store.dispatch(textProcessActions.updateCurrentParagraph(newState.currentParagraph));
   }
-
-  // 전역 상태 업데이트
-  const state = store.getState().textProcess;
-  const config = store.getState().config;
 
   if (newState.programStatus === ProgramStatus.READY) {
     // READY 상태일 때는 무조건 false
@@ -177,6 +183,8 @@ const updateState = async (newState) => {
       overlayWindow.hide();
     }
   }
+
+  console.log('[Main] 현재 프로그램 상태:', store.getState().textProcess.programStatus);
 
   // 상태 변경 통보
   ipcMain.emit('program-status-update', 'event', {
@@ -543,10 +551,10 @@ const FileManager = {
         await store.dispatch(textProcessActions.updateContent({
           paragraphs: result.paragraphsToDisplay,
           paragraphsMetadata: result.paragraphsMetadata,
-          currentNumber: result.currentNumber,
+          currentNumber: result.paragraphsMetadata[restoredPosition]?.pageInfo, // 명시적으로 pageInfo 설정
           processMode: processMode,
           currentFilePath: filePath,
-          programStatus: ProgramStatus.PROCESS  // 명시적으로 상태 설정
+          programStatus: ProgramStatus.PROCESS
         }));
       
         // 2. 위치 업데이트
@@ -554,21 +562,17 @@ const FileManager = {
       
         // 3. 상태 확인을 위한 지연 추가
         await new Promise(resolve => setTimeout(resolve, 0));
-        
-        // 4. 상태 확인
-        const currentState = store.getState().textProcess;
-        console.log('[Main] 현재 프로그램 상태:', currentState.programStatus);
-      
-        // 5. 전역 상태 업데이트
+
+        // 4. 전역 업데이트
         await updateState({
           paragraphs: result.paragraphsToDisplay,
           currentFilePath: filePath,
           currentParagraph: restoredPosition,
-          programStatus: ProgramStatus.PROCESS,  // 여기서도 명시적으로 설정
+          programStatus: ProgramStatus.PROCESS,
           isOverlayVisible: config.overlay.isVisible,
           isPaused: false,
           processMode: processMode,
-          currentNumber: result.paragraphsMetadata[restoredPosition]?.pageNumber || null
+          currentNumber: result.paragraphsMetadata[restoredPosition]?.pageInfo // pageInfo 추가
         });
         
         const formatFileName = (filePath, maxLength = 30) => {
@@ -698,15 +702,10 @@ const ThemeManager = {
     BrowserWindow.getAllWindows().forEach(window => {
       if (!window.isDestroyed()) {
         try {
-          console.log('[Main] 테마 업데이트 발송:', {
-            id: window.id,
-            theme
-          });
-
           window.webContents.send('theme-update', theme);
           window.webContents.send('update-logos');
         } catch (error) {
-          console.error('[ThemeManager] 테마 업데이트 실패:', error);
+          console.error('[Main] 테마 업데이트 실패:', error);
         }
       }
     });
@@ -880,18 +879,7 @@ const WindowManager = {
     if (!window || window.isDestroyed()) return;
   
     const state = store.getState().textProcess;
-    const config = store.getState().config;
-  
-    if (!state.paragraphs || !state.paragraphsMetadata) {
-      console.warn('Invalid text process state');
-      return;
-    }
-  
     const currentParagraph = state.currentParagraph;
-    if (currentParagraph < 0 || currentParagraph >= state.paragraphs.length) {
-      console.warn('Invalid current paragraph Paragraph');
-      return;
-    }
   
     if (window === mainWindow) {
       // 메인 창에는 항상 "페이지" 문구를 포함하여 표시

@@ -1,6 +1,8 @@
 // src/MainComponent.js
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { CSSTransition } from 'react-transition-group';
 import '../CSS/MainComponent.css';
+import '../CSS/Views/ComponentTransition.css'
 import Sidebar from './Sidebar';
 import Settings from './Settings';
 import Overview from './Views/Overview';
@@ -514,97 +516,6 @@ function MainComponent() {
   };
 
   // MainComponent.js의 웰컴 스크린 return문 수정
-  if (state.paragraphs.length === 0 || state.programStatus === ProgramStatus.READY) {
-    return (
-      <div
-        className="app-container"
-        data-theme={theme.mode}
-        onDragOver={handleDragOver}
-        onDragEnter={handleDragEnter}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-      >
-        <Sidebar
-          isVisible={state.isSidebarVisible}
-          onFileSelect={handleSidebarFileSelect}
-          theme={theme}
-          onClose={handleCloseSidebar}
-          status='ready'
-          icons={{
-            sidebarUnfold: sidebarUnfoldIcon,
-            eye: eyeIcon,
-            eyeOff: eyeOffIcon,
-            searchIcon: searchIcon,
-            terminalIcon: terminalIcon,
-            deleteIcon: deleteIcon
-          }}
-          titlePath={state.titlePath}
-          currentFilePath={state.programStatus === ProgramStatus.PROCESS ? state.currentFilePath : null}
-          onToggleOverlay={handleToggleOverlay}
-          onToggleSearch={handleSearchToggle}
-          onShowDebugConsole={handleShowDebugConsole}
-          isOverlayVisible={state.isOverlayVisible}
-        />
-        <DragDropOverlay isVisible={isDragging} />
-
-        <div className="welcome-screen" data-theme={theme.mode}>
-          <div className="button-group-controls">
-            <button className="btn-icon" onClick={handleToggleSidebar}>
-              <img src={sidebarIcon} alt="Sidebar Icon" className="icon" />
-            </button>
-            <button className="btn-icon" onClick={() => setIsSettingsVisible(true)}>
-              <img src={settingsIcon} alt="Settings Icon" className="icon" />
-            </button>
-          </div>
-
-          <div className="logo-container">
-  {state.logoPath && (
-    <img
-      src={state.logoPath}
-      alt="Paraglide Logo"
-      className="logo"
-      onError={(e) => {
-        console.error('로고 렌더링 실패:', e);
-        e.target.style.display = 'none';
-      }}
-    />
-  )}
-  {state.titlePath ? (
-    <img
-      src={state.titlePath}
-      alt="Paraglide Title"
-      className="title-image"
-      onError={(e) => {
-        console.error('타이틀 렌더링 실패:', e);
-        e.target.style.display = 'none';
-      }}
-    />
-  ) : (
-    <h1 className="title">Paraglide</h1>
-  )}
-</div>
-          <div className="button-container">
-            <button className="btn-primary" onClick={handleLoadFile}>
-              파일 불러오기
-            </button>
-          </div>
-        </div>
-
-        <Settings
-          isVisible={isSettingsVisible}
-          onClose={() => setIsSettingsVisible(false)}
-          theme={theme}
-          icons={{
-            themeAuto: themeAutoIcon,
-            themeLight: themeLightIcon,
-            themeDark: themeDarkIcon,
-          }}
-        />
-      </div>
-    );
-  }
-
-  // MainComponent.js의 return문 부분 수정
   return (
     <div
       className="app-container"
@@ -619,7 +530,7 @@ function MainComponent() {
         onFileSelect={handleSidebarFileSelect}
         theme={theme}
         onClose={handleCloseSidebar}
-        status='process'
+        status={state.programStatus === ProgramStatus.READY ? 'ready' : 'process'}
         icons={{
           sidebarUnfold: sidebarUnfoldIcon,
           eye: eyeIcon,
@@ -630,128 +541,202 @@ function MainComponent() {
           deleteIcon: deleteIcon,
         }}
         titlePath={state.titlePath}
-        currentFilePath={state.currentFilePath} // programStatus 대신 currentFilePath
-        currentFile={{                         // currentFile prop 추가
+        currentFilePath={state.currentFilePath}
+        currentFile={state.programStatus === ProgramStatus.PROCESS ? {
           name: path.basename(state.currentFilePath || ''),
           path: state.currentFilePath,
           currentPage: state.paragraphsMetadata[state.currentParagraph]?.pageNumber || 1,
           totalPages: Math.max(...state.paragraphsMetadata
             .filter(meta => meta?.pageNumber != null)
             .map(meta => meta.pageNumber)) || 1
-        }}
+        } : null}
         onToggleOverlay={handleToggleOverlay}
         onToggleSearch={handleSearchToggle}
         onShowDebugConsole={handleShowDebugConsole}
         isOverlayVisible={state.isOverlayVisible}
       />
+      
       <DragDropOverlay isVisible={isDragging} />
-
-      <div className="main-container" data-theme={theme.mode}>
-        <div className="button-group-controls">
-          {/* 왼쪽 버튼 */}
-          <button className="btn-icon" onClick={handleToggleSidebar}>
-            <img src={sidebarIcon} alt="Sidebar Icon" className="icon" />
-          </button>
-
-          <button className="btn-icon" onClick={() => setIsSettingsVisible(true)}>
-            <img src={settingsIcon} alt="Settings Icon" className="icon" />
-          </button>
-
-          <button className="btn-icon" onClick={handleCompleteWork}>
-            <img src={homeIcon} alt="작업 종료" className="icon" />
-          </button>
-
-          <button
-            className={`btn-icon ${state.isPaused ? 'btn-danger' : 'btn-success'}`}
-            onClick={handleTogglePause}
-          >
-            {state.isPaused ? (
-              <img src={playIcon} alt="재생" className="icon" />
-            ) : (
-              <img src={pauseIcon} alt="일시정지" className="icon" />
-            )}
-          </button>
-          <button 
-            className={`btn-icon ${state.isOverlayVisible ? 'btn-active' : 'btn-outline'}`}
-            onClick={handleToggleOverlay}
-          >
-            {state.isOverlayVisible ?
-              <img src={eyeIcon} alt="일시정지" className="icon" />
-               : 
-              <img src={eyeOffIcon} alt="일시정지" className="icon" /> }
-          </button>
-        </div>
-
-        {state.viewMode === 'overview' ? (
-  <>
-  <div className="page-number">
-    {state.currentNumber?.display || '\u00A0'}
-  </div>
-  <Overview
-    paragraphs={state.paragraphs}
-    currentParagraph={state.currentParagraph}
-    onParagraphClick={handleParagraphClick}
-    theme={theme}
-    hoveredSection={hoveredSection}
-    onHoverChange={setHoveredSection}
-  />
-</>
-        ) : (
-          <ListView
-            paragraphs={state.paragraphs}
-            metadata={state.paragraphsMetadata}
-            currentParagraph={state.currentParagraph}
-            onParagraphSelect={handleParagraphSelect}
-            onCompleteWork={handleCompleteWork}
-            theme={theme}
-          />
-        )}
-        {state.paragraphs.length > 0 && (
-          <Search
-            ref={searchRef}
-            paragraphs={state.paragraphs}
-            onSelect={handleParagraphSelect}
-            isVisible={isSearchVisible}
-            onClose={() => setIsSearchVisible(false)}
-            metadata={state.paragraphsMetadata}
-            icons={{
-              searchIcon: searchIcon,
-              pageJumpIcon: pageJumpIcon,
-            }}
-            theme={theme}
-          />
+  
+      <div className="button-group-controls">
+        <button className="btn-icon" onClick={handleToggleSidebar}>
+          <img src={sidebarIcon} alt="Sidebar Icon" className="icon" />
+        </button>
+        <button className="btn-icon" onClick={() => setIsSettingsVisible(true)}>
+          <img src={settingsIcon} alt="Settings Icon" className="icon" />
+        </button>
+        {state.programStatus === ProgramStatus.PROCESS && (
+          <>
+            <button className="btn-icon" onClick={handleCompleteWork}>
+              <img src={homeIcon} alt="작업 종료" className="icon" />
+            </button>
+            <button
+              className={`btn-icon ${state.isPaused ? 'btn-danger' : 'btn-success'}`}
+              onClick={handleTogglePause}
+            >
+              {state.isPaused ? (
+                <img src={playIcon} alt="재생" className="icon" />
+              ) : (
+                <img src={pauseIcon} alt="일시정지" className="icon" />
+              )}
+            </button>
+            <button 
+              className={`btn-icon ${state.isOverlayVisible ? 'btn-active' : 'btn-outline'}`}
+              onClick={handleToggleOverlay}
+            >
+              {state.isOverlayVisible ?
+                <img src={eyeIcon} alt="오버레이 켜짐" className="icon" />
+                : 
+                <img src={eyeOffIcon} alt="오버레이 꺼짐" className="icon" />
+              }
+            </button>
+          </>
         )}
       </div>
-      {state.currentFilePath && (
-        <div className="file-info-container">
-          <div className="file-info-group">
-            <span className="file-name">{path.basename(state.currentFilePath)}</span>
-            <span className="paragraph-info">
-        {` - ${state.paragraphsMetadata[state.currentParagraph]?.pageNumber || '?'}`}
-        /
-        {`${Math.max(...state.paragraphsMetadata
-          .filter(meta => meta?.pageNumber != null)
-          .map(meta => meta.pageNumber)) || '?'}`}P.{' '}{' '}
-        {`(${state.currentParagraph + 1})`}
-      </span>
+  
+      <CSSTransition
+        in={state.programStatus === ProgramStatus.READY}
+        appear={true}
+        timeout={500}
+        classNames="welcome-screen"
+        mountOnEnter
+        unmountOnExit
+      >
+        <div className="welcome-screen" data-theme={theme.mode}>
+          <div className="logo-container">
+            {state.logoPath && (
+              <img
+                src={state.logoPath}
+                alt="Paraglide Logo"
+                className="logo"
+                onError={(e) => {
+                  console.error('로고 렌더링 실패:', e);
+                  e.target.style.display = 'none';
+                }}
+              />
+            )}
+            {state.titlePath ? (
+              <img
+                src={state.titlePath}
+                alt="Paraglide Title"
+                className="title-image"
+                onError={(e) => {
+                  console.error('타이틀 렌더링 실패:', e);
+                  e.target.style.display = 'none';
+                }}
+              />
+            ) : (
+              <h1 className="title">Paraglide</h1>
+            )}
           </div>
-          <div className="path-group">
-            <span className="file-path">| {formatPath(state.currentFilePath)}</span>
+          <div className="button-container">
+            <button className="btn-primary" onClick={handleLoadFile}>
+              파일 불러오기
+            </button>
           </div>
         </div>
-      )}
+      </CSSTransition>
+  
+      <CSSTransition
+        in={state.programStatus === ProgramStatus.PROCESS}
+        timeout={500}
+        classNames="viewport"
+        mountOnEnter
+        unmountOnExit
+      >
+        <div className="main-container" data-theme={theme.mode}>
+          <div className="view-container">
+            <CSSTransition
+              in={state.viewMode === 'overview'}
+              timeout={300}
+              classNames="view-transition"
+              mountOnEnter
+              unmountOnExit
+            >
+              <div className="view-wrapper">
+                <div className="page-number">
+                  {state.currentNumber?.display || '\u00A0'}
+                </div>
+                <Overview
+                  paragraphs={state.paragraphs}
+                  currentParagraph={state.currentParagraph}
+                  onParagraphClick={handleParagraphClick}
+                  theme={theme}
+                  hoveredSection={hoveredSection}
+                  onHoverChange={setHoveredSection}
+                />
+              </div>
+            </CSSTransition>
+  
+            <CSSTransition
+              in={state.viewMode === 'listview'}
+              timeout={300}
+              classNames="view-transition"
+              mountOnEnter
+              unmountOnExit
+            >
+              <div className="view-wrapper">
+                <ListView
+                  paragraphs={state.paragraphs}
+                  metadata={state.paragraphsMetadata}
+                  currentParagraph={state.currentParagraph}
+                  onParagraphSelect={handleParagraphSelect}
+                  onCompleteWork={handleCompleteWork}
+                  theme={theme}
+                />
+              </div>
+            </CSSTransition>
+          </div>
+  
+          {state.paragraphs.length > 0 && (
+            <Search
+              ref={searchRef}
+              paragraphs={state.paragraphs}
+              onSelect={handleParagraphSelect}
+              isVisible={isSearchVisible}
+              onClose={() => setIsSearchVisible(false)}
+              metadata={state.paragraphsMetadata}
+              icons={{
+                searchIcon: searchIcon,
+                pageJumpIcon: pageJumpIcon,
+              }}
+              theme={theme}
+            />
+          )}
+  
+          {state.currentFilePath && (
+            <div className="file-info-container">
+              <div className="file-info-group">
+                <span className="file-name">{path.basename(state.currentFilePath)}</span>
+                <span className="paragraph-info">
+                  {` - ${state.paragraphsMetadata[state.currentParagraph]?.pageNumber || '?'}`}
+                  /
+                  {`${Math.max(...state.paragraphsMetadata
+                    .filter(meta => meta?.pageNumber != null)
+                    .map(meta => meta.pageNumber)) || '?'}`}P.{' '}{' '}
+                  {`(${state.currentParagraph + 1})`}
+                </span>
+              </div>
+              <div className="path-group">
+                <span className="file-path">| {formatPath(state.currentFilePath)}</span>
+              </div>
+            </div>
+          )}
+        </div>
+      </CSSTransition>
+  
       <Settings
         isVisible={isSettingsVisible}
         onClose={() => setIsSettingsVisible(false)}
         theme={theme}
         icons={{
-            themeAuto: themeAutoIcon,
-            themeLight: themeLightIcon,
-            themeDark: themeDarkIcon,
-          }}
+          themeAuto: themeAutoIcon,
+          themeLight: themeLightIcon,
+          themeDark: themeDarkIcon,
+        }}
       />
     </div>
   );
-}
+};
 
 export default MainComponent;

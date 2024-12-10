@@ -1,5 +1,5 @@
 :root {
-  --button-group-height: 100px;
+  --button-group-height: 60px;
   --content-padding: 20px;
   --container-spacing: var(--spacing-md);
 }
@@ -20,7 +20,7 @@
     align-items: center;
     /* justify-content: center; */
     min-height: 100vh;
-    padding: var(--spacing-md);
+    padding-top: var(--button-group-height);
     gap: var(--spacing-xl);
     background-color: var(--bg-color);
     color: var(--text-color);
@@ -104,9 +104,10 @@
 }
 
 .button-group-controls{
-    display: flex;
-    align-items: center;
-    justify-content: start;
+  position: fixed; /* 고정 위치 */
+  top: var(--spacing-md); /* 상단 여백 */
+  left: var(--spacing-md); /* 좌측 여백 */
+  z-index: 100; /* 다른 요소들보다 위에 표시 */
     width: 100%;
     filter: var(--icon-filter);
     gap: var(--spacing-xs);
@@ -172,7 +173,8 @@
     color: var(--text-color);
     margin-left: var(--spacing-sm);
     padding-bottom: 3vh;
-    padding-top: 10px;
+    padding-top: var(--button-group-height);
+    z-index: 10;
 }
 
 .sidebar.visible {
