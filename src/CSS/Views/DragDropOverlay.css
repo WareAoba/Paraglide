@@ -33,9 +33,13 @@
 }
 
 .drag-drop-overlay.visible .drag-drop-backdrop {
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.2);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
+}
+
+[data-theme="dark"] .drag-drop-backdrop {
+  background-color: rgba(0, 0, 0, 0.6);
 }
 
 .drag-drop-content {
