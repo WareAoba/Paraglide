@@ -124,7 +124,6 @@
   left: var(--spacing-md); /* 좌측 여백 */
   z-index: 100; /* 다른 요소들보다 위에 표시 */
   width: 100%;
-  filter: var(--icon-filter);
   display: flex;
   gap: var(--spacing-xs);
 }
@@ -143,18 +142,26 @@
     align-items: center;
     justify-content: center;
     border-radius: 15%;
-    box-shadow: 0 0 0 transparent, 0 0 0 transparent;
     transition: all 0.3s ease;
     width: var(--btn-size); 
     height: var(--btn-size);
     margin: 0;
 }
 
+.button-group-controls .btn-icon img {
+    filter: var(--icon-filter); /* 아이콘에만 필터 적용 */
+}
+
 .button-group-controls .btn-icon:hover{
     scale: 1.1;
-    box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.1),
-                2px 2px 6px rgba(0, 0, 0, 0.2);
+    box-shadow:  2px 2px 5px #e2e5ed, -2px -2px 5px #fff;
+    background: linear-gradient(145deg, rgba(232, 235, 242, 0.6), rgba(242, 243, 247, 0.6));
 }
+
+.button-group-controls .btn-icon:active{
+   box-shadow: -2px -2px 5px #e2e5ed, 2px 2px 5px #fff;
+    }
+
 
 .button-group-controls .btn-icon img[alt="Settings Icon"] {
   transition: transform 0.2s ease;
