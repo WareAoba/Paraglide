@@ -294,23 +294,6 @@
   inset -3px -3px 4px var(--container-shadow-down);
 }
 
-[data-action="open"].control-button {
-  background: var(--container-bg);
-  color: var(--text-color);
-}
-
-[data-action="open"].control-button:hover {
-color: block; 
-box-shadow:
-3px 3px 3px var(--container-shadow-up),
--3px -3px 3px var(--container-shadow-down),;
-}
-
-[data-action="edit"].control-button {
-  background: var(--success-color);
-  color: white;
-}
-
 .control-button:disabled {
   opacity: 0.5;
   box-shadow: none;
@@ -330,7 +313,7 @@ box-shadow:
 }
 
 .control-button img[data-action="edit"] {
-  filter:invert(99%) sepia(0%) saturate(1144%) hue-rotate(173deg) brightness(114%) contrast(100%);
+  filter: var(--success-filter);
 }
 
 .control-button span {

@@ -429,6 +429,8 @@ input:focus + .slider {
   z-index: 1002;
   background: var(--bg-color);
   padding: 12px;
+  box-shadow: 5px 5px 8px var(--container-shadow-up),
+              -5px -5px 8px var(--container-shadow-down);
   border-radius: 8px;
   opacity: 0;
   visibility: hidden;
