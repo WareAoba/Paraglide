@@ -29,12 +29,20 @@ function Sidebar({
   onSelect
 }) {
   const [files, setFiles] = React.useState([]);
+  const [shouldRender, setShouldRender] = React.useState(false);
 
   React.useEffect(() => {
     if (isVisible) {
-      loadFileHistory();
+      setShouldRender(true);
+    } else {
+      // 사이드바가 닫힐 때 0.5초 후 렌더링 해제
+      const timer = setTimeout(() => {
+        setShouldRender(false);
+      }, 500);
+      
+      return () => clearTimeout(timer);
     }
-  }, [isVisible, currentFilePath]);
+  }, [isVisible]);
 
   const loadFileHistory = async () => {
     try {
@@ -234,6 +242,8 @@ function Sidebar({
         </div>
 
         <div className="sidebar-content">
+        {shouldRender && ( // 사이드바가 보일 때만 내용 렌더링
+      <>
           <CSSTransition
             in={!isSearchVisible}
             timeout={500}
@@ -343,11 +353,12 @@ function Sidebar({
               </div>
               </div>
           </CSSTransition>
-
+          </>
+    )}
           <CSSTransition
   in={isSearchVisible}
   timeout={500}
-  classNames="sidebar-transition"
+  classNames="search-transition"
   mountOnEnter
   unmountOnExit
 >
