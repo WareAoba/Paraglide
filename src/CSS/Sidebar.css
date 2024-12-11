@@ -279,8 +279,8 @@
 }
 
 [data-action="open"].control-button {
-  background: var(--primary-color);
-  color: var(--primary-text);
+  background: var(--container-bg);
+  color: var(--primary-color);
   box-shadow: 0 4px 8px var(--primary-color-shadow-up),
               0 4px 8px var(--primary-color-shadow-down),
               inset 0 0 0 transparent, inset 0 0 0 transparent;
@@ -312,7 +312,7 @@
 }
 
 .control-button img[data-action="open"] {
-  filter: var(--primary-filter);
+  filter: var(--primary-color-filter);
 }
 
 .control-button img[data-action="edit"] {

@@ -9,7 +9,6 @@ import Overview from './Views/Overview';
 import ListView from './Views/ListView';
 import Search from './Views/Search';
 import DragDropOverlay from './Views/DragDropOverlay';
-
 const path = window.require('path');
 const { ipcRenderer } = window.require('electron');
 
@@ -451,45 +450,59 @@ function MainComponent() {
     }));
   };
 
-  const themeCalc = (accentColor, defaultColor = '#007bff') => {
-    try {
-      const root = document.documentElement;
-      const rgb = hexToRgb(accentColor);
-      const hsl = hexToHSL(accentColor);
-      
-      // 인간의 시각 인식에 더 가까운 상대 휘도(Relative Luminance) 계산
-      const luminance = (0.2126 * rgb.r + 0.7152 * rgb.g + 0.0722 * rgb.b) / 255;
-      
-      // HSL의 명도(L)도 함께 고려
-      const combinedBrightness = (luminance + (hsl.l / 100)) / 2;
-  
-      const themeVars = {
-        '--primary-color': accentColor,
-        '--primary-text': combinedBrightness > 0.6 ? '#333' : '#f5f5f5',
-        '--primary-filter': combinedBrightness > 0.6 
-          ? 'invert(19%) sepia(0%) saturate(2%) hue-rotate(82deg) brightness(96%) contrast(96%)'
-          : 'invert(99%) sepia(15%) saturate(70%) hue-rotate(265deg) brightness(113%) contrast(92%)',
-        '--primary-color-shadow-up': `hsla(${hsl.h}, ${hsl.s}%, ${Math.min(hsl.l + 5, 100)}%, 0.2)`,
-        '--primary-color-shadow-down': `hsla(${hsl.h}, ${hsl.s}%, ${Math.max(hsl.l - 5, 0)}%, 0.2)`
-      };
-  
-      // 로고 필터 계산 추가
-      const defaultHsl = hexToHSL(defaultColor);
-      const newHsl = hexToHSL(accentColor);
-      themeVars['--logo-filter'] = `hue-rotate(${newHsl.h - defaultHsl.h}deg) saturate(${(newHsl.s / defaultHsl.s) * 100}%) brightness(${(newHsl.l / defaultHsl.l) * 100}%)`;
-  
-      // 현재 창에 적용
-      Object.entries(themeVars).forEach(([key, value]) => {
-        root.style.setProperty(key, value);
-      });
-  
-      // 오버레이 창으로 전달
-      ipcRenderer.send('update-theme-variables', themeVars);
-  
-    } catch (error) {
-      console.error('[MainComponent] CSS 변수 업데이트 실패:', error);
-    }
-  };
+// themeCalc 함수 수정
+const themeCalc = (accentColor, defaultColor = '#007bff') => {
+  try {
+    const root = document.documentElement;
+    
+    // 기본 색상 설정
+    root.style.setProperty('--primary-color', accentColor);
+
+    // RGB/HSL 계산...
+    const rgb = hexToRgb(accentColor);
+    const hsl = hexToHSL(accentColor);
+    const luminance = (0.2126 * rgb.r + 0.7152 * rgb.g + 0.0722 * rgb.b) / 255;
+    const combinedBrightness = (luminance + (hsl.l / 100)) / 2;
+
+    // 즉시 설정할 변수들 적용
+    const immediateVars = {
+      '--primary-text': combinedBrightness > 0.6 ? '#333' : '#f5f5f5',
+      '--primary-filter': combinedBrightness > 0.6 
+        ? 'invert(19%) sepia(0%) saturate(2%) hue-rotate(82deg) brightness(96%) contrast(96%)'
+        : 'invert(99%) sepia(15%) saturate(70%) hue-rotate(265deg) brightness(113%) contrast(92%)',
+      '--primary-color-shadow-up': `hsla(${hsl.h}, ${hsl.s}%, ${Math.min(hsl.l + 5, 100)}%, 0.2)`,
+      '--primary-color-shadow-down': `hsla(${hsl.h}, ${hsl.s}%, ${Math.max(hsl.l - 5, 0)}%, 0.2)`,
+      '--logo-filter': `hue-rotate(${hsl.h - hexToHSL(defaultColor).h}deg) saturate(${(hsl.s / hexToHSL(defaultColor).s) * 100}%) brightness(${(hsl.l / hexToHSL(defaultColor).l) * 100}%)`
+    };
+
+    // 즉시 적용
+    Object.entries(immediateVars).forEach(([key, value]) => {
+      root.style.setProperty(key, value);
+    });
+
+// IPC를 통해 필터 값 가져오기
+ipcRenderer.invoke('generate-css-filter', accentColor, {
+  acceptanceLossPercentage: 1,
+  maxChecks: 10
+}).then(colorFilter => {
+  if (colorFilter && colorFilter.filter) {
+    const filterValue = colorFilter.filter.replace(/;$/, '').trim();
+    root.style.setProperty('--primary-color-filter', filterValue);    // CSS 변수 설정
+    
+    ipcRenderer.send('update-theme-variables', {
+      '--primary-color': accentColor,
+      '--primary-color-filter': filterValue,
+      ...immediateVars
+    });
+  }
+}).catch(error => {
+  console.error('[MainComponent] CSS 필터 생성 실패:', error);
+});
+
+  } catch (error) {
+    console.error('[MainComponent] CSS 변수 업데이트 실패:', error);
+  }
+};
 
   const hexToRgb = (hex) => {
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
@@ -617,13 +630,13 @@ function MainComponent() {
       </div>
   
       <CSSTransition
-        in={state.programStatus === ProgramStatus.READY}
-        appear={true}
-        timeout={500}
-        classNames="welcome-screen"
-        mountOnEnter
-        unmountOnExit
-      >
+  in={state.programStatus === ProgramStatus.READY}
+  appear={true}
+  timeout={500}
+  classNames="viewport" // 여기서 classNames를 "viewport"로 변경
+  mountOnEnter
+  unmountOnExit
+>
         <div className="welcome-screen" data-theme={theme.mode}>
           <div className="logo-container">
             {state.logoPath && (
@@ -669,35 +682,35 @@ function MainComponent() {
       >
         <div className="main-container" data-theme={theme.mode}>
           <div className="view-container">
-            <CSSTransition
-              in={state.viewMode === 'overview'}
-              timeout={300}
-              classNames="view-transition"
-              mountOnEnter
-              unmountOnExit
-            >
-              <div className="view-wrapper">
-                <div className="page-number">
-                  {state.currentNumber?.display || '\u00A0'}
-                </div>
-                <Overview
-                  paragraphs={state.paragraphs}
-                  currentParagraph={state.currentParagraph}
-                  onParagraphClick={handleParagraphClick}
-                  theme={theme}
-                  hoveredSection={hoveredSection}
-                  onHoverChange={setHoveredSection}
-                />
-              </div>
-            </CSSTransition>
+          <CSSTransition
+  in={state.viewMode === 'overview'}
+  timeout={500} // timeout을 500ms로 설정하여 리스트뷰와 통일
+  classNames="viewport" // classNames를 'viewport'로 변경하여 동일한 효과 적용
+  mountOnEnter
+  unmountOnExit
+>
+  <div className="view-wrapper">
+    <div className="page-number">
+      {state.currentNumber?.display || '\u00A0'}
+    </div>
+    <Overview
+      paragraphs={state.paragraphs}
+      currentParagraph={state.currentParagraph}
+      onParagraphClick={handleParagraphClick}
+      theme={theme}
+      hoveredSection={hoveredSection}
+      onHoverChange={setHoveredSection}
+    />
+  </div>
+  </CSSTransition>
   
             <CSSTransition
-              in={state.viewMode === 'listview'}
-              timeout={300}
-              classNames="view-transition"
-              mountOnEnter
-              unmountOnExit
-            >
+    in={state.viewMode === 'listview'}
+    timeout={300}
+    classNames="view-transition"
+    mountOnEnter
+    unmountOnExit
+  >
               <div className="view-wrapper">
                 <ListView
                   paragraphs={state.paragraphs}

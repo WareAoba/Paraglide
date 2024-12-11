@@ -1118,6 +1118,29 @@ const IPCManager = {
       return ThemeManager.getCurrentTheme();
     });
 
+    ipcMain.handle('generate-css-filter', async (event, color, options) => { // --primary-color-filter 생성
+      try {
+        // 모듈 불러오기
+        const module = require('hex-to-css-filter');
+        
+        // hexToCSSFilter 함수 직접 접근
+        if (typeof module.hexToCSSFilter === 'function') {
+          const result = module.hexToCSSFilter(color, options);
+          return result;
+        }
+        
+        throw new Error('hexToCSSFilter 함수를 찾을 수 없습니다');
+        
+      } catch (error) {
+        console.error('[Main] 필터 생성 실패:', error);
+        return {
+          filter: 'brightness(0) saturate(100%)',
+          success: false,
+          loss: 1
+        };
+      }
+    });
+
     // 디버그 콘솔 핸들러
     ipcMain.on('show-debug-console', () => this.handleShowDebugConsole());
 

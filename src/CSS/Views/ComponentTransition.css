@@ -25,7 +25,7 @@
   
   .viewport-exit-active {
     opacity: 0;
-    transform: translateY(-20px);
+    transform: translateY(-20px); /* 반대 방향 */
     transition: opacity 0.5s ease, transform 0.5s ease;
   }
 
@@ -43,25 +43,25 @@
     height: 100%;
   }
 
-.view-transition-enter {
+  .view-transition-enter {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateX(20px);
   }
   
   .view-transition-enter-active {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateX(0);
     transition: opacity 0.3s ease, transform 0.3s ease;
   }
   
   .view-transition-exit {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateX(0);
   }
   
   .view-transition-exit-active {
     opacity: 0;
-    transform: translateY(-20px);
+    transform: translateX(-20px);
     transition: opacity 0.3s ease, transform 0.3s ease;
   }
   

@@ -94,3 +94,7 @@
     margin-right: 8px;
     filter: var(--icon-filter);
   }
+
+  .dropdown-item.active .dropdown-icon {
+    filter: var(--primary-color-filter);
+  }

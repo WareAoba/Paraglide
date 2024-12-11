@@ -22,8 +22,11 @@
   --hover-bg: rgba(0, 0, 0, 0.1);
   --overlay-bg: rgba(255, 255, 255, 1.0);
   --pass-color: #007bff;
+  --pass-filter: invert(35%) sepia(97%) saturate(4192%) hue-rotate(201deg) brightness(106%) contrast(103%);
   --danger-color: #dc3545;
+  --danger-filter: invert(33%) sepia(60%) saturate(4976%) hue-rotate(337deg) brightness(90%) contrast(90%);
   --success-color: #28a745;
+  --success-filter: invert(54%) sepia(19%) saturate(1631%) hue-rotate(81deg) brightness(93%) contrast(92%);
   --window-opacity: 1;
   --bg-opacity: 0.8;
   --bg-rgb: 255, 255, 255;
