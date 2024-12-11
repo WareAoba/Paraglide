@@ -1,30 +1,43 @@
 // src/components/Sidebar.js
 
-import React from 'react';
+import React, {useEffect} from 'react';
 import '../CSS/App.css';
 import '../CSS/Sidebar.css';
+import { Menu, Item, useContextMenu } from 'react-contexify';
+import '../CSS/Controllers/ReactContexify.css';
 const { ipcRenderer } = window.require('electron');
 const path = window.require('path');
 
 // icons prop 추가
-function Sidebar({ isVisible, onClose, currentFilePath, isDarkMode, icons }) {
+function Sidebar({
+  isVisible,
+  onClose,
+  currentFilePath,
+  theme,
+  status,
+  icons,
+  titlePath,
+  currentFile,
+  onToggleSearch,
+  onShowDebugConsole,
+}) {
   const [files, setFiles] = React.useState([]);
 
   React.useEffect(() => {
     if (isVisible) {
       loadFileHistory();
     }
-  }, [isVisible, currentFilePath]); 
+  }, [isVisible, currentFilePath]);
 
   const loadFileHistory = async () => {
     try {
       const { logData, currentFile } = await ipcRenderer.invoke('get-file-history');
-      
+
       const processedFiles = Object.entries(logData)
         .filter(([filePath, data]) => {
           // currentFile이 없으면 모든 파일 표시
           if (!currentFile || !currentFile.path) return true;
-          
+
           // 현재 작업 중인 파일만 제외
           return filePath !== currentFile.path;
         })
@@ -33,7 +46,7 @@ function Sidebar({ isVisible, onClose, currentFilePath, isDarkMode, icons }) {
           filePath: filePath,
           currentPageNumber: data.lastPosition?.pageNumber || null,
           currentParagraph: data.lastPosition?.currentParagraph,
-          timestamp: data.timestamp
+          timestamp: data.timestamp,
         }))
         .sort((a, b) => b.timestamp - a.timestamp);
 
@@ -48,21 +61,21 @@ function Sidebar({ isVisible, onClose, currentFilePath, isDarkMode, icons }) {
     const date = new Date(timestamp);
     const now = new Date();
     const isThisYear = date.getFullYear() === now.getFullYear();
-    
+
     if (isThisYear) {
       return new Intl.DateTimeFormat('ko-KR', {
         month: '2-digit',
         day: '2-digit',
         hour: '2-digit',
         minute: '2-digit',
-        hour12: false
+        hour12: false,
       }).format(date);
     }
-    
+
     return new Intl.DateTimeFormat('ko-KR', {
       year: '2-digit',
       month: '2-digit',
-      day: '2-digit'
+      day: '2-digit',
     }).format(date);
   };
 
@@ -74,12 +87,40 @@ function Sidebar({ isVisible, onClose, currentFilePath, isDarkMode, icons }) {
     return truncatedPath;
   };
 
+  useEffect(() => {
+    const container = document.querySelector('.current-file-name-container');
+    const wrapper = document.querySelector('.current-file-name-wrapper');
+    
+    if (container && wrapper) {
+      const containerWidth = container.offsetWidth;
+      const wrapperWidth = wrapper.offsetWidth;
+      
+      // 텍스트가 컨테이너보다 길 경우에만 애니메이션 활성화
+      if (wrapperWidth > containerWidth) {
+        container.setAttribute('data-needs-animation', 'true');
+        container.style.setProperty('--container-width', `${containerWidth}px`);
+      } else {
+        container.setAttribute('data-needs-animation', 'false');
+      }
+    }
+  }, [currentFilePath]);
+
   // 로그 삭제 핸들러 - 단순히 삭제 요청만
-  const handleRemoveFile = async (e, filePath) => {
-    e.stopPropagation(); // 클릭 이벤트 전파 방지
+  const handleRemoveFile = async (filePath) => {
     try {
+      // 1. CSS 선택자 이스케이프 처리
+      const escapedPath = CSS.escape(filePath);
+      const element = document.querySelector(`[data-filepath="${escapedPath}"]`);
+      
+      // 2. 요소를 못찾아도 삭제는 진행
+      if (element) {
+        element.classList.add('removing');
+        await new Promise((resolve) => setTimeout(resolve, 200));
+      }
+      
+      // 3. 파일 삭제 진행
       await ipcRenderer.invoke('clear-log-files', filePath);
-      loadFileHistory(); // 목록 새로고침
+      loadFileHistory();
     } catch (error) {
       console.error('파일 기록 삭제 실패:', error);
     }
@@ -91,9 +132,9 @@ function Sidebar({ isVisible, onClose, currentFilePath, isDarkMode, icons }) {
       // 통합된 open-file 핸들러 사용
       const result = await ipcRenderer.invoke('open-file', {
         filePath,
-        source: 'history'
+        source: 'history',
       });
-      
+
       if (result.success) {
         onClose();
       }
@@ -102,57 +143,173 @@ function Sidebar({ isVisible, onClose, currentFilePath, isDarkMode, icons }) {
     }
   };
 
+  useEffect(() => {
+    // 파일 기록 변경 감지
+    const handleStateUpdate = (_, newState) => {
+      if (newState.fileHistory) {
+        loadFileHistory(); // 기존 loadFileHistory 함수 재사용
+      }
+    };
+
+    // 리스너 등록
+    ipcRenderer.on('state-update', handleStateUpdate);
+
+    // 클린업
+    return () => {
+      ipcRenderer.removeListener('state-update', handleStateUpdate);
+    };
+  }, []);
+
+  const MENU_ID = 'recent-file-menu';
+  const { show } = useContextMenu({
+    id: MENU_ID,
+  });
+
+  const handleContextMenu = (event, file) => {
+    // 우클릭 메뉴 표시
+    event.preventDefault();
+    show({
+      event,
+      props: {
+        file,
+      },
+    });
+  };
+
   return (
     <>
-      <div 
-        className={`sidebar ${isVisible ? 'visible' : ''} ${isDarkMode ? 'dark' : ''}`}
-        data-theme={isDarkMode ? 'dark' : 'light'}
-      >
+      <div className={`sidebar ${isVisible ? 'visible' : ''}`} data-theme={theme.mode}>
+        {/* 헤더 섹션 */}
         <div className="sidebar-header">
-          <h2>최근 작업 파일</h2>
-          <button className="sidebar-close-button" onClick={onClose}>
-            <img 
-              src={icons?.menuUnfold} 
-              alt="닫기" 
-              className="sidebar-icon-button"
-            />
+        <button className="sidebar-close-button" onClick={onClose}>
+            <img src={icons?.sidebarUnfold} alt="닫기" className="sidebar-icon-button" />
           </button>
-        </div>
-        <div className="sidebar-content">
-          <div className="file-list">
-            {files.length > 0 ? (
-              files.map((file, index) => (
-                <div 
-                  key={index} 
-                  className="file-item"
-                  onClick={() => handleFileSelect(file.filePath)}
-                >
-                  <div className="file-main-info">
-                    <span className="file-name">{file.fileName}</span>
-                    <span className="file-page">
-                      {file.currentPageNumber != null && `${file.currentPageNumber}페이지`}
-                    </span>
-                    <button 
-                      className="btn-remove"
-                      onClick={(e) => handleRemoveFile(e, file.filePath)}
-                    >
-                      ×
-                    </button>
-                  </div>
-                  <div className="file-sub-info">
-                    <span className="file-path">{formatPath(file.filePath)}</span>
-                    <span className="file-date">{formatDate(file.timestamp)}</span>
-                  </div>
-                </div>
-              ))
+          <div className="header-title-group">
+            {titlePath ? (
+              <img src={titlePath} alt="Paraglide" className="header-title-image" />
             ) : (
-              <div className="empty-message">최근 작업 기록이 없습니다.</div>
+              <h2>Paraglide</h2>
             )}
           </div>
         </div>
+
+        <div className="sidebar-content">
+          {/* 파일 정보 섹션 */}
+          {currentFile && (
+            <div className="sidebar-section">
+              <h3>현재 파일</h3>
+              <div className="section-content current-file-info">
+                <img src={icons?.textFileIcon} alt="파일" className="current-file-icon" />
+                <div className="current-file-content">
+                  <div className="current-file-info-header">
+                  <div className="current-file-name-container">
+                  <div className="current-file-name-wrapper">
+                    <span className="current-file-name">{path.basename(currentFilePath)}</span>
+                  </div>
+                  </div>
+                  </div>
+                  <div className="current-page-info">
+                    {(() => { // 페이지 정보 유효성 검사
+                      const isValidPage = (page) => page && Number.isFinite(page) && page > 0;
+
+                      if (!isValidPage(currentFile.totalPages) || !isValidPage(currentFile.currentPage)) {
+                        return "페이지 정보 없음";
+                      }
+
+                      return `${currentFile.currentPage}/${currentFile.totalPages}페이지`;
+                    })()}
+                  </div>
+                  <div className="current-file-path">{formatPath(currentFilePath)}</div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 컨트롤 섹션 */}
+          <div className="sidebar-section controls">
+            <div className="control-grid">
+              <button
+              className="control-button"
+              data-action="open"
+              onClick={() => {
+                ipcRenderer.invoke('open-file')
+              }}
+              >
+                <img src={icons?.openIcon} data-action="open" alt="열기" />
+                <span>열기</span>
+              </button>
+              <button
+                className={`control-button ${status === 'ready' ? 'disabled' : ''}`}
+                data-action="edit"
+                onClick={() => {
+                  onClose();
+                  }}
+                  disabled={true}
+                >
+                  <img src={icons?.editIcon} data-action="edit" alt="편집" />
+                  <span>편집</span>
+                </button>
+                <button
+                  className={`control-button ${status === 'ready' ? 'disabled' : ''}`}
+                  onClick={() => {
+                  onToggleSearch();
+                  onClose();
+                  }}
+                  disabled={status === 'ready'}
+                >
+                  <img src={icons?.searchIcon} alt="검색" />
+                  <span>검색</span>
+                </button>
+                <button
+                  className="control-button"
+                  onClick={() => {
+                  onShowDebugConsole();
+                  onClose();
+                }}
+              >
+                <img src={icons?.terminalIcon} alt="콘솔" />
+                <span>콘솔</span>
+              </button>
+            </div>
+          </div>
+
+          {/* 최근 파일 섹션 */}
+          <div className="sidebar-section recent-files">
+            <h3>최근 작업 파일</h3>
+            <div className="recent-file-list">
+              {files.map((file) => (
+                <div
+                  key={file.filePath}
+                  data-filepath={file.filePath}
+                  className="recent-file-item"
+                  onClick={() => handleFileSelect(file.filePath)} // 추가
+                  onContextMenu={(e) => handleContextMenu(e, file)}
+                >
+                  <div className="recent-file-main-info">
+                    <span className="recent-file-name">{file.fileName}</span>
+                    <span className="recent-file-page">
+                      {file.currentPageNumber != null && `${file.currentPageNumber}페이지`}
+                    </span>
+                  </div>
+                  <div className="recent-file-sub-info">
+                    <span className="recent-file-path">{formatPath(file.filePath)}</span>
+                    <span className="recent-file-date">{formatDate(file.timestamp)}</span>
+                  </div>
+                </div>
+              ))}
+              {files.length === 0 && <div className="empty-message">최근 작업 기록이 없습니다.</div>}
+            </div>
+          </div>
+        </div>
       </div>
-      {isVisible && <div className="sidebar-overlay" onClick={onClose} />}
-      </>
+      <div className={`sidebar-overlay ${isVisible ? 'visible' : ''}`} onClick={onClose} />
+      <Menu id={MENU_ID}>
+        <Item onClick={({ props }) => handleRemoveFile(props.file.filePath)}>
+          <img src={icons?.deleteIcon} alt="삭제" />
+          <span>기록 삭제</span>
+        </Item>
+      </Menu>
+    </>
   );
 }
 

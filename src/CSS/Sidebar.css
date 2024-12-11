@@ -1,4 +1,8 @@
 /* 사이드바 */
+.sidebar * {
+  box-sizing: border-box;
+}
+
 .sidebar {
   position: fixed;
   left: -301px;
@@ -9,8 +13,14 @@
   border-right: none;
   border-radius: 0 16px 16px 0;  /* 우측 상/하단만 둥글게 */
   transition: transform var(--transition-default);
+  box-shadow: 0 0 0 transparent, 0 0 0 transparent;
   z-index: 1000;
-  overflow-y: auto;
+  overflow-y: hidden;
+  overflow-x: visible;
+}
+
+.sidebar.visible {
+  box-shadow: 0 0 0 transparent, 40px 0 80px rgba(0, 0, 0, 0.1);
 }
 
 /* 오버레이 */
@@ -20,16 +30,17 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0);
   z-index: 999;
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
-  transition: opacity var(--transition-default);  /* App.css의 트랜지션 변수 재사용 */
+  transition: all 0.3s ease;  /* App.css의 트랜지션 변수 재사용 */
 }
 
 /* 사이드바가 열릴 때 오버레이 표시 */
-.sidebar.visible ~ .sidebar-overlay {
+.sidebar-overlay.visible {
+  background-color: rgba(0, 0, 0, 0.5);
   opacity: 1;
   visibility: visible;
   pointer-events: auto;  /* 클릭 이벤트 활성화 */
@@ -38,6 +49,38 @@
 /* 사이드바 표시 상태 */
 .sidebar.visible {
   transform: translateX(300px);
+}
+
+.sidebar-icon-button {
+  height: var(--btn-iconsize);
+  width: var(--btn-iconsize);
+  filter: var(--icon-filter);
+  border-radius: 15%;
+  transition: opacity 0.2s;
+}
+
+/* 사이드바 헤더 */
+.sidebar-header {
+  padding: 20px 30px 10px 20px;
+  display: flex;
+  justify-content: flex-start; /* space-between에서 변경 */
+  align-items: center;
+  position: relative;
+  gap: 20px; /* 버튼과 타이틀 사이 간격 */
+}
+
+.header-title-group {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  justify-content: center;
+}
+
+.header-title-image {
+  height: 24px;
+  width: auto;
+  object-fit: contain;
+  display: block; /* 이미지 기본 여백 제거 */
 }
 
 .sidebar-close-button {
@@ -51,32 +94,23 @@
   align-items: center;
   justify-content: center;
   border-radius: 15%;
+  box-shadow: 0 0 0 transparent, 0 0 0 transparent;
+  transition: all 0.3s ease;
   width: var(--btn-size);
   height: var(--btn-size);
   margin: 0;
 }
 
-.sidebar-icon-button {
-  height: var(--btn-iconsize);
-  width: var(--btn-iconsize);
-  filter: var(--icon-filter);
-  border-radius: 15%;
-  transition: opacity 0.2s;
+.sidebar-close-button:hover {
+  scale: 1.1;
+  box-shadow:  2px 2px 5px #e2e5ed, -2px -2px 5px #fff;
+  background: linear-gradient(145deg, rgba(232, 235, 242, 0.6), rgba(242, 243, 247, 0.6));
 }
 
-.sidebar-icon-button:hover {
-  background-color: var(--hover-bg);
-  opacity: 0.7;
-}
+.sidebar-close-button:active {
+  box-shadow:  -2px -2px 5px #e2e5ed, 2px 2px 5px #fff;
+ }
 
-/* 사이드바 헤더 */
-.sidebar-header {
-  padding: 45px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  position: relative;
-}
 
 .sidebar-header h2 {
   color: var(--text-color);
@@ -85,45 +119,289 @@
   font-weight: 500;
 }
 
-.sidebar-header h3 {
+.sidebar-section h3 {
   color: var(--text-color);
-  margin: 0;
-  font-size: 1.75em;
+  font-size: 1.1em;
   font-weight: 500;
-  text-align: left;
+  margin: 0 0 12px 4px;
+}
+
+/* 구분선 스타일 추가 */
+.sidebar-divider {
+  margin: 15px 4px;
+  height: 1px;
+  background-color: var(--text-color);
+  opacity: 0.1;
 }
 
 /* 사이드바 컨텐츠 */
 .sidebar-content {
   padding: 15px;
+  height: calc(100vh - 80px); /* 헤더 높이 제외 */
+  display: flex;
+  flex-direction: column;
+  overflow-x: visible;
+}
+
+.current-file-info-header {
+  display: flex;
+  min-width: 0; /* 추가 */
+  flex-direction: column;
+}
+
+.current-file-info {
+  padding: 16px;
+  background: linear-gradient(145deg, rgba(232, 235, 242, 0.6), rgba(242, 243, 247, 0.6));
+  box-shadow:  5px 5px 10px #e2e5ed, -5px -5px 10px #fff;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;  /* flex-start에서 center로 변경 */
+  gap: 16px;
+  position: relative; /* 추가 */
+}
+
+.current-file-icon {
+  width: 60px;
+  height: 60px;
+  filter: var(--icon-filter);
+  flex-shrink: 0;
+  position: relative; /* 추가 */
+  z-index: 1; /* 추가 */
+}
+
+.current-file-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  text-align: right;
+  min-width: 0;
+  max-width: calc(100% - 76px); /* 아이콘 너비(60px) + gap(16px) */
+}
+
+.current-file-name {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text-color);
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: right;
+  direction: ltr;
+  position: relative;
+  display: inline-block; /* 추가 */
+}
+
+/* 호버 시 애니메이션을 위한 컨테이너 */
+.current-file-name-container {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  text-align: right;
+}
+
+.current-file-name-wrapper {
+  display: inline-block;
+  position: relative;
+  white-space: nowrap;
+  text-align: right;
+  transform: translateX(0);
+  transition: transform 1s ease-out;
+}
+
+.current-file-name-container[data-needs-animation="true"] .current-file-name-wrapper {
+  transition: transform 0.3s ease-out;
+}
+
+.current-file-name-container[data-needs-animation="true"]:hover .current-file-name-wrapper {
+  transform: translateX(calc(var(--container-width) - 100%));
+  transition: transform 4s ease-in;
+  transition-delay: 0.5s;
+}
+
+.current-page-info {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.current-file-path {
+  font-size: 13px;
+  color: var(--text-color);
+  opacity: 0.5;
+  direction: rtl;
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 100%;
+}
+
+/* 컨트롤 섹션 업데이트 */
+.sidebar-section.controls {
+  margin-top:10px;  
+  margin-bottom:25px;
+  background: transparent;
+  border-radius: 8px;
+  padding: 0px;
+}
+
+.control-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* 2열 그리드 */
+  gap: 14px;
+}
+
+/* 메인의 menu-item 스타일을 control-button으로 통합 */
+.control-button {
+  margin: 0px;
+  display: flex;
+  align-items: center;
+  justify-content: center; /* 추가: 가로축 중앙 정렬 */
+  width: 100%;
+  padding: 12px;
+  border: none;
+  background: var(--container-bg);
+  box-shadow: 5px 5px 10px #e2e5ed, -5px -5px 10px #fff;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.control-button:hover {
+  box-shadow: 0 0 0 transparent, 0 0 0 transparent,
+              inset 3px 3px 8px #e2e5ed, inset -3px -3px 4px #fff;
+}
+
+[data-action="open"].control-button {
+  background: var(--primary-color);
+  color: white;
+  box-shadow: 5px 5px 10px #c3c9da, -5px -5px 10px #fff,
+  inset 0 0 0 transparent, inset 0 0 0 transparent;
+}
+
+[data-action="open"].control-button:hover {
+color:block; 
+box-shadow: 3px 3px 3px #c3c9da, -3px -3px 3px #fff;
+
+}
+
+[data-action="edit"].control-button {
+  background: var(--success-color);
+  color: white;
+}
+
+.control-button:disabled {
+  opacity: 0.5;
+  box-shadow: none;
+  cursor: default;
+}
+
+.control-button img {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  margin-right: 20px;
+  filter: var(--icon-filter);
+}
+
+.control-button img[data-action="open"] {
+  filter: var(--primary-filter);
+}
+
+.control-button img[data-action="edit"] {
+  filter:invert(99%) sepia(0%) saturate(1144%) hue-rotate(173deg) brightness(114%) contrast(100%);
+}
+
+.control-button span {
+  flex-grow: 0;
+  font-size: 16px;
+  font-weight: 500;
+  text-align: center; /* left에서 center로 변경 */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* 파일 목록 */
-.file-list {
+.recent-file-list {
+  flex: 1 1 auto;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
+  padding: 10px; /* 그림자를 위한 여유 공간 */
+  margin: -10px; /* 패딩만큼 네거티브 마진으로 상쇄 */
+  overflow-y: auto; /* 스크롤 허용 */
+  overflow-x: hidden; /* 가로 스크롤 방지 */
 }
 
 /* 파일 항목 */
-.file-item {
+.recent-file-item {
   padding: 12px 20px;
   border-radius: 6px;
-  background-color: var(--bg-secondary, var(--bg-color));
+  background-color: var(--container-bg);
+  box-shadow: 5px 5px 10px #e2e5ed, -5px -5px 10px #fff,
+              inset 0 0 0 transparent, inset 0 0 0 transparent;
+  margin: 0; /* 마진 초기화 */
   border: none;
   cursor: pointer;
-  transition: all var(--transition-default);
-  margin-bottom: 8px;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
+  flex-shrink: 0; /* 높이 고정만 필요 */
+  will-change: transform, opacity, height;
+  overflow: hidden;
+  animation: slideIn 0.2s ease-out;
 }
 
-.file-item:hover {
-  background-color: var(--hover-bg);
-  transform: translateY(-1px);
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.recent-file-item.removing {
+  animation: slideOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
+  pointer-events: none;
+}
+
+@keyframes slideOut {
+  0% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+}
+
+.recent-file-item:last-child {
+  height: fit-content !important;
+  min-height: fit-content !important;
+  max-height: fit-content !important;
+  flex: 0 0 auto !important;
+}
+
+.recent-file-item:hover {
+  box-shadow: 0 0 0 transparent, 0 0 0 transparent,
+              inset 3px 3px 8px #e2e5ed, inset -3px -3px 8px #fff;
 }
 
 /* 파일 메인 정보 */
-.file-main-info {
+.recent-file-main-info {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -132,7 +410,7 @@
 }
 
 /* 파일명 */
-.file-name {
+.recent-file-name {
   font-size: 1.1em;
   color: var(--text-color);
   font-weight: 500;
@@ -143,7 +421,7 @@
 }
 
 /* 페이지 번호 */
-.file-page {
+.recent-file-page {
   font-size: 0.9em;
   color: var(--primary-color);
   margin-left: auto;  /* 우측 정렬 */
@@ -162,20 +440,28 @@
   transition: opacity 0.2s;
 }
 
-.file-item:hover .btn-remove {
+.recent-file-item:hover .btn-remove {
   opacity: 1;
 }
 
 /* 파일 부가 정보 */
-.file-sub-info {
+.recent-file-sub-info {
   display: flex;
   justify-content: space-between;
   font-size: 0.85em;
   color: var(--text-secondary);
 }
 
+.sidebar-section.recent-files {
+  flex: 1;
+  min-height: 0; /* 필수: flex item 오버플로우 허용 */
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
 /* 파일 경로 */
-.file-path {
+.recent-file-path {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -183,14 +469,54 @@
 }
 
 /* 파일 날짜 */
-.file-date {
+.recent-file-date {
   white-space: nowrap;
 }
 
 /* 빈 메시지 */
 .empty-message {
+  flex: 0 0 auto; /* 크기 고정 */
   text-align: center;
   color: var(--text-secondary);
   padding: var(--spacing-md);
   font-size: 0.9em;
+}
+
+.contexify {
+  font-family: 'Prentendard Variable', sans-serif;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  z-index: 1001 !important;
+  width: 100px; /* 기본값 220px에서 축소 */
+}
+
+.contexify_item {
+  background: var(--background-color) !important;
+}
+
+.contexify_submenu {
+  background: var(--background-color) !important;
+}
+
+.contexify_itemContent {
+  background: var(--background-color) !important;
+  padding-right: 12px !important;
+  padding-left: 12px !important;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.contexify_itemContent img {
+  width: 16px;
+  height: 16px;
+  filter: invert(28%) sepia(45%) saturate(6152%) hue-rotate(340deg) brightness(93%) contrast(84%)
+}
+
+.contexify_itemContent span {
+  color: var(--danger-color);
+  transform: translateY(2px);
+}
+
+.contexify_item:hover > .contexify_itemContent {
+  background: var(--hover-color) !important;
 }

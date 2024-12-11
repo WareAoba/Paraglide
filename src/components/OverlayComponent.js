@@ -11,7 +11,10 @@ function OverlayComponent() {
     next: [],
     currentNumber: null,
     currentParagraph: null,
-    isDarkMode: false,
+    theme: {
+      mode: 'light',  // 기본값
+      accentColor: '#007bff'
+    },
     isPaused: false,
   });
   const [hoveredIndex, setHoveredIndex] = useState(null);
@@ -25,7 +28,7 @@ function OverlayComponent() {
       setState(prevState => ({
         ...prevState,
         ...data,
-        isDarkMode: data.isDarkMode ?? prevState.isDarkMode
+        theme: data.theme ?? prevState.theme
       }));
     };
 
@@ -35,7 +38,10 @@ function OverlayComponent() {
       
       setState(prevState => ({
         ...prevState,
-        isDarkMode: theme.isDarkMode ?? prevState.isDarkMode
+        theme: {
+          mode: theme.mode,
+          accentColor: theme.accentColor
+        }
       }));
     };
 
@@ -71,6 +77,32 @@ function OverlayComponent() {
     };
   }, []);
 
+  useEffect(() => {
+    // 디버깅을 위한 로그 추가
+    const handleThemeVariablesUpdate = (_, variables) => {
+      
+      const root = document.documentElement;
+      if (variables && typeof variables === 'object') {
+        Object.entries(variables).forEach(([key, value]) => {
+          root.style.setProperty(key, value);
+        });
+        setState(prev => ({
+          ...prev,
+          theme: {
+            ...prev.theme,
+            accentColor: variables['--primary-color'] || prev.theme.accentColor
+          }
+        }));
+      }
+    };
+
+    ipcRenderer.on("update-theme-variables", handleThemeVariablesUpdate);
+  
+    return () => {
+      ipcRenderer.removeListener("update-theme-variables", handleThemeVariablesUpdate);
+    };
+  }, []);
+
   const handleParagraphClick = (index) => {
     if (index !== undefined) {
       ipcRenderer.send("set-current-paragraph", index);
@@ -82,7 +114,7 @@ function OverlayComponent() {
       <div
         ref={containerRef}
         className="overlay-window"
-        data-theme={state.isDarkMode ? "dark" : "light"}
+        data-theme={state.theme.mode}
       >
         <div className="overlay-header">
           <span className="overlay-page-number">

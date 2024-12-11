@@ -1,6 +1,8 @@
 // src/components/ListView.js
 import React, { useEffect, useRef, useMemo } from 'react';
 import '../../CSS/Views/ListView.css';
+import SimpleBar from 'simplebar-react';
+import '../../CSS/Controllers/Simplebar.css';
 
 function ListView({ paragraphs, metadata, currentParagraph, onParagraphSelect, theme, onCompleteWork }) {
   const listRef = useRef(null);
@@ -38,23 +40,26 @@ function ListView({ paragraphs, metadata, currentParagraph, onParagraphSelect, t
 
   // CSS 변수 업데이트
   useEffect(() => {
-    if (listRef.current) {
-      const currentElement = document.querySelector(`[data-paragraph="${currentParagraph}"]`);
-      if (currentElement) {
-        const rect = currentElement.getBoundingClientRect();
-        const containerRect = listRef.current.getBoundingClientRect();
-        const scrollTop = listRef.current.scrollTop;
+    if (!listRef.current) return;
   
-        // 정확한 상대 위치 계산
-        const actualTop = rect.top - containerRect.top + scrollTop - 16;
-        
-        listRef.current.style.setProperty('--current-element-top', `${actualTop}px`);
-      }
-    }
+    const currentElement = document.querySelector(`[data-paragraph="${currentParagraph}"]`);
+    if (!currentElement) return;
+  
+    // SimpleBar의 실제 스크롤 컨테이너 접근
+    const scrollContainer = listRef.current.getScrollElement();
+    const containerRect = scrollContainer.getBoundingClientRect();
+    const rect = currentElement.getBoundingClientRect();
+    const scrollTop = scrollContainer.scrollTop;
+  
+    // 정확한 상대 위치 계산
+    const actualTop = rect.top - containerRect.top + scrollTop - 16;
+    
+    // CSS 변수 설정
+    scrollContainer.style.setProperty('--current-element-top', `${actualTop}px`);
   }, [currentParagraph]);
 
   return (
-    <div className="listview-container" ref={listRef} data-theme={theme?.mode}>
+    <SimpleBar className="listview-container" ref={listRef} data-theme={theme?.mode}>
       {Object.entries(groupedParagraphs).map(([pageKey, items], groupIndex, groupArray) => (
         <div key={pageKey} className="listview-section">
           <h2
@@ -73,7 +78,7 @@ function ListView({ paragraphs, metadata, currentParagraph, onParagraphSelect, t
               {content}
             </div>
           ))}
-       {groupIndex === groupArray.length - 1 && (
+          {groupIndex === groupArray.length - 1 && (
             <button 
               className="complete-work-button"
               onClick={onCompleteWork}
@@ -83,7 +88,7 @@ function ListView({ paragraphs, metadata, currentParagraph, onParagraphSelect, t
           )}
         </div>
       ))}
-    </div>
+    </SimpleBar>
   );
 }
 

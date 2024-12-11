@@ -1,5 +1,5 @@
 :root {
-  --button-group-height: 100px;
+  --button-group-height: 60px;
   --content-padding: 20px;
   --container-spacing: var(--spacing-md);
 }
@@ -20,7 +20,7 @@
     align-items: center;
     /* justify-content: center; */
     min-height: 100vh;
-    padding: var(--spacing-md);
+    padding-top: var(--button-group-height);
     gap: var(--spacing-xl);
     background-color: var(--bg-color);
     color: var(--text-color);
@@ -43,7 +43,14 @@
     max-width: 300px;
     max-height: 300px;
     object-fit: contain;
+    filter: var(--logo-filter);
     cursor: default; /* 커서 기본값으로 변경 */
+}
+
+.welcome-screen .title-image {
+  max-width: 300px;
+  height: auto;
+  margin-bottom: 20px;
 }
 
 .welcome-screen .title {
@@ -65,6 +72,10 @@
 }
 
   .welcome-screen .btn-primary {
+    display: flex;
+    align-items: center;
+    justify-content: center; /* 추가: 가로축 중앙 정렬 */
+    gap: 10px;
     min-width: 200px;
     height: 48px;
     padding: 0 var(--spacing-xl);
@@ -72,7 +83,10 @@
     font-weight: 500;
     font-family: inherit;
     background-color: var(--primary-color);
-    color: #fff;
+    box-shadow: 4px 4px 12px var(--primary-color-shadow-up),
+                4px 4px 12px var(--primary-color-shadow-down),
+                inset 0 0 0 transparent, inset 0 0 0 transparent;
+    color: var(--primary-text);
     border: none;
     border-radius: 6px;
     cursor: pointer;
@@ -80,7 +94,15 @@
 }
 
 .welcome-screen .btn-primary:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 0 0 transparent, 0 0 0 transparent,
+                inset 4px 4px 12px var(--primary-color-shadow-up),
+                inset 4px 4px 12px var(--primary-color-shadow-down);
+}
+
+.welcome-screen .icon-primary {
+    width: 24px;
+    height: 24px;
+    filter: var(--primary-filter);
 }
 
 .main-container {
@@ -93,16 +115,17 @@
     box-sizing: border-box;
     gap: var(--spacing-md);
     padding-bottom: 50px;
+    overflow: hidden;
 }
 
 .button-group-controls{
-    display: flex;
-    align-items: center;
-    justify-content: start;
-    width: 100%;
-    max-width: 800px;
-    filter: var(--icon-filter);
-    gap: var(--spacing-xs);
+  position: fixed; /* 고정 위치 */
+  top: var(--spacing-md); /* 상단 여백 */
+  left: var(--spacing-md); /* 좌측 여백 */
+  z-index: 100; /* 다른 요소들보다 위에 표시 */
+  width: 100%;
+  display: flex;
+  gap: var(--spacing-xs);
 }
 
 [data-theme="dark"] .button-group-controls {
@@ -110,8 +133,8 @@
 }
 
 .button-group-controls .btn-icon {
-    background: none;
     border: none;
+    background: none;
     padding: 0;
     cursor: pointer;
     outline: none;
@@ -119,14 +142,26 @@
     align-items: center;
     justify-content: center;
     border-radius: 15%;
+    transition: all 0.3s ease;
     width: var(--btn-size); 
     height: var(--btn-size);
     margin: 0;
 }
 
-.button-group-controls .btn-icon:hover {
-  background-color: var(--hover-bg); 
+.button-group-controls .btn-icon img {
+    filter: var(--icon-filter); /* 아이콘에만 필터 적용 */
 }
+
+.button-group-controls .btn-icon:hover{
+    scale: 1.1;
+    box-shadow:  2px 2px 5px #e2e5ed, -2px -2px 5px #fff;
+    background: linear-gradient(145deg, rgba(232, 235, 242, 0.6), rgba(242, 243, 247, 0.6));
+}
+
+.button-group-controls .btn-icon:active{
+   box-shadow: -2px -2px 5px #e2e5ed, 2px 2px 5px #fff;
+    }
+
 
 .button-group-controls .btn-icon img[alt="Settings Icon"] {
   transition: transform 0.2s ease;
@@ -141,12 +176,28 @@
   width: var(--btn-iconsize);
 }
 
+.menu-controls {
+  position: fixed;
+  font-family: inherit;
+  right: 20px;
+  z-index: 1000; /* button-group-controls보다 위에 */
+}
+
+.menu-controls .btn-icon {
+  filter: var(--icon-filter);
+}
+
 .main-container .page-number {
+  display: flex;          /* 추가 */
+  flex-direction: column; /* 추가 */
     font-size: 2.1em;  
     text-align: left;
     font-weight: 700; 
     color: var(--text-color);
     margin-left: var(--spacing-sm);
+    padding-bottom: 3vh;
+    padding-top: var(--button-group-height);
+    z-index: 10;
 }
 
 .sidebar.visible {
@@ -186,6 +237,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  color: var(--text-color);
   font-weight: 500;
   flex: 0 1 auto; /* grow 0, shrink 1 */
   width: min-content; /* calc 없이 사용 */

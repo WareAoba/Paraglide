@@ -33,9 +33,13 @@
 }
 
 .drag-drop-overlay.visible .drag-drop-backdrop {
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.2);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
+}
+
+[data-theme="dark"] .drag-drop-backdrop {
+  background-color: rgba(0, 0, 0, 0.6);
 }
 
 .drag-drop-content {
@@ -55,19 +59,19 @@
 
 .drag-drop-overlay.visible .drag-drop-content {
   transform: scale(1);
-  opacity: 1;
+  opacity: 0.8;
 }
 
 .drag-drop-icon {
   width: 64px;
   height: 64px;
   margin-bottom: 1rem;
-  filter: var(--icon-filter, brightness(0.3));
+  filter: invert(22%) sepia(0%) saturate(1509%) hue-rotate(182deg) brightness(99%) contrast(84%);
 }
 
 /* 다크모드 대응 */
 [data-theme="dark"] .drag-drop-icon {
-  filter: var(--icon-filter, brightness(0.8));
+  filter: var(--icon-filter);
 }
 
 .drag-drop-message {
@@ -77,6 +81,6 @@
 }
 
 .drag-drop-sub {
-  font-size: 0.875rem;
+  font-size: 1rem;
   color: var(--text-secondary);
 }

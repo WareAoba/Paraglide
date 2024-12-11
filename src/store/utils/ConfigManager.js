@@ -1,6 +1,6 @@
 // src/store/utils/ConfigManager.js
 const store = require('../store');
-const { configActions } = require('../slices/configSlice');  // 추가
+const { configActions, THEME } = require('../slices/configSlice');  // 추가
 
 const ConfigManager = {
     validateConfig(savedConfig = {}) {
@@ -24,11 +24,10 @@ const ConfigManager = {
     mergeWithDefaults(savedConfig, defaultConfig) {
         return {
             theme: {
-                isDarkMode: this.validateBoolean(
-                    savedConfig.theme?.isDarkMode, 
-                    defaultConfig.theme.isDarkMode
+                mode: this.validateThemeMode(
+                  savedConfig.theme?.mode, 
+                  defaultConfig.theme.mode
                 ),
-                mode: savedConfig.theme?.mode || defaultConfig.theme.mode,
                 accentColor: savedConfig.theme?.accentColor || defaultConfig.theme.accentColor
             },
             overlay: {
@@ -106,6 +105,11 @@ const ConfigManager = {
         }
         return Math.min(Math.max(value, min), max);
     },
+
+    validateThemeMode(value, defaultValue) {
+        const allowedModes = [THEME.DARK, THEME.LIGHT, THEME.AUTO];
+        return allowedModes.includes(value) ? value : defaultValue;
+      },
 
     validateProcessMode(value, defaultValue) { // 추가된 함수
         const allowedModes = ['paragraph', 'line']; // 예시: 허용된 모드 목록

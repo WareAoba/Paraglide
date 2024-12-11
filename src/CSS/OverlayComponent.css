@@ -20,6 +20,7 @@
   transition: background-color var(--transition-default),
               color var(--transition-default);
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);  /* 그림자 추가 */
+
 }
 
 [data-theme="dark"] .overlay-window {
@@ -89,6 +90,7 @@
   align-items: center;
   overflow: hidden;
   position: relative;
+  
 }
 
 /* 단락 공통 스타일 */
