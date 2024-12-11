@@ -465,9 +465,7 @@ function MainComponent() {
         '--primary-filter': brightness > 160 
           ? 'invert(19%) sepia(0%) saturate(2%) hue-rotate(82deg) brightness(96%) contrast(96%)'
           : 'invert(99%) sepia(15%) saturate(70%) hue-rotate(265deg) brightness(113%) contrast(92%)',
-        '--primary-color-shadow-up': `hsla(${hsl.h}, ${hsl.s}%, ${Math.min(hsl.l + 5, 100)}%, 0.2)`,
-        '--primary-color-shadow-down': `hsla(${hsl.h}, ${hsl.s}%, ${Math.max(hsl.l - 5, 0)}%, 0.2)`
-      };
+             };
   
       // 로고 필터 계산 추가
       const defaultHsl = hexToHSL(defaultColor);

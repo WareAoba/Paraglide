@@ -9,9 +9,7 @@
   border-radius: 15px;
   box-sizing: border-box; /* Include padding and border in width calculation */
   overflow-y: auto;
-  background-color: rgba(255, 255, 255, 0.95);
-  box-shadow:  0px 18px 36px var(--container-shadow-up),
-  0px -18px 36px var(--container-shadow-down);
+  box-shadow:  10px 10px 20px #dbdfe9, -10px -10px 20px #fff;
   max-height: calc(60vh - 10px);
   width: min(90vw, 800px);  /* 뷰포트의 90% 또는 최대 800px */
   margin: 0 auto;           /* 좌우 중앙 정렬 */
@@ -41,6 +39,7 @@
   font-size: 1.1rem;  /* 폰트 크기 증가 */
   font-weight: 500;  /* 약간의 강조 */
   color: var(--text-color);
+filter: var(--icon-filter);
 }
 
 [data-theme="dark"] .paragraph-header > div {
@@ -59,7 +58,7 @@
   min-height: 200px;
   width: 100%;
   padding-bottom: 5vh;
-  overflow-y: auto;
+  overflow-y: visible;
   gap: var(--spacing-md);  /* 단락 간 간격 확대 */
   margin-top: var(--spacing-sm);
   padding-top: var(--spacing-sm);
@@ -81,7 +80,6 @@
   white-space: pre-wrap;      /* 원본 개행 유지 */
   word-break: keep-all;       /* 단어 중간 분리 방지 */
   overflow-wrap: break-word;  /* 컨테이너를 넘어갈 때만 줄바꿈 */
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);  /* 미묘한 그림자 */
   overflow: hidden;         /* 넘치는 텍스트 숨김 */
   display: -webkit-box;    /* 웹킷 기반 다중 라인 ellipsis */
   -webkit-box-orient: vertical;
@@ -103,7 +101,6 @@
 
 .paragraph-current {
   background-color: var(--bg-color);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);  /* 더 강한 그림자로 강조 */
   border: 2px solid var(--primary-color);  
   font-weight: 700;
   transition: all 0.3s ease;  /* 부드러운 전환 */
@@ -112,26 +109,21 @@
 .paragraph-prev, .paragraph-next {
   opacity: 0.7;
   font-weight: 300;
-  transition: all 0.3s ease;  /* 부드러운 전환 */
+  transition: all 0.25s ease;  /* 부드러운 전환 */
 }
 
-.paragraph-current:hover {
-  opacity: 1;
-  background-color: var(--hover-bg);
-  transform: translateY(-2px);  /* 살짝 띄우기 효과 */
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);  /* 그림자 강화 */
-}
-
-.paragraph-prev:hover {
-  opacity: 1;
-  background-color: var(--hover-bg);
-  transform: translateY(-2px);  /* 살짝 띄우기 효과 */
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);  /* 그림자 강화 */
-}
-
+.paragraph-current:hover,
+.paragraph-prev:hover,
 .paragraph-next:hover {
   opacity: 1;
-  background-color: var(--hover-bg);
   transform: translateY(-2px);  /* 살짝 띄우기 효과 */
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);  /* 그림자 강화 */
+  box-shadow: inset 2px 2px 8px #dbdfe9, inset -2px -2px 8px #fff;
+  background: linear-gradient(145deg, rgba(232, 235, 242, 0.6), rgba(242, 243, 247, 0.4));
+}
+
+.paragraph-current:active,
+.paragraph-prev:active,
+.paragraph-next:active {
+  box-shadow: inset 6px 6px 12px #dbdfe9, inset -6px -6px 12px #fff;
+  transform: translateY(0);  /* 클릭 시 원래 위치로 되돌리기 */
 }

@@ -94,13 +94,11 @@
 
 .segment-control {
   display: flex;
-  background-color: rgba(0, 0, 0, 0.1);
-  padding: 2px; /* 4px에서 3px로 줄임 */
-  border-radius: 6px; /* 8px에서 6px로 줄임 */
+  padding: 2px;
+  border-radius: 6px;
   width: 100%;
   position: relative;
-  box-shadow: inset 4px 4px 8px var(--container-shadow-up),
-              inset 4px 4px 8px var(--container-shadow-down);
+  box-shadow: inset 5px 5px 10px #e2e5ed, inset -5px -5px 10px #fff;
   height: 28px; /* 높이 명시적 지정 */
 }
 
@@ -141,7 +139,7 @@
   position: relative;
   z-index: 1;
   font-family: inherit;
-  opacity: 0.4; /* 기본 상태는 흐리게 */
+  opacity: 0.6; /* 기본 상태는 흐리게 */
 }
 
 .segment-control button.active {
@@ -421,14 +419,13 @@ input:focus + .slider {
 
 .color-picker-popup {
   position: absolute;
-  top: calc(100% + 8px);
+  top: calc(100% + 14px);
   right: 0;  /* 왼쪽 정렬 */
   z-index: 1002;
   background: var(--bg-color);
   padding: 12px;
   border-radius: 8px;
-  box-shadow: 0 16px 16px var(--container-shadow-up),
-              0 16px 16px var(--container-shadow-down);
+  box-shadow: 8px 8px 14px #e2e5ed, -8px -8px 14px #fff;
   opacity: 0;
   visibility: hidden;
   transform: translateY(10px);
