@@ -13,14 +13,17 @@
   border-right: none;
   border-radius: 0 16px 16px 0;  /* 우측 상/하단만 둥글게 */
   transition: transform var(--transition-default);
-  box-shadow: 0 0 0 transparent, 0 0 0 transparent;
+  box-shadow:
+  0 0 0 transparent, 0 0 0 transparent;
   z-index: 1000;
   overflow-y: hidden;
   overflow-x: visible;
 }
 
 .sidebar.visible {
-  box-shadow: 0 0 0 transparent, 40px 0 80px rgba(0, 0, 0, 0.1);
+  box-shadow:
+  0 0 0 transparent,
+  40px 0 80px rgba(0, 0, 0, 0.1);
 }
 
 /* 오버레이 */
@@ -94,7 +97,8 @@
   align-items: center;
   justify-content: center;
   border-radius: 15%;
-  box-shadow: 0 0 0 transparent, 0 0 0 transparent;
+  box-shadow:
+  0 0 0 transparent, 0 0 0 transparent;
   transition: all 0.3s ease;
   width: var(--btn-size);
   height: var(--btn-size);
@@ -103,11 +107,13 @@
 
 .sidebar-close-button:hover {
   scale: 1.1;
-  background: linear-gradient(145deg, rgba(232, 235, 242, 0.6), rgba(242, 243, 247, 0.6));
+  background: var(--bg-gradient);
 }
 
 .sidebar-close-button:active {
-  box-shadow:  -2px -2px 5px #e2e5ed, 2px 2px 5px #fff;
+  box-shadow: 
+  -2px -2px 5px var(--container-shadow-up),
+  2px 2px 5px var(--container-shadow-down);
  }
 
 .sidebar-header h2 {
@@ -150,8 +156,11 @@
 
 .current-file-info {
   padding: 16px;
-  background: linear-gradient(145deg, rgba(232, 235, 242, 0.6), rgba(242, 243, 247, 0.6));
-  box-shadow:  5px 5px 10px #e2e5ed, -5px -5px 10px #fff;
+  background: var(--bg-gradient);
+  box-shadow:
+  5px 5px 10px var(--container-shadow-up),
+  -5px -5px 10px var(--container-shadow-down),
+  inset 0 0 0 transparent, inset 0 0 0 transparent;
   border-radius: 8px;
   margin-bottom: 16px;
   display: flex;
@@ -267,7 +276,10 @@
   padding: 12px;
   border: none;
   background: var(--container-bg);
-  box-shadow: 5px 5px 10px #e2e5ed, -5px -5px 10px #fff;
+  box-shadow:
+  5px 5px 10px var(--container-shadow-up),
+  -5px -5px 10px var(--container-shadow-down),
+  inset 0 0 0 transparent, inset 0 0 0 transparent;
   color: var(--text-color);
   cursor: pointer;
   border-radius: 8px;
@@ -276,8 +288,10 @@
 }
 
 .control-button:hover {
-  box-shadow: 0 0 0 transparent, 0 0 0 transparent,
- inset 3px 3px 8px #e2e5ed, inset -3px -3px 4px #fff;
+  box-shadow:
+  0 0 0 transparent, 0 0 0 transparent,
+  inset 3px 3px 8px var(--container-shadow-up),
+  inset -3px -3px 4px var(--container-shadow-down);
 }
 
 [data-action="open"].control-button {
@@ -286,8 +300,10 @@
 }
 
 [data-action="open"].control-button:hover {
-color:block; 
-box-shadow: 3px 3px 3px #c3c9da, -3px -3px 3px #fff;
+color: block; 
+box-shadow:
+3px 3px 3px var(--container-shadow-up),
+-3px -3px 3px var(--container-shadow-down),;
 }
 
 [data-action="edit"].control-button {
@@ -345,13 +361,16 @@ box-shadow: 3px 3px 3px #c3c9da, -3px -3px 3px #fff;
   padding: 12px 20px;
   border-radius: 6px;
   background-color: var(--container-bg);
-  box-shadow: 5px 5px 10px #e2e5ed, -5px -5px 10px #fff,
-              inset 0 0 0 transparent, inset 0 0 0 transparent;
+  box-shadow:
+  5px 5px 10px var(--container-shadow-up),
+  -5px -5px 10px var(--container-shadow-down),
+  inset 0 0 0 transparent, inset 0 0 0 transparent;
   margin: 0; /* 마진 초기화 */
   border: none;
   cursor: pointer;
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-              opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+  transition:
+  transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+  opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
               box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   flex-shrink: 0; /* 높이 고정만 필요 */
@@ -396,7 +415,10 @@ box-shadow: 3px 3px 3px #c3c9da, -3px -3px 3px #fff;
 }
 
 .recent-file-item:hover {
-  box-shadow:  3px 3px 8px #e2e5ed, inset -3px -3px 8px #fff;
+  box-shadow: 
+  0 0 0 transparent, 0 0 0 transparent, 
+  inset 3px 3px 8px var(--container-shadow-up),
+  inset -3px -3px 8px var(--container-shadow-down);
 }
 
 /* 파일 메인 정보 */
@@ -483,7 +505,8 @@ box-shadow: 3px 3px 3px #c3c9da, -3px -3px 3px #fff;
 
 .contexify {
   font-family: 'Prentendard Variable', sans-serif;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  box-shadow:
+  0 2px 4px rgba(0, 0, 0, 0.2);
   z-index: 1001 !important;
   width: 100px; /* 기본값 220px에서 축소 */
 }
