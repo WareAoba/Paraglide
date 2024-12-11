@@ -207,7 +207,10 @@ function Settings({ isVisible, onClose, icons }) {
     <div className={`settings-modal ${isVisible ? 'visible' : ''}`}
       data-theme={settings.theme.mode}
       onClick={(e) => {
-        if (e.target.className.includes('settings-modal')) {
+        if (typeof e.target.className === 'string' && e.target.className.includes('settings-modal')) {
+          onClose();
+        }
+        if (e.target.classList && e.target.classList.contains('settings-modal')) {
           onClose();
         }
       }}
