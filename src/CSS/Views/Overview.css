@@ -104,7 +104,7 @@ filter: var(--icon-filter);
   box-shadow:
   inset 2px 2px 8px var(--container-shadow-up),
   inset -2px -2px 8px var(--container-shadow-down);
-  background: linear-gradient(145deg, rgba(232, 235, 242, 0.6), rgba(242, 243, 247, 0.4));
+  background: var(--bg-gradient);
 }
 
 .paragraph-current:active,
