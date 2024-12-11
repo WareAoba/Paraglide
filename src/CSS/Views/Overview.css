@@ -111,8 +111,8 @@ filter: var(--icon-filter);
 .paragraph-prev:active,
 .paragraph-next:active {
   box-shadow:
-  inset 6px 6px 12px #dbdfe9,
-  inset -6px -6px 12px #fff;
+  inset 6px 6px 12px var(--container-shadow-up),
+  inset -6px -6px 12px var(--container-shadow-down);
   transform: translateY(0);  /* 클릭 시 원래 위치로 되돌리기 */
 }
 

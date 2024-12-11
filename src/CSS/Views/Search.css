@@ -46,6 +46,7 @@
   justify-content: center;
   align-items: center;
   margin-bottom: 12px;
+  z-index:100;
 }
 
 .search-header h2 {
@@ -59,11 +60,10 @@
 .search-box {
   width: min(90%, 360px);
   background-color: var(--background-color);
-  border-radius: 12px;
   transform: translateY(-20px);
   opacity: 0;
   transition: all 0.3s ease;
-  padding: 0;          /* 패딩 초기화 */
+  padding: ;          /* 패딩 초기화 */
   box-sizing: border-box;  /* 패딩을 너비에 포함 */
 }
 
@@ -78,25 +78,48 @@
   align-items: center;
   width: calc(100% - 32px); /* 여백 축소: 48px -> 32px */
   margin: 0 16px;  /* 마진도 축소: 24px -> 16px */
-}
+ }
 
 .search-input-container {
   position: relative;
   display: flex;
   align-items: center;
   padding: 5px 12px; /* 좌우 패딩 축소: 16px -> 12px */
+}
 
+.search-icon, .clear-icon {
+  width: 16px;
+  height: 16px;
 }
 
 .search-icon {
   position: absolute;
-  left: 16px;
+  left: 24px;
   top: 50%;
-  transform: translateY(-50%);
-  width: 16px;
-  height: 16px;
   opacity: 0.7;
   filter: var(--icon-filter);
+  transform: translateY(-50%);
+}
+
+.clear-button {
+  position: absolute;
+  right: 24px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  padding: 0;
+  opacity: 0.5;
+  transition: all 0.3s ease;
+  filter: var(--primary-color-filter);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.clear-button:hover {
+  opacity: 1;
 }
 
 /* 기본 상태 */
@@ -104,6 +127,8 @@
   width: 100%;
   border: none;
   padding: 0.7rem;
+  padding-left: 32px; /* 아이콘 + 여유 공간 */
+  padding-right: 32px;
   border-radius: 2rem;
   background: var(--bg-color);
   box-shadow:
@@ -115,25 +140,11 @@
 
 .search-input-container input:focus {
   background: var(--active-bg-color); /* 활성화 배경색 */
+  border: 1px solid var(--primary-color);  
   box-shadow:
     0 0 0 transparent, 0 0 0 transparent,
     inset 20px 20px 40px var(--container-shadow-up),
     inset -20px -20px 40px var(--container-shadow-down);
-}
-
-.clear-button {
-  position: absolute;
-  right: 20px;
-  background: none;
-  border: none;
-  font-size: 20px;
-  color: var(--secondary-text-color);
-  cursor: pointer;
-  padding: 0 8px;
-}
-
-.clear-button:hover {
-  color: var(--text-color);
 }
 
 .search-results {
