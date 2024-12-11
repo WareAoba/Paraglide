@@ -630,13 +630,13 @@ ipcRenderer.invoke('generate-css-filter', accentColor, {
       </div>
   
       <CSSTransition
-  in={state.programStatus === ProgramStatus.READY}
-  appear={true}
-  timeout={500}
-  classNames="viewport" // 여기서 classNames를 "viewport"로 변경
-  mountOnEnter
-  unmountOnExit
->
+        in={state.programStatus === ProgramStatus.READY}
+        appear={true}
+        timeout={500}
+        classNames="viewport" // 여기서 classNames를 "viewport"로 변경
+        mountOnEnter
+        unmountOnExit
+      >
         <div className="welcome-screen" data-theme={theme.mode}>
           <div className="logo-container">
             {state.logoPath && (
@@ -682,35 +682,35 @@ ipcRenderer.invoke('generate-css-filter', accentColor, {
       >
         <div className="main-container" data-theme={theme.mode}>
           <div className="view-container">
-          <CSSTransition
-  in={state.viewMode === 'overview'}
-  timeout={500} // timeout을 500ms로 설정하여 리스트뷰와 통일
-  classNames="viewport" // classNames를 'viewport'로 변경하여 동일한 효과 적용
-  mountOnEnter
-  unmountOnExit
->
-  <div className="view-wrapper">
-    <div className="page-number">
-      {state.currentNumber?.display || '\u00A0'}
-    </div>
-    <Overview
-      paragraphs={state.paragraphs}
-      currentParagraph={state.currentParagraph}
-      onParagraphClick={handleParagraphClick}
-      theme={theme}
-      hoveredSection={hoveredSection}
-      onHoverChange={setHoveredSection}
-    />
-  </div>
-  </CSSTransition>
+            <CSSTransition
+              in={state.viewMode === 'overview'}
+              timeout={500} // timeout을 500ms로 설정하여 리스트뷰와 통일
+              classNames="viewport" // classNames를 'viewport'로 변경하여 동일한 효과 적용
+              mountOnEnter
+              unmountOnExit
+            >
+              <div className="view-wrapper">
+                <div className="page-number">
+                  {state.currentNumber?.display || '\u00A0'}
+                </div>
+                <Overview
+                  paragraphs={state.paragraphs}
+                  currentParagraph={state.currentParagraph}
+                  onParagraphClick={handleParagraphClick}
+                  theme={theme}
+                  hoveredSection={hoveredSection}
+                  onHoverChange={setHoveredSection}
+                />
+              </div>
+            </CSSTransition>
   
             <CSSTransition
-    in={state.viewMode === 'listview'}
-    timeout={300}
-    classNames="view-transition"
-    mountOnEnter
-    unmountOnExit
-  >
+              in={state.viewMode === 'listview'}
+              timeout={300}
+              classNames="view-transition"
+              mountOnEnter
+              unmountOnExit
+            >
               <div className="view-wrapper">
                 <ListView
                   paragraphs={state.paragraphs}
