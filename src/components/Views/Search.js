@@ -458,11 +458,15 @@ const Search = forwardRef((props, ref) => {
           onChange={handleSearchChange}
           placeholder="검색어를 입력하세요"
         />
-        {searchTerm && (
-          <button className="clear-button" onClick={() => setSearchTerm('')}>
-            ×
-          </button>
-        )}
+  {searchTerm && (
+    <button className="clear-button" onClick={() => setSearchTerm('')}>
+      <img 
+        src={icons?.deleteIcon} 
+        alt="지우기"
+        className="clear-icon"
+      />
+    </button>
+  )}
       </div>
         
         <div className="search-results" data-testid="search-results">

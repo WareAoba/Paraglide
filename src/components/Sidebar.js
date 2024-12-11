@@ -219,11 +219,12 @@ function Sidebar({
           className="sidebar-close-button"
           onClick={handleClose}
           >
-                <img 
-      src={isSearchVisible ? icons?.backIcon : icons?.sidebarUnfold} 
-      alt="닫기" 
-      className="sidebar-icon-button" 
-    />
+               <img 
+  src={isSearchVisible ? icons?.backIcon : icons?.sidebarUnfold} 
+  alt="닫기" 
+  className="sidebar-icon-button"
+  style={isSearchVisible ? { transform: 'scale(0.9)' } : undefined}
+/>
           </button>
           <div className="header-title-group">
             {titlePath ? (
