@@ -1,8 +1,7 @@
 // SystemListener.js
 const { app, dialog, clipboard, systemPreferences, ipcMain, nativeTheme } = require('electron');
-const { register, unregisterAll } = require('electron-localshortcut');
 const { GlobalKeyboardListener } = require('node-global-key-listener');
-const { configActions, THEME } = require('./store/slices/configSlice');
+const { configActions } = require('./store/slices/configSlice');
 const store = require('./store/store');
 const path = require('path');
 const fs = require('fs');
@@ -46,7 +45,6 @@ class SystemListener {
       this.setupKeyboardListener();
       this.setupClipboardMonitor();
       this.setupThemeListener();
-      this.setupAppShortcuts();
       return true;
     } catch (error) {
       console.error('[SystemListener] 초기화 실패:', error);
@@ -114,28 +112,18 @@ class SystemListener {
     console.log('[클립보드] 외부 복사 감지');
   }
 
+  // 테마 감지 메서드 추가
   setupThemeListener() {
-    console.log('[SystemListener] 테마 리스너 초기화');  // 리스너 등록 확인
-    
     nativeTheme.on('updated', () => {
-      console.log('[SystemListener] nativeTheme 이벤트 발생');  // 이벤트 발생 확인
-      console.log('[SystemListener] 현재 시스템 테마:', nativeTheme.shouldUseDarkColors ? 'dark' : 'light');
-  
-      const config = store.getState().config;
-      console.log('[SystemListener] 현재 설정된 테마 모드:', config.theme.mode);  // 현재 모드 확인
-  
-      if (config.theme.mode === THEME.AUTO) {
-        const effectiveMode = nativeTheme.shouldUseDarkColors ? 
-          THEME.DARK : THEME.LIGHT;
-        store.dispatch(configActions.setEffectiveTheme(effectiveMode));
-        console.log('[SystemListener] 테마 변경 감지:', effectiveMode);
-      } else {
-        console.log('[SystemListener] AUTO 모드가 아니어서 변경 무시');
-      }
+      const isDark = nativeTheme.shouldUseDarkColors;
+      store.dispatch(configActions.updateTheme(isDark));
     });
-  
-    // 초기 상태 확인을 위한 로그
-    console.log('[SystemListener] 현재 시스템 테마:', nativeTheme.shouldUseDarkColors ? 'dark' : 'light');
+  }
+
+  // 테마 업데이트 메서드
+  updateTheme(isDark) {
+    console.log('[SystemListener] 테마 변경 감지:', isDark);
+    store.dispatch(configActions.updateTheme(isDark));
   }
 
   // 내부 클립보드 변경 알림
@@ -178,8 +166,7 @@ class SystemListener {
         const isAlt = down["LEFT ALT"] || down["RIGHT ALT"]
         const keyName = e.name;
         
-        // Ctrl/Meta 키가 눌려있으면 Shift 조합 단축키 무시
-        if(isShift && !isCtrlOrCmd) {
+        if(isShift) {
           if(isAlt) {
             // Shift + Alt 조합
             switch(keyName) {
@@ -232,50 +219,6 @@ class SystemListener {
       this.notifyInternalClipboardChange();
       this.mainWindow.webContents.send(eventName);
       ipcMain.emit(eventName);
-    }
-  }
-
-  // 앱 globalShortcut
-  setupAppShortcuts() {
-    try {
-      if (!this.mainWindow) {
-        throw new Error('메인 윈도우가 초기화되지 않았습니다.');
-      }
-
-      register(this.mainWindow, 'CommandOrControl+O', () => {
-        this.mainWindow?.webContents.send('trigger-load-file');
-      });
-
-      register(this.mainWindow, 'CommandOrControl+F', () => {
-        this.mainWindow?.webContents.send('toggle-search');
-      });
-
-      register(this.mainWindow, 'CommandOrControl+M', () => {
-        this.mainWindow?.webContents.send('toggle-sidebar');
-      });
-
-      register(this.mainWindow, 'CommandOrControl+,', () => {
-        this.mainWindow?.webContents.send('toggle-settings');
-      });
-
-      register(this.mainWindow, 'Escape', () => {
-        this.mainWindow?.webContents.send('close-esc');
-      });
-
-      console.log('[SystemListener] 앱 단축키 설정 완료');
-    } catch (error) {
-      console.error('[SystemListener] 앱 단축키 설정 실패:', error);
-    }
-  }
-
-  clearAppShortcuts() {
-    try {
-      if (this.mainWindow && !this.mainWindow.isDestroyed()) {
-        unregisterAll(this.mainWindow);
-        console.log('[SystemListener] 모든 단축키 해제됨');
-      }
-    } catch (error) {
-      console.error('[SystemListener] 단축키 해제 중 오류:', error);
     }
   }
 
