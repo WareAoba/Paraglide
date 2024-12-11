@@ -35,8 +35,9 @@
   border-radius: 12px;
   display: flex;
   flex-direction: column;
-  box-shadow: 12px 24px 48px rgba(0, 0, 0, 0.1),
-              12px 24px 48px rgba(0, 0, 0, 0.2);
+  box-shadow:
+  12px 24px 48px rgba(0, 0, 0, 0.1),
+  12px 24px 48px rgba(0, 0, 0, 0.2);
   padding: 32px;
   opacity: 0;
   transition: transform 0.3s ease,
@@ -98,8 +99,10 @@
   border-radius: 6px;
   width: 100%;
   position: relative;
-
-  box-shadow: inset 5px 5px 10px #e2e5ed, inset -5px -5px 10px #fff;
+  color: inherit;
+  box-shadow:
+  inset 5px 5px 10px var(--container-shadow-up), 
+  inset -5px -5px 10px var(--container-shadow-down);
   height: 28px; /* 높이 명시적 지정 */
 }
 
@@ -430,6 +433,7 @@ input:focus + .slider {
   opacity: 0;
   visibility: hidden;
   transform: translateY(10px);
+  transition: all 0.2s ease;
 }
 
 .color-picker-popup.visible {

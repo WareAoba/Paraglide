@@ -8,8 +8,10 @@
   flex-direction: column;
   border-radius: 15px;
   box-sizing: border-box; /* Include padding and border in width calculation */
-  overflow-y: auto;;
-  box-shadow:  10px 10px 20px #dbdfe9, -10px -10px 20px #fff;
+  overflow-y: auto;
+  box-shadow: 
+  10px 10px 20px var(--container-shadow-up),
+  -10px -10px 20px var(--container-shadow-down);
   max-height: calc(60vh - 10px);
   width: min(90vw, 800px);  /* 뷰포트의 90% 또는 최대 800px */
   margin: 0 auto;
@@ -17,8 +19,9 @@
 }
 
 [data-theme="dark"] .paragraph-container {
-  box-shadow:  0px 7px 24px var(--container-shadow-up),
-             0px -7px 24px var(--container-shadow-down);
+  box-shadow: 
+  10px 10px 20px var(--container-shadow-up),
+  -10px -10px 20px var(--container-shadow-down);
   background-color: rgba(255, 255, 255, 0.02);
 }
 
@@ -98,14 +101,18 @@ filter: var(--icon-filter);
 .paragraph-next:hover {
   opacity: 1;
   transform: translateY(-2px);  /* 살짝 띄우기 효과 */
- box-shadow: inset 2px 2px 8px #dbdfe9, inset -2px -2px 8px #fff;
+  box-shadow:
+  inset 2px 2px 8px var(--container-shadow-up),
+  inset -2px -2px 8px var(--container-shadow-down);
   background: linear-gradient(145deg, rgba(232, 235, 242, 0.6), rgba(242, 243, 247, 0.4));
 }
 
 .paragraph-current:active,
 .paragraph-prev:active,
 .paragraph-next:active {
-  box-shadow: inset 6px 6px 12px #dbdfe9, inset -6px -6px 12px #fff;
+  box-shadow:
+  inset 6px 6px 12px #dbdfe9,
+  inset -6px -6px 12px #fff;
   transform: translateY(0);  /* 클릭 시 원래 위치로 되돌리기 */
 }
 

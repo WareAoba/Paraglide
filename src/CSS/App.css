@@ -34,8 +34,8 @@
   --active-color: rgba(188, 188, 188, 1.0);
   --btn-bg: rgba(255, 255, 255, 0.025);
   --icon-filter: brightness(0) saturate(100%) invert(37%) sepia(1%) saturate(0%) hue-rotate(19deg) brightness(96%) contrast(93%);
-  --container-shadow-up: #c7c7c7af;
-  --container-shadow-down: #eeeeeec7; 
+  --container-shadow-up: #e2e5ed;
+  --container-shadow-down: #fff;
   --primary-color-shadow-up: #007bffaf;
   --primary-color-shadow-up: #007bffaf;
   --logo-filter: none;
