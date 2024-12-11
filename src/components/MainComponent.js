@@ -61,24 +61,34 @@ function MainComponent() {
   const [themeDarkIcon, setThemeDarkIcon] = useState(null);
   const [fileOpenIcon, setFileOpenIcon] = useState(null);
   const [editIcon, setEditIcon] = useState(null);
+  const [backIcon, setBackIcon] = useState(null);
 
   const searchRef = useRef(null);
 
   const handleSearchToggle = useCallback(() => { // 검색 토글, 위치가 여기 있는게 마음에 안들긴 한데 뭐......
-    if (state.programStatus !== ProgramStatus.PROCESS) {
-      return;
-    }
+    if (state.programStatus !== ProgramStatus.PROCESS) return;
+
+  // 검색 상태가 유지된 채로 사이드바가 닫혀있는 경우
+  if (isSearchVisible && !state.isSidebarVisible) {
+    // 사이드바만 열기
+    setState(prev => ({
+      ...prev,
+      isSidebarVisible: true
+    }));
+    return;
+  }
+
+  // 사이드바가 닫혀있으면 열기
+  if (!state.isSidebarVisible) {
+    setState(prev => ({
+      ...prev,
+      isSidebarVisible: true
+    }));
+  }
   
-    // 사이드바가 닫혀있으면 열기
-    if (!state.isSidebarVisible) {
-      setState(prev => ({
-        ...prev,
-        isSidebarVisible: true
-      }));
-    }
-    
-    setIsSearchVisible(prev => !prev);
-  }, [state.programStatus, state.isSidebarVisible]);
+  // 검색 토글
+  setIsSearchVisible(prev => !prev);
+}, [state.programStatus, state.isSidebarVisible, isSearchVisible]);
 
   const handleCloseEsc = useCallback(() => {
     // 사이드바
@@ -276,9 +286,29 @@ function MainComponent() {
     }
   };
 
-  const handleParagraphSelect = (index) => {
-    ipcRenderer.send('move-to-position', index);
-  };
+  const handleParagraphSelect = useCallback((index) => {
+    console.log('MainComponent - handleParagraphSelect called with index:', index);
+    
+    if (typeof index !== 'number') {
+      console.error('Invalid paragraph index:', index);
+      return;
+    }
+  
+    try {
+      // move-to-position 이벤트로 변경
+      ipcRenderer.send('move-to-position', index);
+      
+      // 상태 업데이트는 IPC 응답을 통해 처리되도록 함
+      setState(prev => ({
+        ...prev,
+        isPaused: true  // 이동 시 일시정지 상태로 전환
+      }));
+  
+      console.log('Position update request sent:', index);
+    } catch (error) {
+      console.error('Failed to update position:', error);
+    }
+  }, []);
 
   useEffect(() => {
     const loadIcons = async () => {
@@ -302,6 +332,7 @@ function MainComponent() {
           'theme-dark.svg',
           'file-open.svg',
           'edit.svg',
+          'go-back.svg',
         ];
 
         const iconPaths = await Promise.all(
@@ -326,6 +357,7 @@ function MainComponent() {
         setThemeDarkIcon(iconPaths[15]);
         setFileOpenIcon(iconPaths[16]);
         setEditIcon(iconPaths[17]);
+        setBackIcon(iconPaths[18]);
       } catch (error) {
         console.error('아이콘 로드 실패:', error);
       }
@@ -390,7 +422,25 @@ function MainComponent() {
 
   // 사이드바 토글 함수
   const handleToggleSidebar = () => {
-    setState((prev) => ({
+    // 사이드바가 닫혀있고 검색이 열려있는 상태라면
+    if (!state.isSidebarVisible && isSearchVisible) {
+      // 사이드바만 열기
+      setState(prev => ({
+        ...prev,
+        isSidebarVisible: true
+      }));
+      return;
+    }
+  
+    // 사이드바가 열려있고 검색이 열려있는 상태라면
+    if (state.isSidebarVisible && isSearchVisible) {
+      // 검색을 먼저 닫기
+      setIsSearchVisible(false);
+      return;
+    }
+  
+    // 그 외의 경우는 일반적인 사이드바 토글
+    setState(prev => ({
       ...prev,
       isSidebarVisible: !prev.isSidebarVisible,
     }));
@@ -581,7 +631,8 @@ ipcRenderer.invoke('generate-css-filter', accentColor, {
           textFileIcon: textFileIcon,
           deleteIcon: deleteIcon,
           openIcon: fileOpenIcon,
-          editIcon: editIcon
+          editIcon: editIcon,
+          backIcon: backIcon,
         }}
         titlePath={state.titlePath}
         currentFilePath={state.currentFilePath}
@@ -593,8 +644,10 @@ ipcRenderer.invoke('generate-css-filter', accentColor, {
             .filter(meta => meta?.pageNumber != null)
             .map(meta => meta.pageNumber)) || 1
         } : null}
+        currentParagraph={state.currentParagraph}
         paragraphs={state.paragraphs}
         metadata={state.paragraphsMetadata}
+        onSelect={handleParagraphSelect}
         onToggleOverlay={handleToggleOverlay}
         onToggleSearch={handleSearchToggle}
         onShowDebugConsole={handleShowDebugConsole}
