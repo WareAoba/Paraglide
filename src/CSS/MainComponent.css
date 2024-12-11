@@ -142,6 +142,7 @@
     align-items: center;
     justify-content: center;
     border-radius: 15%;
+    box-shadow: 0 0 0 transparent, 0 0 0 transparent;
     transition: all 0.3s ease;
     width: var(--btn-size); 
     height: var(--btn-size);
@@ -153,12 +154,14 @@
 }
 
 .button-group-controls .btn-icon:active{
-  box-shadow: -2px -2px 5px #e2e5ed, 2px 2px 5px #fff;
-   }
+  box-shadow:
+  -2px -2px 5px var(--container-shadow-up),
+  2px 2px 5px var(--container-shadow-down);
+}
 
 .button-group-controls .btn-icon:hover{
   scale: 1.1;
-  background: linear-gradient(145deg, rgba(232, 235, 242, 0.6), rgba(242, 243, 247, 0.6));
+  background: var(--bg-gradient);
 }
 
 .button-group-controls .btn-icon img[alt="Settings Icon"] {
