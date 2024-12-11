@@ -84,8 +84,8 @@
   position: relative;
   display: flex;
   align-items: center;
-  width: calc(100% - 48px); /* 좌우 24px 여백 확보 */
-  margin: 0 24px;  /* 좌우 간격은 마진으로 처리 */
+  padding: 5px 12px; /* 좌우 패딩 축소: 16px -> 12px */
+
 }
 
 .search-icon {
@@ -99,12 +99,26 @@
   filter: var(--icon-filter);
 }
 
+/* 기본 상태 */
 .search-input-container input {
   width: 100%;
-  padding: 8px 32px;
-  border-radius: 8px;
-  border: 1px solid var(--border-color);
+  border: none;
+  padding: 0.7rem;
+  border-radius: 2rem;
   background: var(--bg-color);
+  box-shadow:
+    inset 0 0 0 transparent, inset 0 0 0 transparent,
+    20px 20px 40px var(--container-shadow-up),
+    -20px -20px 40px var(--container-shadow-down);
+   transition: all 0.3 ease;
+}
+
+.search-input-container input:focus {
+  background: var(--active-bg-color); /* 활성화 배경색 */
+  box-shadow:
+    inset 0 0 0 transparent, inset 0 0 0 transparent,
+    inset 20px 20px 40px var(--container-shadow-up),
+    inset -20px -20px 40px var(--container-shadow-down);
 }
 
 .clear-button {
@@ -129,7 +143,7 @@
   flex-direction: column;
   gap: 12px;  /* 간격 증가: 8px -> 12px */
   max-height: calc(100vh - 200px);
-  padding: 12px 12px; /* 좌우 패딩 축소: 16px -> 12px */
+  padding: 10px 12px; /* 좌우 패딩 축소: 16px -> 12px */
 }
 
 /* 그라데이션 마스크 개선 */
