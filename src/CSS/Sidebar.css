@@ -103,14 +103,9 @@
 
 .sidebar-close-button:hover {
   scale: 1.1;
-  box-shadow:  2px 2px 5px #e2e5ed, -2px -2px 5px #fff;
-  background: linear-gradient(145deg, rgba(232, 235, 242, 0.6), rgba(242, 243, 247, 0.6));
+  box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.1),
+              2px 2px 6px rgba(0, 0, 0, 0.2);
 }
-
-.sidebar-close-button:active {
-  box-shadow:  -2px -2px 5px #e2e5ed, 2px 2px 5px #fff;
- }
-
 
 .sidebar-header h2 {
   color: var(--text-color);
@@ -151,8 +146,9 @@
 
 .current-file-info {
   padding: 16px;
-  background: linear-gradient(145deg, rgba(232, 235, 242, 0.6), rgba(242, 243, 247, 0.6));
-  box-shadow:  5px 5px 10px #e2e5ed, -5px -5px 10px #fff;
+  background: var(--container-bg);
+  box-shadow: 0 8px 16px var(--container-shadow-up),
+              0 8px 16px var(--container-shadow-down);
   border-radius: 8px;
   margin-bottom: 16px;
   display: flex;
@@ -244,8 +240,7 @@
 
 /* 컨트롤 섹션 업데이트 */
 .sidebar-section.controls {
-  margin-top:10px;  
-  margin-bottom:25px;
+  margin: 15px 0;
   background: transparent;
   border-radius: 8px;
   padding: 0px;
@@ -254,7 +249,7 @@
 .control-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr); /* 2열 그리드 */
-  gap: 14px;
+  gap: 12px;
 }
 
 /* 메인의 menu-item 스타일을 control-button으로 통합 */
@@ -267,7 +262,10 @@
   padding: 12px;
   border: none;
   background: var(--container-bg);
-  box-shadow: 5px 5px 10px #e2e5ed, -5px -5px 10px #fff;
+  box-shadow: 0px 4px 8px var(--container-shadow-up),
+              0px 4px 8px var(--container-shadow-down),
+              inset 0 0 0 transparent, inset 0 0 0 transparent;
+  color: var(--text-color);
   cursor: pointer;
   border-radius: 8px;
   transition: all 0.2s ease;
@@ -276,20 +274,22 @@
 
 .control-button:hover {
   box-shadow: 0 0 0 transparent, 0 0 0 transparent,
-              inset 3px 3px 8px #e2e5ed, inset -3px -3px 4px #fff;
+              inset 2px 2px 8px var(--container-shadow-up),
+              inset 2px 2px 8px var(--container-shadow-down);
 }
 
 [data-action="open"].control-button {
   background: var(--primary-color);
-  color: white;
-  box-shadow: 5px 5px 10px #c3c9da, -5px -5px 10px #fff,
-  inset 0 0 0 transparent, inset 0 0 0 transparent;
+  color: var(--primary-text);
+  box-shadow: 0 4px 8px var(--primary-color-shadow-up),
+              0 4px 8px var(--primary-color-shadow-down),
+              inset 0 0 0 transparent, inset 0 0 0 transparent;
 }
 
 [data-action="open"].control-button:hover {
-color:block; 
-box-shadow: 3px 3px 3px #c3c9da, -3px -3px 3px #fff;
-
+  box-shadow: 0 0 0 transparent, 0 0 0 transparent,
+              inset 2px 2px 8px var(--primary-color-shadow-up),
+              inset 2px 2px 8px var(--primary-color-shadow-down);
 }
 
 [data-action="edit"].control-button {
@@ -335,8 +335,8 @@ box-shadow: 3px 3px 3px #c3c9da, -3px -3px 3px #fff;
   display: flex;
   flex-direction: column;
   gap: 16px;
-  padding: 10px; /* 그림자를 위한 여유 공간 */
-  margin: -10px; /* 패딩만큼 네거티브 마진으로 상쇄 */
+  padding: 8px; /* 그림자를 위한 여유 공간 */
+  margin: -8px; /* 패딩만큼 네거티브 마진으로 상쇄 */
   overflow-y: auto; /* 스크롤 허용 */
   overflow-x: hidden; /* 가로 스크롤 방지 */
 }
@@ -346,7 +346,8 @@ box-shadow: 3px 3px 3px #c3c9da, -3px -3px 3px #fff;
   padding: 12px 20px;
   border-radius: 6px;
   background-color: var(--container-bg);
-  box-shadow: 5px 5px 10px #e2e5ed, -5px -5px 10px #fff,
+  box-shadow: 4px 4px 8px var(--container-shadow-up),
+              4px 4px 8px var(--container-shadow-down),
               inset 0 0 0 transparent, inset 0 0 0 transparent;
   margin: 0; /* 마진 초기화 */
   border: none;
@@ -397,7 +398,8 @@ box-shadow: 3px 3px 3px #c3c9da, -3px -3px 3px #fff;
 
 .recent-file-item:hover {
   box-shadow: 0 0 0 transparent, 0 0 0 transparent,
-              inset 3px 3px 8px #e2e5ed, inset -3px -3px 8px #fff;
+              inset 2px 2px 8px var(--container-shadow-up),
+              inset 2px 2px 8px var(--container-shadow-down);
 }
 
 /* 파일 메인 정보 */
