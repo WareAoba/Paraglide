@@ -103,3 +103,34 @@
     opacity: 1;
     transform: translateY(0);
   }
+
+  .sidebar-transition-enter, 
+  .search-transition-enter {
+    opacity: 0;
+    transform: translateX(-20px);
+    pointer-events: none;
+  }
+  
+  .sidebar-transition-enter-active,
+  .search-transition-enter-active {
+    opacity: 1;
+    transform: translateX(0);
+    transition: 
+      opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+      transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .sidebar-transition-exit,
+  .search-transition-exit {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  
+  .sidebar-transition-exit-active,
+  .search-transition-exit-active {
+    opacity: 0;
+    transform: translateX(-20px);
+    transition: 
+      opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+      transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }

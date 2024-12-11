@@ -155,7 +155,8 @@
   flex-direction: column;
   gap: 12px;  /* 간격 증가: 8px -> 12px */
   max-height: calc(100vh - 200px);
-  padding: 10px 12px; /* 좌우 패딩 축소: 16px -> 12px */
+  padding: 10px 24px; /* 좌우 패딩 축소: 16px -> 12px */
+  margin: -12px;
 }
 
 /* 그라데이션 마스크 개선 */

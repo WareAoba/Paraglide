@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { CSSTransition } from 'react-transition-group';
 import '../CSS/MainComponent.css';
-import '../CSS/Views/ComponentTransition.css'
+import '../CSS/Views/ComponentTransition.css';
 import Sidebar from './Sidebar';
 import Settings from './Settings';
 import Overview from './Views/Overview';
