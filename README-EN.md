@@ -22,7 +22,6 @@
      - **Shift + Alt (Opt) + Arrow Keys (←→)**: Navigate to the previous/next page.
    - **Shift + Arrow Keys (↑↓)**: Pause/Resume the program.
      - **Shift + Alt (Opt) + Arrow Key (↑)**: Toggle overlay.
-   - and, there are also many other **in-app shortcuts**.
  3. Process text based on **paragraph** or **line** depending on the style of the .TXT file.
  4. Display the **current paragraph in progress** with an overlay window and allow navigation between paragraphs.
  5. Save logs to restore the **last position** when reloading a previously processed file.
@@ -37,49 +36,46 @@
 ## Project Overview
 ```
 📦 Paraglide
-├── 📂 public                                  # Static Resources
-│   ├── 📂 icons                               # App Icons
-│   └── 📂 UI_icons                            # UI Icons
+├── 📂 public                             # Static Resources
+│   ├── 📂 icons                          # App Icons
+│   └── 📂 UI_icons                       # UI Icons
 │   
-├── 📂 src                                     # Source Code
-│   ├── 📂 components                          # React Components
-│   │   ├── 📂 Views                           # Main Component View Modes
-│   │   │   ├── 📜 Console.js                  # Terminal Console
-│   │   │   ├── 📜 DragDropOverlay.js          # Drag & Drop Overlay
-│   │   │   ├── 📜 ListView.js                 # ListView Mode
-│   │   │   ├── 📜 Overview.js                 # Overview Mode
-│   │   │   └── 📜 Search.js                   # Search Overlay
-│   │   │
-│   │   ├── 📜 MainComponent.js                # Main Component
-│   │   ├── 📜 OverlayComponent.js             # Overlay Component
-│   │   ├── 📜 Settings.js                     # Settings Component
-│   │   └── 📜 Sidebar.js                      # Sidebar Component
+├── 📂 src                                # Source Code
+│   ├── 📂 components                     # React Components
+│   │   ├── 📂 Views                      # Main Component View Modes
+│   │   │   ├── 📜 ListView.js            # List View
+│   │   │   └── 📜 Overview.js            # Overview
+│   │   ├── 📜 MainComponent.js           # Main Component
+│   │   ├── 📜 OverlayComponent.js        # Overlay Component
+│   │   ├── 📜 Settings.js                # Settings Component
+│   │   └── 📜 Sidebar.js                 # Sidebar Component
 │   │
 │   ├── 📂 CSS # Stylesheets
-│   │   ├── 📂 Controllers                     # Global Styles for Settings Controllers
-│   │   ├── 📂 Views                           # Main Component View Modes
-│   │   │
-│   │   ├── 📜 App.css                         # Global Styles
-│   │   ├── 📜 MainComponent.css               # Main Component Styles
-│   │   ├── 📜 OverlayComponent.css            # Overlay Styles
-│   │   ├── 📜 Settings.css                    # Settings Styles
-│   │   └── 📜 Sidebar.css                     # Sidebar Styles
+│   │   ├── 📂 Controllers                # Global Styles for Settings Controllers
+│   │   ├── 📂 Views                      # Main Component View Modes
+│   │   │   ├── 📜 ListView.css           # List View Styles
+│   │   │   └── 📜 Overview.css           # Overview Styles
+│   │   ├── 📜 App.css                    # Global Styles
+│   │   ├── 📜 MainComponent.css          # Main Component Styles
+│   │   ├── 📜 OverlayComponent.css       # Overlay Styles
+│   │   ├── 📜 Settings.css               # Settings Styles
+│   │   └── 📜 Sidebar.css                # Sidebar Styles
 │   │
-│   ├── 📂 store                               # Redux Store
-│   │   ├── 📂 slices                          # Redux Reducers
-│   │   ├── 📂 utils                           # Redux Processors
-│   │   └── 📜 store.js                        # Redux Store Entry Point
+│   ├── 📂 store                          # Redux Store
+│   │   ├── 📂 slices                     # Redux Reducers
+│   │   ├── 📂 utils                      # Processors
+│   │   └── 📜 store.js                   # Redux Store Entry Point
 │   │
-│   ├── 📜 App.js                              # React Entry Point
-│   ├── 📜 index.js                            # App Entry Point
-│   ├── 📜 main.js                             # Electron Main Process
-│   └── 📜 SystemListener.js                   # System Event Handler
+│   ├── 📜 App.js                         # React Entry Point
+│   ├── 📜 index.js                       # App Entry Point
+│   ├── 📜 main.js                        # Electron Main Process
+│   └── 📜 SystemListener.js              # System Event Handler
 │
-├── 📜 forge.config.js                         # Electron Forge Configuration
-├── 📜 LICENSE                                 # License File
-├── 📜 package.json                            # Project Configuration
-├── 📜 README.md                               # Project Documentation
-└── 📜 README-EN.md                            # Project Documentation (English)
+├── 📜 forge.config.js                    # Electron Forge Configuration
+├── 📜 LICENSE                            # License File
+├── 📜 package.json                       # Project Configuration
+├── 📜 README.md                          # Project Documentation
+└── 📜 README-EN.md                       # Project Documentation (English)
  ```
 
 ## Supported Platforms
@@ -149,45 +145,34 @@ Download the appropriate precompiled binary from the [Release Page](https://gith
 
 
 ## Recent Updates
-
- 1. **UI Overhaul**: Redesigned with a mix of Material and Neumorphism design. Additionally, various UI animations have been added.
-   - The **Sidebar** functionality has been greatly enhanced.
-   - The highlight color feature has been enabled in the settings.
-   - You can directly select the app theme in the settings.
-
- 2. **Search Function Added**: Currently supports Korean the best, at least for now.
-   - Supports initial consonant search, partial match search, and exact match search(Korean Only).
-   - Highlight colors vary depending on the search type.
-   - You can move the pointer and select using the keyboard.
-
- 3. **Various Shortcuts Added**: The following shortcuts can be used in combination with the Ctrl (Cmd) key.
-   - **O**: Open file
-   - **F**: Open search window (only available when a file is loaded)
-   - **M**: Sidebar
-   - **,** : Open settings window
-
- 4. **Internal Logic Improvements**: Various internal changes have been made.
-
- 5. Add Console Display: You can check internal massages the program sends.
+ ### Latest Release: 0.2.0beta
 
 
-
+ 1. **Line Mode**: Added a mode to process text on a line-by-line basis instead of by paragraphs.
+ 2. **List View**: Added a mode that allows viewing all paragraphs by scrolling instead of showing previous/current/next paragraphs.
+ 3. **Page Number Logic** Improvements:
+     - Extended regex for page number detection.
+     - Detect page numbers attached to paragraphs.
+     - Fixed bugs related to empty pages.
+4. **Redux** introduced.
+5. **Drag & Drop** added.
 
 ## Features in Development
 
- 1. **Photoshop Mode**: Automatically input text layer creation using Photoshop API.
- 2. **built-in Text Editor**: Planned to be equipped with convenient features for tasks like translation work.
- 3. **Overlay refactoring**: Planning to significantly improve functionality.
- 4. **User Guide**: Plan to write a detailed manual for the program.
- 5. **Multilingual Support**: Planned to support English and Japanese first.
+ 1. Search Function: Search text/paragraphs and jump to the desired paragraph.
+ 2. Photoshop Mode: Automatically input text layer creation using Photoshop API.
+ 3. Click-to-Jump in the overlay window.
+ 4. UI Icons: From pause/resume buttons to future buttons.
+ 5. User Guide: Plan to write a detailed manual for the program.
+ 6. File Editing: Simple modifications like renaming files or editing paragraph content.
+ 7. Multilingual Support: Planned to support English and Japanese first.
 
 ## Known Issues
 
- 1. Unexpected bugs may have occurred during logic modification. Please report any issues!
+ 1. Overlay layout misalignment: All paragraphs should have equal spacing, but the gaps between previous/current and current/next are unusually wide. I'm currently unsure how to fix this.
+ 2. Unexpected bugs may have occurred during logic modification. Please report any issues!
 
 ## License
-
- **All uses are permitted except for direct sales.**
 
  The majority of the code for this program was generated using **GitHub Copilot Chat**.
 

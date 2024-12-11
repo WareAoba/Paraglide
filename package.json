@@ -1,6 +1,6 @@
 {
   "name": "paraglide",
-  "version": "0.3.0-beta",
+  "version": "0.2.0-beta",
   "private": true,
   "main": "./src/main.js",
   "author": "WareAoba",
@@ -51,18 +51,11 @@
   "homepage": "./",
   "dependencies": {
     "@reduxjs/toolkit": "^2.3.0",
-    "d2coding": "^1.3.2",
     "electron-clipboard-watcher": "^1.0.1",
-    "electron-localshortcut": "^3.2.1",
-    "hangul-js": "^0.2.6",
     "node-global-key-listener": "^0.3.0",
     "react": "^18.2.0",
-    "react-colorful": "^5.6.1",
-    "react-contexify": "^6.0.0",
     "react-dom": "^18.2.0",
-    "react-router-dom": "^6.28.0",
-    "react-transition-group": "^4.4.5",
-    "simplebar-react": "^3.2.6"
+    "react-router-dom": "^6.28.0"
   },
   "scripts": {
     "make-dmg": "create-dmg 'dist/mac/Paraglide.app' --overwrite --dmgTitle='Paraglide' --icon='public/icons/mac/icon.icns' --background='public/dmg/background.png' --window-size=540,380 --icon-size=100 --app-drop-link-size=130 --app-drop-link-x=600 --app-drop-link-y=400",
@@ -110,7 +103,7 @@
     "cross-env": "^7.0.3",
     "electron": "^26.2.0",
     "electron-squirrel-startup": "^1.0.1",
-    "react-scripts": "5.0.1",
-    "wait-on": "^7.2.0"
+    "wait-on": "^7.2.0",
+    "react-scripts": "5.0.1"
   }
 }

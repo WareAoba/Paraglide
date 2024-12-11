@@ -1,107 +1,91 @@
-/* src/CSS/Views/ListView.css */
+/* src/CSS/ListView.css */
 .listview-container {
-  flex: 1; /* 남은 공간 모두 차지 */
-  height: 0; /* flex-grow가 작동하게 함 */
-  min-height: 0; /* 스크롤을 위해 필요 */
+  height: 100%;
   width: 95%;
-  overflow-y: scroll;
+  overflow-y: auto;
   overflow-x: hidden;
   padding: 1rem;
-  margin-top: 40px;
   position: relative;
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE/Edge */
-}
-
-.listview-container::-webkit-scrollbar {
-  display: none; /* Chrome/Safari */
 }
 
 .listview-header {
-  height: 2rem; /* 헤더 높이 설정 */
-  margin: 1rem 0; /* 상하 마진 */
+  height: 2rem;
+  margin: 1rem 0;
   padding-bottom: 0.5rem;
   border-bottom: 1px solid var(--border-color);
   color: var(--text-color);
+  display: flex;
+  align-items: center;
+}
+
+/* 페이지 번호 없음 헤더 스타일 */
+.listview-header[data-no-page-number] {
+  font-style: italic;
+  color: color-mix(in srgb, var(--text-color) 25%, transparent);
 }
 
 .listview-section {
-  margin-bottom: 1rem; /* 섹션 간격 */
+  margin-bottom: 1rem;   /* 섹션 간격 */
 }
 
 .listview-item {
   position: relative;
-  height: 36px; /* 아이템 높이 고정 */
+  height: 36px;          /* 아이템 높이 고정 */
   padding: 0.5rem;
-  margin: 0.25rem auto; /* 아이템 간격 */
+  margin: 0.25rem auto;     /* 아이템 간격 */
   cursor: pointer;
   white-space: nowrap;
   overflow: hidden;
-  font-family: inherit;
-  font-size: 17px;
-  font-weight: 300;
   text-align: left;
   text-overflow: ellipsis;
   color: var(--text-color);
-  opacity: 0.75;
+  opacity: 0.5;
   user-select: none;
-  transform: translateX(0); /* 초기 위치 */
+  transform: translateX(0);  /* 초기 위치 */
   transition: padding-left 0.2s cubic-bezier(0.4, 0.0, 0.2, 1),
-              opacity 0.2s ease; /* transform 대신 padding 전환 */
+              opacity 0.2s ease;  /* transform 대신 padding 전환 */
   border-radius: 4px;
-}
-
-[data-theme="dark"] .listview-item {
-  opacity: 0.25;
 }
 
 /* 이동하는 배경 박스 */
-.listview-container .simplebar-content-wrapper:before {
-  content: '';
-  position: absolute;
-  left: 3.5rem;
-  width: calc(100% - 4rem);
-  height: 36px;
-  background-color: var(--primary-color);
-  border-radius: 4px;
-  transition: transform 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
-  transform: translateY(calc(var(--current-element-top) + 16px));
-  z-index: 1;
-  pointer-events: none;
+.listview-container:before {
+    content: '';
+    position: absolute;
+    left: 3.5rem;
+    width: calc(100% - 4rem);
+    height: 36px;
+    background-color: var(--primary-color);
+    border-radius: 4px;
+    transition: transform 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
+    transform: translateY(var(--current-element-top, 0));
+    z-index: 1;
 }
 
 /* 이동하는 화살표 */
-.listview-container .simplebar-content-wrapper:after {
-  content: '➤';
-  position: absolute;
-  left: 1.5rem;
-  top: 16px;
-  font-size: 24px;
-  color: var(--primary-color);
-  text-align: center;
-  line-height: 36px;
-  transition: transform 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
-  transform: translateY(var(--current-element-top, 0));
-  z-index: 2;
-  pointer-events: none;
-}
-
-.listview-container .simplebar-content-wrapper::-webkit-scrollbar,
-.listview-container .simplebar-hide-scrollbar::-webkit-scrollbar {
-  display: block;
-  width: 10px;
+.listview-container:after {
+    content: '➤';
+    position: absolute;
+    left: 1.5rem;
+    top: 16px;
+    font-size: 24px;
+    color: var(--primary-color);
+    text-align: center;    /* 추가: 텍스트 중앙 정렬 */
+    line-height: 36px;     /* 수직 중앙 정렬 */
+    transition: transform 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
+    transform: translateY(var(--current-element-top, 0));
+    z-index: 2;
 }
 
 .listview-item.current {
   opacity: 1;
   color: white;
-  padding-left: 3.5rem; /* transform 대신 padding으로 이동 효과 */
+  padding-left: 3.5rem;  /* transform 대신 padding으로 이동 효과 */
   z-index: 5;
 }
 
 .listview-item:hover:not(.current) {
   opacity: 0.7;
-  padding-left: 1.5rem; /* transform 대신 padding으로 이동 효과 */
+  padding-left: 1.5rem;  /* transform 대신 padding으로 이동 효과 */
 }
 
 [data-theme="dark"] .listview-item {
@@ -120,7 +104,6 @@
   border: none;
   border-radius: 8px;
   cursor: pointer;
-  font-family: inherit;
   font-size: 1em;
   transition: filter 0.2s ease;
 }

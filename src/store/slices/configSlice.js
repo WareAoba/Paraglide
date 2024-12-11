@@ -4,14 +4,14 @@ const { nativeTheme } = require('electron');
 // 상수 정의
 const THEME = {
   DARK: 'dark',
-  LIGHT: 'light',
-  AUTO: 'auto'
+  LIGHT: 'light'
 };
 
 // 초기값 설정
 const initialState = {
   theme: {
-    mode: THEME.AUTO,
+    isDarkMode: nativeTheme.shouldUseDarkColors,
+    mode: nativeTheme.shouldUseDarkColors ? THEME.DARK : THEME.LIGHT,
     accentColor: '#007bff'
   },
   overlay: {
@@ -44,8 +44,8 @@ const configSlice = createSlice({
       return {
         ...state,
         theme: { 
-          mode: newConfig.theme?.mode ?? state.theme.mode,
-          accentColor: newConfig.theme?.accentColor ?? state.theme.accentColor
+          ...state.theme, 
+          ...newConfig.theme 
         },
         overlay: {
           ...state.overlay,
@@ -69,14 +69,13 @@ const configSlice = createSlice({
       };
     },
 
-    setThemeMode: (state, action) => {
-      state.theme.mode = action.payload;
-    },
-    setEffectiveTheme: (state, action) => {
-      // AUTO 모드일 때만 실제 테마 적용
-      if (state.theme.mode === THEME.AUTO) {
-        state.theme.effectiveMode = action.payload;
-      }
+    updateTheme: (state, action) => {
+      const isDarkMode = action.payload;
+      state.theme = {
+        ...state.theme,
+        isDarkMode,
+        mode: isDarkMode ? THEME.DARK : THEME.LIGHT
+      };
     },
 
     setOverlayBounds: (state, action) => {

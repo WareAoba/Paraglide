@@ -8,7 +8,6 @@ const initialState = {
   currentFilePath: null,  // 추가
   currentNumber: null,
   currentParagraph: 0,
-  programStatus: 'Ready', // 초기 상태 추가
   processMode: 'paragraph'
 };
 
@@ -21,7 +20,6 @@ const textProcessSlice = createSlice({
       state.paragraphsMetadata = action.payload.paragraphsMetadata;
       state.currentNumber = action.payload.currentNumber;
       state.processMode = action.payload.processMode;
-      state.programStatus = action.payload.programStatus;
       state.currentFilePath = action.payload.currentFilePath;
     },
     updateCurrentParagraph(state, action) {

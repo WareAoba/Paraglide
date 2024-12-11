@@ -35,8 +35,7 @@
   border-radius: 12px;
   display: flex;
   flex-direction: column;
-  box-shadow: 12px 24px 48px rgba(0, 0, 0, 0.1),
-              12px 24px 48px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
   padding: 32px;
   opacity: 0;
   transition: transform 0.3s ease,
@@ -51,7 +50,6 @@
 .settings-scroll-area {
   flex: 1;
   overflow-y: auto;         /* 스크롤 활성화 */
-  overflow-x: visible;
   padding: 0 16px;  /* 좌우 패딩만 유지 */
   padding-bottom: 80px;      /* 버튼 영역 확보 */
   margin-bottom: 60px;      /* 버튼 그룹 공간 확보 */
@@ -88,17 +86,17 @@
   align-items: center;
   justify-content: space-between;
   margin-bottom: 20px;
-  color: var(--text-secondary);
+  color: var(--text-color);
   font-size: 0.95em;
 }
 
 .segment-control {
   display: flex;
-  padding: 2px;
-  border-radius: 6px;
+  background-color: var(--border-color);
+  padding: 2px; /* 4px에서 3px로 줄임 */
+  border-radius: 6px; /* 8px에서 6px로 줄임 */
   width: 100%;
   position: relative;
-  box-shadow: inset 5px 5px 10px #e2e5ed, inset -5px -5px 10px #fff;
   height: 28px; /* 높이 명시적 지정 */
 }
 
@@ -139,7 +137,7 @@
   position: relative;
   z-index: 1;
   font-family: inherit;
-  opacity: 0.6; /* 기본 상태는 흐리게 */
+  opacity: 0.2; /* 기본 상태는 흐리게 */
 }
 
 .segment-control button.active {
@@ -269,10 +267,9 @@ input:focus + .slider {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 12px; /* 여유 공간 증가 */
-  margin: 0 -12px;
+  margin: 0;  /* 기존 마진 제거 */
+  padding: 0;  /* 기존 패딩 제거 */
   margin-bottom: 20px;  /* 슬라이더와 동일한 간격 */
-  z-index: 1; /* 상위 레이어로 올림 */
 }
 
 .settings-group .checkbox-wrapper .checkbox {
@@ -280,9 +277,6 @@ input:focus + .slider {
   justify-content: space-between;
   align-items: center;
   width: 100%;
-  position: relative; /* ripple이 잘리지 않도록 */
-  overflow: visible; /* ripple이 잘리지 않도록 */
-  z-index: 2; /* 더 높은 z-index */
 }
 
 .settings-group .checkbox-wrapper .checkbox span:last-child {
@@ -293,11 +287,6 @@ input:focus + .slider {
 .settings-group .checkbox-wrapper .checkbox span:first-child {
   order: 1;  /* 오른쪽으로 이동 */
   margin-left: 16px;  /* 텍스트와의 간격 */
-}
-
-.dropdown-wrapper {
-  position: relative;
-  z-index: 999;
 }
 
 .settings-button-group {
@@ -322,14 +311,13 @@ input:focus + .slider {
   background-color: var(--bg-color);
   color: var(--text-color);
   font-size: 0.95em;
-  font-family: inherit;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .settings-button-group button.btn-primary {
   background-color: var(--primary-color);
-  color: var(--primary-text);
+  color: white;
   border: none;
 }
 
@@ -365,6 +353,7 @@ input:focus + .slider {
 [data-theme="dark"] .settings-button-group button {
   background-color: var(--dark-bg);
   color: var(--dark-text);
+  font-family: inherit;
   border-color: rgba(255, 255, 255, 0.1);
 }
 
@@ -407,56 +396,4 @@ input:focus + .slider {
 .settings-group.danger-zone button:hover {
   background-color: var(--danger-color);
   color: white;
-}
-
-.color-picker-container {
-  position: relative;
-  display: inline-block;
-  scale: 0.8;
-  z-index: 1002;
-  transition: all 0.2s ease;
-}
-
-.color-picker-popup {
-  position: absolute;
-  top: calc(100% + 14px);
-  right: 0;  /* 왼쪽 정렬 */
-  z-index: 1002;
-  background: var(--bg-color);
-  padding: 12px;
-  border-radius: 8px;
-  box-shadow: 8px 8px 14px #e2e5ed, -8px -8px 14px #fff;
-  opacity: 0;
-  visibility: hidden;
-  transform: translateY(10px);
-  transition: all 0.2s ease;
-}
-
-.color-picker-popup.visible {
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(0);
-}
-
-.color-presets {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: nowrap;
-  gap: 6px;
-  margin-top: 12px;
-  justify-content: flex-start;
-}
-
-.color-preset {
-  flex: 0 0 24px;
-  transition: transform 0.2s ease;
-}
-
-.color-preset:hover {
-  transform: scale(1.1);
-}
-
-.react-colorful {
-  width: 220px !important;
-  height: 200px !important;
 }
