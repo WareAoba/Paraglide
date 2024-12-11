@@ -7,7 +7,6 @@ import Sidebar from './Sidebar';
 import Settings from './Settings';
 import Overview from './Views/Overview';
 import ListView from './Views/ListView';
-import Search from './Views/Search';
 import DragDropOverlay from './Views/DragDropOverlay';
 const path = window.require('path');
 const { ipcRenderer } = window.require('electron');
@@ -43,6 +42,7 @@ function MainComponent() {
   const [isSearchVisible, setIsSearchVisible] = useState(false);
   const [dragCounter, setDragCounter] = useState(0);
   const [hoveredSection, setHoveredSection] = useState(null);
+
   const [playIcon, setPlayIcon] = useState(null);
   const [pauseIcon, setPauseIcon] = useState(null);
   const [terminalIcon, setTerminalIcon] = useState(null);
@@ -68,12 +68,17 @@ function MainComponent() {
     if (state.programStatus !== ProgramStatus.PROCESS) {
       return;
     }
+  
+    // 사이드바가 닫혀있으면 열기
+    if (!state.isSidebarVisible) {
+      setState(prev => ({
+        ...prev,
+        isSidebarVisible: true
+      }));
+    }
+    
     setIsSearchVisible(prev => !prev);
-    setState(prev => ({
-      ...prev,
-      isSidebarVisible: false,
-    }));
-  }, [state.programStatus]);
+  }, [state.programStatus, state.isSidebarVisible]);
 
   const handleCloseEsc = useCallback(() => {
     // 사이드바
@@ -560,6 +565,8 @@ ipcRenderer.invoke('generate-css-filter', accentColor, {
     >
       <Sidebar
         isVisible={state.isSidebarVisible}
+        isSidebarVisible={state.isSidebarVisible}
+        isSearchVisible={isSearchVisible}
         onFileSelect={handleSidebarFileSelect}
         theme={theme}
         onClose={handleCloseSidebar}
@@ -569,6 +576,7 @@ ipcRenderer.invoke('generate-css-filter', accentColor, {
           eye: eyeIcon,
           eyeOff: eyeOffIcon,
           searchIcon: searchIcon,
+          pageJumpIcon: pageJumpIcon,
           terminalIcon: terminalIcon,
           textFileIcon: textFileIcon,
           deleteIcon: deleteIcon,
@@ -585,6 +593,8 @@ ipcRenderer.invoke('generate-css-filter', accentColor, {
             .filter(meta => meta?.pageNumber != null)
             .map(meta => meta.pageNumber)) || 1
         } : null}
+        paragraphs={state.paragraphs}
+        metadata={state.paragraphsMetadata}
         onToggleOverlay={handleToggleOverlay}
         onToggleSearch={handleSearchToggle}
         onShowDebugConsole={handleShowDebugConsole}
@@ -723,22 +733,6 @@ ipcRenderer.invoke('generate-css-filter', accentColor, {
               </div>
             </CSSTransition>
           </div>
-  
-          {state.paragraphs.length > 0 && (
-            <Search
-              ref={searchRef}
-              paragraphs={state.paragraphs}
-              onSelect={handleParagraphSelect}
-              isVisible={isSearchVisible}
-              onClose={() => setIsSearchVisible(false)}
-              metadata={state.paragraphsMetadata}
-              icons={{
-                searchIcon: searchIcon,
-                pageJumpIcon: pageJumpIcon,
-              }}
-              theme={theme}
-            />
-          )}
   
           {state.currentFilePath && (
             <div className="file-info-container">

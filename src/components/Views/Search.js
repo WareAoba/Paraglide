@@ -1,6 +1,7 @@
 // components/Views/Search.js
 import React, { useState, useEffect, useCallback, useRef, forwardRef, useImperativeHandle } from 'react';
 import Hangul from 'hangul-js';
+import '../../CSS/App.css';
 import '../../CSS/Views/Search.css';
 import { debounce } from 'lodash';
 
@@ -443,81 +444,63 @@ const Search = forwardRef((props, ref) => {
   }, [searchTerm, filteredResults, isVisible]);
 
   return (
-    <div
-      className={`search-overlay ${isVisible ? 'active' : ''}`}
-      data-theme={theme.mode}
-      onMouseDown={handleMouseDown}
-      onMouseUp={handleMouseUp}
-    >
-      <div className="search-box">
-        <div className="search-header">
-          {searchTerm.trim() && results.length > 0 ? (
-            <h2 className="search-count">{results.length}개의 검색 결과</h2>
-          ) : (
-            <h2>검색</h2>
-          )}
-        </div>
-        <div className="search-input-container">
-          <img src={icons?.searchIcon} alt="" className="search-icon" />
-          <input
-            ref={searchInputRef}
-            type="text"
-            value={searchTerm}
-            onChange={handleSearchChange}
-            placeholder={`검색어를 입력하세요… (${paragraphs?.length || 0}개 단락)`}
-          />
-          {searchTerm && (
-            <button className="clear-button" onClick={() => setSearchTerm('')}>
-              ×
-            </button>
-          )}
-        </div>
+<div className="search-container" data-theme={theme.mode}>
+  <div className="search-header">
+    <h2>{results.length > 0 ? `${results.length}개의 검색 결과` : '검색'}</h2>
+  </div>
+
+    <div className="search-content">
+      <div className="search-input-container">
+        <img src={icons?.searchIcon} alt="" className="search-icon" />
+        <input
+          type="text"
+          value={searchTerm}
+          onChange={handleSearchChange}
+          placeholder="검색어를 입력하세요"
+        />
+        {searchTerm && (
+          <button className="clear-button" onClick={() => setSearchTerm('')}>
+            ×
+          </button>
+        )}
+      </div>
+        
         <div className="search-results" data-testid="search-results">
           {(() => {
             const pageNum = checkPagePattern(searchTerm.trim());
-
+  
             return (
               <>
                 {pageNum && isValidPage(pageNum) && (
                   <div className="page-jump-container">
                     <button className="page-jump-button" onClick={() => handlePageJump(pageNum)}>
-                      <img src={icons?.pageJumpIcon} alt="" className="page-jump-icon" />
                       <span>{pageNum}페이지로 이동</span>
                     </button>
                   </div>
                 )}
-
-                {searchTerm.trim() && filteredResults.length > 0 &&
+  
+                {searchTerm.trim() && filteredResults.length > 0 ? (
                   filteredResults.map((result, index) => (
                     <div
                       key={result.index}
                       ref={el => resultItemsRef.current[index] = el}
-                      className={`search-result-item ${
-                        removingIndexes.has(result.index) ? 'removing' : ''
-                      } ${pointer === index ? 'pointed' : ''}`}
+                      className={`search-result-item ${pointer === index ? 'pointed' : ''}`}
                       onClick={() => {
                         onSelect(result.index);
                         onClose();
                       }}
-                      data-testid={`search-result-${result.index}`}
                     >
-                      <span className="pointer-arrow left" aria-hidden="true">⮞</span>
-                      <span className="pointer-arrow right" aria-hidden="true">⮜</span>
-                      <span className="result-info">{result.pageInfo}페이지</span>
-                      <span className="result-text">
+                      <div className="result-text">
                         {highlightMatch(result.text, searchTerm)}
-                      </span>
+                      </div>
+                      <div className="result-info">{result.pageInfo}페이지</div>
                     </div>
                   ))
-                }
-
-                {searchTerm.trim() &&
-                  filteredResults.length === 0 &&
-                  !(pageNum && isValidPage(pageNum)) && (
-                    <div className="no-results" data-testid="no-results">
-                      검색 결과가 없습니다
-                    </div>
-                  )}
+                ) : (
+                  searchTerm.trim() && 
+                  !isValidPage(pageNum) && 
+                  <div className="no-results">검색 결과가 없습니다</div>
+                )}
               </>
             );
           })()}
