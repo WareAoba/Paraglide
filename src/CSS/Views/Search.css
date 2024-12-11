@@ -110,7 +110,7 @@
   padding: 0;
   opacity: 0.5;
   transition: all 0.3s ease;
-  filter: var(--primary-color-filter);
+  filter: var(--icon-filter);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -119,6 +119,7 @@
 
 .clear-button:hover {
   opacity: 1;
+   filter: var(--primary-color-filter);
 }
 
 /* 기본 상태 */
@@ -176,7 +177,6 @@
 }
 
 .search-result-item {
-  border: 1px solid var(--border-color);
   padding: 12px;
   border-radius: 8px;
   font-size: 8px;
@@ -187,6 +187,11 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+ box-shadow:
+    5px 5px 10px var(--container-shadow-up),
+    -5px -5px 10px var(--container-shadow-down),
+    inset 0 0 0 transparent, inset 0 0 0 transparent;
+
 }
 
 .search-result-item:last-child {
