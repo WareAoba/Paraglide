@@ -481,20 +481,34 @@ const Search = forwardRef((props, ref) => {
   
                 {searchTerm.trim() && filteredResults.length > 0 ? (
                   filteredResults.map((result, index) => (
-                    <div
-                      key={result.index}
-                      ref={el => resultItemsRef.current[index] = el}
-                      className={`search-result-item ${pointer === index ? 'pointed' : ''}`}
-                      onClick={() => {
-                        onSelect(result.index);
-                        onClose();
-                      }}
-                    >
-                      <div className="result-text">
-                        {highlightMatch(result.text, searchTerm)}
-                      </div>
-                      <div className="result-info">{result.pageInfo}페이지</div>
-                    </div>
+<div
+  key={result.index}
+  ref={el => resultItemsRef.current[index] = el}
+  className={`search-result-item ${pointer === index ? 'pointed' : ''}`}
+  onClick={() => {
+    console.log('Search result clicked:', result.index);
+    
+    // 순서 중요
+    const selectedIndex = result.index;
+    
+    // 먼저 이동
+    if (typeof selectedIndex === 'number') {
+      onSelect(selectedIndex);
+      console.log('Called onSelect with index:', selectedIndex);
+    }
+    
+    // UI 정리
+    if (onClose) {
+      onClose();
+      console.log('Called onClose');
+    }
+  }}
+>
+  <div className="result-text">
+    {highlightMatch(result.text, searchTerm)}
+  </div>
+  <div className="result-info">{result.pageInfo}페이지</div>
+</div>
                   ))
                 ) : (
                   searchTerm.trim() && 

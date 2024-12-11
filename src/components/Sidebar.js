@@ -1,6 +1,6 @@
 // src/components/Sidebar.js
 
-import React, {useEffect} from 'react';
+import React, { useEffect, useCallback } from 'react';
 import '../CSS/App.css';
 import '../CSS/Sidebar.css';
 import Search from './Views/Search';
@@ -23,7 +23,8 @@ function Sidebar({
   onShowDebugConsole,
   paragraphs,
   metadata,
-  isSearchVisible, // 새로 추가
+  isSearchVisible,
+  onSelect
 }) {
   const [files, setFiles] = React.useState([]);
 
@@ -147,15 +148,24 @@ function Sidebar({
     }
   };
 
-  const handleSearchSelect = (result) => {
-    if (result && typeof result.index === 'number') {
-      // 검색 결과 선택 시 처리
-      if (currentFile && currentFile.paragraphs) {
-        onToggleSearch(); // 검색 모드 종료
-        // 필요한 추가 처리
+  const handleSearchSelect = useCallback((result) => {
+    console.log('Sidebar - handleSearchSelect called with result:', result);
+      
+    if (typeof result === 'number') {  // result 객체가 아닌 직접 인덱스를 받도록 수정
+      try {
+        // 순서 중요: 먼저 이동하고, UI 정리
+        onSelect(result);
+        
+        // 사이드바 닫기를 마지막에 실행
+        onToggleSearch(false);  // 검색 UI 닫기
+        onClose();             // 사이드바 닫기
+        
+        console.log('Search selection and navigation completed');
+      } catch (error) {
+        console.error('Error in search selection:', error);
       }
     }
-  };
+  }, [onSelect, onToggleSearch, onClose]);
 
   const handleClose = () => {
     if (isSearchVisible) {
@@ -209,7 +219,11 @@ function Sidebar({
           className="sidebar-close-button"
           onClick={handleClose}
           >
-            <img src={icons?.sidebarUnfold} alt="닫기" className="sidebar-icon-button" />
+                <img 
+      src={isSearchVisible ? icons?.backIcon : icons?.sidebarUnfold} 
+      alt="닫기" 
+      className="sidebar-icon-button" 
+    />
           </button>
           <div className="header-title-group">
             {titlePath ? (
@@ -325,16 +339,23 @@ function Sidebar({
               </div>
             </>
           ) : (
-            <Search
-              paragraphs={paragraphs}
-              onSelect={handleSearchSelect}
-              metadata={metadata}
-              isVisible={isSearchVisible}
-              onClose={() => onToggleSearch(false)}
-              icons={icons}
-              theme={theme}
-              isSidebarVisible={isVisible}
-            />
+<Search
+  paragraphs={paragraphs}
+  onSelect={(index) => {  // result 객체 대신 직접 index를 받도록 수정
+    console.log('Search onSelect called with index:', index);
+    handleSearchSelect(index);
+  }}
+  metadata={metadata}
+  isVisible={isSearchVisible}
+  onClose={() => {
+    console.log('Search onClose called');
+    onToggleSearch(false);  // 검색 UI 닫기
+    onClose();             // 사이드바 닫기
+  }}
+  icons={icons}
+  theme={theme}
+  isSidebarVisible={isVisible}
+/>
           )}
         </div>
       </div>
