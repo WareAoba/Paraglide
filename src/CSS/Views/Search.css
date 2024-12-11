@@ -63,7 +63,6 @@
   transform: translateY(-20px);
   opacity: 0;
   transition: all 0.3s ease;
-  padding: ;          /* 패딩 초기화 */
   box-sizing: border-box;  /* 패딩을 너비에 포함 */
 }
 
@@ -125,7 +124,8 @@
 /* 기본 상태 */
 .search-input-container input {
   width: 100%;
-  border: none;
+  border: 1px solid transparent;
+  box-sizing: border-box; /* 테두리를 너비/높이 계산에 포함 */
   padding: 0.7rem;
   padding-left: 32px; /* 아이콘 + 여유 공간 */
   padding-right: 32px;
