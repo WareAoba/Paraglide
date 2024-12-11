@@ -108,6 +108,9 @@
 .sidebar-close-button:hover {
   scale: 1.1;
   background: var(--bg-gradient);
+  box-shadow:
+  2px 2px 6px var(--container-shadow-up),
+  -2px -2px 6px var(--container-shadow-down);
 }
 
 .sidebar-close-button:active {
@@ -291,7 +294,7 @@
   box-shadow:
   0 0 0 transparent, 0 0 0 transparent,
   inset 3px 3px 8px var(--container-shadow-up),
-  inset -3px -3px 4px var(--container-shadow-down);
+  inset -3px -3px 8px var(--container-shadow-down);
 }
 
 [data-action="open"].control-button {
@@ -302,8 +305,9 @@
 [data-action="open"].control-button:hover {
 color: block; 
 box-shadow:
-3px 3px 3px var(--container-shadow-up),
--3px -3px 3px var(--container-shadow-down),;
+ 0 0 0 transparent, 0 0 0 transparent,
+ inset 3px 3px 8px var(--container-shadow-up),
+ inset -3px -3px 8px var(--container-shadow-down);
 }
 
 [data-action="edit"].control-button {
