@@ -108,6 +108,9 @@
 .sidebar-close-button:hover {
   scale: 1.1;
   background: var(--bg-gradient);
+  box-shadow:
+  2px 2px 6px var(--container-shadow-up),
+  -2px -2px 6px var(--container-shadow-down);
 }
 
 .sidebar-close-button:active {
