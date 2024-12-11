@@ -503,6 +503,7 @@ function MainComponent() {
       ...prev,
       ...resetState
     }));
+    setIsSearchVisible(false);
   };
 
 // themeCalc 함수 수정
