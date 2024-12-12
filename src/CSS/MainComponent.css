@@ -69,7 +69,7 @@
     max-width: 330px;
     max-height: 330px;
     object-fit: contain;
-    filter: var(--logo-filter);
+    filter: var(--logo-filter) drop-shadow(-8px -8px 2px #e2e5ed) drop-shadow(8px 8px 2px #fff);
     cursor: default; /* 커서 기본값으로 변경 */
 }
 
@@ -77,6 +77,7 @@
   max-width: 300px;
   height: auto;
   margin-bottom: 20px;
+  filter: drop-shadow(4px 4px 2px #e2e5ed) drop-shadow(-4px -4px 2px #fff);
 }
 
 .welcome-screen .title {
@@ -86,6 +87,7 @@
     margin: 0;
     text-align: center;
     letter-spacing: -0.5px;
+    
 }
 
 .welcome-screen .button-container {
@@ -94,7 +96,6 @@
     align-items: center;
     gap: var(--spacing-xl);
     padding: var(--spacing-sm);
-    /* margin-top: var(--spacing-xl); */
 }
 
   .welcome-screen .btn-primary {
@@ -109,20 +110,23 @@
     font-weight: 500;
     font-family: inherit;
     background-color: var(--primary-color);
-    box-shadow: 4px 4px 16px var(--primary-color-shadow-up),
-                -4px -4px 16px var(--primary-color-shadow-down),
-                inset 0 0 0 transparent, inset 0 0 0 transparent;
     color: var(--primary-text);
     border: none;
     border-radius: 6px;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease-out;
+    box-shadow:
+    5px 5px 5px var(--container-shadow-up),
+    -5px -5px 5px var(--container-shadow-down);
 }
 
 .welcome-screen .btn-primary:hover {
-    box-shadow: 0 0 0 transparent, 0 0 0 transparent,
-                inset 4px 4px 8px var(--primary-color-shadow-up),
-                inset -4px -4px 8px var(--primary-color-shadow-down);
+  box-shadow:
+  0 0 0 transparent, 0 0 0 transparent,
+  5px 5px 5px var(--container-shadow-up),
+  -5px -5px 5px var(--container-shadow-down),
+  inset 5px 5px 15px var(--primary-color-shadow-up),
+  inset -5px -5px 15px var(--primary-color-shadow-down);
 }
 
 .welcome-screen .icon-primary {
