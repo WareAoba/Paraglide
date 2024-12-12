@@ -3,8 +3,8 @@
   height: 100%;
   display: flex;
   flex-direction: column;
-  padding: 16px;
-  transform: translateX(-12px);
+  padding: 20px;
+  transform: translateX(-14px);
 }
 
 .search-content {
@@ -39,15 +39,16 @@
   visibility: visible;
   opacity: 1;
   background-color: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
+  backdrop-filter: blur(5px);
 }
 
 .search-header {
   display: flex;
   justify-content: center;
   align-items: center;
-  margin-bottom: 12px;
-  z-index:100;
+  margin-top: -15px;  /* 상단으로 올리기 */
+  margin-bottom: 10px;
+  z-index: 100;
 }
 
 .search-header h2 {
@@ -58,10 +59,10 @@
   margin: 0;
 }
 
+
 .search-box {
   width: min(90%, 360px);
   background-color: var(--background-color);
-  transform: translateY(-20px);
   opacity: 0;
   transition: all 0.3s ease;
   box-sizing: border-box;  /* 패딩을 너비에 포함 */
@@ -76,15 +77,14 @@
   position: relative;
   display: flex;
   align-items: center;
-  width: calc(100% - 32px); /* 여백 축소: 48px -> 32px */
-  margin: 0 16px;  /* 마진도 축소: 24px -> 16px */
+  margin: 0; 
  }
 
 .search-input-container {
   position: relative;
   display: flex;
   align-items: center;
-  padding: 5px 12px; /* 좌우 패딩 축소: 16px -> 12px */
+  padding: 6px;
 }
 
 .search-icon, .clear-icon {
@@ -129,8 +129,8 @@
   border: 1px solid transparent;
   box-sizing: border-box; /* 테두리를 너비/높이 계산에 포함 */
   padding: 0.7rem;
-  padding-left: 32px; /* 아이콘 + 여유 공간 */
-  padding-right: 32px;
+  padding-left: 38px; /* 아이콘 + 여유 공간 */
+  padding-right: 36px;
   border-radius: 2rem;
   background: var(--bg-color);
   box-shadow:
@@ -154,51 +154,35 @@
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 12px;  /* 간격 증가: 8px -> 12px */
-  max-height: calc(100vh - 200px);
-  padding: 10px 24px; /* 좌우 패딩 축소: 16px -> 12px */
-  margin: -12px;
-}
-
-/* 그라데이션 마스크 개선 */
-.search-results {
-  mask-image: linear-gradient(
-    to bottom,
-    transparent 0%,
-    black 12px,
-    black calc(100% - 12px),
-    transparent 100%
-  );
-  -webkit-mask-image: linear-gradient(
-    to bottom,
-    transparent 0%,
-    black 12px,
-    black calc(100% - 12px),
-    transparent 100%
-  );
+  gap: 20px; /* 간격 */
+  max-height: calc(100vh - 100px);
+  padding: 0px 16px; /* 내부 패딩 */
+  z-index: 1;
 }
 
 .search-result-item {
   padding: 12px;
   border-radius: 8px;
-  font-size: 8px;
+  font-size: 10px; /* 적정 크기 조정 */
   background: var(--bg-color);
   cursor: pointer;
   box-sizing: border-box;
-  border: 1px solid transparent;
-  transition: all 0.2s ease-out;
-  margin: 0 -8px;
-  height: 80px; /* 고정 높이 */
+  transition: all 0.25s ease-out; /* 필요한 속성만 지정 */
+  margin: 0px 0;
+  height: 80px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  box-shadow:
-    5px 5px 10px var(--container-shadow-up),
-    -5px -5px 10px var(--container-shadow-down),
-    inset 0 0 0 transparent, inset 0 0 0 transparent;
-
+  box-shadow: 5px 5px 10px var(--container-shadow-up),
+              -5px -5px 10px var(--container-shadow-down);
 }
 
+.search-result-item:hover{
+  box-shadow:
+    0 0 0 transparent, 0 0 0 transparent,
+    inset 5px 5px 10px var(--container-shadow-up),
+    inset -5px -5px 10px var(--container-shadow-down);
+}
 .search-result-item:last-child {
   margin-bottom: 0;
 }
@@ -312,7 +296,7 @@
   align-items: center;
   width: calc(100% - 48px); /* 좌우 24px 여백 확보 */
   margin: 0px 24px; /* 상하 간격은 마진으로 처리 */
-  margin-bottom: 32px;
+  margin-bottom: 0px;
 }
 
 .page-jump-button {
