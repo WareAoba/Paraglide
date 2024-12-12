@@ -83,17 +83,8 @@ filter: var(--icon-filter);
   white-space: pre-wrap;      /* 원본 개행 유지 */
   word-break: keep-all;       /* 단어 중간 분리 방지 */
   overflow-wrap: break-word;  /* 컨테이너를 넘어갈 때만 줄바꿈 */
-  overflow: hidden;         /* 넘치는 텍스트 숨김 */
-  display: -webkit-box;    /* 웹킷 기반 다중 라인 ellipsis */
-  -webkit-box-orient: vertical;
   position: relative;  /* 마스크 위치 기준 */
-}
-
-[data-theme="dark"]
-.paragraph-current,
-.paragraph-prev,
-.paragraph-next  {
-  color: var(--text-color);
+  padding-top: 8px;
 }
 
 .paragraph-current:hover,
@@ -128,4 +119,12 @@ filter: var(--icon-filter);
   opacity: 0.7;
   font-weight: 300;
   transition: all 0.25s ease;  /* 부드러운 전환 */
+}
+
+
+[data-theme="dark"]
+.paragraph-current,
+.paragraph-prev,
+.paragraph-next  {
+  color: var(--text-color);
 }

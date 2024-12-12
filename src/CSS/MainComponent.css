@@ -163,7 +163,6 @@
     align-items: center;
     justify-content: center;
     border-radius: 15%;
-    box-shadow: 0 0 0 transparent, 0 0 0 transparent;
     transition: all 0.3s ease;
     width: var(--btn-size); 
     height: var(--btn-size);
@@ -180,6 +179,10 @@
   2px 2px 6px var(--container-shadow-up),
   -2px -2px 6px var(--container-shadow-down);
   background: var(--bg-gradient);
+}
+.button-group-controls .btn-icon img:hover{
+  filter: var(--primary-color-filter);
+  opacity: 0.9;
 }
 
 .button-group-controls .btn-icon:active{

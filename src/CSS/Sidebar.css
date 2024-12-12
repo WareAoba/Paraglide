@@ -115,13 +115,13 @@
   align-items: center;
   justify-content: center;
   border-radius: 15%;
-  box-shadow:
-  0 0 0 transparent, 0 0 0 transparent;
   transition: all 0.3s ease;
   width: var(--btn-size);
   height: var(--btn-size);
   margin: 0;
 }
+
+
 
 .sidebar-close-button:hover {
   scale: 1.1;
@@ -129,6 +129,11 @@
   box-shadow:
   2px 2px 6px var(--container-shadow-up),
   -2px -2px 6px var(--container-shadow-down);
+}
+
+.sidebar-close-button img:hover {
+  filter: var(--primary-color-filter);
+  opacity: 0.9;
 }
 
 .sidebar-close-button:active {
@@ -150,14 +155,6 @@
   font-size: 1.1em;
   font-weight: 500;
   margin: 0 0 12px 4px;
-}
-
-/* 구분선 스타일 추가 */
-.sidebar-divider {
-  margin: 15px 4px;
-  height: 1px;
-  background-color: var(--text-color);
-  opacity: 0.1;
 }
 
 /* 사이드바 컨텐츠 */
@@ -194,7 +191,8 @@
 .current-file-icon {
   width: 60px;
   height: 60px;
-  filter: var(--icon-filter);
+  filter: var(--primary-color-filter);
+  opacity: 0.8;
   flex-shrink: 0;
   position: relative; /* 추가 */
   z-index: 1; /* 추가 */
@@ -317,7 +315,8 @@
 
 .control-button:disabled {
   opacity: 0.5;
-  box-shadow: none;
+  box-shadow: inset 3px 3px 8px var(--container-shadow-up),
+  inset -3px -3px 4px var(--container-shadow-down);
   cursor: default;
 }
 
@@ -436,7 +435,7 @@
 
 /* 파일명 */
 .recent-file-name {
-  font-size: 1.1em;
+  font-size: 1.em;
   color: var(--text-color);
   font-weight: 500;
   flex: 1;
