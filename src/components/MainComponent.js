@@ -1,6 +1,6 @@
 // src/MainComponent.js
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { CSSTransition } from 'react-transition-group';
+import { CSSTransition, TransitionGroup } from 'react-transition-group';
 import '../CSS/MainComponent.css';
 import '../CSS/Views/ComponentTransition.css';
 import Sidebar from './Sidebar';
@@ -714,133 +714,146 @@ ipcRenderer.invoke('generate-css-filter', accentColor, {
         )}
       </div>
   
-      <CSSTransition
-        in={state.programStatus === ProgramStatus.READY}
-        appear={true}
-        timeout={500}
-        classNames="viewport" // 여기서 classNames를 "viewport"로 변경
-        mountOnEnter
-        unmountOnExit
-      >
-        <div className="welcome-screen" data-theme={theme.mode}>
-          <div className="logo-container">
-            {state.logoPath && (
-              <img
-                src={state.logoPath}
-                alt="Paraglide Logo"
-                className="logo"
-                onError={(e) => {
-                  console.error('로고 렌더링 실패:', e);
-                  e.target.style.display = 'none';
-                }}
-              />
-            )}
-            {state.titlePath ? (
-              <img
-                src={state.titlePath}
-                alt="Paraglide Title"
-                className="title-image"
-                onError={(e) => {
-                  console.error('타이틀 렌더링 실패:', e);
-                  e.target.style.display = 'none';
-                }}
-              />
-            ) : (
-              <h1 className="title">Paraglide</h1>
-            )}
-          </div>
-          <div className="button-container">
-            <button className="btn-primary" onClick={handleLoadFile}>
-              <img src={fileOpenIcon} alt="파일 불러오기" className="icon-primary" />
-              <span>파일 불러오기</span>
-            </button>
-          </div>
-        </div>
-      </CSSTransition>
-  
-      <CSSTransition
-        in={state.programStatus === ProgramStatus.PROCESS}
-        timeout={500}
-        classNames="viewport"
-        mountOnEnter
-        unmountOnExit
-      >
-        <div className="main-container" data-theme={theme.mode}>
-          <div className="view-container">
+      <div className="content-area">
+        <TransitionGroup component={null}>
+          {state.programStatus === ProgramStatus.READY && (
             <CSSTransition
-              in={state.viewMode === 'overview'}
-              timeout={500} // timeout을 500ms로 설정하여 리스트뷰와 통일
-              classNames="viewport" // classNames를 'viewport'로 변경하여 동일한 효과 적용
+              key="welcome"
+              appear={true}
+              timeout={500}
+              classNames="viewport"
               mountOnEnter
               unmountOnExit
             >
-              <div className="view-wrapper">
-                <div className="page-number">
-                  {state.currentNumber?.display || '\u00A0'}
+              <div className="welcome-screen" data-theme={theme.mode}>
+                <div className="logo-container">
+                  {state.logoPath && (
+                    <img
+                      src={state.logoPath}
+                      alt="Paraglide Logo"
+                      className="logo"
+                      onError={(e) => {
+                        console.error('로고 렌더링 실패:', e);
+                        e.target.style.display = 'none';
+                      }}
+                    />
+                  )}
+                  {state.titlePath ? (
+                    <img
+                      src={state.titlePath}
+                      alt="Paraglide Title"
+                      className="title-image"
+                      onError={(e) => {
+                        console.error('타이틀 렌더링 실패:', e);
+                        e.target.style.display = 'none';
+                      }}
+                    />
+                  ) : (
+                    <h1 className="title">Paraglide</h1>
+                  )}
                 </div>
-                <Overview
-                  paragraphs={state.paragraphs}
-                  currentParagraph={state.currentParagraph}
-                  onParagraphClick={handleParagraphClick}
-                  theme={theme}
-                  hoveredSection={hoveredSection}
-                  onHoverChange={setHoveredSection}
-                />
+                <div className="button-container">
+                  <button className="btn-primary" onClick={handleLoadFile}>
+                    <img src={fileOpenIcon} alt="파일 불러오기" className="icon-primary" />
+                    <span>파일 불러오기</span>
+                  </button>
+                </div>
               </div>
             </CSSTransition>
-
+          )}
+  
+          {state.programStatus === ProgramStatus.PROCESS && (
             <CSSTransition
-              in={state.viewMode === 'listview'}
-              timeout={300}
-              classNames="view-transition"
+              key="main"
+              timeout={500}
+              classNames="viewport"
               mountOnEnter
               unmountOnExit
             >
-              <div className="view-wrapper">
-                <ListView
-                  paragraphs={state.paragraphs}
-                  metadata={state.paragraphsMetadata}
-                  currentParagraph={state.currentParagraph}
-                  onParagraphSelect={handleParagraphSelect}
-                  onCompleteWork={handleCompleteWork}
-                  theme={theme}
-                />
+              <div className="main-container" data-theme={theme.mode}>
+                <div className="view-container">
+                  <TransitionGroup component={null}>
+                    {state.viewMode === 'overview' && (
+                      <CSSTransition
+                        key="overview"
+                        timeout={500}
+                        classNames="viewport"
+                        mountOnEnter
+                        unmountOnExit
+                      >
+                        <div className="view-wrapper">
+                          <div className="page-number">
+                            {state.currentNumber?.display || '\u00A0'}
+                          </div>
+                          <Overview
+                            paragraphs={state.paragraphs}
+                            currentParagraph={state.currentParagraph}
+                            onParagraphClick={handleParagraphClick}
+                            theme={theme}
+                            hoveredSection={hoveredSection}
+                            onHoverChange={setHoveredSection}
+                          />
+                        </div>
+                      </CSSTransition>
+                    )}
+  
+                    {state.viewMode === 'listview' && (
+                      <CSSTransition
+                        key="listview"
+                        timeout={500}
+                        classNames="viewport"
+                        mountOnEnter
+                        unmountOnExit
+                      >
+                        <div className="view-wrapper">
+                          <ListView
+                            paragraphs={state.paragraphs}
+                            metadata={state.paragraphsMetadata}
+                            currentParagraph={state.currentParagraph}
+                            onParagraphSelect={handleParagraphSelect}
+                            onCompleteWork={handleCompleteWork}
+                            theme={theme}
+                          />
+                        </div>
+                      </CSSTransition>
+                    )}
+                  </TransitionGroup>
+  
+                  {state.currentFilePath && (
+                    <div className="file-info-container">
+                      <div className="file-info-group">
+                        <span className="file-name">{path.basename(state.currentFilePath)}</span>
+                        <span className="paragraph-info">
+                          {(() => {
+                            const hasPageNumbers = state.paragraphsMetadata.some(meta => meta?.pageNumber != null);
+                            const currentPage = state.paragraphsMetadata[state.currentParagraph]?.pageNumber;
+                            
+                            if (!hasPageNumbers) {
+                              return " - 페이지 정보 없음 ";
+                            }
+  
+                            const maxPage = Math.max(
+                              ...state.paragraphsMetadata
+                                .filter(meta => meta?.pageNumber != null)
+                                .map(meta => meta.pageNumber)
+                            );
+  
+                            return ` - ${currentPage || '?'}/${maxPage}P.`;
+                          })()}
+                          {` (${Math.round((state.currentParagraph + 1) / state.paragraphs.length * 100)}%)`}
+                        </span>
+                      </div>
+                      <div className="path-group">
+                        <span className="file-path">| {formatPath(state.currentFilePath)}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </CSSTransition>
-          </div>
-  
-          {state.currentFilePath && (
-            <div className="file-info-container">
-              <div className="file-info-group">
-                <span className="file-name">{path.basename(state.currentFilePath)}</span>
-                <span className="paragraph-info">
-                  {(() => {
-                    // 페이지 메타데이터 유효성 검사
-                    const hasPageNumbers = state.paragraphsMetadata.some(meta => meta?.pageNumber != null);
-                    const currentPage = state.paragraphsMetadata[state.currentParagraph]?.pageNumber;
-                    
-                    if (!hasPageNumbers) {
-                      return " - 페이지 정보 없음 ";
-                    }
-
-                    const maxPage = Math.max(
-                      ...state.paragraphsMetadata
-                        .filter(meta => meta?.pageNumber != null)
-                        .map(meta => meta.pageNumber)
-                    );
-
-                    return ` - ${currentPage || '?'}/${maxPage}P.`;
-                  })()}
-                  {` (${Math.round((state.currentParagraph + 1) / state.paragraphs.length * 100)}%)`}
-                </span>
-              </div>
-              <div className="path-group">
-                <span className="file-path">| {formatPath(state.currentFilePath)}</span>
-              </div>
-            </div>
           )}
-        </div>
-      </CSSTransition>
+        </TransitionGroup>
+      </div>
   
       <Settings
         isVisible={isSettingsVisible}
