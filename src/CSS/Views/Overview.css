@@ -8,14 +8,14 @@
   flex-direction: column;
   border-radius: 15px;
   box-sizing: border-box; /* Include padding and border in width calculation */
-  overflow-y: auto;
+  overflow-y: hidden;
+  max-height: calc(60vh - 10px);
+  width: min(90vw, 900px);  /* 뷰포트의 90% 또는 최대 800px */
+  margin: 0 auto;
+  padding: var(--spacing-md);
   box-shadow: 
   10px 10px 20px var(--container-shadow-up),
   -10px -10px 20px var(--container-shadow-down);
-  max-height: calc(60vh - 10px);
-  width: min(90vw, 800px);  /* 뷰포트의 90% 또는 최대 800px */
-  margin: 0 auto;
-  padding: var(--spacing-md);
 }
 
 [data-theme="dark"] .paragraph-container {
@@ -58,9 +58,8 @@ filter: var(--icon-filter);
   display: flex;
   flex-direction: row;
   flex: 1 1 auto;
-  min-height: 200px;
+  height: 10px;
   width: 100%;
-  padding-bottom: 5vh;
   overflow-y: visible;
   gap: var(--spacing-md);  /* 단락 간 간격 확대 */
   margin-top: var(--spacing-sm);
@@ -85,6 +84,7 @@ filter: var(--icon-filter);
   overflow-wrap: break-word;  /* 컨테이너를 넘어갈 때만 줄바꿈 */
   position: relative;  /* 마스크 위치 기준 */
   padding-top: 8px;
+  margin-bottom: 20px;
 }
 
 .paragraph-current:hover,
