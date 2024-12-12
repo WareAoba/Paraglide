@@ -40,7 +40,7 @@ function Sidebar({
       // 사이드바가 닫힐 때 0.5초 후 렌더링 해제
       const timer = setTimeout(() => {
         setShouldRender(false);
-      }, 500);
+      }, 250);
       
       return () => clearTimeout(timer);
     }
@@ -245,7 +245,7 @@ function Sidebar({
       <>
           <CSSTransition
             in={!isSearchVisible}
-            timeout={500}
+            timeout={250}
             classNames="sidebar-transition"
             mountOnEnter
             unmountOnExit
@@ -357,7 +357,7 @@ function Sidebar({
     )}
           <CSSTransition
   in={isSearchVisible}
-  timeout={500}
+  timeout={250}
   classNames="search-transition"
   mountOnEnter
   unmountOnExit
