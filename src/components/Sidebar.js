@@ -26,13 +26,15 @@ function Sidebar({
   paragraphs,
   metadata,
   isSearchVisible,
-  onSelect
+  onSelect,
+  wasInitiallySidebarOpen
 }) {
   const [files, setFiles] = React.useState([]);
   const [shouldRender, setShouldRender] = React.useState(false);
 
   React.useEffect(() => {
     if (isVisible) {
+      loadFileHistory();
       setShouldRender(true);
     } else {
       // 사이드바가 닫힐 때 0.5초 후 렌더링 해제
@@ -159,32 +161,29 @@ function Sidebar({
   };
 
   const handleSearchSelect = useCallback((result) => {
-    console.log('Sidebar - handleSearchSelect called with result:', result);
-      
-    if (typeof result === 'number') {  // result 객체가 아닌 직접 인덱스를 받도록 수정
-      try {
-        // 순서 중요: 먼저 이동하고, UI 정리
-        onSelect(result);
-        
-        // 사이드바 닫기를 마지막에 실행
-        onToggleSearch(false);  // 검색 UI 닫기
-        onClose();             // 사이드바 닫기
-        
-        console.log('Search selection and navigation completed');
-      } catch (error) {
-        console.error('Error in search selection:', error);
-      }
+    if (typeof result === 'number') {
+      onSelect(result);
+      onToggleSearch(false);
+      onClose();
     }
   }, [onSelect, onToggleSearch, onClose]);
 
   const handleClose = () => {
+    // 검색이 열려있을 때
     if (isSearchVisible) {
-      // 검색창이 열려있으면 검색 먼저 종료
+      // 사이드바를 통해 검색을 열었다면 검색만 닫기
+      if (wasInitiallySidebarOpen) {
+        onToggleSearch(false);
+        return;
+      }
+      // 직접 검색을 열었다면 모두 닫기
       onToggleSearch(false);
-    } else {
-      // 검색창이 닫혀있을 때만 사이드바 종료
       onClose();
+      return;
     }
+    
+    // 검색이 닫혀있을 때는 사이드바 닫기
+    onClose();
   };
 
   useEffect(() => {
@@ -302,15 +301,16 @@ function Sidebar({
                     <span>편집</span>
                   </button>
                   <button
-                    className={`control-button ${status === 'ready' ? 'disabled' : ''}`}
-                    onClick={() => {
-                      onToggleSearch();
-                    }}
-                    disabled={status === 'ready'}
-                  >
-                    <img src={icons?.searchIcon} alt="검색" />
-                    <span>검색</span>
-                  </button>
+  className={`control-button ${status === 'ready' ? 'disabled' : ''}`}
+  onClick={() => {
+    // 사이드바를 통해 검색을 여는 경우 wasInitiallySidebarOpen을 true로 설정
+    onToggleSearch(true, true); // 두 번째 파라미터로 사이드바를 통한 열기임을 전달
+  }}
+  disabled={status === 'ready'}
+>
+  <img src={icons?.searchIcon} alt="검색" />
+  <span>검색</span>
+</button>
                   <button
                     className="control-button"
                     onClick={() => {

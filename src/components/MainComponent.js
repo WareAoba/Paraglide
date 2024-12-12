@@ -65,49 +65,70 @@ function MainComponent() {
 
   const searchRef = useRef(null);
 
-  const handleSearchToggle = useCallback(() => { // 검색 토글, 위치가 여기 있는게 마음에 안들긴 한데 뭐......
+  const handleSearchToggle = useCallback((forceValue = null, fromSidebar = false) => { // 검색 토글, 위치가 여기 있는게 마음에 안들긴 한데 뭐......
     if (state.programStatus !== ProgramStatus.PROCESS) return;
 
-  // 검색 상태가 유지된 채로 사이드바가 닫혀있는 경우
-  if (isSearchVisible && !state.isSidebarVisible) {
-    // 사이드바만 열기
-    setState(prev => ({
-      ...prev,
-      isSidebarVisible: true
-    }));
-    return;
-  }
-
-  // 사이드바가 닫혀있으면 열기
-  if (!state.isSidebarVisible) {
-    setState(prev => ({
-      ...prev,
-      isSidebarVisible: true
-    }));
-  }
+    // boolean 값으로 확실하게 변환 
+    const newSearchState = forceValue === null ? !isSearchVisible : Boolean(forceValue);
+    
+    if (newSearchState === isSearchVisible) {
+      // 이미 원하는 상태면 닫기 동작
+      if (isSearchVisible) {
+        setIsSearchVisible(false);
+        if (!state.wasInitiallySidebarOpen) {
+          setState(prev => ({
+            ...prev,
+            isSidebarVisible: false
+          }));
+        }
+      }
+      return;
+    }
   
-  // 검색 토글
-  setIsSearchVisible(prev => !prev);
-}, [state.programStatus, state.isSidebarVisible, isSearchVisible]);
+    // 상태 업데이트
+    setIsSearchVisible(newSearchState);
+  
+    if (newSearchState) {
+      // 검색창 열기
+      setState(prev => ({
+        ...prev,
+        isSidebarVisible: true,
+        wasInitiallySidebarOpen: fromSidebar || prev.isSidebarVisible
+      }));
+    } else {
+      // 검색창 닫기
+      if (!state.wasInitiallySidebarOpen) {
+        setState(prev => ({
+          ...prev,
+          isSidebarVisible: false
+        }));
+      }
+    }
+  }, [state.programStatus, state.isSidebarVisible, state.wasInitiallySidebarOpen, isSearchVisible]);
 
   const handleCloseEsc = useCallback(() => {
-    // 사이드바
-    setState(prev => ({
-      ...prev,
-      isSidebarVisible: false
-    }));
-    
-    // 검색창
-    setIsSearchVisible(false);
-    
-    // 설정창
+    // 검색이 열려있으면 검색만 닫기
+    if (isSearchVisible) {
+      setIsSearchVisible(false);
+      return;
+    }
+  
+    // 사이드바가 열려있으면 사이드바 닫기
+    if (state.isSidebarVisible) {
+      setState(prev => ({
+        ...prev,
+        isSidebarVisible: false
+      }));
+    }
+  
+    // 설정창 닫기
     setIsSettingsVisible(false);
-    
-    // 검색 내용 초기화 (필요한 경우)
+  
+    // 검색 내용 초기화
     if (searchRef.current) {
       searchRef.current.clearSearch();
     }
-  }, []);
+  }, [isSearchVisible, state.isSidebarVisible]);
 
   useEffect(() => {
     const initializeTheme = async () => {
@@ -421,30 +442,18 @@ function MainComponent() {
   };
 
   // 사이드바 토글 함수
-  const handleToggleSidebar = () => {
-    // 사이드바가 닫혀있고 검색이 열려있는 상태라면
+  const handleToggleSidebar = useCallback(() => {
+    // 사이드바가 닫혀있고 검색이 열려있는 경우
     if (!state.isSidebarVisible && isSearchVisible) {
-      // 사이드바만 열기
-      setState(prev => ({
-        ...prev,
-        isSidebarVisible: true
-      }));
-      return;
+      setIsSearchVisible(false); // 검색 닫기
     }
   
-    // 사이드바가 열려있고 검색이 열려있는 상태라면
-    if (state.isSidebarVisible && isSearchVisible) {
-      // 검색을 먼저 닫기
-      setIsSearchVisible(false);
-      return;
-    }
-  
-    // 그 외의 경우는 일반적인 사이드바 토글
+    // 사이드바 토글
     setState(prev => ({
       ...prev,
-      isSidebarVisible: !prev.isSidebarVisible,
+      isSidebarVisible: !prev.isSidebarVisible
     }));
-  };
+  }, [state.isSidebarVisible, isSearchVisible]);
 
   // 사이드바 닫기 함수
   const handleCloseSidebar = () => {
@@ -653,6 +662,7 @@ ipcRenderer.invoke('generate-css-filter', accentColor, {
         onToggleSearch={handleSearchToggle}
         onShowDebugConsole={handleShowDebugConsole}
         isOverlayVisible={state.isOverlayVisible}
+        wasInitiallySidebarOpen={state.wasInitiallySidebarOpen}
       />
       
       <DragDropOverlay isVisible={isDragging} />
