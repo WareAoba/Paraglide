@@ -4,21 +4,12 @@
   --container-spacing: var(--spacing-md);
 }
 
-/* 다크모드 대응 */
-[data-theme="dark"] .welcome-screen {
-  background-color: var(--bg-color);
-  color: var(--text-color);
-}
-
-[data-theme="dark"] .welcome-screen .title {
-  color: var(--text-color);
-}
-
 .welcome-screen {
     display: flex;
     flex-direction: column;
     align-items: center;
-    /* justify-content: center; */
+    justify-content: center;
+    transform: translateY(-10%);
     min-height: 100vh;
     padding-top: var(--button-group-height);
     gap: var(--spacing-xl);
@@ -40,8 +31,8 @@
 .welcome-screen .logo {
     width: auto;
     height: auto;
-    max-width: 300px;
-    max-height: 300px;
+    max-width: 330px;
+    max-height: 330px;
     object-fit: contain;
     filter: var(--logo-filter);
     cursor: default; /* 커서 기본값으로 변경 */
@@ -83,8 +74,8 @@
     font-weight: 500;
     font-family: inherit;
     background-color: var(--primary-color);
-    box-shadow: 4px 4px 12px var(--primary-color-shadow-up),
-                4px 4px 12px var(--primary-color-shadow-down),
+    box-shadow: 4px 4px 16px var(--primary-color-shadow-up),
+                -4px -4px 16px var(--primary-color-shadow-down),
                 inset 0 0 0 transparent, inset 0 0 0 transparent;
     color: var(--primary-text);
     border: none;
@@ -95,8 +86,8 @@
 
 .welcome-screen .btn-primary:hover {
     box-shadow: 0 0 0 transparent, 0 0 0 transparent,
-                inset 4px 4px 12px var(--primary-color-shadow-up),
-                inset 4px 4px 12px var(--primary-color-shadow-down);
+                inset 4px 4px 8px var(--primary-color-shadow-up),
+                inset -4px -4px 8px var(--primary-color-shadow-down);
 }
 
 .welcome-screen .icon-primary {
@@ -126,10 +117,6 @@
   width: 100%;
   display: flex;
   gap: var(--spacing-xs);
-}
-
-[data-theme="dark"] .button-group-controls {
-    filter: var(--icon-filter);
 }
 
 .button-group-controls .btn-icon {

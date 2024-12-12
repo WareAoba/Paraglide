@@ -528,6 +528,17 @@ const themeCalc = (accentColor, defaultColor = '#007bff') => {
     const hsl = hexToHSL(accentColor);
     const luminance = (0.2126 * rgb.r + 0.7152 * rgb.g + 0.0722 * rgb.b) / 255;
     const combinedBrightness = (luminance + (hsl.l / 100)) / 2;
+    const shadowUpVars = {
+      h: hsl.h - 3,  // 색조 3도 감소
+      s: Math.max(0, hsl.s - 30), // 채도 1% 감소
+      l: Math.max(0, hsl.l - 4)  // 명도 4% 감소
+    };
+
+    const shadowDownVars = {
+      h: hsl.h,      // 색조 유지
+      s: Math.max(0, hsl.s - 20), // 채도 20% 감소
+      l: Math.min(100, hsl.l + 10) // 명도 5% 증가
+    };
 
     // 즉시 설정할 변수들 적용
     const immediateVars = {
@@ -535,8 +546,8 @@ const themeCalc = (accentColor, defaultColor = '#007bff') => {
       '--primary-filter': combinedBrightness > 0.6 
         ? 'invert(19%) sepia(0%) saturate(2%) hue-rotate(82deg) brightness(96%) contrast(96%)'
         : 'invert(99%) sepia(15%) saturate(70%) hue-rotate(265deg) brightness(113%) contrast(92%)',
-      '--primary-color-shadow-up': `hsla(${hsl.h}, ${hsl.s}%, ${Math.min(hsl.l + 5, 100)}%, 0.2)`,
-      '--primary-color-shadow-down': `hsla(${hsl.h}, ${hsl.s}%, ${Math.max(hsl.l - 5, 0)}%, 0.2)`,
+        '--primary-color-shadow-up': `hsla(${shadowUpVars.h}, ${shadowUpVars.s}%, ${shadowUpVars.l}%, 1)`,
+        '--primary-color-shadow-down': `hsla(${shadowDownVars.h}, ${shadowDownVars.s}%, ${shadowDownVars.l}%, 1)`,
       '--logo-filter': `hue-rotate(${hsl.h - hexToHSL(defaultColor).h}deg) saturate(${(hsl.s / hexToHSL(defaultColor).s) * 100}%) brightness(${(hsl.l / hexToHSL(defaultColor).l) * 100}%)`
     };
 
@@ -777,7 +788,7 @@ ipcRenderer.invoke('generate-css-filter', accentColor, {
                 />
               </div>
             </CSSTransition>
-            
+
             <CSSTransition
               in={state.viewMode === 'listview'}
               timeout={300}

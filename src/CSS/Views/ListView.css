@@ -97,6 +97,7 @@
   opacity: 1;
   color: var(--primary-text) !important;
   padding-left: 3.5rem; /* transform 대신 padding으로 이동 효과 */
+  font-weight: 600;
   z-index: 5;
 }
 
