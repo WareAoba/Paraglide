@@ -721,7 +721,7 @@ ipcRenderer.invoke('generate-css-filter', accentColor, {
               key="welcome"
               appear={true}
               timeout={500}
-              classNames="viewport"
+              classNames="welcome-viewport"
               mountOnEnter
               unmountOnExit
             >
