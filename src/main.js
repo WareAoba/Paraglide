@@ -1498,7 +1498,44 @@ const ApplicationManager = {
 };
 
 // 앱 시작점
-app.whenReady().then(() => ApplicationManager.initialize());
+const gotTheLock = app.requestSingleInstanceLock();
+
+if (!gotTheLock) {
+  // 다른 인스턴스가 실행 중이면 경고창을 표시하고 종료
+  dialog.showMessageBoxSync({
+    type: 'warning',
+    buttons: ['확인'],
+    title: '실행 중',
+    message: 'Paraglide가 이미 실행 중입니다.',
+    detail: '다중 실행은 지원하지 않습니다.',
+    cancelId: 1,
+    noLink: true,
+    normalizeAccessKeys: true,
+  });
+  app.quit();
+} else {
+  // 두 번째 인스턴스 실행 시도 시 기존 창 포커스
+  app.on('second-instance', () => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
+      
+      dialog.showMessageBox(mainWindow, {
+        type: 'info',
+        buttons: ['확인'],
+        title: '실행 중',
+        message: 'Paraglide가 이미 실행 중입니다.',
+        detail: '기존 창으로 이동합니다.',
+        cancelId: 1,
+        noLink: true,
+        normalizeAccessKeys: true,
+      });
+    }
+  });
+
+  // 기존 앱 시작 로직
+  app.whenReady().then(() => ApplicationManager.initialize());
+}
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {

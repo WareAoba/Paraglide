@@ -777,7 +777,7 @@ ipcRenderer.invoke('generate-css-filter', accentColor, {
                 />
               </div>
             </CSSTransition>
-  
+            
             <CSSTransition
               in={state.viewMode === 'listview'}
               timeout={300}

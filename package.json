@@ -9,13 +9,15 @@
     "appId": "com.paraglide.app",
     "productName": "Paraglide",
     "directories": {
-      "output": "dist"
+      "output": "dist",
+      "buildResources": "build"
     },
     "files": [
       "build/**/*",
       "src/**/*",
       "node_modules/**/*",
-      "!**/node_modules/.cache/**/*"
+      "!**/node_modules/.cache/**/*",
+      "!**/*.map"
     ],
     "mac": {
       "icon": "public/icons/mac/icon.icns",
@@ -23,7 +25,9 @@
       "target": [
         "dmg",
         "zip"
-      ]
+      ],
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false
     },
     "dmg": {
       "title": "Paraglide",
@@ -67,15 +71,14 @@
     "simplebar-react": "^3.2.6"
   },
   "scripts": {
-    "make-dmg": "create-dmg 'dist/mac/Paraglide.app' --overwrite --dmgTitle='Paraglide' --icon='public/icons/mac/icon.icns' --background='public/dmg/background.png' --window-size=540,380 --icon-size=100 --app-drop-link-size=130 --app-drop-link-x=600 --app-drop-link-y=400",
-    "make-win": "electron-forge make --platform win32 --targets @electron-forge/maker-zip",
     "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
+    "build": "GENERATE_SOURCEMAP=false INLINE_RUNTIME_CHUNK=false CI=false react-scripts build",
+    "prebuild": "rm -rf build dist node_modules/.cache",
     "electron-dev": "cross-env NODE_ENV=development electron .",
     "dev": "concurrently -k \"cross-env BROWSER=none npm start\" \"wait-on http://localhost:3000 && npm run electron-dev\"",
-    "package": "npm run build && electron-forge package",
-    "make": "electron-forge make && npm run make-dmg"
+    "clean": "rm -rf build dist node_modules/.cache && npm cache clean --force",
+    "package": "npm run clean && npm run build && electron-forge package",
+    "make": "npm run clean && CI=false npm run build && electron-forge make && npm run make-dmg"
   },
   "eslintConfig": {
     "extends": [

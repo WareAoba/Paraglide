@@ -4,10 +4,23 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
-    name="description"
-    content="Paraglide - Paragraph Clipboader"
-  />
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self' https:; 
+               style-src 'self' 'unsafe-inline' https: cdn.jsdelivr.net; 
+               style-src-elem 'self' 'unsafe-inline' https: cdn.jsdelivr.net;
+               script-src 'self'; 
+               img-src 'self' data: https:;"
+    />
+    <meta
+      name="description"
+      content="Paraglide - Paragraph Clipboader"
+    />
     <title>Paraglide</title>
+    <link 
+      rel="stylesheet" 
+      href="https://cdn.jsdelivr.net/gh/wan2land/d2coding/d2coding-ligature-full.css"
+      crossorigin="anonymous"
+    />
   </head>
   <body>
     <div id="root"></div>

@@ -223,14 +223,14 @@ function Sidebar({
     <>
       <div className={`sidebar ${isVisible ? 'visible' : ''}`} data-theme={theme.mode}>
         <div className="sidebar-header">
-          <button className="sidebar-close-button" onClick={handleClose}>
-            <img 
-              src={isSearchVisible ? icons?.backIcon : icons?.sidebarUnfold} 
-              alt="닫기" 
-              className="sidebar-icon-button"
-              style={isSearchVisible ? { transform: 'scale(0.9)' } : undefined}
-            />
-          </button>
+        <button className="sidebar-close-button" onClick={handleClose}>
+  <img 
+    src={isSearchVisible && wasInitiallySidebarOpen ? icons?.backIcon : icons?.sidebarUnfold}
+    alt="닫기" 
+    className="sidebar-icon-button"
+    style={isSearchVisible && wasInitiallySidebarOpen ? { transform: 'scale(0.9)' } : undefined}
+  />
+</button>
           <div className="header-title-group">
             {titlePath ? (
               <img src={titlePath} alt="Paraglide" className="header-title-image" />
