@@ -322,23 +322,35 @@ input:focus + .slider {
 .settings-button-group button {
   padding: 8px 20px;
   border-radius: 6px;
-  border: 1px solid var(--border-color);
   background-color: var(--bg-color);
   color: var(--text-color);
   font-size: 0.95em;
   font-family: inherit;
   cursor: pointer;
+  border: none;
+  box-shadow: 4px 4px 8px var(--container-shadow-up),
+              -4px -4px 8px var(--container-shadow-down),
+              inset 0 0 0 transparent, inset 0 0 0 transparent;
   transition: all 0.2s ease;
 }
 
 .settings-button-group button.btn-primary {
   background-color: var(--primary-color);
+  box-shadow:
+  4px 4px 8px var(--container-shadow-up),
+  -4px -4px 8px var(--container-shadow-down);
   color: var(--primary-text);
   border: none;
 }
 
-.settings-button-group button:hover {
-  background-color: var(--hover-bg);
+.settings-button-group button:hover
+
+.settings-button-group button.btn-primary:hover {
+  box-shadow: 0 0 0 transparent, 0 0 0 transparent,
+  4px 4px 8px var(--container-shadow-up),
+  -4px -4px 8px var(--container-shadow-down),
+  inset 4px 4px 8px var(--primary-color-shadow-up),
+  inset -4px -4px 8px var(--primary-color-shadow-down);
 }
 
 .settings-button-group button.btn-primary:hover {
@@ -364,17 +376,6 @@ input:focus + .slider {
 [data-theme="dark"] .settings-group h3,
 [data-theme="dark"] .settings-group label {
   color: var(--dark-text);
-}
-
-[data-theme="dark"] .settings-button-group button {
-  background-color: var(--dark-bg);
-  color: var(--dark-text);
-  border-color: rgba(255, 255, 255, 0.1);
-}
-
-[data-theme="dark"] .settings-button-group button.btn-primary {
-  background-color: var(--primary-color);
-  color: var(--primary-text);
 }
 
 /* 새로운 설정 그룹 스타일 추가 */
