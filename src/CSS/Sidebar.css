@@ -42,6 +42,7 @@
   width: 100%;
 }
 
+
 .search-wrapper .search-wrapper-wrapper {
   
   width: 100%;
@@ -363,7 +364,6 @@
 
 /* 파일 목록 */
 .recent-file-list {
-  flex: 1 1 auto;
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -372,6 +372,7 @@
   margin: -10px; /* 패딩만큼 네거티브 마진으로 상쇄 */
   overflow-y: auto; /* 스크롤 허용 */
   overflow-x: hidden; /* 가로 스크롤 방지 */
+  max-height: calc(100vh - 400px); /* 스크롤이 가능하도록 최대 높이 설정 */
 }
 
 /* 파일 항목 */
@@ -380,20 +381,19 @@
   border-radius: 6px;
   background-color: var(--container-bg);
   box-shadow:
-  5px 5px 10px var(--container-shadow-up),
-  -5px -5px 10px var(--container-shadow-down),
-  inset 0 0 0 transparent, inset 0 0 0 transparent;
+    5px 5px 10px var(--container-shadow-up),
+    -5px -5px 10px var(--container-shadow-down),
+    inset 0 0 0 transparent, inset 0 0 0 transparent;
   margin: 0; /* 마진 초기화 */
   border: none;
   cursor: pointer;
   transition:
-  transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-  opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-              box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   flex-shrink: 0; /* 높이 고정만 필요 */
   will-change: transform, opacity, height;
-  overflow: hidden;
   animation: slideIn 0.2s ease-out;
 }
 
