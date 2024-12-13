@@ -372,7 +372,6 @@
   margin: -10px; /* 패딩만큼 네거티브 마진으로 상쇄 */
   overflow-y: auto; /* 스크롤 허용 */
   overflow-x: hidden; /* 가로 스크롤 방지 */
-  max-height: calc(100vh - 400px); /* 스크롤이 가능하도록 최대 높이 설정 */
 }
 
 /* 파일 항목 */
