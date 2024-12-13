@@ -21,8 +21,8 @@
     background: var(--container-bg);
     border: none;
     opacity: 1;
-    box-shadow: 5px 5px 8px var(--container-shadow-up),
-                -5px -5px 8px var(--container-shadow-down),
+    box-shadow: 5px 5px 10px var(--container-shadow-up),
+                -5px -5px 10px var(--container-shadow-down),
                 inset 0 0 0 transparent,
                 inset 0 0 0 transparent;
     transition: all 0.2s ease;
@@ -31,19 +31,18 @@
 /* 호버링 상태 (2단계) */
 .dropdown-button:hover:not(.active) {
     opacity: 1;
-    box-shadow: 3px 3px 2px var(--container-shadow-up),
-                -3px -3px 2px var(--container-shadow-down),
+    box-shadow: 3px 3px 5px var(--container-shadow-up),
+                -3px -3px 5px var(--container-shadow-down),
                 inset 0 0 0 transparent, inset 0 0 0 transparent;
 }
 
 /* 활성화/클릭 상태 (3단계) */
-.dropdown-button:active,
 .dropdown-button.active {
     opacity: 0.85;
     box-shadow: 0 0 0 transparent,
                 0 0 0 transparent,
-                inset 3px 3px 4px var(--container-shadow-up),
-                inset -3px -3px 4px var(--container-shadow-down);
+                inset 3px 3px 5px var(--container-shadow-up),
+                inset -3px -3px 5px var(--container-shadow-down);
 }
   .dropdown-menu {
     position: absolute;
@@ -54,8 +53,8 @@
     gap: 6px;
     background: var(--bg-color);
     border-radius: 6px;
-    box-shadow: 5px 5px 8px var(--container-shadow-up),
-                -5px -5px 8px var(--container-shadow-down);
+    box-shadow: 3px 3px 5px var(--container-shadow-up),
+                -3px -0px 5px var(--container-shadow-down);
     opacity: 0;
     visibility: hidden;
     transform: translateY(-10px);
