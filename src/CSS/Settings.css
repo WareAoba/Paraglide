@@ -150,14 +150,6 @@
   transition: all 0.3s ease; 
 }
 
-/* 다크모드 수정 */
-[data-theme="dark"] .segment-control {
-  background-color: rgba(0, 0, 0, 0.3); /* 배경보다 어둡게 */
-}
-
-[data-theme="dark"] .segment-control::before {
-  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-}
 
 .switch {
   position: relative;

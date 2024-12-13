@@ -81,6 +81,15 @@
   filter: drop-shadow(4px 4px 2px #e2e5ed) drop-shadow(-4px -4px 2px #fff);
 }
 
+[data-theme="dark"] .welcome-screen .logo {
+  filter: var(--primary-color-filter) drop-shadow(-8px -8px 2px #161616) drop-shadow(8px 8px 2px rgba(255,255,255,0.06));
+}
+
+
+[data-theme="dark"] .welcome-screen .title-image {
+  filter: drop-shadow(4px 4px 2px #161616) drop-shadow(-4px -4px 2px rgba(255,255,255,0.06));
+}
+
 .welcome-screen .title {
     font-size: 2.5rem;
     font-weight: bold; /* 700에서 500으로 감소 */
@@ -121,6 +130,7 @@
     -5px -5px 5px var(--container-shadow-down),
     inset 0 0 0 transparent, inset 0 0 0 transparent;
 }
+
 
 .welcome-screen .btn-primary:hover {
   box-shadow:
