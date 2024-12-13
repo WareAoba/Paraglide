@@ -377,22 +377,7 @@
   object-fit: contain;
 }
 
-/* 포인터 */
-
-.pointer-arrow {
-  position: absolute;
-  top: 50%;
-  font-size: 24px;
-  color: var(--primary-color);
-  opacity: 0;
-  visibility: hidden;
-  z-index: 2;
-  pointer-events: none;
-}
-
-
 /* 포인터 상태일 때 배경색 */
 .search-result-item.pointed {
   border: 1px solid var(--primary-color);
-  scale: 1.02;
 }
