@@ -18,13 +18,6 @@
   -10px -10px 20px var(--container-shadow-down);
 }
 
-[data-theme="dark"] .paragraph-container {
-  box-shadow: 
-  10px 10px 20px var(--container-shadow-up),
-  -10px -10px 20px var(--container-shadow-down);
-  background-color: rgba(255, 255, 255, 0.02);
-}
-
 .paragraph-header {
   display: grid;
   grid-template-columns: 1fr 1.2fr 1fr;

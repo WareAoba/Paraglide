@@ -126,6 +126,7 @@
 
 /* 기본 상태 */
 .search-input-container input {
+  color: var(--text-color);
   width: 100%;
   border: 1px solid transparent;
   box-sizing: border-box; /* 테두리를 너비/높이 계산에 포함 */
@@ -280,6 +281,7 @@
 
 .result-text {
   font-size: 14px;
+  color: var(--text-color);
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -296,11 +298,7 @@
 }
 
 [data-theme="dark"] .no-results {
-  color: var(--dark-text);
-}
-
-[data-theme='dark'] .no-results {
-  color: var(--dark-text);
+  color: var(--text-color);
 }
 
 .search-highlight-exact {

@@ -152,14 +152,6 @@
   transition: all 0.3s ease; 
 }
 
-/* 다크모드 수정 */
-[data-theme="dark"] .segment-control {
-  background-color: rgba(0, 0, 0, 0.3); /* 배경보다 어둡게 */
-}
-
-[data-theme="dark"] .segment-control::before {
-  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-}
 
 .switch {
   position: relative;
@@ -355,27 +347,6 @@ input:focus + .slider {
 
 .settings-button-group button.btn-primary:hover {
   filter: brightness(1.1);
-}
-
-/* 다크모드 */
-[data-theme="dark"] .settings-modal {
-  background-color: rgba(0, 0, 0, 0.7);
-}
-
-[data-theme="dark"] .settings-content {
-  background-color: var(--dark-bg);
-  border: 1px solid var(--dark-border);
-}
-
-[data-theme="dark"] .settings-button-group {
-  background-color: none;
-  border-top-color: rgba(255, 255, 255, 0.1);
-}
-
-[data-theme="dark"] .settings-content h2,
-[data-theme="dark"] .settings-group h3,
-[data-theme="dark"] .settings-group label {
-  color: var(--dark-text);
 }
 
 /* 새로운 설정 그룹 스타일 추가 */
