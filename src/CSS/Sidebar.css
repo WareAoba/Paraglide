@@ -87,7 +87,9 @@
   justify-content: flex-start; /* space-between에서 변경 */
   align-items: center;
   position: relative;
+  
   gap: 20px; /* 버튼과 타이틀 사이 간격 */
+  
 }
 
 .header-title-group {
@@ -435,7 +437,7 @@
 
 /* 파일명 */
 .recent-file-name {
-  font-size: 1.em;
+  font-size:1em;
   color: var(--text-color);
   font-weight: 500;
   flex: 1;
@@ -495,6 +497,12 @@
 /* 파일 날짜 */
 .recent-file-date {
   white-space: nowrap;
+}
+
+/* 텍스트 렌더링 최적화 */
+.recent-file-name,.recent-file-page,.recent-file-path,.recent-file-date {
+  display: inline-block;
+  transform: translateZ(0);  /* GPU 가속 활성화 */
 }
 
 /* 빈 메시지 */

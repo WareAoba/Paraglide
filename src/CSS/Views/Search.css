@@ -182,7 +182,6 @@
 .search-result-item {
   padding: 12px;
   border-radius: 8px;
-  font-size: 8px;
   background: var(--bg-color);
   cursor: pointer;
   box-sizing: border-box;
@@ -197,8 +196,22 @@
     5px 5px 10px var(--container-shadow-up),
     -5px -5px 10px var(--container-shadow-down),
     inset 0 0 0 transparent, inset 0 0 0 transparent;
-
+  position: relative; /* 위치를 상대적으로 설정 */
+  top: 20px; /* 아래에서 시작 */
+  animation: slideUp 0.5s ease-out forwards; /* 애니메이션 설정 */
 }
+
+/* 애니메이션 키프레임 */
+@keyframes slideUp {
+  from {
+    top: 20px; /* 아래에서 시작 */
+  }
+  to {
+    top: 0; /* 원래 위치로 이동 */
+  }
+}
+
+
 
 .search-result-item:hover{
   box-shadow:

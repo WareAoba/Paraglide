@@ -68,6 +68,7 @@
     height: auto;
     max-width: 330px;
     max-height: 330px;
+    will-change: transform, opacity; /*계단현상 줄임*/
     object-fit: contain;
     filter: var(--logo-filter) drop-shadow(-8px -8px 2px #e2e5ed) drop-shadow(8px 8px 2px #fff);
     cursor: default; /* 커서 기본값으로 변경 */
