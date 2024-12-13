@@ -5,7 +5,7 @@
 
 .sidebar {
   position: fixed;
-  left: calc(-1px - 40vw);
+  left: 0;
   top: 0;
   width: 40vw;
   min-width: 300px;
@@ -14,11 +14,14 @@
   background-color: var(--bg-color);
   border-right: none;
   border-radius: 0 16px 16px 0;  /* 우측 상/하단만 둥글게 */
+  transform: translateX(-100%);
+  will-change: transform;
   transition: all 0.3s ease;
   box-shadow:
   0 0 0 transparent, 0 0 0 transparent;
   z-index: 1000;
   overflow: hidden;
+  opacity: 0;
 }
 
 .search-wrapper {
@@ -52,6 +55,7 @@
   box-shadow:
   0 0 0 transparent,
   40px 0 80px rgba(0, 0, 0, 0.1);
+  opacity: 1;
 }
 
 /* 오버레이 */
@@ -79,7 +83,7 @@
 
 /* 사이드바 표시 상태 */
 .sidebar.visible {
-  transform: translateX(40vw);
+  transform: translateX(0);
 }
 
 .sidebar-icon-button {
