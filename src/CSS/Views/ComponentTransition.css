@@ -57,70 +57,71 @@
   transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* 컨테이너 스타일 */
-.view-wrapper {
-  position: relative;
-  min-height: 100%;
-}
-
-.view-container {
-  position: relative;
-  overflow: hidden;
-}
-
 .sidebar-transition-enter {
   opacity: 0;
-  transform: translateX(-30px);
-  position: absolute;
-  width: 100%;
-  height: 100%;
+  transform: translateX(-20px);
+  pointer-events: none;
+}
+ 
+.search-transition-enter {
+  opacity: 0;
+  transform: translateX(20px);
+  pointer-events: none;
 }
 
-.sidebar-transition-enter-active {
+.sidebar-transition-enter-active,
+.search-transition-enter-active {
   opacity: 1;
   transform: translateX(0);
-  transition: all 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  transition: 
+    opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.sidebar-transition-exit {
+.sidebar-transition-exit,
+.search-transition-exit {
   opacity: 1;
   transform: translateX(0);
-  position: absolute;
-  width: 100%;
-  height: 100%;
 }
 
 .sidebar-transition-exit-active {
   opacity: 0;
-  transform: translateX(-30px);
-  transition: all 250ms cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* 검색창 전환 */
-.search-transition-enter {
-  opacity: 0;
-  transform: translateX(30px);
-  position: absolute;
-  width: 100%;
-  height: 100%;
-}
-
-.search-transition-enter-active {
-  opacity: 1;
-  transform: translateX(0);
-  transition: all 250ms cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.search-transition-exit {
-  opacity: 1;
-  transform: translateX(0);
-  position: absolute;
-  width: 100%;
-  height: 100%;
+  transform: translateX(-20px);
+  transition: 
+    opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .search-transition-exit-active {
   opacity: 0;
-  transform: translateX(30px);
-  transition: all 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  transform: translateX(20px);
+  transition: 
+    opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar-transition-appear {
+  opacity: 0;
+  transform: translateX(-20px);
+}
+
+.sidebar-transition-appear-active {
+  opacity: 1;
+  transform: translateX(0);
+  transition: 
+    opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.search-transition-appear {
+  opacity: 0;
+  transform: translateX(20px);
+}
+
+.search-transition-appear-active {
+  opacity: 1;
+  transform: translateX(0);
+  transition: 
+    opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }

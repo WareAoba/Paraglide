@@ -5,37 +5,47 @@
 
 .sidebar {
   position: fixed;
-  left: -301px;
+  left: calc(-1px - 40vw);
   top: 0;
-  width: 300px;
+  width: 40vw;
+  min-width: 300px;
+  max-width: 500px;
   height: 100vh;
   background-color: var(--bg-color);
   border-right: none;
   border-radius: 0 16px 16px 0;  /* 우측 상/하단만 둥글게 */
-  transition: transform var(--transition-default);
+  transition: all 0.3s ease;
   box-shadow:
   0 0 0 transparent, 0 0 0 transparent;
   z-index: 1000;
-  overflow-y: hidden;
-  overflow-x: visible;
+  overflow: hidden;
 }
 
 .search-wrapper {
-  width: 100%;
-  height: 100%;
-  position: absolute;
-  display: flex;
-  flex-direction: column;
-}
-
-.search-wrapper .search-wrapper-wrapper {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
+  background: var(--bg-color); /* 배경색 추가 */
+  z-index: 2; /* 기존 컨텐츠 위에 표시 */
+  will-change: transform;
+}
+
+.main-content-wrapper {
   display: flex;
   flex-direction: column;
+  height: 100%;
+  width: 100%;
+}
+
+.search-wrapper .search-wrapper-wrapper {
+  
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .sidebar.visible {
@@ -69,7 +79,7 @@
 
 /* 사이드바 표시 상태 */
 .sidebar.visible {
-  transform: translateX(300px);
+  transform: translateX(40vw);
 }
 
 .sidebar-icon-button {
@@ -123,8 +133,6 @@
   margin: 0;
 }
 
-
-
 .sidebar-close-button:hover {
   scale: 1.1;
   background: var(--bg-gradient);
@@ -165,7 +173,8 @@
   height: calc(100vh - 80px); /* 헤더 높이 제외 */
   display: flex;
   flex-direction: column;
-  overflow-x: visible;
+  overflow: hidden; /* visible에서 hidden으로 변경 */
+  position: relative; /* 추가: 내부 요소의 기준점 */
 }
 
 .current-file-info-header {

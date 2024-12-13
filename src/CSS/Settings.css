@@ -68,13 +68,11 @@
 .settings-group {
   margin-bottom: 36px;
   padding-bottom: 28px;
-  border-bottom: 1px solid var(--border-color);
 }
 
 .settings-group:last-child {
   margin-bottom: 0;
   padding-bottom: 0;
-  border-bottom: none;
 }
 
 .settings-group h3 {
@@ -314,13 +312,12 @@ input:focus + .slider {
   gap: 12px;
   padding: 8px 20px;       /* 좌우 여백 증가 */
   background-color: none;
-  border-top: 1px solid var(--border-color);
   border-radius: 0 0 12px 12px;
   z-index: 1;                /* 스크롤 컨텐츠 위에 표시 */
 }
 
 .settings-button-group button {
-  padding: 8px 20px;
+  padding: 8px 30px;
   border-radius: 6px;
   background-color: var(--bg-color);
   color: var(--text-color);
@@ -337,52 +334,32 @@ input:focus + .slider {
 .settings-button-group button.btn-primary {
   background-color: var(--primary-color);
   box-shadow:
-  4px 4px 8px var(--container-shadow-up),
-  -4px -4px 8px var(--container-shadow-down);
+  4px 4px 4px var(--container-shadow-up),
+  -4px -4px 4px var(--container-shadow-down),
+  inset 0 0 0 transparent, inset 0 0 0 transparent;
   color: var(--primary-text);
   border: none;
 }
 
-.settings-button-group button:hover
+.settings-button-group button:hover {
+  box-shadow:
+  0 0 0 transparent, 0 0 0 transparent,
+  inset 4px 4px 8px var(--container-shadow-up),
+  inset -4px -4px 8px var(--container-shadow-down);
+}
 
 .settings-button-group button.btn-primary:hover {
-  box-shadow: 0 0 0 transparent, 0 0 0 transparent,
-  4px 4px 8px var(--container-shadow-up),
-  -4px -4px 8px var(--container-shadow-down),
+  box-shadow:
+  4px 4px 4px var(--container-shadow-up),
+  -4px -4px 4px var(--container-shadow-down),
   inset 4px 4px 8px var(--primary-color-shadow-up),
   inset -4px -4px 8px var(--primary-color-shadow-down);
-}
-
-.settings-button-group button.btn-primary:hover {
-  filter: brightness(1.1);
-}
-
-/* 다크모드 */
-[data-theme="dark"] .settings-modal {
-  background-color: rgba(0, 0, 0, 0.7);
-}
-
-[data-theme="dark"] .settings-content {
-  background-color: var(--dark-bg);
-  border: 1px solid var(--dark-border);
-}
-
-[data-theme="dark"] .settings-button-group {
-  background-color: none;
-  border-top-color: rgba(255, 255, 255, 0.1);
-}
-
-[data-theme="dark"] .settings-content h2,
-[data-theme="dark"] .settings-group h3,
-[data-theme="dark"] .settings-group label {
-  color: var(--dark-text);
 }
 
 /* 새로운 설정 그룹 스타일 추가 */
 .settings-group.danger-zone {
   margin-bottom: 36px;  /* 다른 settings-group과 동일한 마진 */
   padding-bottom: 28px;  /* 다른 settings-group과 동일한 패딩 */
-  border-bottom: 1px solid var(--border-color);  /* 구분선 추가 */
   display: flex;
   flex-direction: column;
   align-items: flex-start;  /* 다른 설정 그룹과 동일한 정렬 */

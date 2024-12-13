@@ -118,12 +118,12 @@
     transition: all 0.2s ease-out;
     box-shadow:
     5px 5px 5px var(--container-shadow-up),
-    -5px -5px 5px var(--container-shadow-down);
+    -5px -5px 5px var(--container-shadow-down),
+    inset 0 0 0 transparent, inset 0 0 0 transparent;
 }
 
 .welcome-screen .btn-primary:hover {
   box-shadow:
-  0 0 0 transparent, 0 0 0 transparent,
   5px 5px 5px var(--container-shadow-up),
   -5px -5px 5px var(--container-shadow-down),
   inset 5px 5px 15px var(--primary-color-shadow-up),

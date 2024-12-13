@@ -27,17 +27,14 @@ function Sidebar({
   metadata,
   isSearchVisible,
   onSelect,
-  wasInitiallySidebarOpen
+  wasInitiallySidebarOpen,
+  setState
 }) {
   const [files, setFiles] = React.useState([]);
-  const [shouldRender, setShouldRender] = React.useState(false);
-  const [shouldRenderSearch, setShouldRenderSearch] = React.useState(false);
 
   React.useEffect(() => {
     if (isVisible) {
       loadFileHistory();
-      setShouldRender(true);
-      setShouldRenderSearch(true);
     }
     // 사이드바가 닫힐 때는 아무것도 하지 않음 - 컴포넌트 유지
   }, [isVisible]);
@@ -220,7 +217,7 @@ function Sidebar({
       <div className={`sidebar ${isVisible ? 'visible' : ''}`} data-theme={theme.mode}>
         <div className="sidebar-header">
           <button className="sidebar-close-button" onClick={handleClose}>
-            <img 
+          <img 
               src={isSearchVisible && wasInitiallySidebarOpen ? icons?.backIcon : icons?.sidebarUnfold}
               alt="닫기" 
               className="sidebar-icon-button"
@@ -235,150 +232,163 @@ function Sidebar({
             )}
           </div>
         </div>
-  
+
         <div className="sidebar-content">
-          {shouldRender && (
-            <>
-              <CSSTransition
-                in={!isSearchVisible}
-                timeout={250}
-                classNames="sidebar-transition"
-                mountOnEnter
-                unmountOnExit
-              >
-                <div>
-                  {currentFile && (
-                    <div className="sidebar-section">
-                      <h3>현재 파일</h3>
-                      <div className="section-content current-file-info">
-                        <img src={icons?.textFileIcon} alt="파일" className="current-file-icon" />
-                        <div className="current-file-content">
-                          <div className="current-file-info-header">
-                            <div className="current-file-name-container">
-                              <div className="current-file-name-wrapper">
-                                <span className="current-file-name">{path.basename(currentFilePath)}</span>
-                              </div>
-                            </div>
+          <CSSTransition
+            in={!isSearchVisible && isVisible}
+            timeout={500}
+            classNames="sidebar-transition"
+            unmountOnExit
+          >
+            <div className="sidebar-main-content">
+            {!isSearchVisible && (
+            <div>
+              {/* 파일 정보 섹션 */}
+              {currentFile && (
+                <div className="sidebar-section">
+                  <h3>현재 파일</h3>
+                  <div className="section-content current-file-info">
+                    <img src={icons?.textFileIcon} alt="파일" className="current-file-icon" />
+                    <div className="current-file-content">
+                      <div className="current-file-info-header">
+                        <div className="current-file-name-container">
+                          <div className="current-file-name-wrapper">
+                            <span className="current-file-name">{path.basename(currentFilePath)}</span>
                           </div>
-                          <div className="current-page-info">
-                            {(() => {
-                              const isValidPage = (page) => page && Number.isFinite(page) && page > 0;
-                              if (!isValidPage(currentFile.totalPages) || !isValidPage(currentFile.currentPage)) {
-                                return "페이지 정보 없음";
-                              }
-                              return `${currentFile.currentPage}/${currentFile.totalPages}페이지`;
-                            })()}
-                          </div>
-                          <div className="current-file-path">{formatPath(currentFilePath)}</div>
                         </div>
                       </div>
-                    </div>
-                  )}
-  
-                  <div className="sidebar-section controls">
-                    <div className="control-grid">
-                      <button
-                        className="control-button"
-                        data-action="open"
-                        onClick={() => ipcRenderer.invoke('open-file')}
-                      >
-                        <img src={icons?.openIcon} data-action="open" alt="열기" />
-                        <span>열기</span>
-                      </button>
-                      <button
-                        className={`control-button ${status === 'ready' ? 'disabled' : ''}`}
-                        data-action="edit"
-                        onClick={onClose}
-                        disabled={true}
-                      >
-                        <img src={icons?.editIcon} data-action="edit" alt="편집" />
-                        <span>편집</span>
-                      </button>
-                      <button
-                        className={`control-button ${status === 'ready' ? 'disabled' : ''}`}
-                        onClick={() => {
-                          onToggleSearch(true, true);
-                        }}
-                        disabled={status === 'ready'}
-                      >
-                        <img src={icons?.searchIcon} alt="검색" />
-                        <span>검색</span>
-                      </button>
-                      <button
-                        className="control-button"
-                        onClick={() => {
-                          onShowDebugConsole();
-                          onClose();
-                        }}
-                      >
-                        <img src={icons?.terminalIcon} alt="콘솔" />
-                        <span>콘솔</span>
-                      </button>
-                    </div>
-                  </div>
-  
-                  <div className="sidebar-section recent-files">
-                    <h3>최근 작업 파일</h3>
-                    <div className="recent-file-list">
-                      {files.map((file) => (
-                        <div
-                          key={file.filePath}
-                          data-filepath={file.filePath}
-                          className="recent-file-item"
-                          onClick={() => handleFileSelect(file.filePath)}
-                          onContextMenu={(e) => handleContextMenu(e, file)}
-                        >
-                          <div className="recent-file-main-info">
-                            <span className="recent-file-name">{file.fileName}</span>
-                            <span className="recent-file-page">
-                              {file.currentPageNumber != null && `${file.currentPageNumber}페이지`}
-                            </span>
-                          </div>
-                          <div className="recent-file-sub-info">
-                            <span className="recent-file-path">{formatPath(file.filePath)}</span>
-                            <span className="recent-file-date">{formatDate(file.timestamp)}</span>
-                          </div>
-                        </div>
-                      ))}
-                      {files.length === 0 && <div className="empty-message">최근 작업 기록이 없습니다.</div>}
+                      <div className="current-page-info">
+                        {(() => {
+                          const isValidPage = (page) => page && Number.isFinite(page) && page > 0;
+                          if (!isValidPage(currentFile.totalPages) || !isValidPage(currentFile.currentPage)) {
+                            return "페이지 정보 없음";
+                          }
+                          return `${currentFile.currentPage}/${currentFile.totalPages}페이지`;
+                        })()}
+                      </div>
+                      <div className="current-file-path">{formatPath(currentFilePath)}</div>
                     </div>
                   </div>
                 </div>
-              </CSSTransition>
+              )}
   
-              {shouldRenderSearch && (
-          <CSSTransition
-            in={isSearchVisible}
-            timeout={250}
-            classNames="search-transition"
-            mountOnEnter
-            unmountOnExit
-          >
-            <div className="search-wrapper">
-              <div className="search-wrapper-wrapper">
-                <Search
-                  paragraphs={paragraphs}
-                  onSelect={(index) => handleSearchSelect(index)}
-                  metadata={metadata}
-                  isVisible={isSearchVisible}
-                  onClose={() => {
-                    onToggleSearch(false);
-                    onClose();
-                  }}
-                  icons={icons}
-                  theme={theme}
-                  isSidebarVisible={isVisible}
-                />
+              {/* 컨트롤 섹션 */}
+              <div className="sidebar-section controls">
+                <div className="control-grid">
+                  <button
+                    className="control-button"
+                    data-action="open"
+                    onClick={() => ipcRenderer.invoke('open-file')}
+                  >
+                    <img src={icons?.openIcon} data-action="open" alt="열기" />
+                    <span>열기</span>
+                  </button>
+                  <button
+                    className={`control-button ${status === 'ready' ? 'disabled' : ''}`}
+                    data-action="edit"
+                    onClick={onClose}
+                    disabled={true}
+                  >
+                    <img src={icons?.editIcon} data-action="edit" alt="편집" />
+                    <span>편집</span>
+                  </button>
+                  <button
+                    className={`control-button ${status === 'ready' ? 'disabled' : ''}`}
+                    onClick={() => {
+                      onToggleSearch();
+                    }}
+                    disabled={status === 'ready'}
+                  >
+                    <img src={icons?.searchIcon} alt="검색" />
+                    <span>검색</span>
+                  </button>
+                  <button
+                    className="control-button"
+                    onClick={() => {
+                      onShowDebugConsole();
+                      onClose();
+                    }}
+                  >
+                    <img src={icons?.terminalIcon} alt="콘솔" />
+                    <span>콘솔</span>
+                  </button>
+                </div>
               </div>
-            </div>
+  
+              {/* 최근 파일 섹션 */}
+              <div className="sidebar-section recent-files">
+                <h3>최근 작업 파일</h3>
+                <div className="recent-file-list">
+                  {files.map((file) => (
+                    <div
+                      key={file.filePath}
+                      data-filepath={file.filePath}
+                      className="recent-file-item"
+                      onClick={() => handleFileSelect(file.filePath)}
+                      onContextMenu={(e) => handleContextMenu(e, file)}
+                    >
+                      <div className="recent-file-main-info">
+                        <span className="recent-file-name">{file.fileName}</span>
+                        <span className="recent-file-page">
+                          {file.currentPageNumber != null && `${file.currentPageNumber}페이지`}
+                        </span>
+                      </div>
+                      <div className="recent-file-sub-info">
+                        <span className="recent-file-path">{formatPath(file.filePath)}</span>
+                        <span className="recent-file-date">{formatDate(file.timestamp)}</span>
+                      </div>
+                    </div>
+                  ))}
+                  {files.length === 0 && <div className="empty-message">최근 작업 기록이 없습니다.</div>}
+                </div>
+              </div>
+              </div>
+            )}
+              </div>
           </CSSTransition>
-          )}
-            </>
-          )}
+
+          <CSSTransition
+  in={isSearchVisible}
+  timeout={500}
+  classNames="search-transition"
+  mountOnEnter
+  unmountOnExit
+  appear
+>
+<div className="search-wrapper">
+  <div className="search-wrapper-wrapper">
+    <Search
+      paragraphs={paragraphs}
+      onSelect={(index) => handleSearchSelect(index)}
+      metadata={metadata}
+      isVisible={isSearchVisible}
+      onClose={() => {
+        setState(prev => ({
+          ...prev,
+          isSidebarVisible: false,
+          wasInitiallySidebarOpen: false  // 여기서 초기화
+        }));
+        onToggleSearch(false);
+      }}
+      icons={icons}
+      theme={theme}
+      isSidebarVisible={isVisible}
+    />
+  </div>
+</div>
+</CSSTransition>
         </div>
       </div>
-  
-      <div className={`sidebar-overlay ${isVisible ? 'visible' : ''}`} onClick={onClose} />
+
+      <div className={`sidebar-overlay ${isVisible ? 'visible' : ''}`}
+      onClick={() => {
+        onToggleSearch(false);
+        setState(prev => ({
+          ...prev,
+          isSidebarVisible: false,
+          wasInitiallySidebarOpen: false
+        }));
+      }}  />
       <Menu id={MENU_ID}>
         <Item onClick={({ props }) => handleRemoveFile(props.file.filePath)}>
           <img src={icons?.deleteIcon} alt="삭제" />

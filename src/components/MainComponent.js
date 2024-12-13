@@ -100,7 +100,8 @@ function MainComponent() {
       if (!state.wasInitiallySidebarOpen) {
         setState(prev => ({
           ...prev,
-          isSidebarVisible: false
+          isSidebarVisible: false,
+          wasInitiallySidebarOpen: false
         }));
       }
     }
@@ -109,7 +110,7 @@ function MainComponent() {
   const handleCloseEsc = useCallback(() => {
     // 검색이 열려있으면 검색만 닫기
     if (isSearchVisible) {
-      setIsSearchVisible(false);
+      handleSearchToggle(false);
       return;
     }
   
@@ -117,7 +118,8 @@ function MainComponent() {
     if (state.isSidebarVisible) {
       setState(prev => ({
         ...prev,
-        isSidebarVisible: false
+        isSidebarVisible: false,
+        wasInitiallySidebarOpen: false
       }));
     }
   
@@ -460,6 +462,7 @@ function MainComponent() {
     setState((prev) => ({
       ...prev,
       isSidebarVisible: false,
+      wasInitiallySidebarOpen: false
     }));
   };
 
@@ -674,6 +677,7 @@ ipcRenderer.invoke('generate-css-filter', accentColor, {
         onShowDebugConsole={handleShowDebugConsole}
         isOverlayVisible={state.isOverlayVisible}
         wasInitiallySidebarOpen={state.wasInitiallySidebarOpen}
+        setState={setState}
       />
       
       <DragDropOverlay isVisible={isDragging} />
