@@ -73,7 +73,7 @@
   --btn-bg: rgba(0, 0, 0, 0.025);
   --icon-filter: brightness(0) saturate(100%) invert(61%) sepia(2%) saturate(0%) hue-rotate(327deg) brightness(95%) contrast(84%);
   --container-shadow-up: #161616;
-  --container-shadow-down: rgba(255,255,255,0.05);
+  --container-shadow-down: rgba(255,255,255,0.04);
 
   
   
