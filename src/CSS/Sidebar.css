@@ -158,15 +158,14 @@
  }
 
 .sidebar-header h2 {
-  color: var(--text-color);
+  color: var(--text-third);
   margin: 0;
-
   font-size: 1.5rem;
   font-weight: 500;
 }
 
 .sidebar-section h3 {
-  color: var(--text-color);
+  color: var(--text-third);
   font-size: 1.1em;
   font-weight: 500;
   margin: 0 0 12px 4px;
@@ -264,7 +263,7 @@
 
 .current-file-name-container[data-needs-animation="true"]:hover .current-file-name-wrapper {
   transform: translateX(calc(var(--container-width) - 100%));
-  transition: transform 4s ease-in;
+  transition: transform 4s ease-out;
   transition-delay: 0.5s;
 }
 
@@ -276,8 +275,7 @@
 
 .current-file-path {
   font-size: 13px;
-  color: var(--text-color);
-  opacity: 0.5;
+  color: var(--text-secondary);
   direction: rtl;
   text-align: right;
   overflow: hidden;
@@ -353,6 +351,7 @@
 }
 
 .control-button span {
+  color: var(--text-third);
   flex-grow: 0;
   font-size: 16px;
   font-weight: 500;
@@ -503,7 +502,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 70%;
+  max-width: 65%;
 }
 
 /* 파일 날짜 */

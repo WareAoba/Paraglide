@@ -133,11 +133,12 @@
 
 
 .welcome-screen .btn-primary:hover {
+
   box-shadow:
   5px 5px 5px var(--container-shadow-up),
   -5px -5px 5px var(--container-shadow-down),
-  inset 5px 5px 15px var(--primary-color-shadow-up),
-  inset -5px -5px 15px var(--primary-color-shadow-down);
+  inset 10px 10px 20px rgba(37, 37, 37, 0.5),
+  inset -10px -10px 20px rgb(255, 255, 255, 0.1);
 }
 
 .welcome-screen .icon-primary {
@@ -238,7 +239,7 @@
   font-size: 2.1em;
   text-align: left;
   font-weight: 700;
-  color: var(--text-color);
+  color: var(--text-third);
   margin: 0;
   margin-top: 30px;
   margin-left: var(--spacing-sm);
@@ -246,7 +247,7 @@
   padding: var(--spacing-md) 0;
   z-index: 50;
   width: 100%;
-  max-width: 1200px;
+  max-width: 900px;
 }
 
 .sidebar.visible {

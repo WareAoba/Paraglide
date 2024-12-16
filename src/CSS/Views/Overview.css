@@ -33,13 +33,9 @@
   padding: var(--spacing-xs);  /* 패딩 감소 */
   text-align: center;
   font-size: 1.1rem;  /* 폰트 크기 증가 */
-  font-weight: 500;  /* 약간의 강조 */
-  color: var(--text-color);
-filter: var(--icon-filter);
-}
-
-[data-theme="dark"] .paragraph-header > div {
-  color: var(--text-color);
+  font-weight: 600;  /* 약간의 강조 */
+  filter: var(--icon-filter);
+  opacity: 0.7;
 }
 
 .paragraph-header .current {
@@ -83,7 +79,6 @@ filter: var(--icon-filter);
 .paragraph-current:hover,
 .paragraph-prev:hover,
 .paragraph-next:hover {
-  opacity: 1;
   transform: translateY(-2px);  /* 살짝 띄우기 효과 */
   box-shadow:
   inset 2px 2px 8px var(--container-shadow-up),
@@ -106,6 +101,11 @@ filter: var(--icon-filter);
   font-weight: 700;
   transition: all 0.3s ease;  /* 부드러운 전환 */
 }
+
+[data-theme="dark"] .paragraph-current {
+  font-weight: 500;
+}
+
 
 .paragraph-prev,
 .paragraph-next {

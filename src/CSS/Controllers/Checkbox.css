@@ -35,8 +35,8 @@
     background: var(--container-bg);
     box-shadow:
     0 0 0 transparent, 0 0 0 transparent,
-    inset 2px 2px 4px var(--container-shadow-up),
-    inset -2px -2px 4px var(--container-shadow-down);
+    inset 2px 2px 3px var(--container-shadow-up),
+    inset -2px -2px 3px var(--container-shadow-down);
     transition: all 0.2s ease;
   }
   

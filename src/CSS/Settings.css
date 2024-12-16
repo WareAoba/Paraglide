@@ -87,7 +87,7 @@
   align-items: center;
   justify-content: space-between;
   margin-bottom: 20px;
-  color: var(--text-secondary);
+  color: var(--text-third);
   font-size: 0.95em;
 }
 
@@ -146,7 +146,7 @@
 
 .segment-control button.active {
   opacity: 1; /* 활성화된 버튼만 선명하게 */
-  color: white;
+  color: var(--primary-text);
   transition: all 0.3s ease; 
 }
 
@@ -246,7 +246,7 @@ input:focus + .slider {
 
 /* 라벨 텍스트 스타일 추가 */
 .slider-wrapper span {
-  color: var(--text-color); /* 테마 색상 적용 */
+  color: var(--text-third); /* 테마 색상 적용 */
   font-size: 0.95em; /* settings-group label과 동일한 크기 */
   flex-shrink: 0; /* 텍스트 줄바꿈 방지 */
 }
@@ -333,7 +333,7 @@ input:focus + .slider {
   border: none;
 }
 
-.settings-button-group button:hover {
+.settings-button-group :hover {
   box-shadow:
   0 0 0 transparent, 0 0 0 transparent,
   inset 4px 4px 8px var(--container-shadow-up),
