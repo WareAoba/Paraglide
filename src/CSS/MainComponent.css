@@ -235,20 +235,32 @@
 .main-container .page-number {
   position: relative;
   display: flex;
-  flex-direction: column;
+  flex-direction: row; /* 세로 대신 가로 배치 */
+  justify-content: center; /* 중앙 정렬 */
+  align-items: center; /* 세로 방향 중앙 정렬 */
   font-size: 2.1em;
-  text-align: left;
+  text-align: center;
   font-weight: 700;
   color: var(--text-third);
   margin: 0;
-  margin-top: 30px;
-  margin-left: var(--spacing-sm);
-  margin-bottom: var(--spacing-lg);
-  padding: var(--spacing-md) 0;
+  margin-top: 80px;
+  padding-bottom: 20px;
   z-index: 50;
   width: 100%;
   max-width: 900px;
 }
+
+.main-container .page-number .page-info,
+.main-container .page-number .remaining-info {
+  margin: 0 5px; /* 두 텍스트 사이 여백 */
+}
+
+.main-container .page-number .remaining-info {
+  font-size: 0.8em; /* 기본 크기 대비 80%로 줄이기 */
+  font-weight: 600; /* 굵기 줄이기 */
+  color:var(--text-secondary);
+}
+
 
 .sidebar.visible {
   transform: translateX(301px);

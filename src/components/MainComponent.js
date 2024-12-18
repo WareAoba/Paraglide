@@ -777,29 +777,56 @@ ipcRenderer.invoke('generate-css-filter', accentColor, {
               <div className="main-container" data-theme={theme.mode}>
                 <div className="view-container">
                   <TransitionGroup component={null}>
-                    {state.viewMode === 'overview' && (
-                      <CSSTransition
-                        key="overview"
-                        timeout={500}
-                        classNames="viewport"
-                        mountOnEnter
-                        unmountOnExit
-                      >
-                        <div className="view-wrapper">
-                          <div className="page-number">
-                            {state.currentNumber?.display || '\u00A0'}
-                          </div>
-                          <Overview
-                            paragraphs={state.paragraphs}
-                            currentParagraph={state.currentParagraph}
-                            onParagraphClick={handleParagraphClick}
-                            theme={theme}
-                            hoveredSection={hoveredSection}
-                            onHoverChange={setHoveredSection}
-                          />
-                        </div>
-                      </CSSTransition>
-                    )}
+                  {state.viewMode === 'overview' && (
+                    <CSSTransition
+                      key="overview"
+                      timeout={500}
+                      classNames="viewport"
+                      mountOnEnter
+                      unmountOnExit
+                    >
+                      <div className="view-wrapper">
+                      <div className="page-number">
+                      <span className="page-info">
+                        {state.currentNumber?.display || '\u00A0'}
+                      </span>
+                      {state.currentParagraph !== null && (() => {
+                        const currentPage = state.paragraphsMetadata[state.currentParagraph]?.pageNumber;
+                        const nextPageIndex = state.paragraphsMetadata.findIndex(
+                          (meta, index) => index > state.currentParagraph && meta?.pageNumber > currentPage
+                        );
+                        const remainingParagraphs = nextPageIndex === -1
+                          ? state.paragraphs.length - state.currentParagraph - 1
+                          : nextPageIndex - state.currentParagraph;
+
+                        // 남은 단락 표시 처리
+                        const remainingText =
+                          remainingParagraphs === 0
+                            ? "마지막 단락"
+                            : `${remainingParagraphs} 단락 남음`;
+
+                        return (
+                          <span className="remaining-info">
+                            | {remainingText}
+                          </span>
+                        );
+                      })()}
+                    </div>
+
+
+
+                        <Overview
+                          paragraphs={state.paragraphs}
+                          currentParagraph={state.currentParagraph}
+                          onParagraphClick={handleParagraphClick}
+                          theme={theme}
+                          hoveredSection={hoveredSection}
+                          onHoverChange={setHoveredSection}
+                        />
+                      </div>
+                    </CSSTransition>
+                  )}
+
   
                     {state.viewMode === 'listview' && (
                       <CSSTransition

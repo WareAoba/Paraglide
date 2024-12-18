@@ -109,6 +109,11 @@
   z-index: 5;
 }
 
+[data-theme="dark"] .listview-item.current {
+  font-weight: 500;
+  opacity: 0.8;
+}
+
 .listview-item:hover:not(.current) {
   opacity: 0.7;
   padding-left: 1.5rem; /* transform 대신 padding으로 이동 효과 */
