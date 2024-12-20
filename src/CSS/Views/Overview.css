@@ -55,6 +55,19 @@
   padding-top: var(--spacing-sm);
 }
 
+.next-page-info {
+  font-size: 0.8em; /* 작게 표시 */
+  text-align: center;
+  margin-top: 10px; /* 위 요소와 약간 간격 */
+  color: var(--text-third); /* 기존 텍스트 색상 사용 */
+}
+.remaining-paragraphs {
+  font-size: 0.9em;
+  color: var(--text-secondary);
+  margin-top: 10px;
+  text-align: center;
+}
+
 .paragraph-current,
 .paragraph-prev,
 .paragraph-next {

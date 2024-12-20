@@ -235,9 +235,7 @@
 .main-container .page-number {
   position: relative;
   display: flex;
-  flex-direction: row; /* 세로 대신 가로 배치 */
-  justify-content: center; /* 중앙 정렬 */
-  align-items: center; /* 세로 방향 중앙 정렬 */
+  flex-direction: column;
   font-size: 2.1em;
   text-align: center;
   font-weight: 700;
@@ -249,18 +247,6 @@
   width: 100%;
   max-width: 900px;
 }
-
-.main-container .page-number .page-info,
-.main-container .page-number .remaining-info {
-  margin: 0 5px; /* 두 텍스트 사이 여백 */
-}
-
-.main-container .page-number .remaining-info {
-  font-size: 0.8em; /* 기본 크기 대비 80%로 줄이기 */
-  font-weight: 600; /* 굵기 줄이기 */
-  color:var(--text-secondary);
-}
-
 
 .sidebar.visible {
   transform: translateX(301px);
