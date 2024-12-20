@@ -63,15 +63,12 @@
   left: 3.5rem;
   width: calc(100% - 4rem);
   height: 36px;
-  border: 2px solid var(--primary-color);  
+  background-color: var(--primary-color);
   border-radius: 4px;
   transition: transform 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
   transform: translateY(calc(var(--current-element-top) + 16px));
   z-index: 1;
   pointer-events: none;
-  box-shadow: 
-  5px 5px 10px var(--container-shadow-up),
-  -5px -5px 10px var(--container-shadow-down);
 }
 
 /* 이동하는 화살표 */
@@ -88,11 +85,6 @@
   transform: translateY(var(--current-element-top, 0));
   z-index: 2;
   pointer-events: none;
-  filter: drop-shadow(5px 5px 3px #e2e5ed) drop-shadow(-5px -5px 3px #fff);
-}
-
-[data-theme="dark"] .listview-container .simplebar-content-wrapper:after {
-  filter: drop-shadow(5px 5px 3px #101010) drop-shadow(-5px -5px 3px rgba(255, 255, 255, 0.05));
 }
 
 .listview-container .simplebar-content-wrapper::-webkit-scrollbar,
@@ -103,15 +95,10 @@
 
 .listview-item.current {
   opacity: 1;
-  color: var(--text-color) !important;
+  color: var(--primary-text) !important;
   padding-left: 3.5rem; /* transform 대신 padding으로 이동 효과 */
   font-weight: 600;
   z-index: 5;
-}
-
-[data-theme="dark"] .listview-item.current {
-  font-weight: 500;
-  opacity: 0.8;
 }
 
 .listview-item:hover:not(.current) {

@@ -2,11 +2,11 @@
 
 import React, { useEffect, useCallback } from 'react';
 import { CSSTransition } from 'react-transition-group';
-import '../CSS/Views/Search.css';
+import { Menu, Item, useContextMenu } from 'react-contexify';
+import Search from './Views/Search';
 import '../CSS/App.css';
 import '../CSS/Sidebar.css';
-import Search from './Views/Search';
-import { Menu, Item, useContextMenu } from 'react-contexify';
+import '../CSS/Views/Search.css';
 import '../CSS/Controllers/ReactContexify.css';
 const { ipcRenderer } = window.require('electron');
 const path = window.require('path');
@@ -26,15 +26,25 @@ function Sidebar({
   paragraphs,
   metadata,
   isSearchVisible,
-  onSelect
+  onSelect,
+  wasInitiallySidebarOpen
 }) {
   const [files, setFiles] = React.useState([]);
+  const [shouldRender, setShouldRender] = React.useState(false);
 
   React.useEffect(() => {
     if (isVisible) {
       loadFileHistory();
+      setShouldRender(true);
+    } else {
+      // 사이드바가 닫힐 때 0.5초 후 렌더링 해제
+      const timer = setTimeout(() => {
+        setShouldRender(false);
+      }, 250);
+      
+      return () => clearTimeout(timer);
     }
-  }, [isVisible, currentFilePath]);
+  }, [isVisible]);
 
   const loadFileHistory = async () => {
     try {
@@ -151,32 +161,29 @@ function Sidebar({
   };
 
   const handleSearchSelect = useCallback((result) => {
-    console.log('Sidebar - handleSearchSelect called with result:', result);
-      
-    if (typeof result === 'number') {  // result 객체가 아닌 직접 인덱스를 받도록 수정
-      try {
-        // 순서 중요: 먼저 이동하고, UI 정리
-        onSelect(result);
-        
-        // 사이드바 닫기를 마지막에 실행
-        onToggleSearch(false);  // 검색 UI 닫기
-        onClose();             // 사이드바 닫기
-        
-        console.log('Search selection and navigation completed');
-      } catch (error) {
-        console.error('Error in search selection:', error);
-      }
+    if (typeof result === 'number') {
+      onSelect(result);
+      onToggleSearch(false);
+      onClose();
     }
   }, [onSelect, onToggleSearch, onClose]);
 
   const handleClose = () => {
+    // 검색이 열려있을 때
     if (isSearchVisible) {
-      // 검색창이 열려있으면 검색 먼저 종료
+      // 사이드바를 통해 검색을 열었다면 검색만 닫기
+      if (wasInitiallySidebarOpen) {
+        onToggleSearch(false);
+        return;
+      }
+      // 직접 검색을 열었다면 모두 닫기
       onToggleSearch(false);
-    } else {
-      // 검색창이 닫혀있을 때만 사이드바 종료
       onClose();
+      return;
     }
+    
+    // 검색이 닫혀있을 때는 사이드바 닫기
+    onClose();
   };
 
   useEffect(() => {
@@ -215,19 +222,15 @@ function Sidebar({
   return (
     <>
       <div className={`sidebar ${isVisible ? 'visible' : ''}`} data-theme={theme.mode}>
-        {/* 헤더는 항상 표시 */}
         <div className="sidebar-header">
-          <button
-          className="sidebar-close-button"
-          onClick={handleClose}
-          >
-               <img 
-  src={isSearchVisible ? icons?.backIcon : icons?.sidebarUnfold} 
-  alt="닫기" 
-  className="sidebar-icon-button"
-  style={isSearchVisible ? { transform: 'scale(0.9)' } : undefined}
-/>
-          </button>
+          <button className="sidebar-close-button" onClick={handleClose}>
+  <img 
+    src={isSearchVisible && wasInitiallySidebarOpen ? icons?.backIcon : icons?.sidebarUnfold}
+    alt="닫기" 
+    className="sidebar-icon-button"
+    style={isSearchVisible && wasInitiallySidebarOpen ? { transform: 'scale(0.9)' } : undefined}
+  />
+</button>
           <div className="header-title-group">
             {titlePath ? (
               <img src={titlePath} alt="Paraglide" className="header-title-image" />
@@ -236,11 +239,18 @@ function Sidebar({
             )}
           </div>
         </div>
-  
-        {/* 컨텐츠 영역은 조건부 렌더링 */}
+
         <div className="sidebar-content">
-          {!isSearchVisible ? (
-            <>
+        {shouldRender && ( // 사이드바가 보일 때만 내용 렌더링
+      <>
+          <CSSTransition
+            in={!isSearchVisible}
+            timeout={250}
+            classNames="sidebar-transition"
+            mountOnEnter
+            unmountOnExit
+          >
+            <div>
               {/* 파일 정보 섹션 */}
               {currentFile && (
                 <div className="sidebar-section">
@@ -291,15 +301,16 @@ function Sidebar({
                     <span>편집</span>
                   </button>
                   <button
-                    className={`control-button ${status === 'ready' ? 'disabled' : ''}`}
-                    onClick={() => {
-                      onToggleSearch();
-                    }}
-                    disabled={status === 'ready'}
-                  >
-                    <img src={icons?.searchIcon} alt="검색" />
-                    <span>검색</span>
-                  </button>
+  className={`control-button ${status === 'ready' ? 'disabled' : ''}`}
+  onClick={() => {
+    // 사이드바를 통해 검색을 여는 경우 wasInitiallySidebarOpen을 true로 설정
+    onToggleSearch(true, true); // 두 번째 파라미터로 사이드바를 통한 열기임을 전달
+  }}
+  disabled={status === 'ready'}
+>
+  <img src={icons?.searchIcon} alt="검색" />
+  <span>검색</span>
+</button>
                   <button
                     className="control-button"
                     onClick={() => {
@@ -340,29 +351,38 @@ function Sidebar({
                   {files.length === 0 && <div className="empty-message">최근 작업 기록이 없습니다.</div>}
                 </div>
               </div>
-            </>
-          ) : (
-<Search
-  paragraphs={paragraphs}
-  onSelect={(index) => {  // result 객체 대신 직접 index를 받도록 수정
-    console.log('Search onSelect called with index:', index);
-    handleSearchSelect(index);
-  }}
-  metadata={metadata}
-  isVisible={isSearchVisible}
-  onClose={() => {
-    console.log('Search onClose called');
-    onToggleSearch(false);  // 검색 UI 닫기
-    onClose();             // 사이드바 닫기
-  }}
-  icons={icons}
-  theme={theme}
-  isSidebarVisible={isVisible}
-/>
-          )}
+              </div>
+          </CSSTransition>
+          </>
+    )}
+          <CSSTransition
+  in={isSearchVisible}
+  timeout={250}
+  classNames="search-transition"
+  mountOnEnter
+  unmountOnExit
+>
+<div className="search-wrapper">
+  <div className="search-wrapper-wrapper">
+    <Search
+      paragraphs={paragraphs}
+      onSelect={(index) => handleSearchSelect(index)}
+      metadata={metadata}
+      isVisible={isSearchVisible}
+      onClose={() => {
+        onToggleSearch(false);
+        onClose();
+      }}
+      icons={icons}
+      theme={theme}
+      isSidebarVisible={isVisible}
+    />
+  </div>
+</div>
+</CSSTransition>
         </div>
       </div>
-  
+
       <div className={`sidebar-overlay ${isVisible ? 'visible' : ''}`} onClick={onClose} />
       <Menu id={MENU_ID}>
         <Item onClick={({ props }) => handleRemoveFile(props.file.filePath)}>
