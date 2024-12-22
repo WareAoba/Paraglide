@@ -15,13 +15,12 @@ export default defineConfig({
   },
   optimizeDeps: {
     include: ['@electron/remote'],
-    exclude: ['react-contexify']
+    exclude: ['electron']
   },
   resolve: {
     extensions: ['.mjs', '.js', '.jsx', '.json', '.ts', '.tsx'],
     alias: {
-        // React Contexify CSS 경로 재매핑
-        'react-contexify/dist/ReactContexify.css': 'react-contexify/dist/ReactContexify.min.css'
+        '@': path.resolve(__dirname, 'src')
       }
   },
   esbuild: {
@@ -29,30 +28,21 @@ export default defineConfig({
     include: /src\/.*\.jsx?$/,
     exclude: []
   },
-  base: './',
+  base: './',  // 상대 경로로 변경
   build: {
-    outDir: 'build',
+    outDir: 'dist',
     emptyOutDir: true,
-    target: 'esnext',  // 최신 브라우저 타겟팅
-    minify: 'esbuild', // 더 빠른 압축
     rollupOptions: {
-      input: {
-        main: path.resolve(__dirname, 'index.html')
-      },
+      external: ['electron'],
       output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom', 'react-router-dom'],
-          utils: ['./src/store/utils/'],
-          styles: ['./src/CSS/']  // CSS 청크 분리
-        },
-        assetFileNames: 'assets/[hash][extname]', // 에셋 캐싱
-        chunkFileNames: 'js/[name]-[hash].js',    // JS 청크 캐싱
-        entryFileNames: 'js/[name]-[hash].js'     // 진입점 캐싱
+        manualChunks: (id) => {
+          if (id.includes('node_modules')) {
+            if (id.includes('react')) return 'vendor-react';
+            return 'vendor';
+          }
+        }
       }
-    },
-    assetsInlineLimit: 4096, // 작은 에셋 인라인화
-    cssCodeSplit: true,      // CSS 코드 분할
-    sourcemap: false         // 프로덕션 소스맵 비활성화
+    }
   },
   css: {
     devSourcemap: false,

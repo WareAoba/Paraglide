@@ -11,7 +11,7 @@ module.exports = {
       unpack: "**/{node_modules/node-global-key-listener,public}/**/*",
       compression: 'maximum'
     },
-    dir: 'dist',
+    dir: './',
     icon: process.platform === 'darwin' 
     ? path.resolve(__dirname, 'public/icons/mac/icon.icns')
     : path.resolve(__dirname, 'public/icons/win/icon.ico'),
@@ -81,15 +81,18 @@ module.exports = {
         schemes: ["paraglide"]
       }],  
     files: [
-      "build/**/*",
+      "dist/**/*",
       "src/main.js",
-      "src/SystemListener.js",
+      "src/SystemListener.jsx",
       "package.json"
     ],
     directories: {
       output: 'out',
-      buildResources: 'public'
-    }
+      buildResources: 'assets'  // 리소스 디렉토리
+    },
+    extraResource: [
+      "./dist"  // Vite 빌드 출력을 리소스로 포함
+    ]
   },
 
 
