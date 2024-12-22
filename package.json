@@ -71,15 +71,24 @@
     "simplebar-react": "^3.2.6"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "GENERATE_SOURCEMAP=false INLINE_RUNTIME_CHUNK=false CI=false react-scripts build",
-    "prebuild": "rm -rf build dist node_modules/.cache",
+    "start": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    
     "electron-dev": "cross-env NODE_ENV=development electron .",
-    "dev": "concurrently -k \"cross-env BROWSER=none npm start\" \"wait-on http://localhost:3000 && npm run electron-dev\"",
-    "clean": "rm -rf build dist node_modules/.cache && npm cache clean --force",
-    "package": "npm run clean && npm run build && electron-forge package",
-    "make": "npm run clean && CI=false npm run build && electron-forge make && npm run make-dmg"
+    "dev": "concurrently -k \"cross-env BROWSER=none npm start\" \"wait-on http://localhost:5173 && cross-env NODE_ENV=development electron .\"",
+    
+    "clean": "rm -rf dist",
+    "prebuild": "npm run clean",
+    
+    "package": "npm run build && electron-forge package",
+    "make": "npm run build && electron-forge make",
+    "make-dmg": "electron-forge make --platform darwin --target dmg"
   },
+"engines": {
+  "node": ">=18.0.0",
+  "npm": ">=8.0.0"
+},
   "eslintConfig": {
     "extends": [
       "react-app",
@@ -108,14 +117,12 @@
     "@electron-forge/plugin-auto-unpack-natives": "^7.5.0",
     "@electron-forge/plugin-fuses": "^7.5.0",
     "@electron/fuses": "^1.8.0",
-    "@testing-library/jest-dom": "^5.17.0",
-    "@testing-library/react": "^13.4.0",
-    "@testing-library/user-event": "^13.5.0",
+    "@vitejs/plugin-react": "^4.3.4",
     "concurrently": "^9.1.0",
     "cross-env": "^7.0.3",
     "electron": "^26.2.0",
     "electron-squirrel-startup": "^1.0.1",
-    "react-scripts": "5.0.1",
+    "vite": "^6.0.5",
     "wait-on": "^7.2.0"
   }
 }

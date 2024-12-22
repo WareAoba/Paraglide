@@ -11,6 +11,7 @@ module.exports = {
       unpack: "**/{node_modules/node-global-key-listener,public}/**/*",
       compression: 'maximum'
     },
+    dir: 'dist',
     icon: process.platform === 'darwin' 
     ? path.resolve(__dirname, 'public/icons/mac/icon.icns')
     : path.resolve(__dirname, 'public/icons/win/icon.ico'),

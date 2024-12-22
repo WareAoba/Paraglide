@@ -11,7 +11,7 @@ const fs = require('fs').promises;
 const os = require('os');
 const crypto = require('crypto');
 const url = require('url');
-const SystemListener = require('./SystemListener.js');  // 클래스로 import
+const SystemListener = require('./SystemListener.jsx');  // 클래스로 import
 
 // 디바운스 함수 정의
 const debounce = (func, wait) => {
@@ -66,7 +66,7 @@ const ContentManager = {
   }, DEBOUNCE_TIME)
 };
 
-const isDev = !app.isPackaged;
+const isDev = process.env.NODE_ENV === 'development';
 const appPath = isDev ? path.resolve(__dirname, '..') : app.getAppPath();
 
 // 파일 경로 정의
@@ -76,25 +76,25 @@ const FILE_PATHS = {
   logos: {
     light: isDev 
       ? path.join(appPath, 'public', 'logo-light.png')
-      : path.join(process.resourcesPath, './app.asar.unpacked/public', 'logo-light.png'),
+      : path.join(process.resourcesPath, 'dist', 'logo-light.png'),
     dark: isDev
       ? path.join(appPath, 'public', 'logo-dark.png')
-      : path.join(process.resourcesPath, './app.asar.unpacked/public', 'logo-dark.png')
+      : path.join(process.resourcesPath, 'dist', 'logo-dark.png')
   },
   titles: {
     light: isDev
       ? path.join(appPath, 'public', 'TitleLight.png')
-      : path.join(process.resourcesPath, './app.asar.unpacked/public', 'TitleLight.png'),
+      : path.join(process.resourcesPath, 'dist', 'TitleLight.png'), 
     dark: isDev
       ? path.join(appPath, 'public', 'TitleDark.png')
-      : path.join(process.resourcesPath, './app.asar.unpacked/public', 'TitleDark.png')
+      : path.join(process.resourcesPath, 'dist', 'TitleDark.png')
   },
   icon: isDev
     ? path.join(appPath, 'public', 'icons', 'mac', 'icon.icns')
-    : path.join(process.resourcesPath, './app.asar.unpacked/public', 'icons', 'mac', 'icon.icns'),
+    : path.join(process.resourcesPath, 'dist', 'icons', 'mac', 'icon.icns'),
   ui_icons: isDev
     ? path.join(appPath, 'public', 'UI_icons')
-    : path.join(process.resourcesPath, './app.asar.unpacked/public', 'UI_icons')
+    : path.join(process.resourcesPath, 'dist', 'UI_icons')
 };
 
 
@@ -825,12 +825,12 @@ const WindowManager = {
     });
 
     const startUrl = isDev
-      ? 'http://localhost:3000'
+      ? 'http://localhost:5173' // Vite 기본 포트
       : url.format({
-          pathname: path.join(__dirname, '../build/index.html'),
-          protocol: 'file:',
-          slashes: true
-        });
+        pathname: path.join(__dirname, '../dist/index.html'), // build -> dist
+        protocol: 'file:',
+        slashes: true
+    });
 
     mainWindow.loadURL(startUrl);
     this.setupMainWindowEvents();
@@ -887,9 +887,9 @@ const WindowManager = {
     });
   
     const overlayUrl = isDev
-      ? 'http://localhost:3000/#/overlay'
+      ? 'http://localhost:5173/#/overlay'
       : url.format({
-          pathname: path.join(__dirname, '../build/index.html'),
+          pathname: path.join(__dirname, '../dist/index.html'),
           protocol: 'file:',
           slashes: true,
           hash: '/overlay'
@@ -1394,9 +1394,9 @@ const IPCManager = {
   
     // React 라우팅
     const consoleUrl = isDev
-      ? 'http://localhost:3000/#/console'
+      ? 'http://localhost:5173/#/console'
       : url.format({
-          pathname: path.join(__dirname, '../build/index.html'),
+          pathname: path.join(__dirname, '../dist/index.html'),
           protocol: 'file:',
           slashes: true,
           hash: '/console'

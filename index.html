@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="ko">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -8,7 +8,8 @@
       content="default-src 'self' https:; 
                style-src 'self' 'unsafe-inline' https: cdn.jsdelivr.net; 
                style-src-elem 'self' 'unsafe-inline' https: cdn.jsdelivr.net;
-               script-src 'self'; 
+               script-src 'self' 'unsafe-inline';
+               connect-src 'self' ws: http://localhost:5173;
                img-src 'self' data: https:;"
     />
     <meta
@@ -24,5 +25,6 @@
   </head>
   <body>
     <div id="root"></div>
+    <script type="module" src="/src/index.jsx"></script>  <!-- Vite 엔트리 포인트 -->
   </body>
 </html>
