@@ -426,7 +426,7 @@ const Search = forwardRef((props, ref) => {
           const length = searchInputRef.current.value.length;
           searchInputRef.current.setSelectionRange(length, length);
         }
-      }, 200);
+      }, 100);
 
       return () => clearTimeout(timer);
     }
@@ -453,6 +453,7 @@ const Search = forwardRef((props, ref) => {
       <div className="search-input-container">
         <img src={icons?.searchIcon} alt="" className="search-icon" />
         <input
+          ref={searchInputRef}
           type="text"
           value={searchTerm}
           onChange={handleSearchChange}

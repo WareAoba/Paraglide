@@ -1,5 +1,5 @@
 // src/components/Views/Panel.js
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useContextMenu, Menu, Item } from 'react-contexify';
 import '../../CSS/App.css';
 import '../../CSS/Views/Panel.css';
@@ -42,7 +42,6 @@ function Panel({
 
   const formatPath = (fullPath) => {
     const parts = fullPath.split(path.sep);
-    const fileName = parts.pop();
     const truncatedPath = parts.slice(-3).join(path.sep);
     return truncatedPath;
   };
@@ -97,13 +96,17 @@ function Panel({
   };
 
   // ControlButton 컴포넌트
-const ControlButton = ({ icon, label, action, isDisabled = false }) => (
+  const ControlButton = ({ icon, label, action, isDisabled, actionType = false }) => (
     <button
       className={`control-button ${isDisabled ? 'disabled' : ''}`}
       onClick={action}
       disabled={isDisabled}
     >
-      <img src={icon} alt={label} />
+      <img 
+        src={icon} 
+        alt={label} 
+        data-action={actionType}
+      />
       <span>{label}</span>
     </button>
   );
@@ -128,6 +131,25 @@ const ControlButton = ({ icon, label, action, isDisabled = false }) => (
       </div>
     </div>
   );
+
+
+  useEffect(() => {
+    const container = document.querySelector('.current-file-name-container');
+    const wrapper = document.querySelector('.current-file-name-wrapper');
+    
+    if (container && wrapper) {
+      const containerWidth = container.offsetWidth;
+      const wrapperWidth = wrapper.offsetWidth;
+      
+      // 텍스트가 컨테이너보다 길 경우에만 애니메이션 활성화
+      if (wrapperWidth > containerWidth) {
+        container.setAttribute('data-needs-animation', 'true');
+        container.style.setProperty('--container-width', `${containerWidth}px`);
+      } else {
+        container.setAttribute('data-needs-animation', 'false');
+      }
+    }
+  }, [currentFilePath]);
 
   return (
     <div className="panel-container">
@@ -165,14 +187,15 @@ const ControlButton = ({ icon, label, action, isDisabled = false }) => (
           <ControlButton
             icon={icons?.openIcon}
             label="열기"
+            actionType="open"
             action={() => ipcRenderer.invoke('open-file')}
           />
           <ControlButton
             icon={icons?.editIcon}
             label="편집"
-            disabled={true}
+            actionType="edit"
             action={onClose}
-            isDisabled={status === 'ready'}
+            isDisabled={true}
           />
           <ControlButton
             icon={icons?.searchIcon}

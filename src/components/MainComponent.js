@@ -459,6 +459,8 @@ function MainComponent() {
 
   // 사이드바 닫기 함수
   const handleCloseSidebar = () => {
+    // 검색창과 사이드바 모두 닫기
+    setIsSearchVisible(false);  // 검색창 닫기
     setState((prev) => ({
       ...prev,
       isSidebarVisible: false,

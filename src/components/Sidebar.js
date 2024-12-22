@@ -5,7 +5,6 @@ import Panel from './Views/Panel';
 import Search from './Views/Search';
 import '../CSS/App.css';
 import '../CSS/Sidebar.css';
-import '../CSS/Views/Search.css';
 import '../CSS/Controllers/ReactContexify.css';
 const { ipcRenderer } = window.require('electron');
 const path = window.require('path');
@@ -71,24 +70,6 @@ function Sidebar({
       setFiles([]);
     }
   };
-
-  useEffect(() => {
-    const container = document.querySelector('.current-file-name-container');
-    const wrapper = document.querySelector('.current-file-name-wrapper');
-    
-    if (container && wrapper) {
-      const containerWidth = container.offsetWidth;
-      const wrapperWidth = wrapper.offsetWidth;
-      
-      // 텍스트가 컨테이너보다 길 경우에만 애니메이션 활성화
-      if (wrapperWidth > containerWidth) {
-        container.setAttribute('data-needs-animation', 'true');
-        container.style.setProperty('--container-width', `${containerWidth}px`);
-      } else {
-        container.setAttribute('data-needs-animation', 'false');
-      }
-    }
-  }, [currentFilePath]);
 
   const handleSearchSelect = useCallback((result) => {
     if (typeof result === 'number') {
