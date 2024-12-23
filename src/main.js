@@ -3,15 +3,17 @@ const { app, BrowserWindow, dialog, ipcMain, nativeTheme, clipboard, screen } = 
 const path = require('path');
 const store = require('./store/store');
 const { TextProcessUtils } = require('./store/utils/TextProcessUtils');
+const { ConfigManager } = require('./store/utils/ConfigManager');
 const { textProcessActions } = require('./store/slices/textProcessSlice');
 const { configActions, THEME } = require('./store/slices/configSlice');
-const { ConfigManager } = require('./store/utils/ConfigManager');
 const { logActions } = require('./store/slices/logSlice');
 const fs = require('fs').promises;
 const os = require('os');
 const crypto = require('crypto');
 const url = require('url');
 const SystemListener = require('./SystemListener.jsx');  // 클래스로 import
+const jschardet = require('jschardet');
+const iconv = require('iconv-lite');
 
 // 디바운스 함수 정의
 const debounce = (func, wait) => {
@@ -535,7 +537,52 @@ const FileManager = {
         }
       }
 
-      const fileContent = content || await fs.readFile(filePath, 'utf8');
+      let fileContent;
+if (content) {
+  fileContent = content;
+} else {
+  const buffer = await fs.readFile(filePath);
+  
+  // 1. jschardet로 인코딩 감지
+  const detected = jschardet.detect(buffer);
+  let encoding = detected.encoding || 'utf8';
+  
+  console.log('[Main] 감지된 인코딩:', encoding, '(신뢰도:', detected.confidence, ')');
+
+  // 2. 신뢰도가 낮거나 ASCII로 감지된 경우 한글 우선 시도
+  const lowConfidence = detected.confidence < 0.5;
+  const isAsciiLike = ['ascii', 'windows-1252'].includes(encoding.toLowerCase());
+  
+  // 3. 시도할 인코딩 순서 결정
+  const encodingsToTry = lowConfidence || isAsciiLike ?
+    ['cp949', 'windows-1252', 'utf8'] :  // 신뢰도가 낮을 때
+    [encoding, 'cp949', 'windows-1252', 'utf8'];  // 신뢰도가 높을 때
+
+  // 4. 순차적으로 인코딩 시도
+  for (const enc of encodingsToTry) {
+    try {
+      const decoded = iconv.decode(buffer, enc);
+      // 한글 포함 여부로 검증
+      const hasKorean = /[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(decoded);
+      const hasInvalidChar = decoded.includes('�');
+      
+      if (!hasInvalidChar && (!isAsciiLike || hasKorean)) {
+        fileContent = decoded;
+        console.log('[Main] 성공한 인코딩:', enc, '(한글 포함:', hasKorean, ')');
+        break;
+      }
+    } catch (error) {
+      console.warn(`[Main] ${enc} 인코딩 변환 실패:`, error);
+    }
+  }
+
+  // 5. 모든 시도 실패시 기본값
+  if (!fileContent) {
+    console.warn('[Main] 모든 인코딩 시도 실패, UTF-8로 진행');
+    fileContent = iconv.decode(buffer, 'utf8');
+  }
+}
+  
       if (!fileContent) {
         console.error('[Main] 파일 내용 없음:', filePath);
         dialog.showMessageBoxSync(mainWindow, {
@@ -543,10 +590,10 @@ const FileManager = {
           buttons: ['확인'],
           defaultId: 1,
           title: '잘못된 파일',
-          message: '파일 내용이 비어있습니다.',
+          message: '파일 내용이 비어있거나 읽을 수 없습니다.',
           cancelId: 1,
-          noLink: true, // 버튼을 링크 스타일로 표시하지 않음
-          normalizeAccessKeys: true, // 단축키 정규화
+          noLink: true,
+          normalizeAccessKeys: true,
         });
         return { success: false };
       }
