@@ -216,19 +216,6 @@
     position: relative;
     flex-shrink: 0; /* 높이 고정만 필요 */
     will-change: transform, opacity, height;
-    animation: slideIn 0.2s ease-out;
-  }
-  
-  
-  @keyframes slideIn {
-    from {
-      opacity: 0;
-      transform: translateY(30px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
   }
   
   .recent-file-item.removing {

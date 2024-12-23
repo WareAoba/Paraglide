@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback, useRef, forwardRef, useImperativeHandle } from 'react';
 import Hangul from 'hangul-js';
 import '../../CSS/App.css';
-import '../../CSS/Views/Search.css';
+import '../../CSS/Sidebar/Search.css';
 import { debounce } from 'lodash';
 
 // 검색 유틸리티 함수 모음

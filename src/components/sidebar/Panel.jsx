@@ -2,7 +2,7 @@
 import React, { useEffect } from 'react';
 import { useContextMenu, Menu, Item } from 'react-contexify';
 import '../../CSS/App.css';
-import '../../CSS/Views/Panel.css';
+import '../../CSS/Sidebar/Panel.css';
 const { ipcRenderer } = window.require('electron');
 const path = window.require('path');
 
