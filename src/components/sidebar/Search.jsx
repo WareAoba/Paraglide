@@ -183,54 +183,28 @@ const Search = forwardRef((props, ref) => {
 
   const [searchTerm, setSearchTerm] = useState('');
   const [results, setResults] = useState([]);
-  const [filteredResults, setFilteredResults] = useState([]);
-  const [isAnimating, setIsAnimating] = useState(false);
-  const [removingIndexes, setRemovingIndexes] = useState(new Set());
-  const [prevResults, setPrevResults] = useState([]);
-  const [dragStart, setDragStart] = useState(null);
   const [pointer, setPointer] = useState(-1);
   const searchInputRef = useRef(null);
 
-  const handleMouseDown = (e) => {
-    if (!e.target.closest('.search-box')) {
-      setDragStart({
-        x: e.clientX,
-        y: e.clientY
-      });
-    }
-  };
-
-  const handleMouseUp = (e) => {
-    if (!e.target.closest('.search-box') && dragStart) {
-      const dx = Math.abs(e.clientX - dragStart.x);
-      const dy = Math.abs(e.clientY - dragStart.y);
-
-      if (dx < 5 && dy < 5) {
-        onClose();
-      }
-    }
-    setDragStart(null);
-  };
-
   const handleSearchChange = (e) => {
-    setSearchTerm(e.target.value);
-    debouncedSearch(e.target.value);
+    const newTerm = e.target.value;
+    setSearchTerm(newTerm);
+    
+    // 초성 한 글자 검사를 debounce 이전에 수행
+    const normalizedTerm = SearchUtils.normalizeText(newTerm);
+    if (SearchUtils.isChosung(normalizedTerm) && normalizedTerm.length === 1) {
+      setResults([]);
+      return;
+    }
+    
+    debouncedSearch(newTerm);
   };
 
   const debouncedSearch = useCallback(
     debounce((term) => {
-      if (isAnimating || !term.trim() || !paragraphs) {
-        setResults([]);
-        return;
-      }
 
       const normalizedSearchTerm = SearchUtils.normalizeText(term);
       const isChosungSearch = SearchUtils.isChosung(normalizedSearchTerm);
-
-      if (isChosungSearch && normalizedSearchTerm.length === 1) {
-        setResults([]);
-        return;
-      }
 
       const searchResults = paragraphs
         .map((paragraph, index) => {
@@ -265,7 +239,7 @@ const Search = forwardRef((props, ref) => {
 
       setResults(searchResults);
     }, 200),
-    [paragraphs, metadata, isAnimating]
+    [paragraphs, metadata]
   );
 
   const highlightMatch = (text, term) => {
@@ -290,11 +264,26 @@ const Search = forwardRef((props, ref) => {
     }
   };
 
+  const isValidPage = (pageNum) => {
+    // 0이나 음수는 유효하지 않은 페이지로 처리
+    if (!pageNum || pageNum <= 0 || !metadata) return false;
+  
+    const metadataArray = Array.isArray(metadata) ? metadata : [metadata];
+  
+    return metadataArray.some(meta => {
+      const metaPageNum = meta.pageNumber;
+      // null, undefined, 0 체크 추가
+      if (metaPageNum == null || metaPageNum <= 0) return false;
+      return String(metaPageNum) === String(pageNum);
+    });
+  };
+  
   const checkPagePattern = (text) => {
     const pagePatterns = {
-      numberOnly: /^(\d+)$/
+      // 1 이상의 숫자만 매칭하도록 수정
+      numberOnly: /^([1-9]\d*)$/
     };
-
+  
     for (const pattern of Object.values(pagePatterns)) {
       const match = text.match(pattern);
       if (match) {
@@ -303,18 +292,6 @@ const Search = forwardRef((props, ref) => {
       }
     }
     return null;
-  };
-
-  const isValidPage = (pageNum) => {
-    if (!pageNum || !metadata) return false;
-
-    const metadataArray = Array.isArray(metadata) ? metadata : [metadata];
-
-    return metadataArray.some(meta => {
-      const metaPageNum = meta.pageNumber;
-      if (metaPageNum == null) return false;
-      return String(metaPageNum) === String(pageNum);
-    });
   };
 
   const findParagraphByPage = (pageNum) => {
@@ -335,13 +312,13 @@ const Search = forwardRef((props, ref) => {
   const resultItemsRef = useRef([]);
 
   const handleKeyDown = useCallback((e) => {
-    if (!isVisible || !filteredResults.length) return;
+    if (!isVisible || !results.length) return;
 
     switch (e.key) {
       case 'ArrowDown':
         e.preventDefault();
         setPointer(prev => {
-          if (prev === filteredResults.length - 1) {
+          if (prev === results.length - 1) {
             return -1;
           }
           const newPointer = prev + 1;
@@ -357,7 +334,7 @@ const Search = forwardRef((props, ref) => {
         e.preventDefault();
         setPointer(prev => {
           if (prev === -1) {
-            const lastIndex = filteredResults.length - 1;
+            const lastIndex = results.length - 1;
             resultItemsRef.current[lastIndex]?.scrollIntoView({
               behavior: 'smooth',
               block: 'nearest'
@@ -379,40 +356,18 @@ const Search = forwardRef((props, ref) => {
       case 'Enter':
         e.preventDefault();
         if (pointer >= 0) {
-          onSelect(filteredResults[pointer].index);
+          onSelect(results[pointer].index);
           onClose();
         }
         break;
     }
-  }, [isVisible, filteredResults, pointer, onSelect, onClose]);
-
-  useEffect(() => {
-    if (removingIndexes.size > 0) {
-      setIsAnimating(true);
-      setTimeout(() => {
-        setFilteredResults(results);
-        setRemovingIndexes(new Set());
-        setIsAnimating(false);
-      }, 300);
-    } else {
-      setFilteredResults(results);
-    }
-  }, [results]);
+  }, [isVisible, results, pointer, onSelect, onClose]);
 
   const clearSearch = useCallback(() => {
     setSearchTerm('');
     setResults([]);
-    setFilteredResults([]);
-    setPrevResults([]);
-    setRemovingIndexes(new Set());
-    setIsAnimating(false);
+    setresults([]);
   }, []);
-
-  useEffect(() => {
-    if (!isVisible) {
-      setIsAnimating(false);
-    }
-  }, [isVisible]);
 
   useImperativeHandle(ref, () => ({
     clearSearch
@@ -441,34 +396,38 @@ const Search = forwardRef((props, ref) => {
 
   useEffect(() => {
     setPointer(-1);
-  }, [searchTerm, filteredResults, isVisible]);
+  }, [searchTerm, results, isVisible]);
 
   return (
-<div className="search-container" data-theme={theme.mode}>
-  <div className="search-header">
-    <h2>{results.length > 0 ? `${results.length}개의 검색 결과` : '검색'}</h2>
-  </div>
-
-    <div className="search-content">
-      <div className="search-input-container">
-        <img src={icons?.searchIcon} alt="" className="search-icon" />
-        <input
-          ref={searchInputRef}
-          type="text"
-          value={searchTerm}
-          onChange={handleSearchChange}
-          placeholder="검색어를 입력하세요"
-        />
-  {searchTerm && (
-    <button className="clear-button" onClick={() => setSearchTerm('')}>
-      <img 
-        src={icons?.deleteIcon} 
-        alt="지우기"
-        className="clear-icon"
-      />
-    </button>
-  )}
+    <div className="search-container" data-theme={theme.mode}>
+      <div className="search-header">
+        <h2>
+          {searchTerm.trim() && results.length > 0
+            ? `${results.length}개의 검색 결과`
+            : '검색'}
+        </h2>
       </div>
+
+      <div className="search-content">
+        <div className="search-input-container">
+          <img src={icons?.searchIcon} alt="" className="search-icon" />
+          <input
+            ref={searchInputRef}
+            type="text"
+            value={searchTerm}
+            onChange={handleSearchChange}
+            placeholder="검색어를 입력하세요"
+          />
+          {searchTerm && (
+            <button className="clear-button" onClick={() => setSearchTerm('')}>
+              <img 
+                src={icons?.deleteIcon} 
+                alt="지우기"
+                className="clear-icon"
+              />
+            </button>
+          )}
+        </div>
         
         <div className="search-results" data-testid="search-results">
           {(() => {
@@ -484,36 +443,36 @@ const Search = forwardRef((props, ref) => {
                   </div>
                 )}
   
-                {searchTerm.trim() && filteredResults.length > 0 ? (
-                  filteredResults.map((result, index) => (
-<div
-  key={result.index}
-  ref={el => resultItemsRef.current[index] = el}
-  className={`search-result-item ${pointer === index ? 'pointed' : ''}`}
-  onClick={() => {
-    console.log('Search result clicked:', result.index);
-    
-    // 순서 중요
-    const selectedIndex = result.index;
-    
-    // 먼저 이동
-    if (typeof selectedIndex === 'number') {
-      onSelect(selectedIndex);
-      console.log('Called onSelect with index:', selectedIndex);
-    }
-    
-    // UI 정리
-    if (onClose) {
-      onClose();
-      console.log('Called onClose');
-    }
-  }}
->
-  <div className="result-text">
-    {highlightMatch(result.text, searchTerm)}
-  </div>
-  <div className="result-info">{result.pageInfo}페이지</div>
-</div>
+                {searchTerm.trim() && results.length > 0 ? (
+                  results.map((result, index) => (
+                    <div
+                      key={result.index}
+                      ref={el => resultItemsRef.current[index] = el}
+                      className={`search-result-item ${pointer === index ? 'pointed' : ''}`}
+                      onClick={() => {
+                        console.log('Search result clicked:', result.index);
+                        
+                        // 순서 중요
+                        const selectedIndex = result.index;
+                        
+                        // 먼저 이동
+                        if (typeof selectedIndex === 'number') {
+                          onSelect(selectedIndex);
+                          console.log('Called onSelect with index:', selectedIndex);
+                        }
+                        
+                        // UI 정리
+                        if (onClose) {
+                          onClose();
+                          console.log('Called onClose');
+                        }
+                      }}
+                    >
+                      <div className="result-text">
+                        {highlightMatch(result.text, searchTerm)}
+                      </div>
+                      <div className="result-info">{result.pageInfo}페이지</div>
+                    </div>
                   ))
                 ) : (
                   searchTerm.trim() && 

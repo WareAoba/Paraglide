@@ -62,6 +62,8 @@ function MainComponent() {
   const [fileOpenIcon, setFileOpenIcon] = useState(null);
   const [editIcon, setEditIcon] = useState(null);
   const [backIcon, setBackIcon] = useState(null);
+  const [folderIcon, setFolderIcon] = useState(null);
+  const [finderIcon, setFinderIcon] = useState(null);
 
   const searchRef = useRef(null);
 
@@ -301,7 +303,11 @@ function MainComponent() {
 
         if (result.success) {
           const newState = await ipcRenderer.invoke('get-state');
-          setState((prev) => ({ ...prev, ...newState }));
+          setState((prev) => ({
+            ...prev,
+            ...newState,
+            isSidebarVisible: false
+          }));
         }
       } catch (error) {
         console.error('파일 로드 실패:', error);
@@ -356,6 +362,8 @@ function MainComponent() {
           'file-open.svg',
           'edit.svg',
           'go-back.svg',
+          'folder.svg',
+          'finder.svg'
         ];
 
         const iconPaths = await Promise.all(
@@ -381,6 +389,8 @@ function MainComponent() {
         setFileOpenIcon(iconPaths[16]);
         setEditIcon(iconPaths[17]);
         setBackIcon(iconPaths[18]);
+        setFolderIcon(iconPaths[19]);
+        setFinderIcon(iconPaths[20]);
       } catch (error) {
         console.error('아이콘 로드 실패:', error);
       }
@@ -425,7 +435,11 @@ function MainComponent() {
 
       if (result.success) {
         const newState = await ipcRenderer.invoke('get-state');
-        setState((prev) => ({ ...prev, ...newState }));
+        setState((prev) => ({
+          ...prev,
+          ...newState,
+          isSidebarVisible: false
+        }));
       }
     } catch (error) {
       console.error('파일 로드 실패:', error);
@@ -659,6 +673,8 @@ ipcRenderer.invoke('generate-css-filter', accentColor, {
           openIcon: fileOpenIcon,
           editIcon: editIcon,
           backIcon: backIcon,
+          folderIcon: folderIcon,
+          finderIcon: finderIcon
         }}
         titlePath={state.titlePath}
         currentFilePath={state.currentFilePath}
@@ -799,6 +815,7 @@ ipcRenderer.invoke('generate-css-filter', accentColor, {
                           hoveredSection={hoveredSection}
                           onHoverChange={setHoveredSection}
                           paragraphsMetadata={state.paragraphsMetadata}
+                          onCompleteWork={handleCompleteWork}
                         />
                         <div className="remaining-paragraphs">
                           {state.currentNumber?.display && state.currentNumber?.display !== 'Non 페이지' ? (

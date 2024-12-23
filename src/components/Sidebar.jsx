@@ -154,6 +154,7 @@ function Sidebar({
   onShowDebugConsole={onShowDebugConsole}
   onClose={onClose}
   files={files}
+  theme={theme}
   loadFileHistory={loadFileHistory}
   />
 </CSSTransition>

@@ -338,38 +338,48 @@
   
   .contexify {
     font-family: 'Prentendard Variable', sans-serif;
-    box-shadow:
-    0 2px 4px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     z-index: 1001 !important;
-    width: 100px; /* 기본값 220px에서 축소 */
+    min-width: 120px; /* 최소 폭 설정 */
+    width: auto; /* 자동 폭 조정 */
   }
   
   .contexify_item {
-    background: var(--background-color) !important;
+    background: var(--bg-color) !important;
   }
   
   .contexify_submenu {
-    background: var(--background-color) !important;
+    background: var(--bg-color) !important;
   }
   
   .contexify_itemContent {
-    background: var(--background-color) !important;
+    background: var(--bg-color) !important;
     padding-right: 12px !important;
     padding-left: 12px !important;
     display: flex;
     align-items: center;
     gap: 8px;
+    white-space: nowrap; /* 텍스트 줄바꿈 방지 */
   }
   
   .contexify_itemContent img {
     width: 16px;
     height: 16px;
-    filter: invert(28%) sepia(45%) saturate(6152%) hue-rotate(340deg) brightness(93%) contrast(84%)
+    filter: var(--primary-color-filter)
   }
   
   .contexify_itemContent span {
-    color: var(--danger-color);
+    color: var(--text-color);
     transform: translateY(2px);
+  }
+  
+  /* 기록 삭제 아이템만 빨간색으로 */
+  [data-action="delete"] span {
+    color: var(--danger-color);
+  }
+
+  [data-action="delete"] img {
+    filter: var(--danger-filter);
   }
   
   .contexify_item:hover > .contexify_itemContent {

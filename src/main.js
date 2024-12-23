@@ -1,5 +1,5 @@
 // main.js
-const { app, BrowserWindow, dialog, ipcMain, nativeTheme, clipboard, screen } = require('electron');
+const { app, BrowserWindow, dialog, ipcMain, nativeTheme, clipboard, screen, shell } = require('electron');
 const path = require('path');
 const store = require('./store/store');
 const { TextProcessUtils } = require('./store/utils/TextProcessUtils');
@@ -1086,6 +1086,10 @@ const IPCManager = {
         console.error('[Main] 파일 열기 실패:', error);
         return { success: false };
       }
+    });
+
+    ipcMain.handle('show-in-folder', (_, filePath) => {
+      shell.showItemInFolder(filePath);
     });
 
     ipcMain.handle('read-file', async (event, filePath) => fs.readFile(filePath, 'utf8'));

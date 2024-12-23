@@ -20,7 +20,7 @@
 
 .paragraph-header {
   display: grid;
-  grid-template-columns: 1fr 1.2fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
   border-radius: 6px;
   align-content: center;
   height: 40px;
@@ -50,6 +50,7 @@
   height: 10px;
   width: 100%;
   overflow-y: visible;
+  justify-content: space-between;
   gap: var(--spacing-md);  /* 단락 간 간격 확대 */
   margin-top: var(--spacing-sm);
   padding-top: var(--spacing-sm);
@@ -147,6 +148,19 @@
   color: rgba(255, 255, 255, 0.7); /* 반투명 검정 */
 }
 
+.paragraph-empty {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  visibility: hidden;
+  pointer-events: none;
+  user-select: none;
+}
+
+.paragraph-current-first {
+  flex: 1;  /* flex 비율 유지 */
+}
+
 .overview-paragraph-number {
   position: absolute;
   bottom: 8px;
@@ -155,4 +169,42 @@
   font-size: 0.9em;
   color: var(--text-secondary);
   z-index: 1;
+}
+
+/* 작업 완료 버튼 컨테이너 */
+.complete-work-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  visibility: visible !important;
+  background: transparent;
+}
+
+.complete-work-container:hover {
+  transform: none !important;
+  box-shadow: none !important;
+  background: none !important;
+}
+
+.overview-complete-work-button {
+  width: 80%;
+  min-width: 90px;
+  padding: 15px;
+  background-color: var(--success-color);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 1em;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  opacity: 1;
+}
+
+.overview-complete-work-button:hover {
+  filter: brightness(1.1);
 }

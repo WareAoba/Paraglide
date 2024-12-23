@@ -436,3 +436,8 @@ input:focus + .slider {
   width: 220px !important;
   height: 200px !important;
 }
+
+.info-item {
+  color: var(--text-color);
+  opacity: 0.25;
+}

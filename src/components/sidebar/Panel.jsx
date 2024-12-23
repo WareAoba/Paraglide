@@ -1,10 +1,12 @@
 // src/components/Views/Panel.js
 import React, { useEffect } from 'react';
 import { useContextMenu, Menu, Item } from 'react-contexify';
+import { createPortal } from 'react-dom';
 import '../../CSS/App.css';
 import '../../CSS/Sidebar/Panel.css';
 const { ipcRenderer } = window.require('electron');
 const path = window.require('path');
+const os = window.require('os');
 
 function Panel({
   currentFile,
@@ -15,8 +17,12 @@ function Panel({
   onShowDebugConsole,
   onClose,
   files,
+  theme,
   loadFileHistory
 }) {
+
+  const isMac = os.platform() === 'darwin';
+
   // 1. 포맷팅 유틸리티
   const formatDate = (timestamp) => {
     const date = new Date(timestamp);
@@ -79,21 +85,47 @@ function Panel({
     }
   };
 
-  // 3. 컨텍스트 메뉴
-  const MENU_ID = 'recent-file-menu';
-  const { show } = useContextMenu({
-    id: MENU_ID,
-  });
-
-  const handleContextMenu = (event, file) => {
-    event.preventDefault();
-    show({
-      event,
-      props: {
-        file,
-      },
-    });
+  const handleShowInFolder = async (filePath) => {
+    try {
+      await ipcRenderer.invoke('show-in-folder', filePath);
+    } catch (error) {
+      console.error('파일 탐색기에서 열기 실패:', error);
+    }
   };
+
+  // 3. 컨텍스트 메뉴
+const RECENT_FILE = 'recent-file-menu';
+const CURRENT_FILE = 'current-file-menu';
+
+const { show: showRecentMenu } = useContextMenu({
+  id: RECENT_FILE,
+});
+
+const { show: showCurrentMenu } = useContextMenu({
+  id: CURRENT_FILE,
+});
+
+const handleRecentContextMenu = (event, file) => {
+  event.preventDefault();
+  showRecentMenu({
+    event,
+    props: {
+      file,
+    },
+  });
+};
+
+const handleCurrentContextMenu = (event) => {
+  event.preventDefault();
+  if (!currentFilePath) return;
+  
+  showCurrentMenu({
+    event,
+    props: {
+      file: { filePath: currentFilePath },
+    },
+  });
+};
 
   // ControlButton 컴포넌트
   const ControlButton = ({ icon, label, action, isDisabled, actionType = false }) => (
@@ -155,7 +187,9 @@ function Panel({
     <div className="panel-container">
       {/* 1. 현재 파일 섹션 */}
       {currentFile && (
-        <section className="sidebar-section current-file">
+        <section
+        className="sidebar-section current-file"
+        onContextMenu={handleCurrentContextMenu}>
           <h3>현재 파일</h3>
           <div className="section-content current-file-info">
             <img src={icons?.textFileIcon} alt="파일" className="current-file-icon" />
@@ -224,7 +258,7 @@ function Panel({
                 key={file.filePath}
                 file={file}
                 onSelect={handleFileSelect}
-                onContextMenu={handleContextMenu}
+                onContextMenu={handleRecentContextMenu}
                 formatPath={formatPath}
                 formatDate={formatDate}
               />
@@ -236,12 +270,35 @@ function Panel({
       </section>
   
       {/* 4. 컨텍스트 메뉴 */}
-      <Menu id={MENU_ID}>
-        <Item onClick={({ props }) => handleRemoveFile(props.file.filePath)}>
-          <img src={icons?.deleteIcon} alt="삭제" />
-          <span>기록 삭제</span>
-        </Item>
-      </Menu>
+      {createPortal(
+        <>
+        <Menu id={RECENT_FILE} data-theme={theme.mode}>
+          <Item onClick={({ props }) => handleShowInFolder(props.file.filePath)}>
+            <img 
+              src={isMac ? icons?.finderIcon : icons?.folderIcon} 
+              alt={isMac ? "Finder" : "탐색기"} 
+            />
+            <span>{isMac ? "Finder에서 열기" : "파일 탐색기에서 열기"}</span>
+          </Item>
+          <Item onClick={({ props }) => handleRemoveFile(props.file.filePath)}
+            data-action="delete">
+            <img src={icons?.deleteIcon} alt="삭제" />
+            <span>기록 삭제</span>
+          </Item>
+        </Menu>
+
+        <Menu id={CURRENT_FILE} data-theme={theme.mode}>
+          <Item onClick={({ props }) => handleShowInFolder(props.file.filePath)}>
+            <img 
+              src={isMac ? icons?.finderIcon : icons?.folderIcon} 
+              alt={isMac ? "Finder" : "탐색기"} 
+            />
+            <span>{isMac ? "Finder에서 열기" : "파일 탐색기에서 열기"}</span>
+          </Item>
+        </Menu>
+      </>,
+      document.body
+    )}
     </div>
   );
 }

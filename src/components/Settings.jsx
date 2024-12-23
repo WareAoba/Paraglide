@@ -474,9 +474,11 @@ function Settings({ isVisible, onClose, icons }) {
           {/* 정보 그룹 */}
           <div className="settings-group">
             <h3>정보</h3>
+            <div className="info-item">
             <p>Paraglide 0.3.0 beta</p>
             <p>Made by WareAoba</p>
             <p>Contribute.. Rinna, Latte</p>
+            </div>
           </div>
         </div>
         
