@@ -16,6 +16,7 @@
   --text-third: #333;
   --bg-color: #F2F3F7;
   --bg-gradient: linear-gradient(145deg, rgba(232, 235, 242, 0.6), rgba(242, 243, 247, 0.6));
+  --bg-gradient-none: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0));
   --container-bg: #F2F3F7;
   --border-color: rgba(0, 0, 0, 0.45);
   --hover-bg: rgba(0, 0, 0, 0.1);

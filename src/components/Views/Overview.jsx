@@ -51,7 +51,9 @@ return (
           onMouseLeave={() => onHoverChange(null)}
           data-theme={theme.mode}
         >
-          {paragraphs[currentParagraph - 1] || ''}
+          <div className="overview-paragraph-wrapper">
+            {paragraphs[currentParagraph - 1] || ''}
+          </div>
           <div className="overview-paragraph-number">
             {getPageParagraphInfo(currentParagraph - 1)}
           </div>
@@ -65,7 +67,9 @@ return (
           }}
           data-theme={theme.mode}
         >
-          {paragraphs[currentParagraph] || ''}
+          <div className="overview-paragraph-wrapper">
+            {paragraphs[currentParagraph] || ''}
+          </div>
           <div className="overview-paragraph-number">
             {getPageParagraphInfo(currentParagraph)}
           </div>
@@ -81,14 +85,16 @@ return (
           onMouseLeave={() => onHoverChange(null)}
           data-theme={theme.mode}
         >
-          {paragraphs[currentParagraph + 1] || ''}
+          <div className="overview-paragraph-wrapper">
+            {paragraphs[currentParagraph + 1] || ''}
+          </div>
           <div className="overview-paragraph-number">
             {getPageParagraphInfo(currentParagraph + 1)}
           </div>
         </div>
-      </div>
     </div>
-  );
+  </div>
+);
 }
 
 export default Overview;

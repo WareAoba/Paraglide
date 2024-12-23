@@ -69,15 +69,26 @@
   text-align: center;
 }
 
+.overview-paragraph-wrapper {
+  flex: 1;
+  padding: var(--spacing-md);
+  overflow-y: auto;
+  margin-bottom: 25px;
+  text-align: center;
+}
+
 .paragraph-current,
 .paragraph-prev,
 .paragraph-next {
+  display: flex;
+  flex-direction: column;
   flex: 1;
   padding: var(--spacing-md);
   background: transparent;
   box-shadow:
   inset 0 0 0 transparent,
   inset 0 0 0 transparent;
+  transition: all 0.25s ease;
   border-radius: 8px;  /* 단락별 라운드 처리 */
   overflow-y: auto;  /* 내용이 넘칠 경우 스크롤 */
   font-size: 12pt;
@@ -90,7 +101,8 @@
   overflow-wrap: break-word;  /* 컨테이너를 넘어갈 때만 줄바꿈 */
   position: relative;  /* 마스크 위치 기준 */
   padding-top: 8px;
-  margin-bottom: 20px;
+  padding-bottom: 15px;
+  margin-bottom: 5px;
 }
 
 .paragraph-current:hover,
@@ -116,7 +128,6 @@
   background-color: var(--bg-color);
   border: 2px solid var(--primary-color);  
   font-weight: 700;
-  transition: all 0.3s ease;  /* 부드러운 전환 */
 }
 
 [data-theme="dark"] .paragraph-current {
@@ -129,7 +140,6 @@
 .paragraph-next {
   opacity: 0.7;
   font-weight: 400;
-  transition: all 0.25s ease; /* 부드러운 전환 */
 }
 
 [data-theme="dark"] .paragraph-prev,
