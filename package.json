@@ -72,14 +72,15 @@
   },
   "scripts": {
     "start": "vite",
-    "build": "vite build",
+    "build": "rimraf dist && vite build",
     "preview": "vite preview",
     "electron-dev": "cross-env NODE_ENV=development electron .",
     "dev": "concurrently -k \"cross-env BROWSER=none npm start\" \"wait-on http://localhost:5173 && cross-env NODE_ENV=development electron .\"",
     "clean": "rimraf dist",
+    "sign-win": "powershell -File ./certificates/sign-windows.ps1",
     "prebuild": "npm run clean",
     "package": "npm run build && electron-forge package",
-    "make": "npm run build && electron-forge make",
+    "make": "npm run build && electron-forge make && npm run sign-win",
     "make-dmg": "electron-forge make --platform darwin --target dmg"
   },
   "engines": {

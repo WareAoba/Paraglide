@@ -798,6 +798,7 @@ ipcRenderer.invoke('generate-css-filter', accentColor, {
                           theme={theme}
                           hoveredSection={hoveredSection}
                           onHoverChange={setHoveredSection}
+                          paragraphsMetadata={state.paragraphsMetadata}
                         />
                         <div className="remaining-paragraphs">
                           {state.currentNumber?.display && state.currentNumber?.display !== 'Non 페이지' ? (
