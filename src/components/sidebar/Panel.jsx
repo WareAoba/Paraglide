@@ -47,7 +47,8 @@ function Panel({
   };
 
   const formatPath = (fullPath) => {
-    const parts = fullPath.split(path.sep);
+    const dirPath = path.dirname(fullPath);
+    const parts = dirPath.split(path.sep);
     const truncatedPath = parts.slice(-3).join(path.sep);
     return truncatedPath;
   };

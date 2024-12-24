@@ -119,13 +119,13 @@ function Sidebar({
       <div className={`sidebar ${isVisible ? 'visible' : ''}`} data-theme={theme.mode}>
         <div className="sidebar-header">
           <button className="sidebar-close-button" onClick={handleClose}>
-  <img 
-    src={isSearchVisible && wasInitiallySidebarOpen ? icons?.backIcon : icons?.sidebarUnfold}
-    alt="닫기" 
-    className="sidebar-icon-button"
-    style={isSearchVisible && wasInitiallySidebarOpen ? { transform: 'scale(0.9)' } : undefined}
-  />
-</button>
+            <img 
+              src={isSearchVisible && wasInitiallySidebarOpen ? icons?.backIcon : icons?.sidebarUnfold}
+              alt="닫기" 
+              className="sidebar-icon-button"
+              style={isSearchVisible && wasInitiallySidebarOpen ? { transform: 'scale(0.9)' } : undefined}
+            />
+          </button>
           <div className="header-title-group">
             {titlePath ? (
               <img src={titlePath} alt="Paraglide" className="header-title-image" />
@@ -136,55 +136,55 @@ function Sidebar({
         </div>
 
         <div className="sidebar-content">
-        {shouldRender && ( // 사이드바가 보일 때만 내용 렌더링
-      <>
+          {shouldRender && ( // 사이드바가 보일 때만 내용 렌더링
+            <>
+              <CSSTransition
+                in={!isSearchVisible}
+                timeout={250}
+                classNames="sidebar-transition"
+                mountOnEnter
+                unmountOnExit
+              >
+                <Panel
+                  currentFile={currentFile}
+                  currentFilePath={currentFilePath}
+                  status={status}
+                  icons={icons}
+                  onToggleSearch={onToggleSearch}
+                  onShowDebugConsole={onShowDebugConsole}
+                  onClose={onClose}
+                  files={files}
+                  theme={theme}
+                  loadFileHistory={loadFileHistory}
+                />
+              </CSSTransition>
+            </>
+          )}
           <CSSTransition
-  in={!isSearchVisible}
-  timeout={250}
-  classNames="sidebar-transition"
-  mountOnEnter
-  unmountOnExit
->
-  <Panel
-  currentFile={currentFile}
-  currentFilePath={currentFilePath}
-  status={status}
-  icons={icons}
-  onToggleSearch={onToggleSearch}
-  onShowDebugConsole={onShowDebugConsole}
-  onClose={onClose}
-  files={files}
-  theme={theme}
-  loadFileHistory={loadFileHistory}
-  />
-</CSSTransition>
-          </>
-    )}
-          <CSSTransition
-  in={isSearchVisible}
-  timeout={250}
-  classNames="search-transition"
-  mountOnEnter
-  unmountOnExit
->
-<div className="search-wrapper">
-  <div className="search-wrapper-wrapper">
-    <Search
-      paragraphs={paragraphs}
-      onSelect={(index) => handleSearchSelect(index)}
-      metadata={metadata}
-      isVisible={isSearchVisible}
-      onClose={() => {
-        onToggleSearch(false);
-        onClose();
-      }}
-      icons={icons}
-      theme={theme}
-      isSidebarVisible={isVisible}
-    />
-  </div>
-</div>
-</CSSTransition>
+            in={isSearchVisible}
+            timeout={250}
+            classNames="search-transition"
+            mountOnEnter
+            unmountOnExit
+          >
+            <div className="search-wrapper">
+              <div className="search-wrapper-wrapper">
+                <Search
+                  paragraphs={paragraphs}
+                  onSelect={(index) => handleSearchSelect(index)}
+                  metadata={metadata}
+                  isVisible={isSearchVisible}
+                  onClose={() => {
+                    onToggleSearch(false);
+                    onClose();
+                  }}
+                  icons={icons}
+                  theme={theme}
+                  isSidebarVisible={isVisible}
+                />
+              </div>
+            </div>
+          </CSSTransition>
         </div>
       </div>
 

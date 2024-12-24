@@ -337,7 +337,7 @@
   }
   
   .contexify {
-    font-family: 'Prentendard Variable', sans-serif;
+    font-family: "Pretendard Variable", Pretendard, sans-serif;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     z-index: 1001 !important;
     min-width: 120px; /* 최소 폭 설정 */
@@ -354,23 +354,24 @@
   
   .contexify_itemContent {
     background: var(--bg-color) !important;
-    padding-right: 12px !important;
-    padding-left: 12px !important;
+    padding: 8px 12px !important;
     display: flex;
     align-items: center;
     gap: 8px;
-    white-space: nowrap; /* 텍스트 줄바꿈 방지 */
+    white-space: nowrap;
+    line-height: 1;
   }
   
   .contexify_itemContent img {
     width: 16px;
     height: 16px;
-    filter: var(--primary-color-filter)
+    filter: var(--primary-color-filter);
+    display: block;
   }
   
   .contexify_itemContent span {
     color: var(--text-color);
-    transform: translateY(2px);
+    line-height: 16px;
   }
   
   /* 기록 삭제 아이템만 빨간색으로 */

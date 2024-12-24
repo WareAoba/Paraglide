@@ -51,6 +51,7 @@ const ContentManager = {
         return;
       }
   
+      systemListener.setCurrentParagraphText(content);
       mainWindow?.webContents.send('notify-clipboard-change');
       systemListener.notifyInternalClipboardChange();
       clipboard.writeText(content);

@@ -310,56 +310,41 @@ const Search = forwardRef((props, ref) => {
   };
 
   const resultItemsRef = useRef([]);
-
+  const lastKeyPressTime = useRef(0);
+  
   const handleKeyDown = useCallback((e) => {
     if (!isVisible || !results.length) return;
-
-    switch (e.key) {
-      case 'ArrowDown':
-        e.preventDefault();
-        setPointer(prev => {
-          if (prev === results.length - 1) {
-            return -1;
-          }
-          const newPointer = prev + 1;
-          resultItemsRef.current[newPointer]?.scrollIntoView({
+    
+    const now = Date.now();
+    // 키 입력 간격이 너무 짧으면 무시 (100ms)
+    if (now - lastKeyPressTime.current < 100) return;
+    lastKeyPressTime.current = now;
+    
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      
+      const direction = e.key === 'ArrowDown' ? 1 : -1;
+      setPointer(prev => {
+        const nextPointer = prev + direction;
+        if (nextPointer >= results.length) return -1;
+        if (nextPointer < -1) return results.length - 1;
+        
+        if (nextPointer !== -1) {
+          resultItemsRef.current[nextPointer]?.scrollIntoView({
             behavior: 'smooth',
             block: 'nearest'
           });
-          return newPointer;
-        });
-        break;
-
-      case 'ArrowUp':
-        e.preventDefault();
-        setPointer(prev => {
-          if (prev === -1) {
-            const lastIndex = results.length - 1;
-            resultItemsRef.current[lastIndex]?.scrollIntoView({
-              behavior: 'smooth',
-              block: 'nearest'
-            });
-            return lastIndex;
-          }
-          if (prev === 0) {
-            return -1;
-          }
-          const newPointer = prev - 1;
-          resultItemsRef.current[newPointer]?.scrollIntoView({
-            behavior: 'smooth',
-            block: 'nearest'
-          });
-          return newPointer;
-        });
-        break;
-
-      case 'Enter':
-        e.preventDefault();
-        if (pointer >= 0) {
-          onSelect(results[pointer].index);
-          onClose();
         }
-        break;
+        
+        return nextPointer;
+      });
+    }
+  
+    // Enter 키 처리
+    if (e.key === 'Enter' && pointer >= 0) {
+      e.preventDefault();
+      onSelect(results[pointer].index);
+      onClose();
     }
   }, [isVisible, results, pointer, onSelect, onClose]);
 
@@ -388,13 +373,6 @@ const Search = forwardRef((props, ref) => {
   }, [isVisible]);
 
   useEffect(() => {
-    if (isVisible) {
-      window.addEventListener('keydown', handleKeyDown);
-      return () => window.removeEventListener('keydown', handleKeyDown);
-    }
-  }, [isVisible, handleKeyDown]);
-
-  useEffect(() => {
     setPointer(-1);
   }, [searchTerm, results, isVisible]);
 
@@ -416,6 +394,7 @@ const Search = forwardRef((props, ref) => {
             type="text"
             value={searchTerm}
             onChange={handleSearchChange}
+            onKeyDown={handleKeyDown}
             placeholder="검색어를 입력하세요"
           />
           {searchTerm && (

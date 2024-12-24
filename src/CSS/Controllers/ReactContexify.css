@@ -58,7 +58,7 @@
 .contexify .contexify_submenu {
   position: absolute;
   pointer-events: none;
-  transition: opacity 0.265s;
+  transition: opacity 0.2s;
   /* Initial submenu position */
   top: calc(-1 * var(--contexify-menu-negatePadding));
   left: 100%;
