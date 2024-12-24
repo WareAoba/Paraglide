@@ -27,6 +27,7 @@
  4. Display the **current paragraph in progress** with an overlay window and allow navigation between paragraphs.
  5. Save logs to restore the **last position** when reloading a previously processed file.
  6. Quickly **load previously worked files** within the app.
+ 7. **Search** feature to enhance work efficiency.
 
 ## Purpose of Development
 
@@ -37,49 +38,54 @@
 ## Project Overview
 ```
 📦 Paraglide
-├── 📂 public                                  # Static Resources
-│   ├── 📂 icons                               # App Icons
-│   └── 📂 UI_icons                            # UI Icons
-│   
-├── 📂 src                                     # Source Code
-│   ├── 📂 components                          # React Components
-│   │   ├── 📂 Views                           # Main Component View Modes
-│   │   │   ├── 📜 Console.js                  # Terminal Console
-│   │   │   ├── 📜 DragDropOverlay.js          # Drag & Drop Overlay
-│   │   │   ├── 📜 ListView.js                 # ListView Mode
-│   │   │   ├── 📜 Overview.js                 # Overview Mode
-│   │   │   └── 📜 Search.js                   # Search Overlay
-│   │   │
-│   │   ├── 📜 MainComponent.js                # Main Component
-│   │   ├── 📜 OverlayComponent.js             # Overlay Component
-│   │   ├── 📜 Settings.js                     # Settings Component
-│   │   └── 📜 Sidebar.js                      # Sidebar Component
-│   │
-│   ├── 📂 CSS # Stylesheets
-│   │   ├── 📂 Controllers                     # Global Styles for Settings Controllers
-│   │   ├── 📂 Views                           # Main Component View Modes
-│   │   │
-│   │   ├── 📜 App.css                         # Global Styles
-│   │   ├── 📜 MainComponent.css               # Main Component Styles
-│   │   ├── 📜 OverlayComponent.css            # Overlay Styles
-│   │   ├── 📜 Settings.css                    # Settings Styles
-│   │   └── 📜 Sidebar.css                     # Sidebar Styles
-│   │
-│   ├── 📂 store                               # Redux Store
-│   │   ├── 📂 slices                          # Redux Reducers
-│   │   ├── 📂 utils                           # Redux Processors
-│   │   └── 📜 store.js                        # Redux Store Entry Point
-│   │
-│   ├── 📜 App.js                              # React Entry Point
-│   ├── 📜 index.js                            # App Entry Point
-│   ├── 📜 main.js                             # Electron Main Process
-│   └── 📜 SystemListener.js                   # System Event Handler
+├── 📂 public                              # Static Resources
+│   ├── 📂 icons                           # App Icons
+│   └── 📂 UI_icons                        # UI Icons
 │
-├── 📜 forge.config.js                         # Electron Forge Configuration
-├── 📜 LICENSE                                 # License File
-├── 📜 package.json                            # Project Configuration
-├── 📜 README.md                               # Project Documentation
-└── 📜 README-EN.md                            # Project Documentation (English)
+├── 📂 src                                 # Source Code
+│   ├── 📂 components                      # React Components
+│   │   ├── 📂 sidebar                     # Sidebar Components
+│   │   │   ├── 📜 Panel.jsx               # Sidebar Info Panel
+│   │   │   └── 📜 Search.jsx              # Search Component
+│   │   │
+│   │   ├── 📂 Views                       # Main Component View Modes
+│   │   │   ├── 📜 Console.jsx             # Terminal Console
+│   │   │   ├── 📜 DragDropOverlay.js      # Drag & Drop Overlay
+│   │   │   ├── 📜 ListView.jsx            # ListView
+│   │   │   └── 📜 Overview.jsx            # Overview
+│   │   │
+│   │   ├── 📜 MainComponent.jsx           # Main Component
+│   │   ├── 📜 OverlayComponent.jsx        # Overlay Component
+│   │   ├── 📜 Settings.jsx                # Settings Component
+│   │   └── 📜 Sidebar.jsx                 # Sidebar Component
+│   │
+│   ├── 📂 CSS                             # Stylesheets
+│   │   ├── 📂 Controllers                 # Global Styles for Settings Controllers
+│   │   ├── 📂 Sidebar                     # Sidebar Component Styles
+│   │   ├── 📂 Views                       # Main Component View Modes
+│   │   │   
+│   │   ├── 📜 App.css                     # Global Styles
+│   │   ├── 📜 MainComponent.css           # Main Component Styles
+│   │   ├── 📜 OverlayComponent.css        # Overlay Styles
+│   │   ├── 📜 Settings.css                # Settings Styles
+│   │   └── 📜 Sidebar.js                  # Sidebar Styles
+│   │
+│   ├── 📂 store                           # Redux Store
+│   │   ├── 📂 slices                      # Redux Reducers
+│   │   ├── 📂 utils                       # Redux Processors
+│   │   └── 📜 store.js                    # Redux Store Entry Point
+│   │ 
+│   ├── 📜 App.jsx                         # React Entry Point
+│   ├── 📜 index.jsx                       # App Entry Point
+│   ├── 📜 main.js                         # Electron Main Process
+│   └── 📜 SystemListener.jsx              # System Event Handler
+│
+├── 📜 forge.config.js                     # Electron Forge Configuration
+├── 📜 LICENSE                             # License File
+├── 📜 package.json                        # Project Configuration
+├── 📜 README.md                           # Project Documentation
+├── 📜 README-EN.md                        # Project Documentation (English)
+└── 📜 vite.config.js                      # Vite Configuration
  ```
 
 ## Supported Platforms
@@ -163,10 +169,9 @@ Download the appropriate precompiled binary from the [Release Page](https://gith
  3. **Various Shortcuts Added**: The following shortcuts can be used in combination with the Ctrl (Cmd) key.
    - **O**: Open file
    - **F**: Open search window (only available when a file is loaded)
-   - **M**: Sidebar
    - **,** : Open settings window
 
- 4. **Internal Logic Improvements**: Various internal changes have been made.
+ 4. **Internal Logic Improvements**: Various internal changes have been made, including the adoption of Vite.
 
  5. Add Console Display: You can check internal massages the program sends.
 
@@ -182,12 +187,14 @@ Download the appropriate precompiled binary from the [Release Page](https://gith
  5. **Multilingual Support**: Planned to support English and Japanese first.
 
 ## Known Issues
-
- 1. Unexpected bugs may have occurred during logic modification. Please report any issues!
+ 1. There is a performance issue with initial launch speed of the compiled app on Windows.
+ This appears to be security-related and will be addressed in a future update.
+ 2. Unexpected bugs may have occurred during logic modification. Please report any issues!
 
 ## License
 
  **All uses are permitted except for direct sales.**
+ Feel free to use, modify, and redistribute this program as you wish!
 
  The majority of the code for this program was generated using **GitHub Copilot Chat**.
 
