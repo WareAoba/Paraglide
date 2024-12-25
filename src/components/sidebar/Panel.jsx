@@ -64,12 +64,26 @@ function Panel({
         await new Promise((resolve) => setTimeout(resolve, 200));
       }
       
-      await ipcRenderer.invoke('clear-log-files', filePath);
-      loadFileHistory();
+      const result = await ipcRenderer.invoke('clear-log-files', filePath);
+      if (!result.success) {
+        console.error('파일 기록 삭제 실패');
+      }
     } catch (error) {
       console.error('파일 기록 삭제 실패:', error);
     }
   };
+  
+  useEffect(() => {
+    const handleHistoryUpdate = (_, updatedHistory) => {
+      loadFileHistory();
+    };
+  
+    ipcRenderer.on('history-update', handleHistoryUpdate);
+  
+    return () => {
+      ipcRenderer.removeListener('history-update', handleHistoryUpdate);
+    };
+  }, [loadFileHistory]);
 
   const handleFileSelect = async (filePath) => {
     try {

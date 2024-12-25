@@ -366,6 +366,14 @@ const FileManager = {
         await this.saveLog({});
         console.log('[Main] 로그 파일 정리 성공');
       }
+
+      const updatedHistory = await this.getFileHistory();
+    BrowserWindow.getAllWindows().forEach(window => {
+      if (!window.isDestroyed()) {
+        window.webContents.send('history-update', updatedHistory);
+      }
+    });
+
       return { success: true };
     } catch (error) {
       console.error('[Main] 로그 정리 실패:', error);
@@ -490,46 +498,40 @@ const FileManager = {
       // 파일 확장자 검사
       const fileExtension = path.extname(filePath).toLowerCase();
       if (fileExtension !== '.txt') {
-        dialog.showMessageBoxSync(mainWindow, {
+        await dialog.showMessageBox(mainWindow, {
           type: 'warning',
           buttons: ['확인'],
-          defaultId: 1,
+          defaultId: 0,
           title: '파일 형식 오류',
           message: '지원하지 않는 파일 형식입니다.\n(.txt 파일만 지원됩니다)',
-          cancelId: 1,
-          noLink: true,
-          normalizeAccessKeys: true,
+          noLink: true
         });
         return { success: false };
       }
-      // content가 직접 제공되지 않은 경우 파일 존재 여부 확인
+
+      // 파일 존재 여부 확인
       if (!content) {
         try {
           await fs.access(filePath);
         } catch (error) {
           if (error.code === 'ENOENT') {
-            // 파일이 존재하지 않는 경우
-            dialog.showMessageBoxSync(mainWindow, {
+            await dialog.showMessageBox(mainWindow, {
               type: 'warning',
               buttons: ['확인'],
-              defaultId: 1,
+              defaultId: 0,
               title: '파일 열기 오류',
-              message: '파일이 존재하지 않습니다.\n 기록을 삭제합니다.',
-              cancelId: 1,
-              noLink: true, // 버튼을 링크 스타일로 표시하지 않음
-              normalizeAccessKeys: true, // 단축키 정규화
+              message: '파일이 존재하지 않습니다.\n기록을 삭제합니다.',
+              noLink: true
             });
-  
+
             // 로그에서 해당 파일 기록 삭제
             await this.clearLogs(filePath);
             const updatedHistory = await this.getFileHistory();
-            mainWindow?.webContents.send('state-update', {
-              ...globalState,
-              fileHistory: updatedHistory
-            });
+            mainWindow?.webContents.send('history-update', updatedHistory);
             
             return { success: false };
           }
+          throw error; // 다른 에러는 상위로 전파
         }
       }
 
@@ -698,6 +700,20 @@ if (content) {
 
     } catch (error) {
       console.error('[Main] 파일 열기 실패:', error);
+      
+      // 에러 발생 시 안전하게 메시지 표시
+      if (!mainWindow.isDestroyed()) {
+        await dialog.showMessageBox(mainWindow, {
+          type: 'error',
+          buttons: ['확인'],
+          defaultId: 0,
+          title: '오류',
+          message: '파일을 여는 중 오류가 발생했습니다.',
+          detail: error.message,
+          noLink: true
+        });
+      }
+      
       return { success: false };
     }
   },
