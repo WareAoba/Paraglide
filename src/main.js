@@ -76,14 +76,9 @@ const appPath = isDev ? path.resolve(__dirname, '..') : app.getAppPath();
 const FILE_PATHS = {
   config: path.join(os.homedir(), '.ParaglideConfigure.json'),
   log: path.join(os.homedir(), '.ParaglideParaLog.json'),
-  logos: {
-    light: isDev 
-      ? path.join(appPath, 'public', 'logo-light.png')
-      : path.join(process.resourcesPath, 'dist', 'logo-light.png'),
-    dark: isDev
-      ? path.join(appPath, 'public', 'logo-dark.png')
-      : path.join(process.resourcesPath, 'dist', 'logo-dark.png')
-  },
+  logos: isDev 
+    ? path.join(appPath, 'public', 'logo.png')
+    : path.join(process.resourcesPath, 'dist', 'logo.png'),
   titles: {
     light: isDev
       ? path.join(appPath, 'public', 'TitleLight.png')
@@ -1205,9 +1200,7 @@ const IPCManager = {
       let imagePath;
       
       if (type === 'logo') {
-        imagePath = effectiveMode === THEME.DARK ? 
-          FILE_PATHS.logos.dark : 
-          FILE_PATHS.logos.light;
+        imagePath = FILE_PATHS.logos;
       } else if (type === 'title') {
         imagePath = effectiveMode === THEME.DARK ? 
           FILE_PATHS.titles.dark : 
