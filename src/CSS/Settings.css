@@ -35,13 +35,9 @@
   border-radius: 12px;
   display: flex;
   flex-direction: column;
-<<<<<<< HEAD
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
-=======
   box-shadow:
   12px 24px 48px rgba(0, 0, 0, 0.1),
   12px 24px 48px rgba(0, 0, 0, 0.2);
->>>>>>> development
   padding: 32px;
   opacity: 0;
   transition: transform 0.3s ease,
@@ -90,23 +86,12 @@
   align-items: center;
   justify-content: space-between;
   margin-bottom: 20px;
-<<<<<<< HEAD
-  color: var(--text-color);
-=======
   color: var(--text-third);
->>>>>>> development
   font-size: 0.95em;
 }
 
 .segment-control {
   display: flex;
-<<<<<<< HEAD
-  background-color: var(--border-color);
-  padding: 2px; /* 4px에서 3px로 줄임 */
-  border-radius: 6px; /* 8px에서 6px로 줄임 */
-  width: 100%;
-  position: relative;
-=======
   padding: 2px;
   border-radius: 6px;
   width: 100%;
@@ -115,7 +100,6 @@
   box-shadow:
   inset 5px 5px 10px var(--container-shadow-up), 
   inset -5px -5px 10px var(--container-shadow-down);
->>>>>>> development
   height: 28px; /* 높이 명시적 지정 */
 }
 
@@ -156,11 +140,7 @@
   position: relative;
   z-index: 1;
   font-family: inherit;
-<<<<<<< HEAD
-  opacity: 0.2; /* 기본 상태는 흐리게 */
-=======
   opacity: 0.6; /* 기본 상태는 흐리게 */
->>>>>>> development
 }
 
 .segment-control button.active {
@@ -334,15 +314,11 @@ input:focus + .slider {
 
 .settings-button-group button.btn-primary {
   background-color: var(--primary-color);
-<<<<<<< HEAD
-  color: white;
-=======
   box-shadow:
   4px 4px 4px var(--container-shadow-up),
   -4px -4px 4px var(--container-shadow-down),
   inset 0 0 0 transparent, inset 0 0 0 transparent;
   color: var(--primary-text);
->>>>>>> development
   border: none;
 }
 
@@ -354,48 +330,11 @@ input:focus + .slider {
 }
 
 .settings-button-group button.btn-primary:hover {
-<<<<<<< HEAD
-  filter: brightness(1.1);
-}
-
-/* 다크모드 */
-[data-theme="dark"] .settings-modal {
-  background-color: rgba(0, 0, 0, 0.7);
-}
-
-[data-theme="dark"] .settings-content {
-  background-color: var(--dark-bg);
-  border: 1px solid var(--dark-border);
-}
-
-[data-theme="dark"] .settings-button-group {
-  background-color: none;
-  border-top-color: rgba(255, 255, 255, 0.1);
-}
-
-[data-theme="dark"] .settings-content h2,
-[data-theme="dark"] .settings-group h3,
-[data-theme="dark"] .settings-group label {
-  color: var(--dark-text);
-}
-
-[data-theme="dark"] .settings-button-group button {
-  background-color: var(--dark-bg);
-  color: var(--dark-text);
-  font-family: inherit;
-  border-color: rgba(255, 255, 255, 0.1);
-}
-
-[data-theme="dark"] .settings-button-group button.btn-primary {
-  background-color: var(--primary-color);
-  color: var(--dark-text);
-=======
   box-shadow:
   4px 4px 4px var(--container-shadow-up),
   -4px -4px 4px var(--container-shadow-down),
   inset 4px 4px 8px var(--primary-color-shadow-up),
   inset -4px -4px 8px var(--primary-color-shadow-down);
->>>>>>> development
 }
 
 /* 새로운 설정 그룹 스타일 추가 */
@@ -431,8 +370,6 @@ input:focus + .slider {
 .settings-group.danger-zone button:hover {
   background-color: var(--danger-color);
   color: white;
-<<<<<<< HEAD
-=======
 }
 
 .color-picker-container {
@@ -492,5 +429,4 @@ input:focus + .slider {
 .info-item {
   color: var(--text-color);
   opacity: 0.25;
->>>>>>> development
 }

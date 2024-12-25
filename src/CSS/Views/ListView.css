@@ -14,18 +14,7 @@
   padding-bottom: 0.5rem;
   border-bottom: 1px solid var(--border-color);
   color: var(--text-color);
-<<<<<<< HEAD
-  display: flex;
-  align-items: center;
-}
-
-/* 페이지 번호 없음 헤더 스타일 */
-.listview-header[data-no-page-number] {
-  font-style: italic;
-  color: color-mix(in srgb, var(--text-color) 25%, transparent);
-=======
   filter: brightness(0.8);
->>>>>>> development
 }
 
 .listview-section {
@@ -51,13 +40,10 @@
   border-radius: 4px;
 }
 
-<<<<<<< HEAD
-=======
 [data-theme="dark"] .listview-item {
   opacity: 0.4;
 }
 
->>>>>>> development
 /* 이동하는 배경 박스 */
 .listview-container:before {
     content: '';
@@ -89,14 +75,9 @@
 
 .listview-item.current {
   opacity: 1;
-<<<<<<< HEAD
-  color: white;
-  padding-left: 3.5rem;  /* transform 대신 padding으로 이동 효과 */
-=======
   color: var(--primary-text) !important;
   padding-left: 3.5rem; /* transform 대신 padding으로 이동 효과 */
   font-weight: 600;
->>>>>>> development
   z-index: 5;
 }
 

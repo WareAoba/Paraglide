@@ -5,13 +5,8 @@ const store = require('./store/store');
 const { TextProcessUtils } = require('./store/utils/TextProcessUtils');
 const { ConfigManager } = require('./store/utils/ConfigManager');
 const { textProcessActions } = require('./store/slices/textProcessSlice');
-<<<<<<< HEAD
-const { configActions } = require('./store/slices/configSlice');
-const { ConfigManager } = require('./store/utils/ConfigManager');
-=======
 const { configActions, THEME } = require('./store/slices/configSlice');
 const { logActions } = require('./store/slices/logSlice');
->>>>>>> development
 const fs = require('fs').promises;
 const os = require('os');
 const crypto = require('crypto');
@@ -81,15 +76,6 @@ const appPath = isDev ? path.resolve(__dirname, '..') : app.getAppPath();
 const FILE_PATHS = {
   config: path.join(os.homedir(), '.ParaglideConfigure.json'),
   log: path.join(os.homedir(), '.ParaglideParaLog.json'),
-<<<<<<< HEAD
-  logos: {
-    light: isDev 
-      ? path.join(appPath, 'public', 'logo-light.png')
-      : path.join(process.resourcesPath, './app.asar.unpacked/public', 'logo-light.png'),
-    dark: isDev
-      ? path.join(appPath, 'public', 'logo-dark.png')
-      : path.join(process.resourcesPath, './app.asar.unpacked/public', 'logo-dark.png')
-=======
   logos: isDev 
     ? path.join(appPath, 'public', 'logo.png')
     : path.join(process.resourcesPath, 'dist', 'logo.png'),
@@ -100,7 +86,6 @@ const FILE_PATHS = {
     dark: isDev
       ? path.join(appPath, 'public', 'TitleDark.png')
       : path.join(process.resourcesPath, 'dist', 'TitleDark.png')
->>>>>>> development
   },
   icon: isDev
     ? path.join(appPath, 'public', 'icons', 'mac', 'icon.icns')
@@ -498,11 +483,6 @@ const FileManager = {
 
   async openFile(filePath, content = null) {
     try {
-<<<<<<< HEAD
-      const fileContent = content || await fs.readFile(filePath, 'utf8');
-      if (!fileContent) {
-        console.error('파일 내용 없음:', filePath);
-=======
       // 파일 확장자 검사
       const fileExtension = path.extname(filePath).toLowerCase();
       if (fileExtension !== '.txt') {
@@ -601,7 +581,6 @@ if (content) {
           noLink: true,
           normalizeAccessKeys: true,
         });
->>>>>>> development
         return { success: false };
       }
   
@@ -685,9 +664,6 @@ if (content) {
   
       return { success: true };
     } catch (error) {
-<<<<<<< HEAD
-      console.error('파일 열기 실패:', error);
-=======
       console.error('[Main] 파일 열기 실패:', error);
       
       // 에러 발생 시 안전하게 메시지 표시
@@ -703,7 +679,6 @@ if (content) {
         });
       }
       
->>>>>>> development
       return { success: false };
     }
   },
@@ -1151,11 +1126,6 @@ const IPCManager = {
 
   async handleGetLogoPath() {
     try {
-<<<<<<< HEAD
-      const logoPath = nativeTheme.shouldUseDarkColors ?
-        FILE_PATHS.logos.dark : FILE_PATHS.logos.light;
-      const imageBuffer = await fs.readFile(logoPath);
-=======
       const effectiveMode = ThemeManager.getEffectiveMode();
       let imagePath;
       
@@ -1170,7 +1140,6 @@ const IPCManager = {
       }
   
       const imageBuffer = await fs.readFile(imagePath);
->>>>>>> development
       return `data:image/png;base64,${imageBuffer.toString('base64')}`;
     } catch (error) {
       console.error('로고 로드 실패:', error);
@@ -1408,9 +1377,6 @@ const IPCManager = {
     logWindow.webContents.on('did-finish-load', () => {
       logWindow.webContents.send('update-logs', logMessages.join(''));
     });
-<<<<<<< HEAD
-
-=======
   
     // React 라우팅
     const consoleUrl = isDev
@@ -1425,7 +1391,6 @@ const IPCManager = {
     logWindow.loadURL(consoleUrl);
   
     // 구독 해제 추가
->>>>>>> development
     logWindow.on('closed', () => {
       logWindow = null;
     });

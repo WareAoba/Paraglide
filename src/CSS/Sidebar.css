@@ -10,11 +10,6 @@
   background-color: var(--bg-color);
   border-right: none;
   border-radius: 0 16px 16px 0;  /* 우측 상/하단만 둥글게 */
-<<<<<<< HEAD
-  transition: transform var(--transition-default);
-  z-index: 1000;
-  overflow-y: auto;
-=======
   transform: translateX(-100%);
   will-change: transform;
   transition: all 0.3s ease;
@@ -58,7 +53,6 @@
   0 0 0 transparent,
   40px 0 80px rgba(0, 0, 0, 0.1);
   opacity: 1;
->>>>>>> development
 }
 
 /* 오버레이 */
@@ -88,8 +82,6 @@
   transform: translateX(0);
 }
 
-<<<<<<< HEAD
-=======
 .sidebar-icon-button {
   height: var(--btn-iconsize);
   width: var(--btn-iconsize);
@@ -124,7 +116,6 @@
   display: block; /* 이미지 기본 여백 제거 */
 }
 
->>>>>>> development
 .sidebar-close-button {
   position: relative;  /* absolute 제거 */
   background: none;
@@ -136,44 +127,18 @@
   align-items: center;
   justify-content: center;
   border-radius: 15%;
-<<<<<<< HEAD
-=======
   transition: all 0.3s ease;
->>>>>>> development
   width: var(--btn-size);
   height: var(--btn-size);
   margin: 0;
 }
 
-<<<<<<< HEAD
-.sidebar-icon-button {
-  height: var(--btn-iconsize);
-  width: var(--btn-iconsize);
-  filter: var(--icon-filter);
-  border-radius: 15%;
-  transition: opacity 0.2s;
-}
-
-.sidebar-icon-button:hover {
-  background-color: var(--hover-bg);
-  opacity: 0.7;
-}
-
-/* 사이드바 헤더 */
-.sidebar-header {
-  padding: 45px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  position: relative;
-=======
 .sidebar-close-button:hover {
   scale: 1.1;
   background: var(--bg-gradient);
   box-shadow:
   2px 2px 6px var(--container-shadow-up),
   -2px -2px 6px var(--container-shadow-down);
->>>>>>> development
 }
 
 .sidebar-close-button img:hover {
@@ -194,116 +159,6 @@
   font-weight: 500;
 }
 
-<<<<<<< HEAD
-.sidebar-header h3 {
-  color: var(--text-color);
-  margin: 0;
-  font-size: 1.75em;
-  font-weight: 500;
-  text-align: left;
-}
-
-/* 사이드바 컨텐츠 */
-.sidebar-content {
-  padding: 15px;
-}
-
-/* 파일 목록 */
-.file-list {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-/* 파일 항목 */
-.file-item {
-  padding: 12px 20px;
-  border-radius: 6px;
-  background-color: var(--bg-secondary, var(--bg-color));
-  border: none;
-  cursor: pointer;
-  transition: all var(--transition-default);
-  margin-bottom: 8px;
-  position: relative;
-}
-
-.file-item:hover {
-  background-color: var(--hover-bg);
-  transform: translateY(-1px);
-}
-
-/* 파일 메인 정보 */
-.file-main-info {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding-right: 0;  /* 우측 패딩 제거 */
-  margin-bottom: 4px;
-}
-
-/* 파일명 */
-.file-name {
-  font-size: 1.1em;
-  color: var(--text-color);
-  font-weight: 500;
-  flex: 1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* 페이지 번호 */
-.file-page {
-  font-size: 0.9em;
-  color: var(--primary-color);
-  margin-left: auto;  /* 우측 정렬 */
-  font-weight: 500;   /* 가독성을 위해 약간 두껍게 */
-}
-
-/* 삭제 버튼 */
-.btn-remove {
-  margin-left: 8px;  /* 페이지 번호와의 간격 */
-  background: none;
-  border: none;
-  color: var(--text-secondary);
-  padding: 4px 8px;
-  cursor: pointer;
-  opacity: 0;
-  transition: opacity 0.2s;
-}
-
-.file-item:hover .btn-remove {
-  opacity: 1;
-}
-
-/* 파일 부가 정보 */
-.file-sub-info {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.85em;
-  color: var(--text-secondary);
-}
-
-/* 파일 경로 */
-.file-path {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 70%;
-}
-
-/* 파일 날짜 */
-.file-date {
-  white-space: nowrap;
-}
-
-/* 빈 메시지 */
-.empty-message {
-  text-align: center;
-  color: var(--text-secondary);
-  padding: var(--spacing-md);
-  font-size: 0.9em;
-=======
 .sidebar-section h3 {
   color: var(--text-third);
   font-size: 1.1em;
@@ -318,5 +173,4 @@
   flex-direction: column;
   overflow: hidden; /* visible에서 hidden으로 변경 */
   position: relative; /* 추가: 내부 요소의 기준점 */
->>>>>>> development
 }

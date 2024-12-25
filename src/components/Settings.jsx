@@ -1,21 +1,30 @@
 // src/components/Settings.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { HexColorPicker } from 'react-colorful';
 import '../CSS/Settings.css';
 import '../CSS/Controllers/Checkbox.css';
 import '../CSS/Controllers/RangeSlider.css';
+import '../CSS/Controllers/Dropdown.css';
 const { ipcRenderer } = window.require('electron');
 
-function Settings({ isVisible, onClose, isDarkMode }) {
+function Settings({ isVisible, onClose, icons }) {
   const [settings, setSettings] = useState({
     windowOpacity: 1.0,      // 창 전체 투명도
     contentOpacity: 0.8,     // 배경 투명도
     overlayFixed: false,
     loadLastOverlayBounds: true,
-    accentColor: '#007bff',
+    theme: {
+      mode: 'auto',     // 테마 모드 추가
+      accentColor: '#007bff'
+    },
     processMode: 'paragraph',  // 기본 텍스트 처리 방식
     viewMode: 'overview'
   });
   const [originalSettings, setOriginalSettings] = useState(null);
+  const [showThemeDropdown, setShowThemeDropdown] = useState(false);
+  const dropdownRef = useRef(null);
+  const [showColorPicker, setShowColorPicker] = useState(false);
+  const colorPickerRef = useRef(null);
 
   // 초기 설정 로드
   useEffect(() => {
@@ -66,9 +75,12 @@ function Settings({ isVisible, onClose, isDarkMode }) {
         contentOpacity: newSettings.contentOpacity,
         overlayFixed: newSettings.overlayFixed,
         loadLastOverlayBounds: newSettings.loadLastOverlayBounds,
-        accentColor: newSettings.accentColor,
         processMode: newSettings.processMode,
-        viewMode: newSettings.viewMode
+        viewMode: newSettings.viewMode,
+        theme: {
+          mode: newSettings.theme.mode,
+          accentColor: newSettings.theme.accentColor
+        }
       });
 
       if (newSettings.viewMode && newSettings.viewMode !== settings.viewMode) {
@@ -76,10 +88,10 @@ function Settings({ isVisible, onClose, isDarkMode }) {
       }
   
       if (!result) {
-        console.error('설정 적용 실패');
+        console.error('[Settings] 설정 적용 실패');
       }
     } catch (error) {
-      console.error('설정 변경 중 오류:', error);
+      console.error('[Settings] 설정 변경 중 오류:', error);
     }
   };
 
@@ -114,6 +126,53 @@ function Settings({ isVisible, onClose, isDarkMode }) {
     }
   };
 
+  useEffect(() => {
+    // 설정이 로드되면 슬라이더 값 초기화
+    const windowOpacitySlider = document.querySelector('input[type="range"][value="' + (settings.windowOpacity * 100) + '"]');
+    const contentOpacitySlider = document.querySelector('input[type="range"][value="' + (settings.contentOpacity * 100) + '"]');
+  
+    if (windowOpacitySlider) {
+      windowOpacitySlider.style.setProperty('--slider-value', `${settings.windowOpacity * 100}%`);
+    }
+    if (contentOpacitySlider) {
+      contentOpacitySlider.style.setProperty('--slider-value', `${settings.contentOpacity * 100}%`);
+    }
+  }, [settings.windowOpacity, settings.contentOpacity]);
+
+  useEffect(() => {
+    function handleDropdownOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        
+        setShowThemeDropdown(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handleDropdownOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleDropdownOutside);
+    };
+  }, []);
+
+  useEffect(() => {
+    function handleColorpickerOutside(event) {
+      if (colorPickerRef.current && !colorPickerRef.current.contains(event.target)) {
+        setShowColorPicker(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handleColorpickerOutside);
+    return () => document.removeEventListener('mousedown', handleColorpickerOutside);
+  }, []);
+
+  const handleThemeItemClick = async (mode) => {
+    // setTimeout 제거하고 즉시 실행하도록 변경
+    await handleSettingChange({
+      ...settings,
+      theme: { ...settings.theme, mode }
+    });
+    setShowThemeDropdown(false);
+  };
+
   const handleViewModeChange = async () => {
     try {
       const currentMode = settings.viewMode;
@@ -146,9 +205,6 @@ function Settings({ isVisible, onClose, isDarkMode }) {
 
   return (
     <div className={`settings-modal ${isVisible ? 'visible' : ''}`}
-<<<<<<< HEAD:src/components/Settings.js
-      data-theme={isDarkMode ? 'dark' : 'light'}
-=======
       data-theme={settings.theme.mode}
       onClick={(e) => {
         if (typeof e.target.className === 'string' && e.target.className.includes('settings-modal')) {
@@ -158,30 +214,11 @@ function Settings({ isVisible, onClose, isDarkMode }) {
           onClose();
         }
       }}
->>>>>>> development:src/components/Settings.jsx
     >
       <div className="settings-content">
         <h2>설정</h2>
         
         <div className="settings-scroll-area">
-<<<<<<< HEAD:src/components/Settings.js
-        <div className="settings-group">
-          {/* 텍스트 처리 방식 그룹 */}
-          <div className="segment-control" data-mode={settings.processMode}>
-            <button 
-              className={settings.processMode === 'paragraph' ? 'active' : ''}
-              onClick={() => handleProcessModeChange('paragraph')}
-            >
-              단락 단위로
-            </button>
-            <button 
-              className={settings.processMode === 'line' ? 'active' : ''}
-              onClick={() => handleProcessModeChange('line')}
-            >
-              줄 단위로
-            </button>
-          </div>
-=======
           <div className="settings-group">
             {/* 텍스트 처리 방식 그룹 */}
             <h3>텍스트 처리 방식</h3>
@@ -199,7 +236,6 @@ function Settings({ isVisible, onClose, isDarkMode }) {
                 줄 단위로
               </button>
             </div>
->>>>>>> development:src/components/Settings.jsx
           </div>
 
           <div className="settings-group">
@@ -231,12 +267,6 @@ function Settings({ isVisible, onClose, isDarkMode }) {
                 max="100"
                 step="1"
                 value={settings.windowOpacity * 100}
-<<<<<<< HEAD:src/components/Settings.js
-                onChange={e => handleSettingChange({
-                  ...settings, 
-                  windowOpacity: parseFloat(e.target.value) / 100
-                })}
-=======
                 onChange={e => {
                   const value = parseFloat(e.target.value);
                   e.target.style.setProperty('--slider-value', `${value}%`);
@@ -245,7 +275,6 @@ function Settings({ isVisible, onClose, isDarkMode }) {
                     windowOpacity: value / 100
                   });
                 }}
->>>>>>> development:src/components/Settings.jsx
               />
             </div>
             <div className="slider-wrapper">
@@ -256,12 +285,6 @@ function Settings({ isVisible, onClose, isDarkMode }) {
                 max="100"
                 step="1"
                 value={settings.contentOpacity * 100}
-<<<<<<< HEAD:src/components/Settings.js
-                onChange={e => handleSettingChange({
-                  ...settings, 
-                  contentOpacity: parseFloat(e.target.value) / 100
-                })}
-=======
                 onChange={e => {
                   const value = e.target.value;
                   // CSS 변수 업데이트
@@ -272,7 +295,6 @@ function Settings({ isVisible, onClose, isDarkMode }) {
                     contentOpacity: parseFloat(value) / 100
                   });
                 }}
->>>>>>> development:src/components/Settings.jsx
               />
             </div>
             <div className="checkbox-wrapper">
@@ -320,16 +342,6 @@ function Settings({ isVisible, onClose, isDarkMode }) {
             <h3>앱 설정</h3>
             <label>
               강조색
-<<<<<<< HEAD:src/components/Settings.js
-              <input 
-                type="color"
-                value={settings.accentColor}
-                onChange={e => handleSettingChange({
-                  ...settings, 
-                  accentColor: e.target.value
-                })}
-              />
-=======
               <div className="color-picker-container" ref={colorPickerRef}>
                 <div 
                   className="color-preview"
@@ -448,7 +460,6 @@ function Settings({ isVisible, onClose, isDarkMode }) {
                   </div>
                 </div>
               </div>
->>>>>>> development:src/components/Settings.jsx
             </label>
           </div>
 
@@ -459,8 +470,6 @@ function Settings({ isVisible, onClose, isDarkMode }) {
               로그 파일 정리
             </button>
           </div>
-<<<<<<< HEAD:src/components/Settings.js
-=======
 
           {/* 정보 그룹 */}
           <div className="settings-group">
@@ -471,7 +480,6 @@ function Settings({ isVisible, onClose, isDarkMode }) {
             <p>Contribute.. Rinna, Latte</p>
             </div>
           </div>
->>>>>>> development:src/components/Settings.jsx
         </div>
         
         <div className="settings-button-group">

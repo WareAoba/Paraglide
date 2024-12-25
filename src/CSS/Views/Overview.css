@@ -10,12 +10,6 @@
   border-radius: 15px;
   background-color: var(--bg-color);
   box-sizing: border-box; /* Include padding and border in width calculation */
-<<<<<<< HEAD
-  overflow-y: auto;
-  max-height: 380px;
-  width: 94vw;
-  padding: var(--spacing-md);
-=======
   overflow-y: hidden;
   max-height: calc(60vh - 10px);
   width: min(90vw, 900px);  /* 뷰포트의 90% 또는 최대 800px */
@@ -24,21 +18,14 @@
   box-shadow: 
   10px 10px 20px var(--container-shadow-up),
   -10px -10px 20px var(--container-shadow-down);
->>>>>>> development
 }
 
 .paragraph-header {
   display: grid;
-<<<<<<< HEAD
-  grid-template-columns: 1fr 1.2fr 1fr;
-  background-color: transparent;
-  border: none;
-=======
   grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
   border-radius: 6px;
   align-content: center;
   height: 40px;
->>>>>>> development
   padding: var(--spacing-xs), var(--spacing-xs), 0px, var(--spacing-xs);  /* 패딩 감소 */
   gap: var(--spacing-sm);
 }
@@ -64,13 +51,8 @@
   flex: 1 1 auto;
   height: 10px;
   width: 100%;
-<<<<<<< HEAD
-  max-height: 250px;
-  overflow-y: auto;
-=======
   overflow-y: visible;
   justify-content: space-between;
->>>>>>> development
   gap: var(--spacing-md);  /* 단락 간 간격 확대 */
   margin-top: var(--spacing-sm);
   padding-top: var(--spacing-sm);
@@ -115,22 +97,6 @@
   line-height: 1.6;  /* 행간 조정 */
   text-align: left;
   text-overflow: ellipsis;
-<<<<<<< HEAD
-  user-select: none;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);  /* 미묘한 그림자 */
-  overflow: hidden;         /* 넘치는 텍스트 숨김 */
-  display: -webkit-box;    /* 웹킷 기반 다중 라인 ellipsis */
-  -webkit-box-orient: vertical;
-  word-break: break-word;  /* 긴 단어 처리 */
-}
-
-[data-theme="dark"] .paragraph-current,
-.paragraph-prev,
-.paragraph-next  {
-  color: var(--text-color);
-}
-
-=======
   font-family: inherit;
   white-space: pre-wrap;      /* 원본 개행 유지 */
   word-break: keep-all;       /* 단어 중간 분리 방지 */
@@ -160,18 +126,9 @@
   transform: translateY(0);  /* 클릭 시 원래 위치로 되돌리기 */
 }
 
->>>>>>> development
 .paragraph-current {
   background-color: var(--bg-color);
   border: 2px solid var(--primary-color);  
-<<<<<<< HEAD
-  transition: all 0.3s ease;  /* 부드러운 전환 */
-}
-
-.paragraph-prev, .paragraph-next {
-  opacity: 0.8;
-  transition: all 0.3s ease;  /* 부드러운 전환 */
-=======
   font-weight: 700;
 }
 
@@ -185,7 +142,6 @@
 .paragraph-next {
   opacity: 0.7;
   font-weight: 400;
->>>>>>> development
 }
 
 [data-theme="dark"] .paragraph-prev,

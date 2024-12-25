@@ -8,13 +8,6 @@
 :root {
   /* 색상 */
   --primary-color: #007bff;
-<<<<<<< HEAD
-  --text-color: #333;
-  --text-secondary: #666;
-  --bg-color: rgba(255, 255, 255, 0.9);
-  --dark-text: #f5f5f5;
-  --dark-bg: #1e1e1e;
-=======
   --primary-text: #333;
   --primary-filter: invert(19%) sepia(0%) saturate(2%) hue-rotate(82deg) brightness(96%) contrast(96%);
   --primary-color-filter: invert(19%) sepia(0%) saturate(2%) hue-rotate(82deg) brightness(96%) contrast(96%);
@@ -25,15 +18,11 @@
   --bg-gradient: linear-gradient(145deg, rgba(232, 235, 242, 0.6), rgba(242, 243, 247, 0.6));
   --bg-gradient-none: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0));
   --container-bg: #F2F3F7;
->>>>>>> development
   --border-color: rgba(0, 0, 0, 0.45);
   --hover-bg: rgba(0, 0, 0, 0.1);
   --overlay-bg: rgba(255, 255, 255, 1.0);
-<<<<<<< HEAD
-=======
   --pass-color: #007bff;
   --pass-filter: invert(35%) sepia(97%) saturate(4192%) hue-rotate(201deg) brightness(106%) contrast(103%);
->>>>>>> development
   --danger-color: #dc3545;
   --danger-filter: invert(33%) sepia(60%) saturate(4976%) hue-rotate(337deg) brightness(90%) contrast(90%);
   --success-color: #28a745;
@@ -43,16 +32,12 @@
   --bg-rgb: 255, 255, 255;
   --active-color: rgba(188, 188, 188, 1.0);
   --btn-bg: rgba(255, 255, 255, 0.025);
-<<<<<<< HEAD
-  --icon-filter: brightness(0) saturate(100%) invert(37%) sepia(1%) saturate(0%) hue-rotate(19deg) brightness(96%) contrast(93%)
-=======
   --icon-filter: brightness(0) saturate(100%) invert(37%) sepia(1%) saturate(0%) hue-rotate(19deg) brightness(96%) contrast(93%);
   --container-shadow-up: #e2e5ed;
   --container-shadow-down: #fff;
   --primary-color-shadow-up: #007bffaf;
   --primary-color-shadow-up: #007bffaf;
   --logo-filter: none;
->>>>>>> development
 
   /* 크기 */
   --container-width: 100vw;
@@ -76,36 +61,23 @@
 
 /* 다크모드 */
 [data-theme="dark"] {
-<<<<<<< HEAD
-  --primary-color: #0066cc;
-  --text-color: #f5f5f5;
-  --text-secondary: #ccc;
-  --bg-color: #1e1e1e;
-=======
   --text-color: #ececec;
   --text-secondary: #606060;
   --text-third: #bababa;
   --bg-color: #181818;
   --bg-gradient: linear-gradient(145deg, #101010, #202020);
->>>>>>> development
   --bg-rgb: 30, 30, 30;
   --bg-secondary: #181818;
   --border-color: rgba(255, 255, 255, 0.5);
-<<<<<<< HEAD
-=======
   --container-bg: #181818;
->>>>>>> development
   --hover-bg: rgba(255, 255, 255, 0.05);
   --overlay-bg: rgba(32, 32, 32, 1.0);
   --active-color: rgba(48, 48, 48, 1.0);
   --btn-bg: rgba(0, 0, 0, 0.025);
   --icon-filter: brightness(0) saturate(100%) invert(61%) sepia(2%) saturate(0%) hue-rotate(327deg) brightness(95%) contrast(84%);
-<<<<<<< HEAD
-=======
   --container-shadow-up: #101010;
   --container-shadow-down: rgba(255, 255, 255, 0.05);
 
->>>>>>> development
   
   
   /* 버튼 관련 */
@@ -132,11 +104,6 @@ body,
               color var(--transition-default);
 }
 
-<<<<<<< HEAD
-/* 스크롤바 제거 */
-::-webkit-scrollbar {
-  display: none;
-=======
 img {
   -webkit-user-drag: none;
   user-select: none;
@@ -145,7 +112,6 @@ img {
   -ms-user-select: none;
   image-rendering: -webkit-optimize-contrast;
   -webkit-font-smoothing: antialiased !important;
->>>>>>> development
 }
 
 * {

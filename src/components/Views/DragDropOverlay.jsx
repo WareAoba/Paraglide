@@ -1,6 +1,6 @@
 // DragDropOverlay.js
 import React, { useEffect, useState } from 'react';
-import '../CSS/DragDropOverlay.css';
+import '../../CSS/Views/DragDropOverlay.css';
 const { ipcRenderer } = window.require('electron');
 
 function DragDropOverlay({ isVisible, theme }) {
