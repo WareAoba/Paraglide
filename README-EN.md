@@ -11,7 +11,6 @@
 ![Comparison](https://github.com/user-attachments/assets/7a51a03d-a1bb-4598-aefa-8fd1ec112a88)
 ![Paste](https://github.com/user-attachments/assets/2d0b1ec6-81f7-4e3c-a32d-c3207a16cba8)
 ![Shortcut](https://github.com/user-attachments/assets/c40498b3-9945-4137-a20e-fec5a4978d1e)
-![Sidebar](https://github.com/user-attachments/assets/2d5b2dab-b787-4ad0-b3da-d9ba4a2a7f2b)
 
 ## Key Features
 
