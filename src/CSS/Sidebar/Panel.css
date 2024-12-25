@@ -1,0 +1,388 @@
+/* 사이드바 컨텐츠 */
+.panel-container {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .current-file-info-header {
+    display: flex;
+    min-width: 0; /* 추가 */
+    flex-direction: column;
+  }
+  
+  .current-file-info {
+    padding: 16px;
+    background: var(--bg-gradient);
+    box-shadow:
+    5px 5px 10px var(--container-shadow-up),
+    -5px -5px 10px var(--container-shadow-down),
+    inset 0 0 0 transparent, inset 0 0 0 transparent;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;  /* flex-start에서 center로 변경 */
+    gap: 16px;
+    color: var(--text-color);
+    position: relative; /* 추가 */
+  }
+  
+  .current-file-icon {
+    width: 60px;
+    height: 60px;
+    filter: var(--primary-color-filter);
+    opacity: 0.8;
+    flex-shrink: 0;
+    position: relative; /* 추가 */
+    z-index: 1; /* 추가 */
+  }
+  
+  .current-file-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+    text-align: right;
+    min-width: 0;
+    max-width: calc(100% - 76px); /* 아이콘 너비(60px) + gap(16px) */
+  }
+  
+  .current-file-name {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--text-color);
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: right;
+    direction: ltr;
+    position: relative;
+    display: inline-block; /* 추가 */
+  }
+  
+  /* 호버 시 애니메이션을 위한 컨테이너 */
+  .current-file-name-container {
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    text-align: right;
+  }
+  
+  .current-file-name-wrapper {
+    display: inline-block;
+    position: relative;
+    white-space: nowrap;
+    text-align: right;
+    transform: translateX(0);
+    transition: transform 1s ease-out;
+  }
+  
+  .current-file-name-container[data-needs-animation="true"] .current-file-name-wrapper {
+    transition: transform 0.3s ease-out;
+  }
+  
+  .current-file-name-container[data-needs-animation="true"]:hover .current-file-name-wrapper {
+    transform: translateX(calc(var(--container-width) - 100%));
+    transition: transform 4s ease-in-out;
+    transition-delay: 0.5s;
+  }
+  
+  .current-page-info {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-color);
+  }
+  
+  .current-file-path {
+    font-size: 13px;
+    color: var(--text-secondary);
+    direction: rtl;
+    text-align: right;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    width: 100%;
+  }
+  
+  /* 컨트롤 섹션 업데이트 */
+  .sidebar-section.controls {
+    margin-top:10px;  
+    margin-bottom:25px;
+    background: transparent;
+    border-radius: 8px;
+    padding: 0px;
+  }
+  
+  .control-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr); /* 2열 그리드 */
+    gap: 14px;
+  }
+  
+  /* 메인의 menu-item 스타일을 control-button으로 통합 */
+  .control-button {
+    margin: 0px;
+    display: flex;
+    align-items: center;
+    justify-content: center; /* 추가: 가로축 중앙 정렬 */
+    width: 100%;
+    padding: 12px;
+    border: none;
+    background: var(--container-bg);
+    box-shadow:
+    5px 5px 10px var(--container-shadow-up),
+    -5px -5px 10px var(--container-shadow-down),
+    inset 0 0 0 transparent, inset 0 0 0 transparent;
+    color: var(--text-color);
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    font-family: inherit;
+  }
+  
+  .control-button:hover {
+    box-shadow:
+    0 0 0 transparent, 0 0 0 transparent,
+    inset 3px 3px 8px var(--container-shadow-up),
+    inset -3px -3px 4px var(--container-shadow-down);
+  }
+  
+  .control-button:disabled {
+    opacity: 0.5;
+    box-shadow: inset 3px 3px 8px var(--container-shadow-up),
+    inset -3px -3px 4px var(--container-shadow-down);
+    cursor: default;
+  }
+  
+  .control-button img {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    margin-right: 20px;
+    filter: var(--icon-filter);
+  }
+  
+  .control-button img[data-action="open"] {
+    filter: var(--primary-color-filter);
+  }
+  
+  .control-button img[data-action="edit"] {
+    filter: var(--success-filter);
+  }
+  
+  .control-button span {
+    color: var(--text-third);
+    flex-grow: 0;
+    font-size: 16px;
+    font-weight: 500;
+    text-align: center; /* left에서 center로 변경 */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  /* 파일 목록 */
+  .recent-file-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    color: var(--text-color);
+    padding: 10px; /* 그림자를 위한 여유 공간 */
+    margin: -10px; /* 패딩만큼 네거티브 마진으로 상쇄 */
+    overflow-y: auto; /* 스크롤 허용 */
+    overflow-x: hidden; /* 가로 스크롤 방지 */
+  }
+  
+  /* 파일 항목 */
+  .recent-file-item {
+    padding: 12px 20px;
+    border-radius: 6px;
+    background-color: var(--container-bg);
+    box-shadow:
+      5px 5px 10px var(--container-shadow-up),
+      -5px -5px 10px var(--container-shadow-down),
+      inset 0 0 0 transparent, inset 0 0 0 transparent;
+    margin: 0; /* 마진 초기화 */
+    border: none;
+    cursor: pointer;
+    transition:
+      transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+      opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+      box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    flex-shrink: 0; /* 높이 고정만 필요 */
+    will-change: transform, opacity, height;
+  }
+  
+  .recent-file-item.removing {
+    animation: slideOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
+    pointer-events: none;
+  }
+  
+  @keyframes slideOut {
+    0% {
+      opacity: 1;
+      transform: translateX(0);
+    }
+    100% {
+      opacity: 0;
+      transform: translateX(-100%);
+    }
+  }
+  
+  .recent-file-item:last-child {
+    height: fit-content !important;
+    min-height: fit-content !important;
+    max-height: fit-content !important;
+    flex: 0 0 auto !important;
+  }
+  
+  .recent-file-item:hover {
+    box-shadow: 
+    0 0 0 transparent, 0 0 0 transparent, 
+    inset 3px 3px 8px var(--container-shadow-up),
+    inset -3px -3px 8px var(--container-shadow-down);
+  }
+  
+  /* 파일 메인 정보 */
+  .recent-file-main-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-right: 0;  /* 우측 패딩 제거 */
+    margin-bottom: 4px;
+  }
+  
+  /* 파일명 */
+  .recent-file-name {
+    font-size:1em;
+    color: var(--text-color);
+    font-weight: 500;
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  /* 페이지 번호 */
+  .recent-file-page {
+    font-size: 0.9em;
+    color: var(--primary-color);
+    margin-left: auto;  /* 우측 정렬 */
+    font-weight: 500;   /* 가독성을 위해 약간 두껍게 */
+  }
+  
+  /* 삭제 버튼 */
+  .btn-remove {
+    margin-left: 8px;  /* 페이지 번호와의 간격 */
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    padding: 4px 8px;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  
+  .recent-file-item:hover .btn-remove {
+    opacity: 1;
+  }
+  
+  /* 파일 부가 정보 */
+  .recent-file-sub-info {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85em;
+    color: var(--text-secondary);
+  }
+  
+  .sidebar-section.recent-files {
+    flex: 1;
+    min-height: 0; /* 필수: flex item 오버플로우 허용 */
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  /* 파일 경로 */
+  .recent-file-path {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 65%;
+  }
+  
+  /* 파일 날짜 */
+  .recent-file-date {
+    white-space: nowrap;
+  }
+  
+  /* 텍스트 렌더링 최적화 */
+  .recent-file-name,.recent-file-page,.recent-file-path,.recent-file-date {
+    display: inline-block;
+    transform: translateZ(0);  /* GPU 가속 활성화 */
+  }
+  
+  /* 빈 메시지 */
+  .empty-message {
+    flex: 0 0 auto; /* 크기 고정 */
+    text-align: center;
+    color: var(--text-secondary);
+    padding: var(--spacing-md);
+    font-size: 0.9em;
+  }
+  
+  .contexify {
+    font-family: "Pretendard Variable", Pretendard, sans-serif;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    z-index: 1001 !important;
+    min-width: 120px; /* 최소 폭 설정 */
+    width: auto; /* 자동 폭 조정 */
+  }
+  
+  .contexify_item {
+    background: var(--bg-color) !important;
+  }
+  
+  .contexify_submenu {
+    background: var(--bg-color) !important;
+  }
+  
+  .contexify_itemContent {
+    background: var(--bg-color) !important;
+    padding: 8px 12px !important;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+    line-height: 1;
+  }
+  
+  .contexify_itemContent img {
+    width: 16px;
+    height: 16px;
+    filter: var(--primary-color-filter);
+    display: block;
+  }
+  
+  .contexify_itemContent span {
+    color: var(--text-color);
+    line-height: 16px;
+  }
+  
+  /* 기록 삭제 아이템만 빨간색으로 */
+  [data-action="delete"] span {
+    color: var(--danger-color);
+  }
+
+  [data-action="delete"] img {
+    filter: var(--danger-filter);
+  }
+  
+  .contexify_item:hover > .contexify_itemContent {
+    background: var(--hover-color) !important;
+  }

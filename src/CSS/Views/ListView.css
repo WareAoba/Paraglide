@@ -14,6 +14,7 @@
   padding-bottom: 0.5rem;
   border-bottom: 1px solid var(--border-color);
   color: var(--text-color);
+<<<<<<< HEAD
   display: flex;
   align-items: center;
 }
@@ -22,6 +23,9 @@
 .listview-header[data-no-page-number] {
   font-style: italic;
   color: color-mix(in srgb, var(--text-color) 25%, transparent);
+=======
+  filter: brightness(0.8);
+>>>>>>> development
 }
 
 .listview-section {
@@ -47,6 +51,13 @@
   border-radius: 4px;
 }
 
+<<<<<<< HEAD
+=======
+[data-theme="dark"] .listview-item {
+  opacity: 0.4;
+}
+
+>>>>>>> development
 /* 이동하는 배경 박스 */
 .listview-container:before {
     content: '';
@@ -78,18 +89,20 @@
 
 .listview-item.current {
   opacity: 1;
+<<<<<<< HEAD
   color: white;
   padding-left: 3.5rem;  /* transform 대신 padding으로 이동 효과 */
+=======
+  color: var(--primary-text) !important;
+  padding-left: 3.5rem; /* transform 대신 padding으로 이동 효과 */
+  font-weight: 600;
+>>>>>>> development
   z-index: 5;
 }
 
 .listview-item:hover:not(.current) {
   opacity: 0.7;
   padding-left: 1.5rem;  /* transform 대신 padding으로 이동 효과 */
-}
-
-[data-theme="dark"] .listview-item {
-  color: var(--dark-text);
 }
 
 .complete-work-button {
@@ -105,9 +118,16 @@
   border-radius: 8px;
   cursor: pointer;
   font-size: 1em;
-  transition: filter 0.2s ease;
+  box-shadow:
+  8px 8px 10px var(--container-shadow-up),
+  -8px -8px 10px var(--container-shadow-down),
+  inset 0 0 0 transparent, inset 0 0 0 transparent;
+  transition: all 0.3s ease;
 }
 
 .complete-work-button:hover {
-  filter: brightness(1.1);
+  box-shadow:
+  0 0 0 transparent, 0 0 0 transparent,
+  inset 4px 4px 8px rgba(0, 0, 0, 0.2),
+  inset -4px -4px 8px rgba(0, 0, 0, 0.1);
 }

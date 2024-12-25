@@ -1,26 +1,62 @@
 :root {
+<<<<<<< HEAD
   --button-group-height: 100px;
+=======
+  --button-group-height: 0px;
+>>>>>>> development
   --content-padding: 20px;
   --container-spacing: var(--spacing-md);
 }
 
-/* 다크모드 대응 */
-[data-theme="dark"] .welcome-screen {
-  background-color: var(--bg-color);
-  color: var(--text-color);
+.transition-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
 }
 
-[data-theme="dark"] .welcome-screen .title {
-  color: var(--text-color);
+.content-area {
+  position: relative;
+  width: 100%;
+  height: calc(100vh - var(--button-group-height));
+  padding-top: var(--button-group-height);
+  display: flex;
+  justify-content: center; /* 가로 중앙 정렬 */
+  overflow: hidden;
+}
+
+.view-container {
+  position: relative;
+  width: 100%;
+  max-width: 1200px; /* 최대 너비 설정 */
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* 중앙 정렬 */
+}
+
+.view-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* 중앙 정렬 */
+  padding: 0 var(--content-padding);
+  box-sizing: border-box;
 }
 
 .welcome-screen {
     display: flex;
     flex-direction: column;
     align-items: center;
+<<<<<<< HEAD
     /* justify-content: center; */
     min-height: 100vh;
     padding: var(--spacing-md);
+=======
+    justify-content: center;
+    min-height: 96vh;
+>>>>>>> development
     gap: var(--spacing-xl);
     background-color: var(--bg-color);
     color: var(--text-color);
@@ -40,12 +76,36 @@
 .welcome-screen .logo {
     width: auto;
     height: auto;
-    max-width: 300px;
-    max-height: 300px;
+    max-width: 330px;
+    max-height: 330px;
+    will-change: transform, opacity; /*계단현상 줄임*/
     object-fit: contain;
+<<<<<<< HEAD
     cursor: default; /* 커서 기본값으로 변경 */
 }
 
+=======
+    filter: var(--primary-color-filter) drop-shadow(-8px -8px 2px #e2e5ed) drop-shadow(8px 8px 2px #fff);
+    cursor: default; /* 커서 기본값으로 변경 */
+}
+
+.welcome-screen .title-image {
+  max-width: 300px;
+  height: auto;
+  margin-bottom: 20px;
+  filter: drop-shadow(4px 4px 2px #e2e5ed) drop-shadow(-4px -4px 2px #fff);
+}
+
+[data-theme="dark"] .welcome-screen .logo {
+  filter: var(--primary-color-filter) drop-shadow(-8px -8px 2px #161616) drop-shadow(8px 8px 2px rgba(255,255,255,0.06));
+}
+
+
+[data-theme="dark"] .welcome-screen .title-image {
+  filter: drop-shadow(4px 4px 2px #161616) drop-shadow(-4px -4px 2px rgba(255,255,255,0.06));
+}
+
+>>>>>>> development
 .welcome-screen .title {
     font-size: 2.5rem;
     font-weight: bold; /* 700에서 500으로 감소 */
@@ -53,6 +113,7 @@
     margin: 0;
     text-align: center;
     letter-spacing: -0.5px;
+    
 }
 
 .welcome-screen .button-container {
@@ -61,7 +122,6 @@
     align-items: center;
     gap: var(--spacing-xl);
     padding: var(--spacing-sm);
-    /* margin-top: var(--spacing-xl); */
 }
 
   .welcome-screen .btn-primary {
@@ -72,14 +132,24 @@
     font-weight: 500;
     font-family: inherit;
     background-color: var(--primary-color);
+<<<<<<< HEAD
     color: #fff;
+=======
+    color: var(--primary-text);
+>>>>>>> development
     border: none;
     border-radius: 6px;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease-out;
+    box-shadow:
+    5px 5px 5px var(--container-shadow-up),
+    -5px -5px 5px var(--container-shadow-down),
+    inset 0 0 0 transparent, inset 0 0 0 transparent;
 }
 
+
 .welcome-screen .btn-primary:hover {
+<<<<<<< HEAD
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
@@ -103,10 +173,42 @@
     max-width: 800px;
     filter: var(--icon-filter);
     gap: var(--spacing-xs);
+=======
+
+  box-shadow:
+  5px 5px 5px var(--container-shadow-up),
+  -5px -5px 5px var(--container-shadow-down),
+  inset 10px 10px 20px rgba(37, 37, 37, 0.5),
+  inset -10px -10px 20px rgb(255, 255, 255, 0.1);
 }
 
-[data-theme="dark"] .button-group-controls {
-    filter: var(--icon-filter);
+.welcome-screen .icon-primary {
+    width: 24px;
+    height: 24px;
+    filter: var(--primary-filter);
+}
+
+.main-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* 중앙 정렬 추가 */
+  padding: 20px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.button-group-controls{
+  position: fixed; /* 고정 위치 */
+  top: var(--spacing-md); /* 상단 여백 */
+  left: var(--spacing-md); /* 좌측 여백 */
+  z-index: 100; /* 다른 요소들보다 위에 표시 */
+  width: 100%;
+  display: flex;
+  gap: var(--spacing-xs);
+>>>>>>> development
 }
 
 .button-group-controls .btn-icon {
@@ -119,14 +221,42 @@
     align-items: center;
     justify-content: center;
     border-radius: 15%;
+<<<<<<< HEAD
+=======
+    transition: all 0.3s ease;
+>>>>>>> development
     width: var(--btn-size); 
     height: var(--btn-size);
     margin: 0;
 }
 
+<<<<<<< HEAD
 .button-group-controls .btn-icon:hover {
   background-color: var(--hover-bg); 
+=======
+.button-group-controls .btn-icon img {
+  filter: var(--icon-filter); /* 아이콘에만 필터 적용 */
+>>>>>>> development
 }
+
+.button-group-controls .btn-icon:hover{
+  scale: 1.1;
+  box-shadow:
+  2px 2px 6px var(--container-shadow-up),
+  -2px -2px 6px var(--container-shadow-down);
+  background: var(--bg-gradient);
+}
+.button-group-controls .btn-icon:hover img{
+  filter: var(--primary-color-filter);
+  opacity: 0.9;
+}
+
+.button-group-controls .btn-icon:active{
+  box-shadow:
+  -2px -2px 5px var(--container-shadow-up),
+  2px 2px 5px var(--container-shadow-down);
+}
+
 
 .button-group-controls .btn-icon img[alt="Settings Icon"] {
   transition: transform 0.2s ease;
@@ -142,11 +272,27 @@
 }
 
 .main-container .page-number {
+<<<<<<< HEAD
     font-size: 2.1em;  
     text-align: left;
     font-weight: 700; 
     color: var(--text-color);
     margin-left: var(--spacing-sm);
+=======
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  font-size: 2.1em;
+  text-align: center;
+  font-weight: 700;
+  color: var(--text-third);
+  margin: 0;
+  margin-top: 80px;
+  padding-bottom: 20px;
+  z-index: 50;
+  width: 100%;
+  max-width: 900px;
+>>>>>>> development
 }
 
 .sidebar.visible {

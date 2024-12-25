@@ -11,7 +11,6 @@
 ![Comparison](https://github.com/user-attachments/assets/7a51a03d-a1bb-4598-aefa-8fd1ec112a88)
 ![Paste](https://github.com/user-attachments/assets/2d0b1ec6-81f7-4e3c-a32d-c3207a16cba8)
 ![Shortcut](https://github.com/user-attachments/assets/c40498b3-9945-4137-a20e-fec5a4978d1e)
-![Sidebar](https://github.com/user-attachments/assets/2d5b2dab-b787-4ad0-b3da-d9ba4a2a7f2b)
 
 ## Key Features
 
@@ -22,10 +21,12 @@
      - **Shift + Alt (Opt) + Arrow Keys (←→)**: Navigate to the previous/next page.
    - **Shift + Arrow Keys (↑↓)**: Pause/Resume the program.
      - **Shift + Alt (Opt) + Arrow Key (↑)**: Toggle overlay.
+   - and, there are also many other **in-app shortcuts**.
  3. Process text based on **paragraph** or **line** depending on the style of the .TXT file.
  4. Display the **current paragraph in progress** with an overlay window and allow navigation between paragraphs.
  5. Save logs to restore the **last position** when reloading a previously processed file.
  6. Quickly **load previously worked files** within the app.
+ 7. **Search** feature to enhance work efficiency.
 
 ## Purpose of Development
 
@@ -36,46 +37,54 @@
 ## Project Overview
 ```
 📦 Paraglide
-├── 📂 public                             # Static Resources
-│   ├── 📂 icons                          # App Icons
-│   └── 📂 UI_icons                       # UI Icons
-│   
-├── 📂 src                                # Source Code
-│   ├── 📂 components                     # React Components
-│   │   ├── 📂 Views                      # Main Component View Modes
-│   │   │   ├── 📜 ListView.js            # List View
-│   │   │   └── 📜 Overview.js            # Overview
-│   │   ├── 📜 MainComponent.js           # Main Component
-│   │   ├── 📜 OverlayComponent.js        # Overlay Component
-│   │   ├── 📜 Settings.js                # Settings Component
-│   │   └── 📜 Sidebar.js                 # Sidebar Component
-│   │
-│   ├── 📂 CSS # Stylesheets
-│   │   ├── 📂 Controllers                # Global Styles for Settings Controllers
-│   │   ├── 📂 Views                      # Main Component View Modes
-│   │   │   ├── 📜 ListView.css           # List View Styles
-│   │   │   └── 📜 Overview.css           # Overview Styles
-│   │   ├── 📜 App.css                    # Global Styles
-│   │   ├── 📜 MainComponent.css          # Main Component Styles
-│   │   ├── 📜 OverlayComponent.css       # Overlay Styles
-│   │   ├── 📜 Settings.css               # Settings Styles
-│   │   └── 📜 Sidebar.css                # Sidebar Styles
-│   │
-│   ├── 📂 store                          # Redux Store
-│   │   ├── 📂 slices                     # Redux Reducers
-│   │   ├── 📂 utils                      # Processors
-│   │   └── 📜 store.js                   # Redux Store Entry Point
-│   │
-│   ├── 📜 App.js                         # React Entry Point
-│   ├── 📜 index.js                       # App Entry Point
-│   ├── 📜 main.js                        # Electron Main Process
-│   └── 📜 SystemListener.js              # System Event Handler
+├── 📂 public                              # Static Resources
+│   ├── 📂 icons                           # App Icons
+│   └── 📂 UI_icons                        # UI Icons
 │
-├── 📜 forge.config.js                    # Electron Forge Configuration
-├── 📜 LICENSE                            # License File
-├── 📜 package.json                       # Project Configuration
-├── 📜 README.md                          # Project Documentation
-└── 📜 README-EN.md                       # Project Documentation (English)
+├── 📂 src                                 # Source Code
+│   ├── 📂 components                      # React Components
+│   │   ├── 📂 sidebar                     # Sidebar Components
+│   │   │   ├── 📜 Panel.jsx               # Sidebar Info Panel
+│   │   │   └── 📜 Search.jsx              # Search Component
+│   │   │
+│   │   ├── 📂 Views                       # Main Component View Modes
+│   │   │   ├── 📜 Console.jsx             # Terminal Console
+│   │   │   ├── 📜 DragDropOverlay.js      # Drag & Drop Overlay
+│   │   │   ├── 📜 ListView.jsx            # ListView
+│   │   │   └── 📜 Overview.jsx            # Overview
+│   │   │
+│   │   ├── 📜 MainComponent.jsx           # Main Component
+│   │   ├── 📜 OverlayComponent.jsx        # Overlay Component
+│   │   ├── 📜 Settings.jsx                # Settings Component
+│   │   └── 📜 Sidebar.jsx                 # Sidebar Component
+│   │
+│   ├── 📂 CSS                             # Stylesheets
+│   │   ├── 📂 Controllers                 # Global Styles for Settings Controllers
+│   │   ├── 📂 Sidebar                     # Sidebar Component Styles
+│   │   ├── 📂 Views                       # Main Component View Modes
+│   │   │   
+│   │   ├── 📜 App.css                     # Global Styles
+│   │   ├── 📜 MainComponent.css           # Main Component Styles
+│   │   ├── 📜 OverlayComponent.css        # Overlay Styles
+│   │   ├── 📜 Settings.css                # Settings Styles
+│   │   └── 📜 Sidebar.js                  # Sidebar Styles
+│   │
+│   ├── 📂 store                           # Redux Store
+│   │   ├── 📂 slices                      # Redux Reducers
+│   │   ├── 📂 utils                       # Redux Processors
+│   │   └── 📜 store.js                    # Redux Store Entry Point
+│   │ 
+│   ├── 📜 App.jsx                         # React Entry Point
+│   ├── 📜 index.jsx                       # App Entry Point
+│   ├── 📜 main.js                         # Electron Main Process
+│   └── 📜 SystemListener.jsx              # System Event Handler
+│
+├── 📜 forge.config.js                     # Electron Forge Configuration
+├── 📜 LICENSE                             # License File
+├── 📜 package.json                        # Project Configuration
+├── 📜 README.md                           # Project Documentation
+├── 📜 README-EN.md                        # Project Documentation (English)
+└── 📜 vite.config.js                      # Vite Configuration
  ```
 
 ## Supported Platforms
@@ -145,34 +154,46 @@ Download the appropriate precompiled binary from the [Release Page](https://gith
 
 
 ## Recent Updates
- ### Latest Release: 0.2.0beta
+
+ 1. **UI Overhaul**: Redesigned with a mix of Material and Neumorphism design. Additionally, various UI animations have been added.
+   - The **Sidebar** functionality has been greatly enhanced.
+   - The highlight color feature has been enabled in the settings.
+   - You can directly select the app theme in the settings.
+
+ 2. **Search Function Added**: Currently supports Korean the best, at least for now.
+   - Supports initial consonant search, partial match search, and exact match search(Korean Only).
+   - Highlight colors vary depending on the search type.
+   - You can move the pointer and select using the keyboard.
+
+ 3. **Various Shortcuts Added**: The following shortcuts can be used in combination with the Ctrl (Cmd) key.
+   - **O**: Open file
+   - **F**: Open search window (only available when a file is loaded)
+   - **,** : Open settings window
+
+ 4. **Internal Logic Improvements**: Various internal changes have been made, including the adoption of Vite.
+
+ 5. Add Console Display: You can check internal massages the program sends.
 
 
- 1. **Line Mode**: Added a mode to process text on a line-by-line basis instead of by paragraphs.
- 2. **List View**: Added a mode that allows viewing all paragraphs by scrolling instead of showing previous/current/next paragraphs.
- 3. **Page Number Logic** Improvements:
-     - Extended regex for page number detection.
-     - Detect page numbers attached to paragraphs.
-     - Fixed bugs related to empty pages.
-4. **Redux** introduced.
-5. **Drag & Drop** added.
+
 
 ## Features in Development
 
- 1. Search Function: Search text/paragraphs and jump to the desired paragraph.
- 2. Photoshop Mode: Automatically input text layer creation using Photoshop API.
- 3. Click-to-Jump in the overlay window.
- 4. UI Icons: From pause/resume buttons to future buttons.
- 5. User Guide: Plan to write a detailed manual for the program.
- 6. File Editing: Simple modifications like renaming files or editing paragraph content.
- 7. Multilingual Support: Planned to support English and Japanese first.
+ 1. **Photoshop Mode**: Automatically input text layer creation using Photoshop API.
+ 2. **built-in Text Editor**: Planned to be equipped with convenient features for tasks like translation work.
+ 3. **Overlay refactoring**: Planning to significantly improve functionality.
+ 4. **User Guide**: Plan to write a detailed manual for the program.
+ 5. **Multilingual Support**: Planned to support English and Japanese first.
 
 ## Known Issues
-
- 1. Overlay layout misalignment: All paragraphs should have equal spacing, but the gaps between previous/current and current/next are unusually wide. I'm currently unsure how to fix this.
+ 1. There is a performance issue with initial launch speed of the compiled app on Windows.
+ This appears to be security-related and will be addressed in a future update.
  2. Unexpected bugs may have occurred during logic modification. Please report any issues!
 
 ## License
+
+ **All uses are permitted except for direct sales.**
+ Feel free to use, modify, and redistribute this program as you wish!
 
  The majority of the code for this program was generated using **GitHub Copilot Chat**.
 

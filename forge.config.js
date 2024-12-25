@@ -7,10 +7,24 @@ module.exports = {
   packagerConfig: {
     name: "Paraglide",
     executableName: "Paraglide",
+    win32metadata: {
+      CompanyName: "WareAoba",
+      FileDescription: "Paraglide",
+      OriginalFilename: "Paraglide.exe",
+      ProductName: "Paraglide",
+      InternalName: "Paraglide",
+      requestedExecutionLevel: 'asInvoker',
+      manifestVersion: '1.0.0.0'
+    },
+    signAndEditExecutable: true,
+    certificateFile: process.env.WINDOWS_CODESIGN_FILE,
+    certificatePassword: process.env.WINDOWS_CODESIGN_PASSWORD,
     asar: {
       unpack: "**/{node_modules/node-global-key-listener,public}/**/*",
-      compression: 'maximum'
+      compression: 'normal',
+      smartUnpack: true
     },
+    dir: './',
     icon: process.platform === 'darwin' 
     ? path.resolve(__dirname, 'public/icons/mac/icon.icns')
     : path.resolve(__dirname, 'public/icons/win/icon.ico'),
@@ -80,15 +94,18 @@ module.exports = {
         schemes: ["paraglide"]
       }],  
     files: [
-      "build/**/*",
+      "dist/**/*",
       "src/main.js",
-      "src/SystemListener.js",
+      "src/SystemListener.jsx",
       "package.json"
     ],
     directories: {
       output: 'out',
-      buildResources: 'public'
-    }
+      buildResources: 'assets'  // 리소스 디렉토리
+    },
+    extraResource: [
+      "./dist"  // Vite 빌드 출력을 리소스로 포함
+    ]
   },
 
 
@@ -108,7 +125,10 @@ module.exports = {
       config: {
         // Windows 설정
         options: {
-          icon: path.resolve(__dirname, 'public/icons/win/icon.ico')
+          icon: path.resolve(__dirname, 'public/icons/win/icon.ico'),
+          certificateFile: process.env.WINDOWS_CODESIGN_FILE,
+          certificatePassword: process.env.WINDOWS_CODESIGN_PASSWORD,
+          signWithParams: '/tr http://timestamp.digicert.com /td sha256 /fd sha256'
         }
       }
     },

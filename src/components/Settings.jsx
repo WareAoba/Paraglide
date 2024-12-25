@@ -146,12 +146,25 @@ function Settings({ isVisible, onClose, isDarkMode }) {
 
   return (
     <div className={`settings-modal ${isVisible ? 'visible' : ''}`}
+<<<<<<< HEAD:src/components/Settings.js
       data-theme={isDarkMode ? 'dark' : 'light'}
+=======
+      data-theme={settings.theme.mode}
+      onClick={(e) => {
+        if (typeof e.target.className === 'string' && e.target.className.includes('settings-modal')) {
+          onClose();
+        }
+        if (e.target.classList && e.target.classList.contains('settings-modal')) {
+          onClose();
+        }
+      }}
+>>>>>>> development:src/components/Settings.jsx
     >
       <div className="settings-content">
         <h2>설정</h2>
         
         <div className="settings-scroll-area">
+<<<<<<< HEAD:src/components/Settings.js
         <div className="settings-group">
           {/* 텍스트 처리 방식 그룹 */}
           <div className="segment-control" data-mode={settings.processMode}>
@@ -168,6 +181,25 @@ function Settings({ isVisible, onClose, isDarkMode }) {
               줄 단위로
             </button>
           </div>
+=======
+          <div className="settings-group">
+            {/* 텍스트 처리 방식 그룹 */}
+            <h3>텍스트 처리 방식</h3>
+            <div className="segment-control" data-mode={settings.processMode}>
+              <button 
+                className={settings.processMode === 'paragraph' ? 'active' : ''}
+                onClick={() => handleProcessModeChange('paragraph')}
+              >
+                단락 단위로
+              </button>
+              <button 
+                className={settings.processMode === 'line' ? 'active' : ''}
+                onClick={() => handleProcessModeChange('line')}
+              >
+                줄 단위로
+              </button>
+            </div>
+>>>>>>> development:src/components/Settings.jsx
           </div>
 
           <div className="settings-group">
@@ -199,10 +231,21 @@ function Settings({ isVisible, onClose, isDarkMode }) {
                 max="100"
                 step="1"
                 value={settings.windowOpacity * 100}
+<<<<<<< HEAD:src/components/Settings.js
                 onChange={e => handleSettingChange({
                   ...settings, 
                   windowOpacity: parseFloat(e.target.value) / 100
                 })}
+=======
+                onChange={e => {
+                  const value = parseFloat(e.target.value);
+                  e.target.style.setProperty('--slider-value', `${value}%`);
+                  handleSettingChange({
+                    ...settings, 
+                    windowOpacity: value / 100
+                  });
+                }}
+>>>>>>> development:src/components/Settings.jsx
               />
             </div>
             <div className="slider-wrapper">
@@ -213,10 +256,23 @@ function Settings({ isVisible, onClose, isDarkMode }) {
                 max="100"
                 step="1"
                 value={settings.contentOpacity * 100}
+<<<<<<< HEAD:src/components/Settings.js
                 onChange={e => handleSettingChange({
                   ...settings, 
                   contentOpacity: parseFloat(e.target.value) / 100
                 })}
+=======
+                onChange={e => {
+                  const value = e.target.value;
+                  // CSS 변수 업데이트
+                  e.target.style.setProperty('--slider-value', `${value}%`);
+                  // 기존 설정 업데이트
+                  handleSettingChange({
+                    ...settings, 
+                    contentOpacity: parseFloat(value) / 100
+                  });
+                }}
+>>>>>>> development:src/components/Settings.jsx
               />
             </div>
             <div className="checkbox-wrapper">
@@ -264,6 +320,7 @@ function Settings({ isVisible, onClose, isDarkMode }) {
             <h3>앱 설정</h3>
             <label>
               강조색
+<<<<<<< HEAD:src/components/Settings.js
               <input 
                 type="color"
                 value={settings.accentColor}
@@ -272,6 +329,126 @@ function Settings({ isVisible, onClose, isDarkMode }) {
                   accentColor: e.target.value
                 })}
               />
+=======
+              <div className="color-picker-container" ref={colorPickerRef}>
+                <div 
+                  className="color-preview"
+                  onClick={() => setShowColorPicker(!showColorPicker)}
+                  style={{ 
+                    backgroundColor: settings.theme.accentColor,
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '4px',
+                    border: '2px solid var(--border-color)',
+                    cursor: 'pointer'
+                  }}
+                />
+                <div className={`color-picker-popup ${showColorPicker ? 'visible' : ''}`}>
+                  <HexColorPicker
+                    color={settings.theme.accentColor}
+                    onChange={(color) => {
+                      handleSettingChange({
+                        ...settings,
+                        theme: {
+                          ...settings.theme,
+                          accentColor: color
+                        }
+                      });
+                    }}
+                  />
+                  <div className="color-presets">
+                    {[
+                      '#007bff',
+                      '#dc3545',
+                      '#28a745',
+                      '#ffc107',
+                      '#17a2b8',
+                      '#6f42c1'
+                    ].map(color => (
+                      <div
+                        key={color}
+                        className="color-preset"
+                        style={{
+                          backgroundColor: color,
+                          width: '24px',
+                          height: '24px',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          margin: '4px'
+                        }}
+                        onClick={() => {
+                          handleSettingChange({
+                            ...settings,
+                            theme: {
+                              ...settings.theme,
+                              accentColor: color
+                            }
+                          });
+                          setShowColorPicker(false);
+                        }}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </label>
+            <label className="settings-label">
+              테마
+              <div className="dropdown-wrapper" ref={dropdownRef}>
+                <button 
+                  className="dropdown-button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowThemeDropdown(!showThemeDropdown);
+                  }}
+                >
+                  <img 
+                    src={
+                      settings.theme.mode === 'auto' ? icons?.themeAuto :
+                      settings.theme.mode === 'light' ? icons?.themeLight : 
+                      icons?.themeDark
+                    } 
+                    alt="" 
+                    className="dropdown-icon" 
+                  />
+                  {settings.theme.mode === 'auto' ? '자동' :
+                  settings.theme.mode === 'light' ? '라이트' : '다크'}
+                  <svg width="10" height="6" viewBox="0 0 10 6">
+                    <path 
+                      d="M1 1L5 5L9 1" 
+                      stroke="currentColor" 
+                      strokeWidth="1.5" 
+                      fill="none"
+                    />
+                  </svg>
+                </button>
+                <div className={`dropdown-menu ${showThemeDropdown ? 'show' : ''}`}>
+                  <div
+                    className={`dropdown-item ${settings.theme.mode === 'auto' ? 'active' : ''}`}
+                    onClick={() => handleThemeItemClick('auto')}
+                  >
+                    <img src={icons?.themeAuto} alt="자동" className="dropdown-icon" />
+                    자동
+                  </div>
+
+                  <div
+                    className={`dropdown-item ${settings.theme.mode === 'light' ? 'active' : ''}`}
+                    onClick={() => handleThemeItemClick('light')}
+                  >
+                    <img src={icons?.themeLight} alt="라이트" className="dropdown-icon" />
+                    라이트
+                  </div>
+
+                  <div
+                    className={`dropdown-item ${settings.theme.mode === 'dark' ? 'active' : ''}`}
+                    onClick={() => handleThemeItemClick('dark')}
+                  >
+                    <img src={icons?.themeDark} alt="다크" className="dropdown-icon" />
+                    다크
+                  </div>
+                </div>
+              </div>
+>>>>>>> development:src/components/Settings.jsx
             </label>
           </div>
 
@@ -282,6 +459,19 @@ function Settings({ isVisible, onClose, isDarkMode }) {
               로그 파일 정리
             </button>
           </div>
+<<<<<<< HEAD:src/components/Settings.js
+=======
+
+          {/* 정보 그룹 */}
+          <div className="settings-group">
+            <h3>정보</h3>
+            <div className="info-item">
+            <p>Paraglide 0.3.0 beta</p>
+            <p>Made by WareAoba</p>
+            <p>Contribute.. Rinna, Latte</p>
+            </div>
+          </div>
+>>>>>>> development:src/components/Settings.jsx
         </div>
         
         <div className="settings-button-group">

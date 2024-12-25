@@ -35,7 +35,13 @@
   border-radius: 12px;
   display: flex;
   flex-direction: column;
+<<<<<<< HEAD
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
+=======
+  box-shadow:
+  12px 24px 48px rgba(0, 0, 0, 0.1),
+  12px 24px 48px rgba(0, 0, 0, 0.2);
+>>>>>>> development
   padding: 32px;
   opacity: 0;
   transition: transform 0.3s ease,
@@ -65,13 +71,11 @@
 .settings-group {
   margin-bottom: 36px;
   padding-bottom: 28px;
-  border-bottom: 1px solid var(--border-color);
 }
 
 .settings-group:last-child {
   margin-bottom: 0;
   padding-bottom: 0;
-  border-bottom: none;
 }
 
 .settings-group h3 {
@@ -86,17 +90,32 @@
   align-items: center;
   justify-content: space-between;
   margin-bottom: 20px;
+<<<<<<< HEAD
   color: var(--text-color);
+=======
+  color: var(--text-third);
+>>>>>>> development
   font-size: 0.95em;
 }
 
 .segment-control {
   display: flex;
+<<<<<<< HEAD
   background-color: var(--border-color);
   padding: 2px; /* 4px에서 3px로 줄임 */
   border-radius: 6px; /* 8px에서 6px로 줄임 */
   width: 100%;
   position: relative;
+=======
+  padding: 2px;
+  border-radius: 6px;
+  width: 100%;
+  position: relative;
+  color: inherit;
+  box-shadow:
+  inset 5px 5px 10px var(--container-shadow-up), 
+  inset -5px -5px 10px var(--container-shadow-down);
+>>>>>>> development
   height: 28px; /* 높이 명시적 지정 */
 }
 
@@ -137,23 +156,19 @@
   position: relative;
   z-index: 1;
   font-family: inherit;
+<<<<<<< HEAD
   opacity: 0.2; /* 기본 상태는 흐리게 */
+=======
+  opacity: 0.6; /* 기본 상태는 흐리게 */
+>>>>>>> development
 }
 
 .segment-control button.active {
   opacity: 1; /* 활성화된 버튼만 선명하게 */
-  color: white;
+  color: var(--primary-text);
   transition: all 0.3s ease; 
 }
 
-/* 다크모드 수정 */
-[data-theme="dark"] .segment-control {
-  background-color: rgba(0, 0, 0, 0.3); /* 배경보다 어둡게 */
-}
-
-[data-theme="dark"] .segment-control::before {
-  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-}
 
 .switch {
   position: relative;
@@ -250,7 +265,7 @@ input:focus + .slider {
 
 /* 라벨 텍스트 스타일 추가 */
 .slider-wrapper span {
-  color: var(--text-color); /* 테마 색상 적용 */
+  color: var(--text-third); /* 테마 색상 적용 */
   font-size: 0.95em; /* settings-group label과 동일한 크기 */
   flex-shrink: 0; /* 텍스트 줄바꿈 방지 */
 }
@@ -299,33 +314,47 @@ input:focus + .slider {
   gap: 12px;
   padding: 8px 20px;       /* 좌우 여백 증가 */
   background-color: none;
-  border-top: 1px solid var(--border-color);
   border-radius: 0 0 12px 12px;
   z-index: 1;                /* 스크롤 컨텐츠 위에 표시 */
 }
 
 .settings-button-group button {
-  padding: 8px 20px;
+  padding: 8px 30px;
   border-radius: 6px;
-  border: 1px solid var(--border-color);
   background-color: var(--bg-color);
   color: var(--text-color);
   font-size: 0.95em;
   cursor: pointer;
+  border: none;
+  box-shadow: 4px 4px 8px var(--container-shadow-up),
+              -4px -4px 8px var(--container-shadow-down),
+              inset 0 0 0 transparent, inset 0 0 0 transparent;
   transition: all 0.2s ease;
 }
 
 .settings-button-group button.btn-primary {
   background-color: var(--primary-color);
+<<<<<<< HEAD
   color: white;
+=======
+  box-shadow:
+  4px 4px 4px var(--container-shadow-up),
+  -4px -4px 4px var(--container-shadow-down),
+  inset 0 0 0 transparent, inset 0 0 0 transparent;
+  color: var(--primary-text);
+>>>>>>> development
   border: none;
 }
 
-.settings-button-group button:hover {
-  background-color: var(--hover-bg);
+.settings-button-group :hover {
+  box-shadow:
+  0 0 0 transparent, 0 0 0 transparent,
+  inset 4px 4px 8px var(--container-shadow-up),
+  inset -4px -4px 8px var(--container-shadow-down);
 }
 
 .settings-button-group button.btn-primary:hover {
+<<<<<<< HEAD
   filter: brightness(1.1);
 }
 
@@ -360,13 +389,19 @@ input:focus + .slider {
 [data-theme="dark"] .settings-button-group button.btn-primary {
   background-color: var(--primary-color);
   color: var(--dark-text);
+=======
+  box-shadow:
+  4px 4px 4px var(--container-shadow-up),
+  -4px -4px 4px var(--container-shadow-down),
+  inset 4px 4px 8px var(--primary-color-shadow-up),
+  inset -4px -4px 8px var(--primary-color-shadow-down);
+>>>>>>> development
 }
 
 /* 새로운 설정 그룹 스타일 추가 */
 .settings-group.danger-zone {
   margin-bottom: 36px;  /* 다른 settings-group과 동일한 마진 */
   padding-bottom: 28px;  /* 다른 settings-group과 동일한 패딩 */
-  border-bottom: 1px solid var(--border-color);  /* 구분선 추가 */
   display: flex;
   flex-direction: column;
   align-items: flex-start;  /* 다른 설정 그룹과 동일한 정렬 */
@@ -396,4 +431,66 @@ input:focus + .slider {
 .settings-group.danger-zone button:hover {
   background-color: var(--danger-color);
   color: white;
+<<<<<<< HEAD
+=======
+}
+
+.color-picker-container {
+  position: relative;
+  display: inline-block;
+  scale: 0.8;
+  z-index: 1002;
+  transition: all 0.2s ease;
+}
+
+.color-picker-popup {
+  position: absolute;
+  top: calc(100% + 8px);
+  top: calc(100% + 14px);
+  right: 0;  /* 왼쪽 정렬 */
+  z-index: 1002;
+  background: var(--bg-color);
+  padding: 12px;
+  box-shadow: 5px 5px 8px var(--container-shadow-up),
+              -5px -5px 8px var(--container-shadow-down);
+  border-radius: 8px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(10px);
+  transition: all 0.2s ease;
+}
+
+.color-picker-popup.visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.color-presets {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  gap: 6px;
+  margin-top: 12px;
+  justify-content: flex-start;
+}
+
+.color-preset {
+  flex: 0 0 24px;
+  transition: transform 0.2s ease;
+}
+
+.color-preset:hover {
+  transform: scale(1.1);
+}
+
+.react-colorful {
+  width: 220px !important;
+  height: 200px !important;
+}
+
+.info-item {
+  color: var(--text-color);
+  opacity: 0.25;
+>>>>>>> development
 }

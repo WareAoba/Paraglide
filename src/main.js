@@ -1,16 +1,24 @@
 // main.js
-const { app, BrowserWindow, dialog, ipcMain, nativeTheme, clipboard, screen } = require('electron');
+const { app, BrowserWindow, dialog, ipcMain, nativeTheme, clipboard, screen, shell } = require('electron');
 const path = require('path');
 const store = require('./store/store');
 const { TextProcessUtils } = require('./store/utils/TextProcessUtils');
+const { ConfigManager } = require('./store/utils/ConfigManager');
 const { textProcessActions } = require('./store/slices/textProcessSlice');
+<<<<<<< HEAD
 const { configActions } = require('./store/slices/configSlice');
 const { ConfigManager } = require('./store/utils/ConfigManager');
+=======
+const { configActions, THEME } = require('./store/slices/configSlice');
+const { logActions } = require('./store/slices/logSlice');
+>>>>>>> development
 const fs = require('fs').promises;
 const os = require('os');
 const crypto = require('crypto');
 const url = require('url');
-const SystemListener = require('./SystemListener.js');  // 클래스로 import
+const SystemListener = require('./SystemListener.jsx');  // 클래스로 import
+const jschardet = require('jschardet');
+const iconv = require('iconv-lite');
 
 // 디바운스 함수 정의
 const debounce = (func, wait) => {
@@ -48,6 +56,7 @@ const ContentManager = {
         return;
       }
   
+      systemListener.setCurrentParagraphText(content);
       mainWindow?.webContents.send('notify-clipboard-change');
       systemListener.notifyInternalClipboardChange();
       clipboard.writeText(content);
@@ -65,13 +74,14 @@ const ContentManager = {
   }, DEBOUNCE_TIME)
 };
 
-const isDev = !app.isPackaged;
+const isDev = process.env.NODE_ENV === 'development';
 const appPath = isDev ? path.resolve(__dirname, '..') : app.getAppPath();
 
 // 파일 경로 정의
 const FILE_PATHS = {
   config: path.join(os.homedir(), '.ParaglideConfigure.json'),
   log: path.join(os.homedir(), '.ParaglideParaLog.json'),
+<<<<<<< HEAD
   logos: {
     light: isDev 
       ? path.join(appPath, 'public', 'logo-light.png')
@@ -79,13 +89,25 @@ const FILE_PATHS = {
     dark: isDev
       ? path.join(appPath, 'public', 'logo-dark.png')
       : path.join(process.resourcesPath, './app.asar.unpacked/public', 'logo-dark.png')
+=======
+  logos: isDev 
+    ? path.join(appPath, 'public', 'logo.png')
+    : path.join(process.resourcesPath, 'dist', 'logo.png'),
+  titles: {
+    light: isDev
+      ? path.join(appPath, 'public', 'TitleLight.png')
+      : path.join(process.resourcesPath, 'dist', 'TitleLight.png'), 
+    dark: isDev
+      ? path.join(appPath, 'public', 'TitleDark.png')
+      : path.join(process.resourcesPath, 'dist', 'TitleDark.png')
+>>>>>>> development
   },
   icon: isDev
     ? path.join(appPath, 'public', 'icons', 'mac', 'icon.icns')
-    : path.join(process.resourcesPath, './app.asar.unpacked/public', 'icons', 'mac', 'icon.icns'),
+    : path.join(process.resourcesPath, 'dist', 'icons', 'mac', 'icon.icns'),
   ui_icons: isDev
     ? path.join(appPath, 'public', 'UI_icons')
-    : path.join(process.resourcesPath, './app.asar.unpacked/public', 'UI_icons')
+    : path.join(process.resourcesPath, 'dist', 'UI_icons')
 };
 
 
@@ -347,6 +369,14 @@ const FileManager = {
         await this.saveLog({});
         console.log('로그 파일이 정리되었습니다.');
       }
+
+      const updatedHistory = await this.getFileHistory();
+    BrowserWindow.getAllWindows().forEach(window => {
+      if (!window.isDestroyed()) {
+        window.webContents.send('history-update', updatedHistory);
+      }
+    });
+
       return { success: true };
     } catch (error) {
       console.error('로그 정리 실패:', error);
@@ -468,9 +498,110 @@ const FileManager = {
 
   async openFile(filePath, content = null) {
     try {
+<<<<<<< HEAD
       const fileContent = content || await fs.readFile(filePath, 'utf8');
       if (!fileContent) {
         console.error('파일 내용 없음:', filePath);
+=======
+      // 파일 확장자 검사
+      const fileExtension = path.extname(filePath).toLowerCase();
+      if (fileExtension !== '.txt') {
+        await dialog.showMessageBox(mainWindow, {
+          type: 'warning',
+          buttons: ['확인'],
+          defaultId: 0,
+          title: '파일 형식 오류',
+          message: '지원하지 않는 파일 형식입니다.\n(.txt 파일만 지원됩니다)',
+          noLink: true
+        });
+        return { success: false };
+      }
+
+      // 파일 존재 여부 확인
+      if (!content) {
+        try {
+          await fs.access(filePath);
+        } catch (error) {
+          if (error.code === 'ENOENT') {
+            await dialog.showMessageBox(mainWindow, {
+              type: 'warning',
+              buttons: ['확인'],
+              defaultId: 0,
+              title: '파일 열기 오류',
+              message: '파일이 존재하지 않습니다.\n기록을 삭제합니다.',
+              noLink: true
+            });
+
+            // 로그에서 해당 파일 기록 삭제
+            await this.clearLogs(filePath);
+            const updatedHistory = await this.getFileHistory();
+            mainWindow?.webContents.send('history-update', updatedHistory);
+            
+            return { success: false };
+          }
+          throw error; // 다른 에러는 상위로 전파
+        }
+      }
+
+      let fileContent;
+if (content) {
+  fileContent = content;
+} else {
+  const buffer = await fs.readFile(filePath);
+  
+  // 1. jschardet로 인코딩 감지
+  const detected = jschardet.detect(buffer);
+  let encoding = detected.encoding || 'utf8';
+  
+  console.log('[Main] 감지된 인코딩:', encoding, '(신뢰도:', detected.confidence, ')');
+
+  // 2. 신뢰도가 낮거나 ASCII로 감지된 경우 한글 우선 시도
+  const lowConfidence = detected.confidence < 0.5;
+  const isAsciiLike = ['ascii', 'windows-1252'].includes(encoding.toLowerCase());
+  
+  // 3. 시도할 인코딩 순서 결정
+  const encodingsToTry = lowConfidence || isAsciiLike ?
+    ['cp949', 'windows-1252', 'utf8'] :  // 신뢰도가 낮을 때
+    [encoding, 'cp949', 'windows-1252', 'utf8'];  // 신뢰도가 높을 때
+
+  // 4. 순차적으로 인코딩 시도
+  for (const enc of encodingsToTry) {
+    try {
+      const decoded = iconv.decode(buffer, enc);
+      // 한글 포함 여부로 검증
+      const hasKorean = /[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(decoded);
+      const hasInvalidChar = decoded.includes('�');
+      
+      if (!hasInvalidChar && (!isAsciiLike || hasKorean)) {
+        fileContent = decoded;
+        console.log('[Main] 성공한 인코딩:', enc, '(한글 포함:', hasKorean, ')');
+        break;
+      }
+    } catch (error) {
+      console.warn(`[Main] ${enc} 인코딩 변환 실패:`, error);
+    }
+  }
+
+  // 5. 모든 시도 실패시 기본값
+  if (!fileContent) {
+    console.warn('[Main] 모든 인코딩 시도 실패, UTF-8로 진행');
+    fileContent = iconv.decode(buffer, 'utf8');
+  }
+}
+  
+      if (!fileContent) {
+        console.error('[Main] 파일 내용 없음:', filePath);
+        dialog.showMessageBoxSync(mainWindow, {
+          type: 'warning',
+          buttons: ['확인'],
+          defaultId: 1,
+          title: '잘못된 파일',
+          message: '파일 내용이 비어있거나 읽을 수 없습니다.',
+          cancelId: 1,
+          noLink: true,
+          normalizeAccessKeys: true,
+        });
+>>>>>>> development
         return { success: false };
       }
   
@@ -554,7 +685,25 @@ const FileManager = {
   
       return { success: true };
     } catch (error) {
+<<<<<<< HEAD
       console.error('파일 열기 실패:', error);
+=======
+      console.error('[Main] 파일 열기 실패:', error);
+      
+      // 에러 발생 시 안전하게 메시지 표시
+      if (!mainWindow.isDestroyed()) {
+        await dialog.showMessageBox(mainWindow, {
+          type: 'error',
+          buttons: ['확인'],
+          defaultId: 0,
+          title: '오류',
+          message: '파일을 여는 중 오류가 발생했습니다.',
+          detail: error.message,
+          noLink: true
+        });
+      }
+      
+>>>>>>> development
       return { success: false };
     }
   },
@@ -673,12 +822,12 @@ const WindowManager = {
     });
 
     const startUrl = isDev
-      ? 'http://localhost:3000'
+      ? 'http://localhost:5173' // Vite 기본 포트
       : url.format({
-          pathname: path.join(__dirname, '../build/index.html'),
-          protocol: 'file:',
-          slashes: true
-        });
+        pathname: path.join(__dirname, '../dist/index.html'), // build -> dist
+        protocol: 'file:',
+        slashes: true
+    });
 
     mainWindow.loadURL(startUrl);
     this.setupMainWindowEvents();
@@ -735,9 +884,9 @@ const WindowManager = {
     });
   
     const overlayUrl = isDev
-      ? 'http://localhost:3000/#/overlay'
+      ? 'http://localhost:5173/#/overlay'
       : url.format({
-          pathname: path.join(__dirname, '../build/index.html'),
+          pathname: path.join(__dirname, '../dist/index.html'),
           protocol: 'file:',
           slashes: true,
           hash: '/overlay'
@@ -897,6 +1046,10 @@ const IPCManager = {
       }
     });
 
+    ipcMain.handle('show-in-folder', (_, filePath) => {
+      shell.showItemInFolder(filePath);
+    });
+
     ipcMain.handle('read-file', async (event, filePath) => fs.readFile(filePath, 'utf8'));
 
     // 리소스 관련 핸들러
@@ -967,6 +1120,29 @@ const IPCManager = {
       return ThemeManager.getCurrentTheme();
     });
 
+    ipcMain.handle('generate-css-filter', async (event, color, options) => { // --primary-color-filter 생성
+      try {
+        // 모듈 불러오기
+        const module = require('hex-to-css-filter');
+        
+        // hexToCSSFilter 함수 직접 접근
+        if (typeof module.hexToCSSFilter === 'function') {
+          const result = module.hexToCSSFilter(color, options);
+          return result;
+        }
+        
+        throw new Error('hexToCSSFilter 함수를 찾을 수 없습니다');
+        
+      } catch (error) {
+        console.error('[Main] 필터 생성 실패:', error);
+        return {
+          filter: 'brightness(0) saturate(100%)',
+          success: false,
+          loss: 1
+        };
+      }
+    });
+
     // 디버그 콘솔 핸들러
     ipcMain.on('show-debug-console', () => this.handleShowDebugConsole());
 
@@ -975,9 +1151,26 @@ const IPCManager = {
 
   async handleGetLogoPath() {
     try {
+<<<<<<< HEAD
       const logoPath = nativeTheme.shouldUseDarkColors ?
         FILE_PATHS.logos.dark : FILE_PATHS.logos.light;
       const imageBuffer = await fs.readFile(logoPath);
+=======
+      const effectiveMode = ThemeManager.getEffectiveMode();
+      let imagePath;
+      
+      if (type === 'logo') {
+        imagePath = FILE_PATHS.logos;
+      } else if (type === 'title') {
+        imagePath = effectiveMode === THEME.DARK ? 
+          FILE_PATHS.titles.dark : 
+          FILE_PATHS.titles.light;
+      } else {
+        throw new Error('Unknown image type');
+      }
+  
+      const imageBuffer = await fs.readFile(imagePath);
+>>>>>>> development
       return `data:image/png;base64,${imageBuffer.toString('base64')}`;
     } catch (error) {
       console.error('로고 로드 실패:', error);
@@ -1215,7 +1408,24 @@ const IPCManager = {
     logWindow.webContents.on('did-finish-load', () => {
       logWindow.webContents.send('update-logs', logMessages.join(''));
     });
+<<<<<<< HEAD
 
+=======
+  
+    // React 라우팅
+    const consoleUrl = isDev
+      ? 'http://localhost:5173/#/console'
+      : url.format({
+          pathname: path.join(__dirname, '../dist/index.html'),
+          protocol: 'file:',
+          slashes: true,
+          hash: '/console'
+        });
+  
+    logWindow.loadURL(consoleUrl);
+  
+    // 구독 해제 추가
+>>>>>>> development
     logWindow.on('closed', () => {
       logWindow = null;
     });
@@ -1274,7 +1484,44 @@ const ApplicationManager = {
 };
 
 // 앱 시작점
-app.whenReady().then(() => ApplicationManager.initialize());
+const gotTheLock = app.requestSingleInstanceLock();
+
+if (!gotTheLock) {
+  // 다른 인스턴스가 실행 중이면 경고창을 표시하고 종료
+  dialog.showMessageBoxSync({
+    type: 'warning',
+    buttons: ['확인'],
+    title: '실행 중',
+    message: 'Paraglide가 이미 실행 중입니다.',
+    detail: '다중 실행은 지원하지 않습니다.',
+    cancelId: 1,
+    noLink: true,
+    normalizeAccessKeys: true,
+  });
+  app.quit();
+} else {
+  // 두 번째 인스턴스 실행 시도 시 기존 창 포커스
+  app.on('second-instance', () => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
+      
+      dialog.showMessageBox(mainWindow, {
+        type: 'info',
+        buttons: ['확인'],
+        title: '실행 중',
+        message: 'Paraglide가 이미 실행 중입니다.',
+        detail: '기존 창으로 이동합니다.',
+        cancelId: 1,
+        noLink: true,
+        normalizeAccessKeys: true,
+      });
+    }
+  });
+
+  // 기존 앱 시작 로직
+  app.whenReady().then(() => ApplicationManager.initialize());
+}
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {

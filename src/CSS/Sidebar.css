@@ -1,16 +1,64 @@
 /* 사이드바 */
 .sidebar {
   position: fixed;
-  left: -301px;
+  left: 0;
   top: 0;
-  width: 300px;
+  width: 40vw;
+  min-width: 300px;
+  max-width: 500px;
   height: 100vh;
   background-color: var(--bg-color);
   border-right: none;
   border-radius: 0 16px 16px 0;  /* 우측 상/하단만 둥글게 */
+<<<<<<< HEAD
   transition: transform var(--transition-default);
   z-index: 1000;
   overflow-y: auto;
+=======
+  transform: translateX(-100%);
+  will-change: transform;
+  transition: all 0.3s ease;
+  box-shadow:
+  0 0 0 transparent, 0 0 0 transparent;
+  z-index: 1000;
+  overflow: hidden;
+  opacity: 0;
+}
+
+.search-wrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--bg-color); /* 배경색 추가 */
+  z-index: 2; /* 기존 컨텐츠 위에 표시 */
+  will-change: transform;
+}
+
+.main-content-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+}
+
+
+.search-wrapper .search-wrapper-wrapper {
+  
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.sidebar.visible {
+  box-shadow:
+  0 0 0 transparent,
+  40px 0 80px rgba(0, 0, 0, 0.1);
+  opacity: 1;
+>>>>>>> development
 }
 
 /* 오버레이 */
@@ -37,9 +85,46 @@
 
 /* 사이드바 표시 상태 */
 .sidebar.visible {
-  transform: translateX(300px);
+  transform: translateX(0);
 }
 
+<<<<<<< HEAD
+=======
+.sidebar-icon-button {
+  height: var(--btn-iconsize);
+  width: var(--btn-iconsize);
+  filter: var(--icon-filter);
+  border-radius: 15%;
+  transition: opacity 0.2s;
+}
+
+/* 사이드바 헤더 */
+.sidebar-header {
+  padding: 20px 30px 10px 20px;
+  display: flex;
+  justify-content: flex-start; /* space-between에서 변경 */
+  align-items: center;
+  position: relative;
+  
+  gap: 20px; /* 버튼과 타이틀 사이 간격 */
+  
+}
+
+.header-title-group {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  justify-content: center;
+}
+
+.header-title-image {
+  height: 24px;
+  width: auto;
+  object-fit: contain;
+  display: block; /* 이미지 기본 여백 제거 */
+}
+
+>>>>>>> development
 .sidebar-close-button {
   position: relative;  /* absolute 제거 */
   background: none;
@@ -51,11 +136,16 @@
   align-items: center;
   justify-content: center;
   border-radius: 15%;
+<<<<<<< HEAD
+=======
+  transition: all 0.3s ease;
+>>>>>>> development
   width: var(--btn-size);
   height: var(--btn-size);
   margin: 0;
 }
 
+<<<<<<< HEAD
 .sidebar-icon-button {
   height: var(--btn-iconsize);
   width: var(--btn-iconsize);
@@ -76,15 +166,35 @@
   justify-content: space-between;
   align-items: center;
   position: relative;
+=======
+.sidebar-close-button:hover {
+  scale: 1.1;
+  background: var(--bg-gradient);
+  box-shadow:
+  2px 2px 6px var(--container-shadow-up),
+  -2px -2px 6px var(--container-shadow-down);
+>>>>>>> development
 }
 
+.sidebar-close-button img:hover {
+  filter: var(--primary-color-filter);
+  opacity: 0.9;
+}
+
+.sidebar-close-button:active {
+  box-shadow: 
+  -2px -2px 5px var(--container-shadow-up),
+  2px 2px 5px var(--container-shadow-down);
+ }
+
 .sidebar-header h2 {
-  color: var(--text-color);
+  color: var(--text-third);
   margin: 0;
   font-size: 1.5rem;
   font-weight: 500;
 }
 
+<<<<<<< HEAD
 .sidebar-header h3 {
   color: var(--text-color);
   margin: 0;
@@ -193,4 +303,20 @@
   color: var(--text-secondary);
   padding: var(--spacing-md);
   font-size: 0.9em;
+=======
+.sidebar-section h3 {
+  color: var(--text-third);
+  font-size: 1.1em;
+  font-weight: 500;
+  margin: 0 0 12px 4px;
+}
+
+.sidebar-content {
+  padding: 15px;
+  height: calc(100vh - 80px); /* 헤더 높이 제외 */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* visible에서 hidden으로 변경 */
+  position: relative; /* 추가: 내부 요소의 기준점 */
+>>>>>>> development
 }

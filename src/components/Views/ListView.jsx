@@ -30,10 +30,27 @@ function ListView({ paragraphs, metadata, currentParagraph, onParagraphSelect, t
 
   // 현재 단락으로 자동 스크롤
   useEffect(() => {
-    const currentElement = document.querySelector(`[data-paragraph="${currentParagraph}"]`);
-    if (currentElement) {
-      currentElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
+    // SimpleBar 스크롤 컨테이너와 타겟 요소 가져오기
+    const scrollContainer = listRef.current?.getScrollElement();
+    const targetElement = document.querySelector(`[data-paragraph="${currentParagraph}"]`);
+    
+    if (!scrollContainer || !targetElement) return;
+  
+    // 스크롤 컨테이너와 타겟 요소의 위치/크기 정보
+    const containerRect = scrollContainer.getBoundingClientRect();
+    const targetRect = targetElement.getBoundingClientRect();
+    
+    // 컨테이너의 중앙으로 스크롤할 위치 계산
+    const targetScrollTop = 
+      targetElement.offsetTop - 
+      (containerRect.height / 2) + 
+      (targetRect.height / 2);
+  
+    // 부드러운 스크롤 애니메이션 적용
+    scrollContainer.scrollTo({
+      top: targetScrollTop,
+      behavior: 'smooth'
+    });
   }, [currentParagraph]);
 
   // CSS 변수 업데이트

@@ -1,0 +1,98 @@
+.dropdown-wrapper {
+    position: relative;
+    display: inline-block;
+    margin-left: 16px;
+  }
+  
+  .dropdown-button {
+    /* 기존 레이아웃 속성 유지 */
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-family: inherit;
+    width: 160px;
+    padding: 8px 12px;
+    font-size: 0.95em;
+    border-radius: 6px;
+    cursor: pointer;
+
+    /* 기본 상태 (1단계) */
+    color: var(--text-color);
+    background: var(--container-bg);
+    border: none;
+    opacity: 1;
+    box-shadow: 5px 5px 10px var(--container-shadow-up),
+                -5px -5px 10px var(--container-shadow-down),
+                inset 0 0 0 transparent,
+                inset 0 0 0 transparent;
+    transition: all 0.2s ease;
+}
+
+/* 호버링 상태 (2단계) */
+.dropdown-button:hover:not(.active) {
+    opacity: 1;
+    box-shadow: 3px 3px 5px var(--container-shadow-up),
+                -3px -3px 5px var(--container-shadow-down),
+                inset 0 0 0 transparent, inset 0 0 0 transparent;
+}
+
+/* 활성화/클릭 상태 (3단계) */
+.dropdown-button.active {
+    opacity: 0.85;
+    box-shadow: 0 0 0 transparent,
+                0 0 0 transparent,
+                inset 3px 3px 5px var(--container-shadow-up),
+                inset -3px -3px 5px var(--container-shadow-down);
+}
+  .dropdown-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 5px;
+    width: 158px;
+    gap: 6px;
+    background: var(--bg-color);
+    border-radius: 6px;
+    box-shadow: 3px 3px 5px var(--container-shadow-up),
+                -3px -0px 5px var(--container-shadow-down);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.2s ease;
+  }
+  
+  .dropdown-menu.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+  }
+  
+  .dropdown-item {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    color: var(--text-color);
+    font-size: 0.95em;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+  }
+  
+  .dropdown-item:hover {
+    background: var(--hover-bg);
+  }
+  
+  .dropdown-item.active {
+    color: var(--primary-color);
+  }
+
+  .dropdown-icon {
+    width: 16px;
+    height: 16px;
+    margin-right: 8px;
+    filter: var(--icon-filter);
+  }
+
+  .dropdown-item.active .dropdown-icon {
+    filter: var(--primary-color-filter);
+  }

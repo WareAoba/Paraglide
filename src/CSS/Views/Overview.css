@@ -10,17 +10,35 @@
   border-radius: 15px;
   background-color: var(--bg-color);
   box-sizing: border-box; /* Include padding and border in width calculation */
+<<<<<<< HEAD
   overflow-y: auto;
   max-height: 380px;
   width: 94vw;
   padding: var(--spacing-md);
+=======
+  overflow-y: hidden;
+  max-height: calc(60vh - 10px);
+  width: min(90vw, 900px);  /* 뷰포트의 90% 또는 최대 800px */
+  margin: 0 auto;
+  padding: var(--spacing-md);
+  box-shadow: 
+  10px 10px 20px var(--container-shadow-up),
+  -10px -10px 20px var(--container-shadow-down);
+>>>>>>> development
 }
 
 .paragraph-header {
   display: grid;
+<<<<<<< HEAD
   grid-template-columns: 1fr 1.2fr 1fr;
   background-color: transparent;
   border: none;
+=======
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  border-radius: 6px;
+  align-content: center;
+  height: 40px;
+>>>>>>> development
   padding: var(--spacing-xs), var(--spacing-xs), 0px, var(--spacing-xs);  /* 패딩 감소 */
   gap: var(--spacing-sm);
 }
@@ -30,12 +48,9 @@
   padding: var(--spacing-xs);  /* 패딩 감소 */
   text-align: center;
   font-size: 1.1rem;  /* 폰트 크기 증가 */
-  font-weight: 500;  /* 약간의 강조 */
-  color: var(--text-color);
-}
-
-[data-theme="dark"] .paragraph-header > div {
-  color: var(--text-color);
+  font-weight: 600;  /* 약간의 강조 */
+  filter: var(--icon-filter);
+  opacity: 0.7;
 }
 
 .paragraph-header .current {
@@ -47,27 +62,60 @@
   display: flex;
   flex-direction: row;
   flex: 1 1 auto;
-  min-height: 200px;
+  height: 10px;
   width: 100%;
+<<<<<<< HEAD
   max-height: 250px;
   overflow-y: auto;
+=======
+  overflow-y: visible;
+  justify-content: space-between;
+>>>>>>> development
   gap: var(--spacing-md);  /* 단락 간 간격 확대 */
   margin-top: var(--spacing-sm);
   padding-top: var(--spacing-sm);
 }
 
+.next-page-info {
+  font-size: 0.8em; /* 작게 표시 */
+  text-align: center;
+  margin-top: 10px; /* 위 요소와 약간 간격 */
+  color: var(--text-third); /* 기존 텍스트 색상 사용 */
+}
+
+.remaining-paragraphs {
+  font-size: 0.9em;
+  color: var(--text-secondary);
+  margin-top: 12px;
+  text-align: center;
+}
+
+.overview-paragraph-wrapper {
+  flex: 1;
+  overflow-y: auto;
+  margin-bottom: 25px;
+  text-align: center;
+}
+
 .paragraph-current,
 .paragraph-prev,
 .paragraph-next {
+  display: flex;
+  flex-direction: column;
   flex: 1;
   padding: var(--spacing-md);
-  background-color: var(--bg-color);
+  background: transparent;
+  box-shadow:
+  inset 0 0 0 transparent,
+  inset 0 0 0 transparent;
+  transition: all 0.25s ease;
   border-radius: 8px;  /* 단락별 라운드 처리 */
   overflow-y: auto;  /* 내용이 넘칠 경우 스크롤 */
   font-size: 11pt;
   line-height: 1.6;  /* 행간 조정 */
   text-align: left;
   text-overflow: ellipsis;
+<<<<<<< HEAD
   user-select: none;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);  /* 미묘한 그림자 */
   overflow: hidden;         /* 넘치는 텍스트 숨김 */
@@ -82,35 +130,135 @@
   color: var(--text-color);
 }
 
+=======
+  font-family: inherit;
+  white-space: pre-wrap;      /* 원본 개행 유지 */
+  word-break: keep-all;       /* 단어 중간 분리 방지 */
+  overflow-wrap: break-word;  /* 컨테이너를 넘어갈 때만 줄바꿈 */
+  position: relative;  /* 마스크 위치 기준 */
+  padding-top: 8px;
+  padding-bottom: 15px;
+  margin-bottom: 5px;
+}
+
+.paragraph-current:hover,
+.paragraph-prev:hover,
+.paragraph-next:hover {
+  transform: translateY(-2px);  /* 살짝 띄우기 효과 */
+  box-shadow:
+  inset 2px 2px 8px var(--container-shadow-up),
+  inset -2px -2px 8px var(--container-shadow-down);
+  background: var(--bg-gradient);
+}
+
+.paragraph-current:active,
+.paragraph-prev:active,
+.paragraph-next:active {
+  box-shadow:
+  inset 6px 6px 12px var(--container-shadow-up),
+  inset -6px -6px 12px var(--container-shadow-down);
+  transform: translateY(0);  /* 클릭 시 원래 위치로 되돌리기 */
+}
+
+>>>>>>> development
 .paragraph-current {
   background-color: var(--bg-color);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);  /* 더 강한 그림자로 강조 */
   border: 2px solid var(--primary-color);  
+<<<<<<< HEAD
   transition: all 0.3s ease;  /* 부드러운 전환 */
 }
 
 .paragraph-prev, .paragraph-next {
   opacity: 0.8;
   transition: all 0.3s ease;  /* 부드러운 전환 */
+=======
+  font-weight: 700;
 }
 
-.paragraph-current:hover {
-  opacity: 1;
-  background-color: var(--hover-bg);
-  transform: translateY(-2px);  /* 살짝 띄우기 효과 */
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);  /* 그림자 강화 */
+[data-theme="dark"] .paragraph-current {
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 500;
+  opacity: 0.9;
 }
 
-.paragraph-prev:hover {
-  opacity: 1;
-  background-color: var(--hover-bg);
-  transform: translateY(-2px);  /* 살짝 띄우기 효과 */
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);  /* 그림자 강화 */
+.paragraph-prev,
+.paragraph-next {
+  opacity: 0.7;
+  font-weight: 400;
+>>>>>>> development
 }
 
-.paragraph-next:hover {
+[data-theme="dark"] .paragraph-prev,
+[data-theme="dark"] .paragraph-next {
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.7); /* 반투명 검정 */
+}
+
+.paragraph-empty {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  visibility: hidden;
+  pointer-events: none;
+  user-select: none;
+}
+
+.paragraph-current-first {
+  flex: 1;  /* flex 비율 유지 */
+}
+
+.overview-paragraph-number {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.9em;
+  color: var(--text-secondary);
+  z-index: 1;
+}
+
+/* 작업 완료 버튼 컨테이너 */
+.complete-work-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  visibility: visible !important;
+  background: transparent;
+}
+
+.complete-work-container:hover {
+  transform: none !important;
+  box-shadow: none !important;
+  background: none !important;
+}
+
+.overview-complete-work-button {
+  width: 80%;
+  min-width: 90px;
+  padding: 15px;
+  background-color: var(--success-color);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 1em;
+  font-weight: 500;
+  transition: all 0.3s ease;
   opacity: 1;
-  background-color: var(--hover-bg);
-  transform: translateY(-2px);  /* 살짝 띄우기 효과 */
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);  /* 그림자 강화 */
+  box-shadow:
+  8px 8px 10px var(--container-shadow-up),
+  -8px -8px 10px var(--container-shadow-down),
+  inset 0 0 0 transparent, inset 0 0 0 transparent;
+  transition: all 0.3s ease;
+}
+
+.overview-complete-work-button:hover {
+  box-shadow:
+  0 0 0 transparent, 0 0 0 transparent,
+  inset 4px 4px 8px rgba(0, 0, 0, 0.2),
+  inset -4px -4px 8px rgba(0, 0, 0, 0.1);
 }
