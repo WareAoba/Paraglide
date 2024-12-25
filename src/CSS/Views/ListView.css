@@ -120,9 +120,16 @@
   cursor: pointer;
   font-family: inherit;
   font-size: 1em;
-  transition: filter 0.2s ease;
+  box-shadow:
+  8px 8px 10px var(--container-shadow-up),
+  -8px -8px 10px var(--container-shadow-down),
+  inset 0 0 0 transparent, inset 0 0 0 transparent;
+  transition: all 0.3s ease;
 }
 
 .complete-work-button:hover {
-  filter: brightness(1.1);
+  box-shadow:
+  0 0 0 transparent, 0 0 0 transparent,
+  inset 4px 4px 8px rgba(0, 0, 0, 0.2),
+  inset -4px -4px 8px rgba(0, 0, 0, 0.1);
 }
