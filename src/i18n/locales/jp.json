@@ -1,14 +1,71 @@
 {
     "app": {
         "name": "Paraglide",
-        "title": "Paraglide - 텍스트 단락 처리기"
+        "title": "Paraglide - 텍스트 단락 처리기",
+        "version": "0.3.0 beta",
+        "credits": {
+            "made": "Made by WareAoba",
+            "contribute": "Contribute.. Rinna, Latte"
+        }
     },
     "common": {
-        "confirm": "확인",
-        "cancel": "취소",
-        "close": "닫기",
-        "open": "열기",
-        "exit": "종료"
+        "buttons": {
+            "confirm": "확인",
+            "cancel": "취소",
+            "close": "닫기",
+            "open": "열기",
+            "edit": "편집",
+            "search": "검색",
+            "exit": "종료",
+            "completeWork": "작업 완료"
+        },
+        "aria": {
+            "sidebar": "사이드바 토글",
+            "settings": "설정 열기",
+            "endWork": "작업 종료",
+            "playPause": "재생/일시정지",
+            "overlay": "오버레이 토글"
+        },
+        "status": {
+            "empty": "내용 없음",
+            "loading": "로딩 중...",
+            "ready": "준비됨",
+            "paused": "일시정지"
+        },
+        "navigation": {
+            "prev": "이전",
+            "next": "다음",
+            "symbols": {
+                "prev": "◀",
+                "next": "▶"
+            }
+        },
+        "pageInfo": {
+            "none": "페이지 정보 없음",
+            "format": "{current}/{total}페이지",
+            "shortFormat": "{current}/{total}P.",
+            "progress": "({percent}%)",
+            "pageNumber": "{page}페이지"
+        },
+        "errors": {
+            "rendering": {
+                "logo": "로고 렌더링 실패",
+                "title": "타이틀 렌더링 실패",
+                "icon": "아이콘 로드 실패"
+            },
+            "file": {
+                "load": "파일 로드 실패",
+                "empty": "파일 내용이 비어있거나 읽을 수 없습니다",
+                "notFound": "파일이 존재하지 않습니다"
+            },
+            "system": {
+                "themeInit": "초기 테마 설정 실패",
+                "stateInit": "초기 상태 로드 실패",
+                "positionUpdate": "위치 업데이트 실패",
+                "cssUpdate": "CSS 변수 업데이트 실패",
+                "filterGenerate": "CSS 필터 생성 실패"
+            }
+        }
     },
     "dialogs": {
         "fileError": {
@@ -86,27 +143,27 @@
         }
     },
     "views": {
-        "overview": {
-            "navigation": {
-                "previousParagraph": "이전 단락",
-                "currentParagraph": "현재 단락",
-                "nextParagraph": "다음 단락"
+        "main": {
+            "welcome": {
+                "title": "Paraglide",
+                "openFile": "파일 불러오기",
+                "dragDrop": {
+                    "message": "텍스트 파일을 여기에 드롭하세요",
+                    "formats": "*.txt 파일만 지원됩니다"
+                },
+                "hints": {
+                    "pageNumber": "💡단락 위 숫자는 페이지 번호로 인식됩니다 (예시: 1, 1p, 1페)."
+                },
+                "images": {
+                    "logoAlt": "Paraglide 로고",
+                    "titleAlt": "Paraglide 타이틀"
+                }
             },
-            "status": {
-                "empty": "내용 없음",
-                "pageFormat": "{pageNumber}-{order}"
-            },
-            "buttons": {
-                "completeWork": "작업 완료"
-            }
-        },
-        "listview": {
-            "headers": {
-                "noPageNumber": "페이지 번호 없음",
-                "pageFormat": "{pageNumber} 페이지"
-            },
-            "buttons": {
-                "completeWork": "작업 완료"
+            "content": {
+                "paragraphInfo": {
+                    "toNextPage": "다음 페이지까지 {count}단락 남음",
+                    "lastParagraph": "마지막 단락입니다"
+                }
             }
         }
     },
