@@ -61,11 +61,12 @@ function Overview({
   return (
     <div className='overview-container' data-theme={theme.mode}>
       <div className="page-number">
-      {currentNumber?.display 
-        ? t('common.pageInfo.pageNumber', { page: currentNumber.start }) 
-        : t('common.pageInfo.none')
-      }
-      </div>
+  {currentNumber?.display ? 
+    t('common.pageInfo.pageNumber', { 
+      page: currentNumber.display.text
+    }) 
+    : t('common.pageInfo.none')}
+</div>
     <div className="paragraph-container">
       <div className="paragraph-header">
         <div style={{ visibility: isFirstParagraph ? 'hidden' : 'visible' }}>

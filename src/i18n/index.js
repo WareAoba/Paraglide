@@ -15,6 +15,10 @@ const getSystemLanguage = () => {
   return supportedLangs.includes(browserLang) ? browserLang : 'en';
 };
 
+const updateHtmlLang = (lng) => {
+  document.documentElement.setAttribute('lang', lng);
+};
+
 i18n
   .use(initReactI18next)
   .init({
@@ -23,11 +27,19 @@ i18n
       en: { translation: en },
       ja: { translation: ja }
     },
-    lng: getSystemLanguage(), // 시스템 언어 사용
+    lng: getSystemLanguage(),
     fallbackLng: 'en',
     interpolation: {
       escapeValue: false
     }
+  }).then(() => {
+    // 초기 언어 설정시 html lang 속성 업데이트
+    updateHtmlLang(i18n.language);
   });
+
+// 언어 변경 이벤트 리스너 추가
+i18n.on('languageChanged', (lng) => {
+  updateHtmlLang(lng);
+});
 
 export default i18n;

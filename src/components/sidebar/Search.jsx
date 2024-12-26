@@ -1,6 +1,7 @@
 // components/Views/Search.js
 import React, { useState, useEffect, useCallback, useRef, forwardRef, useImperativeHandle } from 'react';
 import Hangul from 'hangul-js';
+import { useTranslation } from 'react-i18next';
 import '../../CSS/App.css';
 import '../../CSS/Sidebar/Search.css';
 import { debounce } from 'lodash';
@@ -181,6 +182,7 @@ const highlightPartialMatch = (text, term) => {
 const Search = forwardRef((props, ref) => {
   const { paragraphs, metadata, onSelect, isVisible, onClose, icons, theme } = props;
 
+  const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState('');
   const [results, setResults] = useState([]);
   const [pointer, setPointer] = useState(-1);
@@ -381,8 +383,8 @@ const Search = forwardRef((props, ref) => {
       <div className="search-header">
         <h2>
           {searchTerm.trim() && results.length > 0
-            ? `${results.length}개의 검색 결과`
-            : '검색'}
+            ? t('sidebar.search.results.count', { count: results.length })
+            : t('sidebar.search.title')}
         </h2>
       </div>
 
@@ -395,13 +397,17 @@ const Search = forwardRef((props, ref) => {
             value={searchTerm}
             onChange={handleSearchChange}
             onKeyDown={handleKeyDown}
-            placeholder="검색어를 입력하세요"
+            placeholder={t('sidebar.search.input.placeholder')}
           />
           {searchTerm && (
-            <button className="clear-button" onClick={() => setSearchTerm('')}>
+            <button 
+              className="clear-button" 
+              onClick={() => setSearchTerm('')}
+              aria-label={t('sidebar.search.input.clear')}
+            >
               <img 
                 src={icons?.deleteIcon} 
-                alt="지우기"
+                alt={t('sidebar.search.input.clear')}
                 className="clear-icon"
               />
             </button>
@@ -417,7 +423,7 @@ const Search = forwardRef((props, ref) => {
                 {pageNum && isValidPage(pageNum) && (
                   <div className="page-jump-container">
                     <button className="page-jump-button" onClick={() => handlePageJump(pageNum)}>
-                      <span>{pageNum}페이지로 이동</span>
+                      <span>{t('sidebar.search.results.pageJump.button', { page: pageNum })}</span>
                     </button>
                   </div>
                 )}
@@ -450,13 +456,14 @@ const Search = forwardRef((props, ref) => {
                       <div className="result-text">
                         {highlightMatch(result.text, searchTerm)}
                       </div>
-                      <div className="result-info">{result.pageInfo}페이지</div>
+                      <div className="result-info">{t('sidebar.search.pageInfo.format', { page: result.pageInfo })}
+                      </div>
                     </div>
                   ))
                 ) : (
                   searchTerm.trim() && 
                   !isValidPage(pageNum) && 
-                  <div className="no-results">검색 결과가 없습니다</div>
+                  <div className="no-results">{t('sidebar.search.results.empty')}</div>
                 )}
               </>
             );

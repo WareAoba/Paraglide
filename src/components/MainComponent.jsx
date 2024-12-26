@@ -1,10 +1,12 @@
 // src/MainComponent.js
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { CSSTransition, TransitionGroup } from 'react-transition-group';
+import { useTranslation } from 'react-i18next';
 import '../CSS/MainComponent.css';
 import '../CSS/Views/ComponentTransition.css';
 import Sidebar from './Sidebar';
 import Settings from './Settings';
+import Welcome from './Views/Welcome';
 import Overview from './Views/Overview';
 import ListView from './Views/ListView';
 import DragDropOverlay from './Views/DragDropOverlay';
@@ -20,6 +22,9 @@ const ProgramStatus = {
 
 // MainComponent.js 수정
 function MainComponent() {
+
+  const { t } = useTranslation();
+
   const [state, setState] = useState({
     paragraphs: [],
     currentParagraph: 0,
@@ -184,13 +189,21 @@ function MainComponent() {
 
     // 상태 업데이트 핸들러
     const handleStateUpdate = (event, updatedState) => {
-      setState((prev) => ({
-        ...prev,
-        ...updatedState,
-        currentNumber:
-          updatedState.paragraphsMetadata?.[updatedState.currentParagraph]?.pageInfo ||
-          null,
-      }));
+      setState((prev) => {
+        const pageInfo = updatedState.paragraphsMetadata?.[updatedState.currentParagraph]?.pageInfo;
+        const display = pageInfo ? {
+          text: pageInfo.end !== pageInfo.start ? 
+            `${pageInfo.start}-${pageInfo.end}` :  // 합페이지
+            `${pageInfo.start}`,                   // 단일 페이지
+          isRange: pageInfo.end !== pageInfo.start // 합페이지 여부
+        } : null;
+    
+        return {
+          ...prev,
+          ...updatedState,
+          currentNumber: { ...pageInfo, display }
+        };
+      });
     };
 
     const clearSearchHandler = () => {
@@ -738,50 +751,25 @@ ipcRenderer.invoke('generate-css-filter', accentColor, {
   
       <div className="content-area">
         <TransitionGroup component={null}>
-          {state.programStatus === ProgramStatus.READY && (
-            <CSSTransition
-              key="welcome"
-              appear={true}
-              timeout={500}
-              classNames="welcome-viewport"
-              mountOnEnter
-              unmountOnExit
-            >
-              <div className="welcome-screen" data-theme={theme.mode}>
-                <div className="logo-container">
-                  {state.logoPath && (
-                    <img
-                      src={state.logoPath}
-                      alt="Paraglide Logo"
-                      className="logo"
-                      onError={(e) => {
-                        console.error('로고 렌더링 실패:', e);
-                        e.target.style.display = 'none';
-                      }}
-                    />
-                  )}
-                  {state.titlePath ? (
-                    <img
-                      src={state.titlePath}
-                      alt="Paraglide Title"
-                      className="title-image"
-                      onError={(e) => {
-                        console.error('타이틀 렌더링 실패:', e);
-                        e.target.style.display = 'none';
-                      }}
-                    />
-                  ) : (
-                    <h1 className="title">Paraglide</h1>
-                  )}
-                </div>
-                <div className="button-container">
-                  <button className="btn-primary" onClick={handleLoadFile}>
-                    <img src={fileOpenIcon} alt="파일 불러오기" className="icon-primary" />
-                    <span>파일 불러오기</span>
-                  </button>
-                </div>
-              </div>
-            </CSSTransition>
+        {state.programStatus === ProgramStatus.READY && (
+  <CSSTransition
+  key="welcome"
+  appear={true}
+  timeout={500}
+  classNames="welcome-viewport"
+  mountOnEnter
+  unmountOnExit
+>
+<div className="welcome-wrapper">
+    <Welcome 
+      onLoadFile={handleLoadFile}
+      logoPath={state.logoPath}
+      titlePath={state.titlePath}
+      theme={theme}
+      fileOpenIcon={fileOpenIcon}
+    />
+  </div>
+  </CSSTransition>
           )}
   
           {state.programStatus === ProgramStatus.PROCESS && (
@@ -844,32 +832,37 @@ ipcRenderer.invoke('generate-css-filter', accentColor, {
   
                   {state.currentFilePath && (
                     <div className="file-info-container">
-                      <div className="file-info-group">
-                        <span className="file-name">{path.basename(state.currentFilePath)}</span>
-                        <span className="paragraph-info">
-                          {(() => {
-                            const hasPageNumbers = state.paragraphsMetadata.some(meta => meta?.pageNumber != null);
-                            const currentPage = state.paragraphsMetadata[state.currentParagraph]?.pageNumber;
-                            
-                            if (!hasPageNumbers) {
-                              return " - 페이지 정보 없음 ";
-                            }
-  
-                            const maxPage = Math.max(
-                              ...state.paragraphsMetadata
-                                .filter(meta => meta?.pageNumber != null)
-                                .map(meta => meta.pageNumber)
-                            );
-  
-                            return ` - ${currentPage || '?'}/${maxPage}P.`;
-                          })()}
-                          {` (${Math.round((state.currentParagraph + 1) / state.paragraphs.length * 100)}%)`}
-                        </span>
-                      </div>
-                      <div className="path-group">
-                        <span className="file-path">| {formatPath(state.currentFilePath)}</span>
-                      </div>
+                    <div className="file-info-group">
+                      <span className="file-name">{path.basename(state.currentFilePath)}</span>
+                      <span className="paragraph-info">
+                        {(() => {
+                          const hasPageNumbers = state.paragraphsMetadata.some(meta => meta?.pageNumber != null);
+                          const currentPage = state.paragraphsMetadata[state.currentParagraph]?.pageNumber;
+                          
+                          if (!hasPageNumbers) {
+                            return t('common.pageInfo.none');
+                          }
+                  
+                          const maxPage = Math.max(
+                            ...state.paragraphsMetadata
+                              .filter(meta => meta?.pageNumber != null)
+                              .map(meta => meta.pageNumber)
+                          );
+                  
+                          return t('common.pageInfo.format', { 
+                            current: currentPage || '?',
+                            total: maxPage 
+                          });
+                        })()}
+                        {t('common.pageInfo.progress', { 
+                          percent: Math.round((state.currentParagraph + 1) / state.paragraphs.length * 100)
+                        })}
+                      </span>
                     </div>
+                    <div className="path-group">
+                      <span className="file-path">{t('mainComponent.fileInfo.path.separator')}{formatPath(state.currentFilePath)}</span>
+                    </div>
+                  </div>
                   )}
                 </div>
               </div>

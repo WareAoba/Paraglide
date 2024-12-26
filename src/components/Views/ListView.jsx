@@ -1,34 +1,40 @@
 // src/components/ListView.js
 import React, { useEffect, useRef, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import '../../CSS/Views/ListView.css';
 import SimpleBar from 'simplebar-react';
 import '../../CSS/Controllers/Simplebar.css';
 
 function ListView({ paragraphs, metadata, currentParagraph, onParagraphSelect, theme, onCompleteWork }) {
+  const { t } = useTranslation();
   const listRef = useRef(null);
-
-  const renderPageNumber = (meta) => {
-    return meta?.pageInfo?.display || '';  // pageInfo.display 사용
-  };
 
   // 페이지별 단락 그룹화 - 페이지 번호 없는 단락도 포함
   const groupedParagraphs = useMemo(() => {
-    return paragraphs.reduce((acc, para, idx) => {
-      const pageInfo = metadata[idx]?.pageInfo;
+    const groups = {};
+    
+    paragraphs.forEach((paragraph, index) => {
+      const pageInfo = metadata[index]?.pageInfo;
+      const key = pageInfo ? 
+      t('common.pageInfo.pageNumber', { 
+        page: pageInfo.end !== pageInfo.start ?
+          `${pageInfo.start}-${pageInfo.end}` :  // 합페이지도 "페이지" 문구 포함
+          pageInfo.start                         // 단일 페이지
+      }) 
+      : t('common.pageInfo.none');
       
-      // 페이지 정보가 없는 경우 "기타" 그룹으로 분류
-      const pageKey = pageInfo ? 
-        (pageInfo.display || `${pageInfo.start} 페이지`) : 
-        '페이지 번호 없음';
-      
-      if (!acc[pageKey]) {
-        acc[pageKey] = [];
+      if (!groups[key]) {
+        groups[key] = [];
       }
       
-      acc[pageKey].push({ content: para, index: idx });
-      return acc;
-    }, {});
-  }, [paragraphs, metadata]);
+      groups[key].push({
+        content: paragraph,
+        index
+      });
+    });
+    
+    return groups;
+  }, [paragraphs, metadata, t]);
 
   // 현재 단락으로 자동 스크롤
   useEffect(() => {
@@ -81,7 +87,7 @@ function ListView({ paragraphs, metadata, currentParagraph, onParagraphSelect, t
         <div key={pageKey} className="listview-section">
           <h2
             className="listview-header"
-            data-no-page-number={pageKey === '페이지 번호 없음' ? '' : undefined}
+            data-no-page-number={pageKey === t('common.pageInfo.none') ? '' : undefined}
           >
             {pageKey}
           </h2>
@@ -100,7 +106,7 @@ function ListView({ paragraphs, metadata, currentParagraph, onParagraphSelect, t
               className="complete-work-button"
               onClick={onCompleteWork}
             >
-              작업 완료
+              {t('common.buttons.completeWork')}
             </button>
           )}
         </div>

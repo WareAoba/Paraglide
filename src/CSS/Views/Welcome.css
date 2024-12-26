@@ -1,0 +1,105 @@
+.welcome-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 96vh;
+    gap: var(--spacing-xl);
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    transition: background-color var(--transition-default),
+                color var(--transition-default);
+}
+
+.welcome-screen .logo-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: var(--spacing-sm);
+    gap: var(--spacing-xs); /* gap 증가 */
+    margin-bottom: var(--spacing-sm);
+}
+
+.welcome-screen .logo {
+    width: auto;
+    height: auto;
+    max-width: 330px;
+    max-height: 330px;
+    will-change: transform, opacity; /*계단현상 줄임*/
+    object-fit: contain;
+    filter: var(--primary-color-filter) drop-shadow(-8px -8px 2px #e2e5ed) drop-shadow(8px 8px 2px #fff);
+    cursor: default; /* 커서 기본값으로 변경 */
+}
+
+.welcome-screen .title-image {
+  max-width: 300px;
+  height: auto;
+  margin-bottom: 20px;
+  filter: drop-shadow(4px 4px 2px #e2e5ed) drop-shadow(-4px -4px 2px #fff);
+}
+
+[data-theme="dark"] .welcome-screen .logo {
+  filter: var(--primary-color-filter) drop-shadow(-8px -8px 2px #161616) drop-shadow(8px 8px 2px rgba(255,255,255,0.06));
+}
+
+
+[data-theme="dark"] .welcome-screen .title-image {
+  filter: drop-shadow(4px 4px 2px #161616) drop-shadow(-4px -4px 2px rgba(255,255,255,0.06));
+}
+
+.welcome-screen .title {
+    font-size: 2.5rem;
+    font-weight: bold; /* 700에서 500으로 감소 */
+    color: var(--text-color);
+    margin: 0;
+    text-align: center;
+    letter-spacing: -0.5px;
+    
+}
+
+.welcome-screen .button-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-xl);
+    padding: var(--spacing-sm);
+}
+
+  .welcome-screen .btn-primary {
+    display: flex;
+    align-items: center;
+    justify-content: center; /* 추가: 가로축 중앙 정렬 */
+    gap: 10px;
+    min-width: 200px;
+    height: 48px;
+    padding: 0 var(--spacing-xl);
+    font-size: 1.1rem;
+    font-weight: 500;
+    font-family: inherit;
+    background-color: var(--primary-color);
+    color: var(--primary-text);
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease-out;
+    box-shadow:
+    5px 5px 5px var(--container-shadow-up),
+    -5px -5px 5px var(--container-shadow-down),
+    inset 0 0 0 transparent, inset 0 0 0 transparent;
+}
+
+
+.welcome-screen .btn-primary:hover {
+
+  box-shadow:
+  5px 5px 5px var(--container-shadow-up),
+  -5px -5px 5px var(--container-shadow-down),
+  inset 10px 10px 20px rgba(37, 37, 37, 0.5),
+  inset -10px -10px 20px rgb(255, 255, 255, 0.1);
+}
+
+.welcome-screen .icon-primary {
+    width: 24px;
+    height: 24px;
+    filter: var(--primary-filter);
+}

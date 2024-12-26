@@ -171,7 +171,8 @@ const handleCurrentContextMenu = (event) => {
       <div className="recent-file-main-info">
         <span className="recent-file-name">{file.fileName}</span>
         <span className="recent-file-page">
-          {file.currentPageNumber != null && `${file.currentPageNumber}페이지`}
+          {file.currentPageNumber != null && 
+            t('common.pageInfo.pageNumber', { page: file.currentPageNumber })}
         </span>
       </div>
       <div className="recent-file-sub-info">
@@ -319,7 +320,11 @@ const handleCurrentContextMenu = (event) => {
               src={isMac ? icons?.finderIcon : icons?.folderIcon} 
               alt={isMac ? "Finder" : "탐색기"} 
             />
-            <span>{isMac ? "Finder에서 열기" : "파일 탐색기에서 열기"}</span>
+            <span>
+              {t(isMac ? 
+                'sidebar.panel.contextMenu.showInFinder' : 
+                'sidebar.panel.contextMenu.showInExplorer')}
+            </span>
           </Item>
         </Menu>
       </>,

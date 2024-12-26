@@ -1,10 +1,12 @@
 // OverlayComponent.js
 import React, { useState, useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import "../CSS/OverlayComponent.css";
 import "../CSS/App.css";
 const { ipcRenderer } = window.require("electron");
 
 function OverlayComponent() {
+  const { t } = useTranslation();
   const [state, setState] = useState({
     previous: [],
     current: null,
@@ -118,24 +120,29 @@ function OverlayComponent() {
       >
         <div className="overlay-header">
           <span className="overlay-page-number">
-            {/* pageInfo.display를 그대로 사용 */}
-            {state.currentNumber?.display || ""}
+          {state.currentNumber?.display ? (
+    state.currentNumber.display.isRange ?
+      state.currentNumber.display.text :  // 합페이지는 그대로 표시
+      t('common.pageInfo.pageNumber', { page: state.currentNumber.display.text }) // 단일 페이지는 번역 적용
+  ) : t('overlay.paragraphs.empty')}
           </span>
           <div className="header-controls">
             {state.isPaused && (
-              <span className="pause-indicator">일시정지</span>
+              <span className="pause-indicator">
+                {t('overlay.header.pauseIndicator')}
+              </span>
             )}
             <button
               onClick={() => ipcRenderer.send("move-to-prev")}
               className="overlay-nav-button"
             >
-              ◀
+              {t('overlay.header.navigation.prev')}
             </button>
             <button
               onClick={() => ipcRenderer.send("move-to-next")}
               className="overlay-nav-button"
             >
-              ▶
+              {t('overlay.header.navigation.next')}
             </button>
           </div>
         </div>

@@ -108,11 +108,6 @@
             "titleAlt": "Paraglide タイトル"
         },
         "fileInfo": {
-            "pageInfo": {
-                "none": "ページ情報なし",
-                "format": "{current}/{total}P.",
-                "progress": "({percent}%)"
-            },
             "path": {
                 "separator": "| "
             }
@@ -148,10 +143,6 @@
             "welcome": {
                 "title": "Paraglide",
                 "openFile": "ファイルを読み込む",
-                "dragDrop": {
-                    "message": "テキストファイルをここにドロップしてください",
-                    "formats": "*.txtファイルのみ対応"
-                },
                 "images": {
                     "logoAlt": "Paraglide ロゴ",
                     "titleAlt": "Paraglide タイトル"
@@ -160,7 +151,7 @@
         }
     },
     "dragDrop": {
-        "message": "テキストファイルをここにドロップしてください",
+        "message": "テキストファイルをここにドロップしてください。",
         "subMessage": "*.txtファイルのみ対応"
     },
     "sidebar": {
@@ -175,7 +166,7 @@
                     "empty": "編集中のファイルはありません",
                     "pageInfo": {
                         "none": "ページ情報なし",
-                        "format": "{current}/{total}ページ"
+                        "format": "{{current}}/{{total}}ページ"
                     }
                 },
                 "recentFiles": {
@@ -191,7 +182,7 @@
             },
             "contextMenu": {
                 "showInFinder": "Finderで表示",
-                "showInExplorer": "ファイルエクスプローラで表示",
+                "showInExplorer": "エクスプローラで表示",
                 "deleteHistory": "履歴を削除"
             }
         },
@@ -202,14 +193,14 @@
                 "clear": "クリア"
             },
             "results": {
-                "count": "{count}件の検索結果",
+                "count": "{{count}}件の検索結果",
                 "empty": "検索結果はありません",
                 "pageJump": {
-                    "button": "{page}ページへ移動"
+                    "button": "{{page}}ページへ移動"
                 }
             },
             "pageInfo": {
-                "format": "{page}ページ"
+                "format": "{{page}}ページ"
             }
         }
     },
@@ -223,7 +214,7 @@
         },
         "paragraphs": {
             "empty": " ",
-            "number": "{index}"
+            "number": "{{index}}"
         }
     },
     "settings": {
@@ -275,7 +266,7 @@
     },
     "console": {
         "header": {
-            "title": "ターミナルログ ({count})",
+            "title": "Terminal Logs ({count})",
             "close": "×"
         },
         "content": {

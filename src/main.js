@@ -998,32 +998,34 @@ const WindowManager = {
     const currentParagraph = state.currentParagraph;
   
     if (window === mainWindow) {
-      // 메인 창에는 항상 "페이지" 문구를 포함하여 표시
       const pageInfo = state.paragraphsMetadata[currentParagraph]?.pageInfo;
-      const display = pageInfo ? (
-        pageInfo.end !== pageInfo.start ? 
-        `${pageInfo.start}-${pageInfo.end} 페이지` : 
-        `${pageInfo.start} 페이지`
-      ) : '';
+      const display = pageInfo ? {
+        text: pageInfo.end !== pageInfo.start ? 
+          `${pageInfo.start}-${pageInfo.end}` :  // 합페이지
+          `${pageInfo.start}`,                   // 단일 페이지
+        isRange: pageInfo.end !== pageInfo.start // 합페이지 여부
+      } : null;
     
       window.webContents.send('state-update', {
         ...globalState,
         paragraphs: state.paragraphs,
         currentParagraph: state.currentParagraph,
         paragraphsMetadata: state.paragraphsMetadata,
-        currentNumber: { ...pageInfo, display }, // display 속성 덮어쓰기
+        currentNumber: { ...pageInfo, display },
         theme: ThemeManager.getEffectiveMode(),
       });
+      
     } else if (window === overlayWindow) {
       const startIdx = Math.max(0, currentParagraph - 5);
       const endIdx = Math.min(state.paragraphs.length, currentParagraph + 6);
-        // 오버레이에는 합페일 때 숫자만 표시
+        // 오버레이에는 합페일 때 숫자만 표시하도록 해주세요.
       const pageInfo = state.paragraphsMetadata[currentParagraph]?.pageInfo;
-      const display = pageInfo ? (
-        pageInfo.end !== pageInfo.start ? 
-        `${pageInfo.start}-${pageInfo.end}` : 
-        `${pageInfo.start} 페이지`
-      ) : '';
+      const display = pageInfo ? {
+        text: pageInfo.end !== pageInfo.start ? 
+          `${pageInfo.start}-${pageInfo.end}` :  // 합페이지는 숫자만
+          pageInfo.start,                        // 단일 페이지는 숫자만
+        isRange: pageInfo.end !== pageInfo.start // 합페이지 여부
+      } : null;
     
       window.webContents.send('paragraphs-updated', {
         previous: state.paragraphs.slice(startIdx, currentParagraph).map((text, idx) => ({
@@ -1038,8 +1040,7 @@ const WindowManager = {
           metadata: state.paragraphsMetadata[currentParagraph + 1 + idx]
         })),
         currentParagraph: currentParagraph,
-        // currentNumber를 전체 pageInfo 객체로 전달
-        currentNumber: { ...pageInfo, display } || null,
+        currentNumber: { ...pageInfo, display },
         isPaused: globalState.isPaused,
         theme: {
           mode: ThemeManager.getEffectiveMode(),

@@ -1,9 +1,11 @@
 // DragDropOverlay.js
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import '../../CSS/Views/DragDropOverlay.css';
 const { ipcRenderer } = window.require('electron');
 
 function DragDropOverlay({ isVisible, theme }) {
+  const { t } = useTranslation();
   const [fileIcon, setFileIcon] = useState(null);
 
   useEffect(() => {
@@ -21,12 +23,12 @@ function DragDropOverlay({ isVisible, theme }) {
         {fileIcon && (
           <img 
             src={fileIcon} 
-            alt="Text file" 
+            alt={t('dragDrop.fileIconAlt')} 
             className="drag-drop-icon"
           />
         )}
-        <div className="drag-drop-message">텍스트 파일을 여기에 드롭하세요</div>
-        <div className="drag-drop-sub">*.txt 파일만 지원됩니다</div>
+        <div className="drag-drop-message">{t('dragDrop.message')}</div>
+        <div className="drag-drop-sub">{t('dragDrop.subMessage')}</div>
       </div>
     </div>
   );

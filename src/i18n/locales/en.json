@@ -43,10 +43,10 @@
         },
         "pageInfo": {
             "none": "페이지 정보 없음",
-            "format": "{current}/{total}페이지",
-            "shortFormat": "{current}/{total}P.",
-            "progress": "({percent}%)",
-            "pageNumber": "{page}페이지"
+            "format": "{{current}}/{{total}}페이지",
+            "shortFormat": "{{current}}/{{total}}P.",
+            "progress": "({{percent}}%)",
+            "pageNumber": "{{page}}페이지"
         },
         "errors": {
             "rendering": {
@@ -108,11 +108,6 @@
             "titleAlt": "Paraglide 타이틀"
         },
         "fileInfo": {
-            "pageInfo": {
-                "none": "페이지 정보 없음",
-                "format": "{current}/{total}P.",
-                "progress": "({percent}%)"
-            },
             "path": {
                 "separator": "| "
             }
@@ -120,7 +115,7 @@
         "paragraphInfo": {
             "toNextPage": "다음 페이지까지 {count}단락 남음",
             "lastParagraph": "마지막 단락입니다.",
-            "pageNumberHint": "💡단락 위 숫자는 페이지 번호로 인식됩니다 (예시: 1, 1p, 1페)."
+            "pageNumberHint": "💡페이지 번호를 기입하여 표시할 수 있습니다. (예시: 1, 1p, 1페)."
         },
         "buttons": {
             "aria": {
@@ -152,18 +147,9 @@
                     "message": "텍스트 파일을 여기에 드롭하세요",
                     "formats": "*.txt 파일만 지원됩니다"
                 },
-                "hints": {
-                    "pageNumber": "💡단락 위 숫자는 페이지 번호로 인식됩니다 (예시: 1, 1p, 1페)."
-                },
                 "images": {
                     "logoAlt": "Paraglide 로고",
                     "titleAlt": "Paraglide 타이틀"
-                }
-            },
-            "content": {
-                "paragraphInfo": {
-                    "toNextPage": "다음 페이지까지 {count}단락 남음",
-                    "lastParagraph": "마지막 단락입니다"
                 }
             }
         }
@@ -211,14 +197,14 @@
                 "clear": "지우기"
             },
             "results": {
-                "count": "{count}개의 검색 결과",
+                "count": "{{count}}개의 검색 결과",
                 "empty": "검색 결과가 없습니다",
                 "pageJump": {
-                    "button": "{page}페이지로 이동"
+                    "button": "{{page}}페이지로 이동"
                 }
             },
             "pageInfo": {
-                "format": "{page}페이지"
+                "format": "{{page}}페이지"
             }
         }
     },
@@ -232,7 +218,7 @@
         },
         "paragraphs": {
             "empty": " ",
-            "number": "{index}"
+            "number": "{{index}}"
         }
     },
     "settings": {
@@ -284,12 +270,12 @@
     },
     "console": {
         "header": {
-            "title": "Terminal Logs ({count})",
+            "title": "Terminal Logs ({{count}})",
             "close": "×"
         },
         "content": {
             "noLogs": "로그가 없습니다.",
-            "timestamp": "[{time}]"
+            "timestamp": "[{{time}}]"
         },
         "highlight": {
             "patterns": {
