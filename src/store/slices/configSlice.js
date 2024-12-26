@@ -14,6 +14,7 @@ const initialState = {
     mode: THEME.AUTO,
     accentColor: '#007bff'
   },
+  language: 'ko',
   overlay: {
     bounds: { 
       width: 320, 

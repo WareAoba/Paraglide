@@ -2,6 +2,7 @@
 const { app, BrowserWindow, dialog, ipcMain, nativeTheme, clipboard, screen, shell } = require('electron');
 const path = require('path');
 const store = require('./store/store');
+const i18next = require('i18next');
 const { TextProcessUtils } = require('./store/utils/TextProcessUtils');
 const { ConfigManager } = require('./store/utils/ConfigManager');
 const { textProcessActions } = require('./store/slices/textProcessSlice');
@@ -1078,6 +1079,19 @@ const IPCManager = {
     // 상태 관련 핸들러
     ipcMain.handle('get-state', () => globalState);
     ipcMain.on('update-state', (event, newState) => updateState(newState));
+
+    // 언어 변경 핸들러
+ipcMain.handle('change-language', async (_, lang) => {
+  try {
+    await i18next.changeLanguage(lang);
+    store.dispatch(configActions.updateLanguage(lang));
+    await FileManager.saveConfig({ language: lang });
+    return true;
+  } catch (error) {
+    console.error('[Main] 언어 변경 실패:', error);
+    return false;
+  }
+});
   
     // 파일 관련 핸들러 - 통합
     ipcMain.handle('get-file-history', () => FileManager.getFileHistory());

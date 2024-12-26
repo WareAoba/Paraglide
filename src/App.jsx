@@ -1,5 +1,7 @@
 import React from 'react';
 import { createHashRouter, RouterProvider } from 'react-router-dom';
+import { I18nextProvider } from 'react-i18next';
+import i18n from './i18n';
 import MainComponent from './components/MainComponent';
 import OverlayComponent from './components/OverlayComponent';
 import Console from './components/Views/Console';
@@ -38,7 +40,11 @@ const router = createHashRouter([
 });
 
 function App() {
-  return <RouterProvider router={router} />;
+  return (
+    <I18nextProvider i18n={i18n}>
+      <RouterProvider router={router} />
+    </I18nextProvider>
+  );
 }
 
 export default App;

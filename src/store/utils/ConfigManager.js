@@ -17,7 +17,8 @@ const ConfigManager = {
             config.theme &&
             config.overlay &&
             typeof config.processMode === 'string' &&
-            typeof config.viewMode === 'string'
+            typeof config.viewMode === 'string' &&
+            typeof config.language === 'string'  // language 검증 추가
         );
     },
 
@@ -25,11 +26,15 @@ const ConfigManager = {
         return {
             theme: {
                 mode: this.validateThemeMode(
-                  savedConfig.theme?.mode, 
-                  defaultConfig.theme.mode
+                    savedConfig.theme?.mode, 
+                    defaultConfig.theme.mode
                 ),
                 accentColor: savedConfig.theme?.accentColor || defaultConfig.theme.accentColor
             },
+            language: this.validateLanguage(
+                savedConfig.language,
+                defaultConfig.language
+            ),
             overlay: {
                 bounds: {
                     width: this.validateNumber(
@@ -109,7 +114,12 @@ const ConfigManager = {
     validateThemeMode(value, defaultValue) {
         const allowedModes = [THEME.DARK, THEME.LIGHT, THEME.AUTO];
         return allowedModes.includes(value) ? value : defaultValue;
-      },
+    },
+
+    validateLanguage(value, defaultValue) {
+        const supportedLanguages = ['ko', 'en', 'ja'];
+        return supportedLanguages.includes(value) ? value : defaultValue;
+    },
 
     validateProcessMode(value, defaultValue) { // 추가된 함수
         const allowedModes = ['paragraph', 'line']; // 예시: 허용된 모드 목록

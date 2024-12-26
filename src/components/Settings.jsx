@@ -1,5 +1,6 @@
 // src/components/Settings.js
 import React, { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { HexColorPicker } from 'react-colorful';
 import '../CSS/Settings.css';
 import '../CSS/Controllers/Checkbox.css';
@@ -8,16 +9,17 @@ import '../CSS/Controllers/Dropdown.css';
 const { ipcRenderer } = window.require('electron');
 
 function Settings({ isVisible, onClose, icons }) {
+  const { t } = useTranslation();
   const [settings, setSettings] = useState({
-    windowOpacity: 1.0,      // 창 전체 투명도
-    contentOpacity: 0.8,     // 배경 투명도
+    windowOpacity: 1.0, // 창 전체 투명도
+    contentOpacity: 0.8, // 배경 투명도
     overlayFixed: false,
     loadLastOverlayBounds: true,
     theme: {
-      mode: 'auto',     // 테마 모드 추가
+      mode: 'auto', // 테마 모드 추가
       accentColor: '#007bff'
     },
-    processMode: 'paragraph',  // 기본 텍스트 처리 방식
+    processMode: 'paragraph', // 기본 텍스트 처리 방식
     viewMode: 'overview'
   });
   const [originalSettings, setOriginalSettings] = useState(null);
@@ -34,16 +36,16 @@ function Settings({ isVisible, onClose, icons }) {
         if (savedSettings) {
           // 기존 processMode를 우선적으로 사용
           const processMode = savedSettings.processMode || 'paragraph';
-          
+
           const newSettings = {
             ...settings,
             ...savedSettings,
             processMode // 명시적으로 processMode 설정
           };
-          
+
           setSettings(newSettings);
           setOriginalSettings(newSettings); // originalSettings도 동일하게 설정
-          
+
           // 디버깅용
           console.log('로드된 설정:', newSettings);
         }
@@ -51,24 +53,24 @@ function Settings({ isVisible, onClose, icons }) {
         console.error('설정 로드 중 오류:', error);
       }
     };
-    
+
     if (isVisible) {
       loadSettings();
     }
   }, [isVisible]);
-  
+
   // 로그 파일 정리 핸들러
   const handleClearLogs = async () => {
     if (window.confirm('모든 로그 파일을 정리하시겠습니까?')) {
       await ipcRenderer.invoke('clear-log-files');
     }
-  }; 
+  };
 
   const handleSettingChange = async (newSettings) => {
     try {
       // 설정 상태 업데이트
       setSettings(newSettings);
-  
+
       // 설정 적용 요청
       const result = await ipcRenderer.invoke('apply-settings', {
         windowOpacity: newSettings.windowOpacity,
@@ -86,7 +88,7 @@ function Settings({ isVisible, onClose, icons }) {
       if (newSettings.viewMode && newSettings.viewMode !== settings.viewMode) {
         ipcRenderer.send('update-view-mode', newSettings.viewMode);
       }
-  
+
       if (!result) {
         console.error('[Settings] 설정 적용 실패');
       }
@@ -100,7 +102,7 @@ function Settings({ isVisible, onClose, icons }) {
     try {
       const currentMode = settings.processMode;
       const newMode = currentMode === 'paragraph' ? 'line' : 'paragraph';
-      
+
       // 디버깅용
       console.log('모드 전환:', currentMode, '->', newMode);
 
@@ -111,14 +113,13 @@ function Settings({ isVisible, onClose, icons }) {
 
       // 먼저 UI 상태 업데이트
       setSettings(newSettings);
-      
+
       // 설정 저장 및 모드 전환 요청
       await ipcRenderer.invoke('apply-settings', newSettings);
       ipcRenderer.send('switch-mode', newMode);
-      
+
       // 성공 시 originalSettings 업데이트
       setOriginalSettings(newSettings);
-
     } catch (error) {
       console.error('모드 전환 중 오류:', error);
       // 오류 시 이전 상태로 복구
@@ -130,7 +131,7 @@ function Settings({ isVisible, onClose, icons }) {
     // 설정이 로드되면 슬라이더 값 초기화
     const windowOpacitySlider = document.querySelector('input[type="range"][value="' + (settings.windowOpacity * 100) + '"]');
     const contentOpacitySlider = document.querySelector('input[type="range"][value="' + (settings.contentOpacity * 100) + '"]');
-  
+
     if (windowOpacitySlider) {
       windowOpacitySlider.style.setProperty('--slider-value', `${settings.windowOpacity * 100}%`);
     }
@@ -142,7 +143,6 @@ function Settings({ isVisible, onClose, icons }) {
   useEffect(() => {
     function handleDropdownOutside(event) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        
         setShowThemeDropdown(false);
       }
     }
@@ -177,16 +177,16 @@ function Settings({ isVisible, onClose, icons }) {
     try {
       const currentMode = settings.viewMode;
       const newMode = currentMode === 'overview' ? 'listview' : 'overview';
-      
+
       const newSettings = {
         ...settings,
         viewMode: newMode
       };
-  
+
       setSettings(newSettings);
       await ipcRenderer.invoke('apply-settings', newSettings);
       ipcRenderer.send('update-view-mode', newMode);
-      
+
       setOriginalSettings(newSettings);
     } catch (error) {
       console.error('뷰 모드 전환 중 오류:', error);
@@ -204,7 +204,8 @@ function Settings({ isVisible, onClose, icons }) {
   };
 
   return (
-    <div className={`settings-modal ${isVisible ? 'visible' : ''}`}
+    <div
+      className={`settings-modal ${isVisible ? 'visible' : ''}`}
       data-theme={settings.theme.mode}
       onClick={(e) => {
         if (typeof e.target.className === 'string' && e.target.className.includes('settings-modal')) {
@@ -216,96 +217,96 @@ function Settings({ isVisible, onClose, icons }) {
       }}
     >
       <div className="settings-content">
-        <h2>설정</h2>
-        
+        <h2>{t('settings.title')}</h2>
+
         <div className="settings-scroll-area">
           <div className="settings-group">
             {/* 텍스트 처리 방식 그룹 */}
-            <h3>텍스트 처리 방식</h3>
+            <h3>{t('settings.processMode.title')}</h3>
             <div className="segment-control" data-mode={settings.processMode}>
-              <button 
+              <button
                 className={settings.processMode === 'paragraph' ? 'active' : ''}
                 onClick={() => handleProcessModeChange('paragraph')}
               >
-                단락 단위로
+                {t('settings.processMode.paragraph')}
               </button>
-              <button 
+              <button
                 className={settings.processMode === 'line' ? 'active' : ''}
                 onClick={() => handleProcessModeChange('line')}
               >
-                줄 단위로
+                {t('settings.processMode.line')}
               </button>
             </div>
           </div>
 
           <div className="settings-group">
-            <h3>화면 표시 방식</h3>
-            <div className="segment-control" 
-                 data-mode={settings.viewMode}
-                 onClick={handleViewModeChange}>  {/* 전체 영역에 클릭 핸들러 추가 */}
-              <button 
-                className={settings.viewMode === 'overview' ? 'active' : ''}
-              >
-                오버뷰
+            <h3>{t('settings.viewMode.title')}</h3>
+            <div
+              className="segment-control"
+              data-mode={settings.viewMode}
+              onClick={handleViewModeChange} // 전체 영역에 클릭 핸들러 추가
+            >
+              <button className={settings.viewMode === 'overview' ? 'active' : ''}>
+                {t('settings.viewMode.overview')}
               </button>
-              <button 
-                className={settings.viewMode === 'listview' ? 'active' : ''}
-              >
-                리스트뷰
+              <button className={settings.viewMode === 'listview' ? 'active' : ''}>
+                {t('settings.viewMode.listview')}
               </button>
             </div>
           </div>
 
           {/* 오버레이 그룹 */}
           <div className="settings-group">
-            <h3>오버레이</h3>
+            <h3>{t('settings.overlay.title')}</h3>
             <div className="slider-wrapper">
-              <span>전체 투명도</span>
-              <input 
-                type="range" 
+              <span>{t('settings.overlay.windowOpacity')}</span>
+              <input
+                type="range"
                 min="0"
                 max="100"
                 step="1"
                 value={settings.windowOpacity * 100}
-                onChange={e => {
+                onChange={(e) => {
                   const value = parseFloat(e.target.value);
                   e.target.style.setProperty('--slider-value', `${value}%`);
                   handleSettingChange({
-                    ...settings, 
+                    ...settings,
                     windowOpacity: value / 100
                   });
                 }}
               />
             </div>
             <div className="slider-wrapper">
-              <span>배경 투명도</span>
-              <input 
-                type="range" 
+              <span>{t('settings.overlay.contentOpacity')}</span>
+              <input
+                type="range"
                 min="0"
                 max="100"
                 step="1"
                 value={settings.contentOpacity * 100}
-                onChange={e => {
+                onChange={(e) => {
                   const value = e.target.value;
                   // CSS 변수 업데이트
                   e.target.style.setProperty('--slider-value', `${value}%`);
                   // 기존 설정 업데이트
                   handleSettingChange({
-                    ...settings, 
+                    ...settings,
                     contentOpacity: parseFloat(value) / 100
                   });
                 }}
               />
             </div>
             <div className="checkbox-wrapper">
-              <input 
+              <input
                 type="checkbox"
                 id="overlayFixed"
                 checked={settings.overlayFixed}
-                onChange={e => handleSettingChange({
-                  ...settings, 
-                  overlayFixed: e.target.checked
-                })}
+                onChange={(e) =>
+                  handleSettingChange({
+                    ...settings,
+                    overlayFixed: e.target.checked
+                  })
+                }
               />
               <label className="checkbox" htmlFor="overlayFixed">
                 <span>
@@ -313,40 +314,41 @@ function Settings({ isVisible, onClose, icons }) {
                     <polyline points="1.5 6 4.5 9 10.5 1"></polyline>
                   </svg>
                 </span>
-                <span>오버레이 위치 고정</span>
+                <span>{t('settings.overlay.fixed')}</span>
               </label>
             </div>
             <div className="checkbox-wrapper">
-              <input 
+              <input
                 type="checkbox"
                 id="loadLastOverlayBounds"
                 checked={settings.loadLastOverlayBounds}
-                onChange={e => handleSettingChange({
-                  ...settings, 
-                  loadLastOverlayBounds: e.target.checked
-                })}
+                onChange={(e) =>
+                  handleSettingChange({
+                    ...settings,
+                    loadLastOverlayBounds: e.target.checked
+                  })
+                }
               />
               <label className="checkbox" htmlFor="loadLastOverlayBounds">
                 <span>
-                  <svg width="12" height="10" viewBox="0 0 12 10">
+                  <svg width="12" height="10" viewBox="0 0 12 10"></svg>
                     <polyline points="1.5 6 4.5 9 10.5 1"></polyline>
-                  </svg>
                 </span>
-                <span>마지막 오버레이 위치/크기 가져오기</span>
+                <span>{t('settings.overlay.remember')}</span>
               </label>
             </div>
           </div>
 
           {/* 앱 설정 그룹 */}
           <div className="settings-group">
-            <h3>앱 설정</h3>
+            <h3>{t('settings.appearance.title')}</h3>
             <label>
-              강조색
+              {t('settings.appearance.accentColor')}
               <div className="color-picker-container" ref={colorPickerRef}>
-                <div 
+                <div
                   className="color-preview"
                   onClick={() => setShowColorPicker(!showColorPicker)}
-                  style={{ 
+                  style={{
                     backgroundColor: settings.theme.accentColor,
                     width: '32px',
                     height: '32px',
@@ -369,14 +371,7 @@ function Settings({ isVisible, onClose, icons }) {
                     }}
                   />
                   <div className="color-presets">
-                    {[
-                      '#007bff',
-                      '#dc3545',
-                      '#28a745',
-                      '#ffc107',
-                      '#17a2b8',
-                      '#6f42c1'
-                    ].map(color => (
+                    {['#007bff', '#dc3545', '#28a745', '#ffc107', '#17a2b8', '#6f42c1'].map((color) => (
                       <div
                         key={color}
                         className="color-preset"
@@ -405,59 +400,46 @@ function Settings({ isVisible, onClose, icons }) {
               </div>
             </label>
             <label className="settings-label">
-              테마
+              {t('settings.appearance.theme.title')}
               <div className="dropdown-wrapper" ref={dropdownRef}>
-                <button 
+                <button
                   className="dropdown-button"
                   onClick={(e) => {
                     e.stopPropagation();
                     setShowThemeDropdown(!showThemeDropdown);
                   }}
                 >
-                  <img 
+                  <img
                     src={
-                      settings.theme.mode === 'auto' ? icons?.themeAuto :
-                      settings.theme.mode === 'light' ? icons?.themeLight : 
-                      icons?.themeDark
-                    } 
-                    alt="" 
-                    className="dropdown-icon" 
+                      settings.theme.mode === 'auto'
+                        ? icons?.themeAuto
+                        : settings.theme.mode === 'light'
+                        ? icons?.themeLight
+                        : icons?.themeDark
+                    }
+                    alt={t('settings.appearance.theme.iconAlt')}
+                    className="dropdown-icon"
                   />
-                  {settings.theme.mode === 'auto' ? '자동' :
-                  settings.theme.mode === 'light' ? '라이트' : '다크'}
+                  {t(`settings.appearance.theme.${settings.theme.mode}`)}
                   <svg width="10" height="6" viewBox="0 0 10 6">
-                    <path 
-                      d="M1 1L5 5L9 1" 
-                      stroke="currentColor" 
-                      strokeWidth="1.5" 
-                      fill="none"
-                    />
+                    <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="1.5" fill="none" />
                   </svg>
                 </button>
                 <div className={`dropdown-menu ${showThemeDropdown ? 'show' : ''}`}>
-                  <div
-                    className={`dropdown-item ${settings.theme.mode === 'auto' ? 'active' : ''}`}
-                    onClick={() => handleThemeItemClick('auto')}
-                  >
-                    <img src={icons?.themeAuto} alt="자동" className="dropdown-icon" />
-                    자동
-                  </div>
-
-                  <div
-                    className={`dropdown-item ${settings.theme.mode === 'light' ? 'active' : ''}`}
-                    onClick={() => handleThemeItemClick('light')}
-                  >
-                    <img src={icons?.themeLight} alt="라이트" className="dropdown-icon" />
-                    라이트
-                  </div>
-
-                  <div
-                    className={`dropdown-item ${settings.theme.mode === 'dark' ? 'active' : ''}`}
-                    onClick={() => handleThemeItemClick('dark')}
-                  >
-                    <img src={icons?.themeDark} alt="다크" className="dropdown-icon" />
-                    다크
-                  </div>
+                  {['auto', 'light', 'dark'].map((mode) => (
+                    <div
+                      key={mode}
+                      className={`dropdown-item ${settings.theme.mode === mode ? 'active' : ''}`}
+                      onClick={() => handleThemeItemClick(mode)}
+                    >
+                      <img
+                        src={icons?.[`theme${mode.charAt(0).toUpperCase() + mode.slice(1)}`]}
+                        alt={t(`settings.appearance.theme.${mode}IconAlt`)}
+                        className="dropdown-icon"
+                      />
+                      {t(`settings.appearance.theme.${mode}`)}
+                    </div>
+                  ))}
                 </div>
               </div>
             </label>
@@ -465,26 +447,28 @@ function Settings({ isVisible, onClose, icons }) {
 
           {/* 데이터 관리 그룹 */}
           <div className="settings-group danger-zone">
-            <h3>데이터 관리</h3>
-            <button onClick={handleClearLogs}>
-              로그 파일 정리
-            </button>
+            <h3>{t('settings.dataManagement.title')}</h3>
+            <button onClick={handleClearLogs}>{t('settings.dataManagement.clearLogs')}</button>
           </div>
 
           {/* 정보 그룹 */}
           <div className="settings-group">
-            <h3>정보</h3>
+            <h3>{t('settings.info.title')}</h3>
             <div className="info-item">
-            <p>Paraglide 0.3.0 beta</p>
-            <p>Made by WareAoba</p>
-            <p>Contribute.. Rinna, Latte</p>
+              <p>{t('settings.info.version')}</p>
+              <p>{t('settings.info.credits.made')}</p>
+              <p>{t('settings.info.credits.contribute')}</p>
             </div>
           </div>
         </div>
-        
+
         <div className="settings-button-group">
-          <button className="btn" onClick={handleCancel}>취소</button>
-          <button className="btn btn-primary" onClick={onClose}>확인</button>
+          <button className="btn" onClick={handleCancel}>
+            {t('common.buttons.cancel')}
+          </button>
+          <button className="btn btn-primary" onClick={onClose}>
+            {t('common.buttons.confirm')}
+          </button>
         </div>
       </div>
     </div>

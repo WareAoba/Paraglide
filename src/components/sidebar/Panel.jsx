@@ -2,6 +2,7 @@
 import React, { useEffect } from 'react';
 import { useContextMenu, Menu, Item } from 'react-contexify';
 import { createPortal } from 'react-dom';
+import { useTranslation } from 'react-i18next';
 import '../../CSS/App.css';
 import '../../CSS/Sidebar/Panel.css';
 const { ipcRenderer } = window.require('electron');
@@ -21,6 +22,7 @@ function Panel({
   loadFileHistory
 }) {
 
+  const { t } = useTranslation();
   const isMac = os.platform() === 'darwin';
 
   // 1. 포맷팅 유틸리티
@@ -220,8 +222,11 @@ const handleCurrentContextMenu = (event) => {
                 {(() => {
                   const isValidPage = (page) => page && Number.isFinite(page) && page > 0;
                   return (!isValidPage(currentFile.totalPages) || !isValidPage(currentFile.currentPage))
-                    ? "페이지 정보 없음"
-                    : `${currentFile.currentPage}/${currentFile.totalPages}페이지`;
+                    ? t('common.pageInfo.none')
+                    : t('common.pageInfo.format', {
+                        current: currentFile.currentPage,
+                        total: currentFile.totalPages
+                      });
                 })()}
               </div>
               <div className="current-file-path">{formatPath(currentFilePath)}</div>
@@ -229,32 +234,32 @@ const handleCurrentContextMenu = (event) => {
           </div>
         </section>
       )}
-  
+
       {/* 2. 컨트롤 섹션 */}
       <section className="sidebar-section controls">
         <div className="control-grid">
           <ControlButton
             icon={icons?.openIcon}
-            label="열기"
+            label={t('sidebar.panel.controls.open')}
             actionType="open"
             action={() => ipcRenderer.invoke('open-file')}
           />
           <ControlButton
             icon={icons?.editIcon}
-            label="편집"
+            label={t('sidebar.panel.controls.edit')}
             actionType="edit"
             action={onClose}
             isDisabled={true}
           />
           <ControlButton
             icon={icons?.searchIcon}
-            label="검색"
+            label={t('sidebar.panel.controls.search')}
             action={() => onToggleSearch(true, true)}
             isDisabled={status === 'ready'}
           />
           <ControlButton
             icon={icons?.terminalIcon}
-            label="콘솔"
+            label={t('sidebar.panel.controls.console')}
             action={() => {
               onShowDebugConsole();
               onClose();
@@ -262,10 +267,10 @@ const handleCurrentContextMenu = (event) => {
           />
         </div>
       </section>
-  
+
       {/* 3. 최근 파일 섹션 */}
       <section className="sidebar-section recent-files">
-        <h3>최근 작업 파일</h3>
+        <h3>{t('sidebar.panel.sections.recentFiles.title')}</h3>
         <div className="recent-file-list">
           {files.length > 0 ? (
             files.map((file) => (
@@ -279,11 +284,13 @@ const handleCurrentContextMenu = (event) => {
               />
             ))
           ) : (
-            <div className="empty-message">최근 작업 기록이 없습니다.</div>
+            <div className="empty-message">
+              {t('sidebar.panel.sections.recentFiles.empty')}
+            </div>
           )}
         </div>
       </section>
-  
+
       {/* 4. 컨텍스트 메뉴 */}
       {createPortal(
         <>
@@ -293,12 +300,16 @@ const handleCurrentContextMenu = (event) => {
               src={isMac ? icons?.finderIcon : icons?.folderIcon} 
               alt={isMac ? "Finder" : "탐색기"} 
             />
-            <span>{isMac ? "Finder에서 열기" : "파일 탐색기에서 열기"}</span>
+            <span>
+              {t(isMac ? 
+                'sidebar.panel.contextMenu.showInFinder' : 
+                'sidebar.panel.contextMenu.showInExplorer')}
+            </span>
           </Item>
           <Item onClick={({ props }) => handleRemoveFile(props.file.filePath)}
             data-action="delete">
-            <img src={icons?.deleteIcon} alt="삭제" />
-            <span>기록 삭제</span>
+            <img src={icons?.deleteIcon} alt={t('common.buttons.delete')} />
+            <span>{t('sidebar.panel.contextMenu.deleteHistory')}</span>
           </Item>
         </Menu>
 

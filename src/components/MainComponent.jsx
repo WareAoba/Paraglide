@@ -804,12 +804,10 @@ ipcRenderer.invoke('generate-css-filter', accentColor, {
                       unmountOnExit
                     >
                       <div className="view-wrapper">
-                        <div className="page-number">
-                        {state.currentNumber?.display || '페이지 번호 없음'}
-                        </div>
                         <Overview
                           paragraphs={state.paragraphs}
                           currentParagraph={state.currentParagraph}
+                          currentNumber={state.currentNumber}
                           onParagraphClick={handleParagraphClick}
                           theme={theme}
                           hoveredSection={hoveredSection}
@@ -817,30 +815,6 @@ ipcRenderer.invoke('generate-css-filter', accentColor, {
                           paragraphsMetadata={state.paragraphsMetadata}
                           onCompleteWork={handleCompleteWork}
                         />
-                        <div className="remaining-paragraphs">
-                          {state.currentNumber?.display && state.currentNumber?.display !== 'Non 페이지' ? (
-                            (() => {
-                              // 현재 단락 인덱스
-                              const currentIndex = state.currentParagraph;
-
-                              // 다음 페이지의 첫 번째 단락 인덱스 계산
-                              const nextPageIndex = state.paragraphsMetadata.findIndex(
-                                (meta) => meta.pageNumber > state.paragraphsMetadata[currentIndex]?.pageNumber
-                              );
-
-                              // 남은 단락 계산
-                              const remainingParagraphs =
-                                nextPageIndex !== -1 ? nextPageIndex - currentIndex : 0;
-
-                              // 표시할 텍스트
-                              return remainingParagraphs > 0
-                                ? `다음 페이지까지 ${remainingParagraphs}단락 남음`
-                                : '마지막 단락입니다.';
-                            })()
-                          ) : (
-                            '💡단락 위 숫자는 페이지 번호로 인식됩니다 (예시: 1, 1p, 1페).'
-                          )}
-                        </div>
                       </div>
                     </CSSTransition>
                   )}

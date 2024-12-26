@@ -1,9 +1,21 @@
 // src/components/Views/Overview.js
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import '../../CSS/Views/Overview.css';
 
-function Overview({ paragraphs, currentParagraph, onParagraphClick, theme, hoveredSection, onHoverChange, paragraphsMetadata, onCompleteWork }) {
+function Overview({
+  paragraphs,
+  currentNumber,
+  currentParagraph,
+  onParagraphClick,
+  theme,
+  hoveredSection,
+  onHoverChange,
+  paragraphsMetadata,
+  onCompleteWork
+}) {
   
+  const { t } = useTranslation();
   const isFirstParagraph = currentParagraph === 0;
   const isLastParagraph = currentParagraph === paragraphs.length - 1;
 
@@ -27,70 +39,107 @@ function Overview({ paragraphs, currentParagraph, onParagraphClick, theme, hover
   return `${currentPageNum}-${paragraphCount}`;
   };
 
+  const getRemainingParagraphsText = () => { // 남은 페이지 or 페이지 번호 힌트트
+    const currentMeta = paragraphsMetadata[currentParagraph];
+    if (!currentMeta?.pageNumber) {
+      return t('mainComponent.paragraphInfo.pageNumberHint');
+    }
+
+    const nextPageIndex = paragraphsMetadata.findIndex(
+      (meta) => meta?.pageNumber > currentMeta.pageNumber
+    );
+
+    const remainingParagraphs = nextPageIndex !== -1 ? 
+      nextPageIndex - currentParagraph : 
+      0;
+
+    return remainingParagraphs > 0
+      ? t('mainComponent.paragraphInfo.toNextPage', { count: remainingParagraphs })
+      : t('mainComponent.paragraphInfo.lastParagraph');
+  };
+
   return (
-  <div className="paragraph-container">
-    <div className="paragraph-header" data-theme={theme.mode}>
-    <div style={{ visibility: isFirstParagraph ? 'hidden' : 'visible' }}>이전 단락</div>
-    <div className="current">현재 단락</div>
-    <div style={{ visibility: isLastParagraph ? 'hidden' : 'visible' }}>다음 단락</div>
-    </div>
-    
-    <div className="paragraph-content" data-theme={theme.mode}>
-    <div 
-      className={`paragraph-prev ${!isFirstParagraph ? '' : 'paragraph-empty'} ${hoveredSection === 'prev' ? 'hovered' : ''}`}
-      onClick={!isFirstParagraph ? () => onParagraphClick('prev') : undefined}
-      onMouseEnter={!isFirstParagraph ? () => onHoverChange('prev') : undefined}
-      onMouseLeave={!isFirstParagraph ? () => onHoverChange(null) : undefined}
-      data-theme={theme.mode}
-    >
-      <div className="overview-paragraph-wrapper">
-      {!isFirstParagraph && paragraphs[currentParagraph - 1]}
+    <div className='overview-container' data-theme={theme.mode}>
+      <div className="page-number">
+      {currentNumber?.display 
+        ? t('common.pageInfo.pageNumber', { page: currentNumber.start }) 
+        : t('common.pageInfo.none')
+      }
       </div>
-      <div className="overview-paragraph-number">
-      {!isFirstParagraph && getPageParagraphInfo(currentParagraph - 1)}
+    <div className="paragraph-container">
+      <div className="paragraph-header">
+        <div style={{ visibility: isFirstParagraph ? 'hidden' : 'visible' }}>
+          {t('common.navigation.prev')}
+        </div>
+        <div className="current">
+        {t('common.navigation.current')}
+        </div>
+        <div style={{ visibility: isLastParagraph ? 'hidden' : 'visible' }}>
+          {t('common.navigation.next')}
+        </div>
       </div>
-    </div>
+      
+      <div className="paragraph-content" data-theme={theme.mode}>
+        <div 
+          className={`paragraph-prev ${!isFirstParagraph ? '' : 'paragraph-empty'} ${hoveredSection === 'prev' ? 'hovered' : ''}`}
+          onClick={!isFirstParagraph ? () => onParagraphClick('prev') : undefined}
+          onMouseEnter={!isFirstParagraph ? () => onHoverChange('prev') : undefined}
+          onMouseLeave={!isFirstParagraph ? () => onHoverChange(null) : undefined}
+          data-theme={theme.mode}
+        >
+          <div className="overview-paragraph-wrapper">
+            {!isFirstParagraph && paragraphs[currentParagraph - 1]}
+          </div>
+          <div className="overview-paragraph-number">
+            {!isFirstParagraph && getPageParagraphInfo(currentParagraph - 1)}
+          </div>
+        </div>
 
-    <div 
-      className={`paragraph-current ${isFirstParagraph ? 'paragraph-current-first' : ''}`}
-      onClick={() => onParagraphClick('current')}
-      data-theme={theme.mode}
-    >
-      <div className="overview-paragraph-wrapper">
-      {paragraphs[currentParagraph]}
-      </div>
-      <div className="overview-paragraph-number">
-      {getPageParagraphInfo(currentParagraph)}
-      </div>
-    </div>
+        <div 
+          className={`paragraph-current ${isFirstParagraph ? 'paragraph-current-first' : ''}`}
+          onClick={() => onParagraphClick('current')}
+          data-theme={theme.mode}
+        >
+          <div className="overview-paragraph-wrapper">
+            {paragraphs[currentParagraph]}
+          </div>
+          <div className="overview-paragraph-number">
+            {getPageParagraphInfo(currentParagraph)}
+          </div>
+        </div>
 
-    {isLastParagraph ? (
+        {isLastParagraph ? (
       <div className="paragraph-next complete-work-container">
-      <button 
-        className="overview-complete-work-button"
-        onClick={onCompleteWork}
-      >
-        작업 완료
-      </button>
+        <button 
+          className="overview-complete-work-button"
+          onClick={onCompleteWork}
+        >
+          {t('common.buttons.completeWork')}
+        </button>
       </div>
     ) : (
-      <div 
-      className={`paragraph-next ${hoveredSection === 'next' ? 'hovered' : ''}`}
-      onClick={() => onParagraphClick('next')}
-      onMouseEnter={() => onHoverChange('next')}
-      onMouseLeave={() => onHoverChange(null)}
-      data-theme={theme.mode}
-      >
-      <div className="overview-paragraph-wrapper">
-        {paragraphs[currentParagraph + 1]}
+          <div 
+            className={`paragraph-next ${hoveredSection === 'next' ? 'hovered' : ''}`}
+            onClick={() => onParagraphClick('next')}
+            onMouseEnter={() => onHoverChange('next')}
+            onMouseLeave={() => onHoverChange(null)}
+            data-theme={theme.mode}
+          >
+            <div className="overview-paragraph-wrapper">
+              {paragraphs[currentParagraph + 1]}
+            </div>
+            <div className="overview-paragraph-number">
+              {getPageParagraphInfo(currentParagraph + 1)}
+            </div>
+          </div>
+        )}
       </div>
-      <div className="overview-paragraph-number">
-        {getPageParagraphInfo(currentParagraph + 1)}
+      <div className="remaining-paragraphs">
+        {getRemainingParagraphsText()}
       </div>
-      </div>
-    )}
     </div>
-  </div>
+    </div>
+    
   );
 }
 
