@@ -1,0 +1,266 @@
+{
+    "app": {
+        "name": "Paraglide",
+        "title": "Paraglide - 텍스트 단락 처리기"
+    },
+    "common": {
+        "confirm": "확인",
+        "cancel": "취소",
+        "close": "닫기",
+        "open": "열기",
+        "exit": "종료"
+    },
+    "dialogs": {
+        "fileError": {
+            "title": "파일 형식 오류",
+            "message": "지원하지 않는 파일 형식입니다.\n(.txt 파일만 지원됩니다)"
+        },
+        "fileNotFound": {
+            "title": "파일 열기 오류",
+            "message": "파일이 존재하지 않습니다.\n기록을 삭제합니다."
+        },
+        "processMode": {
+            "title": "모드 추천",
+            "message": "문장 길이가 길어 보입니다. 줄 단위로 표시할까요?"
+        },
+        "emptyFile": {
+            "title": "잘못된 파일",
+            "message": "파일 내용이 비어있거나 읽을 수 없습니다."
+        },
+        "exitConfirm": {
+            "title": "작업 종료",
+            "message": "작업 중인 파일이 있습니다.\n정말 종료하시겠습니까?"
+        },
+        "alreadyRunning": {
+            "title": "실행 중",
+            "message": "Paraglide가 이미 실행 중입니다.",
+            "detail": "다중 실행은 지원하지 않습니다."
+        },
+        "switchToExisting": {
+            "title": "실행 중",
+            "message": "Paraglide가 이미 실행 중입니다.",
+            "detail": "기존 창으로 이동합니다."
+        }
+    },
+    "mainComponent": {
+        "welcome": {
+            "title": "Paraglide",
+            "openFile": "파일 불러오기",
+            "logoAlt": "Paraglide 로고",
+            "titleAlt": "Paraglide 타이틀"
+        },
+        "fileInfo": {
+            "pageInfo": {
+                "none": "페이지 정보 없음",
+                "format": "{current}/{total}P.",
+                "progress": "({percent}%)"
+            },
+            "path": {
+                "separator": "| "
+            }
+        },
+        "paragraphInfo": {
+            "toNextPage": "다음 페이지까지 {count}단락 남음",
+            "lastParagraph": "마지막 단락입니다.",
+            "pageNumberHint": "💡단락 위 숫자는 페이지 번호로 인식됩니다 (예시: 1, 1p, 1페)."
+        },
+        "buttons": {
+            "aria": {
+                "sidebar": "사이드바 토글",
+                "settings": "설정 열기",
+                "endWork": "작업 종료",
+                "playPause": "재생/일시정지",
+                "overlay": "오버레이 토글"
+            }
+        },
+        "errors": {
+            "logoLoad": "로고 렌더링 실패",
+            "titleLoad": "타이틀 렌더링 실패",
+            "fileLoad": "파일 로드 실패",
+            "iconLoad": "아이콘 로드 실패",
+            "themeInit": "초기 테마 설정 실패",
+            "stateInit": "초기 상태 로드 실패",
+            "positionUpdate": "위치 업데이트 실패",
+            "cssUpdate": "CSS 변수 업데이트 실패",
+            "filterGenerate": "CSS 필터 생성 실패"
+        }
+    },
+    "views": {
+        "overview": {
+            "navigation": {
+                "previousParagraph": "이전 단락",
+                "currentParagraph": "현재 단락",
+                "nextParagraph": "다음 단락"
+            },
+            "status": {
+                "empty": "내용 없음",
+                "pageFormat": "{pageNumber}-{order}"
+            },
+            "buttons": {
+                "completeWork": "작업 완료"
+            }
+        },
+        "listview": {
+            "headers": {
+                "noPageNumber": "페이지 번호 없음",
+                "pageFormat": "{pageNumber} 페이지"
+            },
+            "buttons": {
+                "completeWork": "작업 완료"
+            }
+        }
+    },
+    "dragDrop": {
+        "message": "텍스트 파일을 여기에 드롭하세요",
+        "subMessage": "*.txt 파일만 지원됩니다"
+    },
+    "sidebar": {
+        "common": {
+            "title": "Paraglide",
+            "close": "닫기"
+        },
+        "panel": {
+            "sections": {
+                "currentFile": {
+                    "title": "현재 파일",
+                    "empty": "현재 작업 중인 파일이 없습니다",
+                    "pageInfo": {
+                        "none": "페이지 정보 없음",
+                        "format": "{current}/{total}페이지"
+                    }
+                },
+                "recentFiles": {
+                    "title": "최근 작업 파일",
+                    "empty": "최근 작업 기록이 없습니다"
+                }
+            },
+            "controls": {
+                "open": "열기",
+                "edit": "편집",
+                "search": "검색",
+                "console": "콘솔"
+            },
+            "contextMenu": {
+                "showInFinder": "Finder에서 열기",
+                "showInExplorer": "파일 탐색기에서 열기",
+                "deleteHistory": "기록 삭제"
+            }
+        },
+        "search": {
+            "title": "검색",
+            "input": {
+                "placeholder": "검색어를 입력하세요",
+                "clear": "지우기"
+            },
+            "results": {
+                "count": "{count}개의 검색 결과",
+                "empty": "검색 결과가 없습니다",
+                "pageJump": {
+                    "button": "{page}페이지로 이동"
+                }
+            },
+            "pageInfo": {
+                "format": "{page}페이지"
+            }
+        }
+    },
+    "overlay": {
+        "header": {
+            "pauseIndicator": "일시정지",
+            "navigation": {
+                "prev": "◀",
+                "next": "▶"
+            }
+        },
+        "paragraphs": {
+            "empty": " ",
+            "number": "{index}"
+        }
+    },
+    "settings": {
+        "title": "설정",
+        "processMode": {
+            "title": "텍스트 처리 방식",
+            "paragraph": "단락 단위로",
+            "line": "줄 단위로"
+        },
+        "viewMode": {
+            "title": "화면 표시 방식",
+            "overview": "오버뷰",
+            "listview": "리스트뷰"
+        },
+        "overlay": {
+            "title": "오버레이",
+            "windowOpacity": "전체 투명도",
+            "contentOpacity": "배경 투명도",
+            "fixed": "오버레이 위치 고정",
+            "remember": "마지막 오버레이 위치/크기 가져오기"
+        },
+        "appearance": {
+            "title": "앱 설정",
+            "accentColor": "강조색",
+            "theme": {
+                "title": "테마",
+                "auto": "자동",
+                "light": "라이트",
+                "dark": "다크"
+            }
+        },
+        "dataManagement": {
+            "title": "데이터 관리",
+            "clearLogs": "로그 파일 정리",
+            "clearLogsConfirm": "모든 로그 파일을 정리하시겠습니까?"
+        },
+        "info": {
+            "title": "정보",
+            "version": "Paraglide 0.3.0 beta",
+            "credits": {
+                "made": "Made by WareAoba",
+                "contribute": "Contribute.. Rinna, Latte"
+            }
+        },
+        "buttons": {
+            "cancel": "취소",
+            "confirm": "확인"
+        }
+    },
+    "console": {
+        "header": {
+            "title": "Terminal Logs ({count})",
+            "close": "×"
+        },
+        "content": {
+            "noLogs": "로그가 없습니다.",
+            "timestamp": "[{time}]"
+        },
+        "highlight": {
+            "patterns": {
+                "success": [
+                    "완료",
+                    "로그 저장됨",
+                    "성공",
+                    "복사됨",
+                    "Process"
+                ],
+                "pass": [
+                    "[SystemListener]",
+                    "[단축키]",
+                    "테스트 통과",
+                    "초기화",
+                    "Ready"
+                ],
+                "warning": [
+                    "변경 감지",
+                    "외부 복사 감지",
+                    "[클립보드]",
+                    "[Main]"
+                ],
+                "error": [
+                    "실패",
+                    "오류",
+                    "에러"
+                ]
+            }
+        }
+    }
+}
