@@ -26,7 +26,8 @@ function Settings({ isVisible, onClose, icons }) {
   const [originalSettings, setOriginalSettings] = useState(null);
   const [showThemeDropdown, setShowThemeDropdown] = useState(false);
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
-  const dropdownRef = useRef(null);
+  const themeDropdownRef = useRef(null);  // 이름 변경
+  const languageDropdownRef = useRef(null);  // 추가
   const [showColorPicker, setShowColorPicker] = useState(false);
   const colorPickerRef = useRef(null);
 
@@ -42,7 +43,8 @@ function Settings({ isVisible, onClose, icons }) {
           const newSettings = {
             ...settings,
             ...savedSettings,
-            processMode // 명시적으로 processMode 설정
+            processMode, // 명시적으로 processMode 설정
+            language: savedSettings.language || 'auto'
           };
 
           setSettings(newSettings);
@@ -142,18 +144,33 @@ function Settings({ isVisible, onClose, icons }) {
     }
   }, [settings.windowOpacity, settings.contentOpacity]);
 
-  useEffect(() => {
-    function handleDropdownOutside(event) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setShowThemeDropdown(false);
-      }
+  // 테마 드롭다운 바깥 클릭 감지
+useEffect(() => {
+  function handleThemeDropdownOutside(event) {
+    if (themeDropdownRef.current && !themeDropdownRef.current.contains(event.target)) {
+      setShowThemeDropdown(false);
     }
+  }
 
-    document.addEventListener('mousedown', handleDropdownOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleDropdownOutside);
-    };
-  }, []);
+  document.addEventListener('mousedown', handleThemeDropdownOutside);
+  return () => {
+    document.removeEventListener('mousedown', handleThemeDropdownOutside);
+  };
+}, []);
+
+// 언어 드롭다운 바깥 클릭 감지
+useEffect(() => {
+  function handleLanguageDropdownOutside(event) {
+    if (languageDropdownRef.current && !languageDropdownRef.current.contains(event.target)) {
+      setShowLanguageDropdown(false);
+    }
+  }
+
+  document.addEventListener('mousedown', handleLanguageDropdownOutside);
+  return () => {
+    document.removeEventListener('mousedown', handleLanguageDropdownOutside);
+  };
+}, []);
 
   useEffect(() => {
     function handleColorpickerOutside(event) {
@@ -372,7 +389,7 @@ function Settings({ isVisible, onClose, icons }) {
             <h3>{t('settings.appearance.title')}</h3>
             <label className="settings-label">
   {t('settings.language.title')}
-  <div className="dropdown-wrapper language-dropdown" ref={dropdownRef}>
+  <div className="dropdown-wrapper language-dropdown" ref={languageDropdownRef}>
   <button
   className="dropdown-button"
   onClick={(e) => {
@@ -457,7 +474,7 @@ function Settings({ isVisible, onClose, icons }) {
             </label>
             <label className="settings-label">
               {t('settings.appearance.theme.title')}
-              <div className="dropdown-wrapper" ref={dropdownRef}>
+              <div className="dropdown-wrapper" ref={themeDropdownRef}>
                 <button
                   className="dropdown-button"
                   onClick={(e) => {

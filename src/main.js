@@ -781,30 +781,50 @@ if (content) {
 // i18next 초기화 함수
 const initializeI18n = async () => {
   try {
-    // 1. store에서 직접 설정 가져오기
     const config = store.getState().config;
     const savedLanguage = config.language;
     
-    // 2. 유효 언어 결정
     const effectiveLanguage = savedLanguage === 'auto' 
       ? app.getLocale().split('-')[0] 
       : savedLanguage;
-    
-    // 3. 지원 언어 검증
+  
     const supportedLanguages = ['ko', 'en', 'ja'];
     const finalLanguage = supportedLanguages.includes(effectiveLanguage) 
       ? effectiveLanguage 
-      : 'en';
+      : (supportedLanguages.includes(app.getLocale().split('-')[0]) 
+          ? app.getLocale().split('-')[0] 
+          : 'en');
 
-    // 4. i18next 초기화
+    const resources = {
+      ko: require('./i18n/locales/ko.json'),
+      en: require('./i18n/locales/en.json'),
+      ja: require('./i18n/locales/ja.json')
+    };
+
+    // 초기화 전 기존 인스턴스 정리
+    if (i18next.isInitialized) {
+      await i18next.destroy();
+    }
+
+    // main 프로세스용 i18next 초기화
     await i18next.init({
       lng: finalLanguage,
       fallbackLng: 'en',
+      resources,
       interpolation: {
         escapeValue: false
+      },
+      react: null  // React 통합 비활성화
+    });
+
+    // 저장된 언어 설정을 모든 창에 전파
+    BrowserWindow.getAllWindows().forEach(window => {
+      if (!window.isDestroyed()) {
+        window.webContents.send('language-changed', finalLanguage);
       }
     });
 
+    console.log('[Main] i18next 초기화 완료:', finalLanguage);
     return true;
   } catch (error) {
     console.error('[Main] i18n 초기화 실패:', error);
@@ -1118,25 +1138,30 @@ const IPCManager = {
     // 언어 변경 핸들러
     ipcMain.handle('change-language', async (_, lang) => {
       try {
-        // 1. 언어 설정 저장
-        store.dispatch(configActions.updateLanguage(lang));
-        await FileManager.saveConfig({ language: lang });
+        // 초기화되지 않았다면 재초기화
+        if (!i18next.isInitialized) {
+          const initResult = await initializeI18n();
+          if (!initResult) {
+            throw new Error('i18next 재초기화 실패');
+          }
+        }
     
-        // 2. 실제 적용할 언어 결정
         const effectiveLang = lang === 'auto' ? 
           app.getLocale().split('-')[0] : 
           lang;
     
-        // 3. i18next 언어 변경 (추가)
         await i18next.changeLanguage(effectiveLang);
+        
+        store.dispatch(configActions.updateLanguage(lang));
+        await FileManager.saveConfig({ language: lang });
     
-        // 4. 모든 창에 변경된 언어 전파
         BrowserWindow.getAllWindows().forEach(window => {
           if (!window.isDestroyed()) {
             window.webContents.send('language-changed', effectiveLang);
           }
         });
     
+        console.log('[Main] 언어 변경 성공:', effectiveLang);
         return true;
       } catch (error) {
         console.error('[Main] 언어 변경 실패:', error);
@@ -1229,6 +1254,7 @@ const IPCManager = {
             mode: config.theme.mode,
             accentColor: config.theme.accentColor
           },
+          language: config.language,
           processMode: config.processMode,
           viewMode: config.viewMode
         };
