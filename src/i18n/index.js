@@ -3,13 +3,15 @@ import { initReactI18next } from 'react-i18next';
 import ko from './locales/ko.json';
 import en from './locales/en.json';
 import ja from './locales/ja.json';
+import zh from './locales/zh.json';
 
 const { ipcRenderer } = window.require('electron');
 
 const resources = {
   ko: { translation: ko },
   en: { translation: en },
-  ja: { translation: ja }
+  ja: { translation: ja },
+  zh: { translation: zh }
 };
 
 // 초기 언어 설정 가져오기 

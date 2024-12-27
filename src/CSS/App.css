@@ -90,8 +90,15 @@
 /* 기본 리셋 */
 
 @font-face {
+  font-family: "Chinese";
+  src: url('/fonts/NotoSansSC-VariableFont_wght.ttf') format('truetype');
+  unicode-range: U+4E00-9FFF, U+3400-4DBF, U+20000-2A6DF, U+2A700-2B73F, U+2B740-2B81F, U+2B820-2CEAF;
+  font-display: swap;
+}
+
+@font-face {
   font-family: "Japanese";
-  src: url('/public/fonts/NotoSansJP-VariableFont_wght.ttf') format('truetype');
+  src: url('/fonts/NotoSansJP-VariableFont_wght.ttf') format('truetype');
   unicode-range: U+3040-309F, U+30A0-30FF, U+4E00-9FFF;
   font-display: swap;
 }
@@ -104,7 +111,7 @@ body,
   width: 100%;
   height: 100%;
   overflow: hidden;
-  font-family: "Japanese", "Pretendard Variable", -apple-system, sans-serif;
+  font-family: "Chinese", "Japanese", "Pretendard Variable", -apple-system, sans-serif;
   font-feature-settings: "palt";
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;

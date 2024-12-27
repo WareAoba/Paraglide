@@ -1,0 +1,318 @@
+{
+    "app": {
+        "name": "Paraglide",
+        "title": "Paraglide - 文本段落处理器",
+        "version": "0.3.0 beta",
+        "credits": {
+            "made": "由 WareAoba 制作",
+            "contribute": "贡献者: Rinna, Latte"
+        }
+    },
+    "common": {
+        "buttons": {
+            "confirm": "确认",
+            "cancel": "取消",
+            "close": "关闭",
+            "open": "打开",
+            "edit": "编辑", 
+            "search": "搜索",
+            "exit": "退出",
+            "completeWork": "完成工作"
+        },
+        "aria": {
+            "sidebar": "切换侧边栏",
+            "settings": "打开设置",
+            "endWork": "结束工作",
+            "playPause": "播放/暂停",
+            "overlay": "切换覆盖层"
+        },
+        "status": {
+            "empty": "无内容",
+            "loading": "加载中...",
+            "ready": "就绪",
+            "paused": "已暂停"
+        },
+        "navigation": {
+            "prev": "上一段",
+            "current": "当前段落",
+            "next": "下一段",
+            "symbols": {
+                "prev": "◀",
+                "next": "▶"
+            }
+        },
+        "pageInfo": {
+            "none": "无页面信息",
+            "format": "第{{current}}/{{total}}页",
+            "shortFormat": "{{current}}/{{total}}页",
+            "progress": "({{percent}}%)",
+            "pageNumber": "第{{page}}页"
+        },
+        "errors": {
+            "rendering": {
+                "logo": "无法渲染徽标",
+                "title": "无法渲染标题",
+                "icon": "无法加载图标"
+            },
+            "file": {
+                "load": "文件加载失败",
+                "empty": "文件为空或无法读取",
+                "notFound": "文件不存在"
+            },
+            "system": {
+                "themeInit": "主题初始化失败",
+                "stateInit": "状态加载失败", 
+                "positionUpdate": "位置更新失败",
+                "cssUpdate": "CSS变量更新失败",
+                "filterGenerate": "CSS滤镜生成失败"
+            }
+        }
+    },
+    "dialogs": {
+        "fileError": {
+            "title": "文件格式错误",
+            "message": "不支持该文件格式。\n(仅支持.txt文件)"
+        },
+        "fileNotFound": {
+            "title": "文件打开错误",
+            "message": "文件不存在。\n将从历史记录中删除。"
+        },
+        "processMode": {
+            "title": "模式建议",
+            "message": "句子似乎较长。是否按行显示？"
+        },
+        "emptyFile": {
+            "title": "无效文件",
+            "message": "文件为空或无法读取。"
+        },
+        "exitConfirm": {
+            "title": "退出确认",
+            "message": "有未保存的工作。\n确定要退出吗？"
+        },
+        "alreadyRunning": {
+            "title": "程序已运行",
+            "message": "Paraglide 已在运行。",
+            "detail": "不支持多个实例。"
+        },
+        "switchToExisting": {
+            "title": "程序已运行",
+            "message": "Paraglide 已在运行。",
+            "detail": "正在切换到现有窗口。"
+        }
+    },
+    "mainComponent": {
+        "welcome": {
+            "title": "Paraglide",
+            "openFile": "打开文件",
+            "logoAlt": "Paraglide 徽标",
+            "titleAlt": "Paraglide 标题"
+        },
+        "fileInfo": {
+            "path": {
+                "separator": "| "
+            }
+        },
+        "paragraphInfo": {
+            "toNextPage": "距下一页还有{count}段",
+            "lastParagraph": "这是最后一段。",
+            "pageNumberHint": "💡可以输入页码来导航(例如: 1, 1p, 1页)。"
+        },
+        "buttons": {
+            "aria": {
+                "sidebar": "사이드바 토글",
+                "settings": "설정 열기",
+                "endWork": "작업 종료",
+                "playPause": "재생/일시정지",
+                "overlay": "오버레이 토글"
+            }
+        },
+        "errors": {
+            "logoLoad": "로고 렌더링 실패",
+            "titleLoad": "타이틀 렌더링 실패",
+            "fileLoad": "파일 로드 실패",
+            "iconLoad": "아이콘 로드 실패",
+            "themeInit": "초기 테마 설정 실패",
+            "stateInit": "초기 상태 로드 실패",
+            "positionUpdate": "위치 업데이트 실패",
+            "cssUpdate": "CSS 변수 업데이트 실패",
+            "filterGenerate": "CSS 필터 생성 실패"
+        }
+    },
+    "views": {
+        "main": {
+            "welcome": {
+                "title": "Paraglide",
+                "openFile": "打开文件",
+                "dragDrop": {
+                    "message": "将文本文件拖放到此处",
+                    "formats": "仅支持*.txt文件"
+                },
+                "images": {
+                    "logoAlt": "Paraglide 徽标",
+                    "titleAlt": "Paraglide 标题"
+                }
+            }
+        }
+    },
+    "dragDrop": {
+        "message": "将文本文件拖放到此处",
+        "subMessage": "仅支持*.txt文件"
+    },
+    "sidebar": {
+        "common": {
+            "title": "Paraglide",
+            "close": "关闭"
+        },
+        "panel": {
+            "sections": {
+                "currentFile": {
+                    "title": "当前文件",
+                    "empty": "当前无打开的文件",
+                    "pageInfo": {
+                        "none": "无页面信息",
+                        "format": "第{current}/{total}页"
+                    }
+                },
+                "recentFiles": {
+                    "title": "最近文件",
+                    "empty": "无最近文件"
+                }
+            },
+            "controls": {
+                "open": "打开",
+                "edit": "编辑",
+                "search": "搜索",
+                "console": "控制台"
+            },
+            "contextMenu": {
+                "showInFinder": "在访达中显示",
+                "showInExplorer": "在文件资源管理器中显示",
+                "deleteHistory": "从历史记录中删除"
+            }
+        },
+        "search": {
+            "title": "搜索",
+            "input": {
+                "placeholder": "输入关键词搜索",
+                "clear": "清除"
+            },
+            "results": {
+                "count": "{{count}}条搜索结果",
+                "empty": "未找到搜索结果",
+                "pageJump": {
+                    "button": "跳转到第{{page}}页"
+                }
+            },
+            "pageInfo": {
+                "format": "第{{page}}页"
+            }
+        }
+    },
+        "overlay": {
+            "header": {
+                "pauseIndicator": "已暂停",
+                "navigation": {
+                    "prev": "◀",
+                    "next": "▶"
+                }
+            },
+            "paragraphs": {
+                "empty": " ",
+                "number": "{{index}}"
+            }
+        },
+        "settings": {
+            "title": "设置",
+            "processMode": {
+                "title": "文本处理方式",
+                "paragraph": "按段落",
+                "line": "按行"
+            },
+            "viewMode": {
+                "title": "显示方式",
+                "overview": "概览",
+                "listview": "列表视图"
+            },
+            "overlay": {
+                "title": "覆盖层",
+                "windowOpacity": "窗口透明度",
+                "contentOpacity": "背景透明度",
+                "fixed": "固定覆盖层位置",
+                "remember": "记住上次覆盖层位置/大小"
+            },
+            "appearance": {
+                "title": "应用设置",
+                "accentColor": "强调色",
+                "theme": {
+                    "title": "主题",
+                    "auto": "自动",
+                    "light": "浅色",
+                    "dark": "深色"
+                }
+            },
+            "language": {
+                "title": "语言",
+                "auto": "自动",
+                "en": "English",
+                "ja": "日本語",
+                "zh": "中文",
+                "ko": "한국어"
+            },
+            "dataManagement": {
+                "title": "数据管理",
+                "clearLogs": "清理日志文件",
+                "clearLogsConfirm": "是否清理所有日志文件？"
+            },
+            "info": {
+                "title": "关于",
+                "version": "Paraglide 0.3.0 beta",
+                "credits": {
+                    "made": "Made by WareAoba",
+                    "contribute": "Contribute.. Rinna, Latte"
+                }
+            },
+            "buttons": {
+                "cancel": "取消",
+                "confirm": "确认"
+            }
+        },
+        "console": {
+            "header": {
+                "title": "终端日志 ({{count}})",
+                "close": "×"
+            },
+            "content": {
+                "noLogs": "暂无日志",
+                "timestamp": "[{{time}}]"
+            },
+            "highlight": {
+                "patterns": {
+                    "success": [
+                        "完成",
+                        "日志已保存",
+                        "成功",
+                        "已复制",
+                        "Process"
+                    ],
+                    "pass": [
+                        "[SystemListener]",
+                        "[快捷键]",
+                        "测试通过",
+                        "初始化",
+                        "Ready"
+                    ],
+                    "warning": [
+                        "检测到更改",
+                        "检测到外部复制",
+                        "[剪贴板]",
+                        "[Main]"
+                    ],
+                    "error": [
+                        "失败",
+                        "错误",
+                        "异常"
+                    ]
+                }
+            }
+        }
+    }

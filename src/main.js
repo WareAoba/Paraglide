@@ -788,18 +788,19 @@ const initializeI18n = async () => {
       ? app.getLocale().split('-')[0] 
       : savedLanguage;
   
-    const supportedLanguages = ['ko', 'en', 'ja'];
+      const supportedLanguages = ['ko', 'en', 'ja', 'zh'];
     const finalLanguage = supportedLanguages.includes(effectiveLanguage) 
       ? effectiveLanguage 
       : (supportedLanguages.includes(app.getLocale().split('-')[0]) 
           ? app.getLocale().split('-')[0] 
           : 'en');
 
-    const resources = {
-      ko: require('./i18n/locales/ko.json'),
-      en: require('./i18n/locales/en.json'),
-      ja: require('./i18n/locales/ja.json')
-    };
+          const resources = {
+            ko: require('./i18n/locales/ko.json'),
+            en: require('./i18n/locales/en.json'),
+            ja: require('./i18n/locales/ja.json'),
+            zh: require('./i18n/locales/zh.json')
+        };
 
     // 초기화 전 기존 인스턴스 정리
     if (i18next.isInitialized) {

@@ -403,7 +403,7 @@ useEffect(() => {
   </svg>
 </button>
     <div className={`dropdown-menu ${showLanguageDropdown ? 'show' : ''}`}>
-      {['auto', 'ko', 'en', 'ja'].map((lang) => (
+      {['auto', 'ko', 'en', 'ja', 'zh'].map((lang) => (
         <div
           key={lang}
           className={`dropdown-item ${settings.language === lang ? 'active' : ''}`}

@@ -117,7 +117,7 @@ const ConfigManager = {
     },
 
     validateLanguage(value, defaultValue) {
-        const supportedLanguages = ['auto', 'ko', 'en', 'ja'];
+        const supportedLanguages = ['auto', 'ko', 'en', 'ja', 'zh'];
         return supportedLanguages.includes(value) ? value : defaultValue;
     },
 
