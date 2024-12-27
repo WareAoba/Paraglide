@@ -154,6 +154,7 @@ Download the appropriate precompiled binary from the [Release Page](https://gith
 
 
 ## Recent Updates
+### Last Release: 0.3.1beta
 
  1. **UI Overhaul**: Redesigned with a mix of Material and Neumorphism design. Additionally, various UI animations have been added.
    - The **Sidebar** functionality has been greatly enhanced.
@@ -174,6 +175,8 @@ Download the appropriate precompiled binary from the [Release Page](https://gith
 
  5. Add Console Display: You can check internal massages the program sends.
 
+ 6. **Multilingual Support**: English, Japanese, and Chinese are prioritized.
+
 
 
 
@@ -183,7 +186,6 @@ Download the appropriate precompiled binary from the [Release Page](https://gith
  2. **built-in Text Editor**: Planned to be equipped with convenient features for tasks like translation work.
  3. **Overlay refactoring**: Planning to significantly improve functionality.
  4. **User Guide**: Plan to write a detailed manual for the program.
- 5. **Multilingual Support**: Planned to support English and Japanese first.
 
 ## Known Issues
  1. There is a performance issue with initial launch speed of the compiled app on Windows.
