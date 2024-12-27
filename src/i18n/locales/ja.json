@@ -23,12 +23,12 @@
             "sidebar": "サイドバーの切り替え",
             "settings": "設定を開く",
             "endWork": "作業終了",
-            "playPause": "再生/一時停止",
+            "playPause": "再開/一時停止",
             "overlay": "オーバーレイ切り替え"
         },
         "status": {
             "empty": "内容なし",
-            "loading": "読み込み中...",
+            "loading": "読み込み中",
             "ready": "準備完了",
             "paused": "一時停止中"
         },
@@ -122,7 +122,7 @@
                 "sidebar": "サイドバーの切り替え",
                 "settings": "設定を開く",
                 "endWork": "作業終了",
-                "playPause": "再生/一時停止",
+                "playPause": "再開/一時停止",
                 "overlay": "オーバーレイ切り替え"
             }
         },
@@ -170,7 +170,7 @@
                     }
                 },
                 "recentFiles": {
-                    "title": "最近のファイル",
+                    "title": "最近履歴",
                     "empty": "履歴がありません"
                 }
             },
@@ -182,7 +182,7 @@
             },
             "contextMenu": {
                 "showInFinder": "Finderで表示",
-                "showInExplorer": "エクスプローラで表示",
+                "showInExplorer": "エクスプローラーで表示",
                 "deleteHistory": "履歴を削除"
             }
         },
@@ -231,7 +231,7 @@
         },
         "overlay": {
             "title": "オーバーレイ",
-            "windowOpacity": "ウィンドウ全体の透明度",
+            "windowOpacity": "全体の透明度",
             "contentOpacity": "背景の透明度",
             "fixed": "オーバーレイ位置を固定",
             "remember": "最後のオーバーレイ位置/サイズを記憶"
@@ -248,8 +248,8 @@
         },
         "dataManagement": {
             "title": "データ管理",
-            "clearLogs": "ログファイルを整理",
-            "clearLogsConfirm": "すべてのログファイルを整理しますか？"
+            "clearLogs": "ログデータ削除",
+            "clearLogsConfirm": "すべてのログデータを整理しますか？"
         },
         "info": {
             "title": "情報",
@@ -285,7 +285,7 @@
                 "pass": [
                     "[SystemListener]",
                     "[ショートカット]",
-                    "テスト合格",
+                    "テストパス",
                     "初期化",
                     "Ready"
                 ],
