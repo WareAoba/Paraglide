@@ -2,7 +2,7 @@
     "app": {
         "name": "Paraglide",
         "title": "Paraglide - 텍스트 단락 처리기",
-        "version": "0.3.0 beta",
+        "version": "0.3.1 beta",
         "credits": {
             "made": "Made by WareAoba",
             "contribute": "Contribute.. Rinna, Latte"
@@ -265,7 +265,7 @@
         },
         "info": {
             "title": "정보",
-            "version": "Paraglide 0.3.0 beta",
+            "version": "Paraglide 0.3.1 beta",
             "credits": {
                 "made": "Made by WareAoba",
                 "contribute": "Contribute.. Rinna, Latte"

@@ -781,6 +781,7 @@ if (content) {
 // i18next 초기화 함수
 const initializeI18n = async () => {
   try {
+
     const config = store.getState().config;
     const savedLanguage = config.language;
     
@@ -796,11 +797,19 @@ const initializeI18n = async () => {
           : 'en');
 
           const resources = {
-            ko: require('./i18n/locales/ko.json'),
-            en: require('./i18n/locales/en.json'),
-            ja: require('./i18n/locales/ja.json'),
-            zh: require('./i18n/locales/zh.json')
-        };
+            ko: require(isDev ? 
+              './i18n/locales/ko.json' : 
+              path.join(__dirname, './i18n/locales/ko.json')),
+            en: require(isDev ? 
+              './i18n/locales/en.json' : 
+              path.join(__dirname, './i18n/locales/en.json')),
+            ja: require(isDev ? 
+              './i18n/locales/ja.json' : 
+              path.join(__dirname, './i18n/locales/ja.json')),
+            zh: require(isDev ?
+              './i18n/locales/zh.json' : 
+              path.join(__dirname, './i18n/locales/zh.json'))
+          };
 
     // 초기화 전 기존 인스턴스 정리
     if (i18next.isInitialized) {
