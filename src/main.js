@@ -778,6 +778,40 @@ if (content) {
   },
 };
 
+// i18next 초기화 함수
+const initializeI18n = async () => {
+  try {
+    // 1. store에서 직접 설정 가져오기
+    const config = store.getState().config;
+    const savedLanguage = config.language;
+    
+    // 2. 유효 언어 결정
+    const effectiveLanguage = savedLanguage === 'auto' 
+      ? app.getLocale().split('-')[0] 
+      : savedLanguage;
+    
+    // 3. 지원 언어 검증
+    const supportedLanguages = ['ko', 'en', 'ja'];
+    const finalLanguage = supportedLanguages.includes(effectiveLanguage) 
+      ? effectiveLanguage 
+      : 'en';
+
+    // 4. i18next 초기화
+    await i18next.init({
+      lng: finalLanguage,
+      fallbackLng: 'en',
+      interpolation: {
+        escapeValue: false
+      }
+    });
+
+    return true;
+  } catch (error) {
+    console.error('[Main] i18n 초기화 실패:', error);
+    return false;
+  }
+};
+
 const ThemeManager = {
   initialize() {
     store.subscribe(() => {
@@ -1082,17 +1116,33 @@ const IPCManager = {
     ipcMain.on('update-state', (event, newState) => updateState(newState));
 
     // 언어 변경 핸들러
-ipcMain.handle('change-language', async (_, lang) => {
-  try {
-    await i18next.changeLanguage(lang);
-    store.dispatch(configActions.updateLanguage(lang));
-    await FileManager.saveConfig({ language: lang });
-    return true;
-  } catch (error) {
-    console.error('[Main] 언어 변경 실패:', error);
-    return false;
-  }
-});
+    ipcMain.handle('change-language', async (_, lang) => {
+      try {
+        // 1. 언어 설정 저장
+        store.dispatch(configActions.updateLanguage(lang));
+        await FileManager.saveConfig({ language: lang });
+    
+        // 2. 실제 적용할 언어 결정
+        const effectiveLang = lang === 'auto' ? 
+          app.getLocale().split('-')[0] : 
+          lang;
+    
+        // 3. i18next 언어 변경 (추가)
+        await i18next.changeLanguage(effectiveLang);
+    
+        // 4. 모든 창에 변경된 언어 전파
+        BrowserWindow.getAllWindows().forEach(window => {
+          if (!window.isDestroyed()) {
+            window.webContents.send('language-changed', effectiveLang);
+          }
+        });
+    
+        return true;
+      } catch (error) {
+        console.error('[Main] 언어 변경 실패:', error);
+        return false;
+      }
+    });
   
     // 파일 관련 핸들러 - 통합
     ipcMain.handle('get-file-history', () => FileManager.getFileHistory());
@@ -1270,6 +1320,7 @@ ipcMain.handle('change-language', async (_, lang) => {
           mode: settings.theme?.mode ?? state.theme.mode,
           accentColor: settings.theme?.accentColor ?? state.theme.accentColor
         },
+        language: settings.language ?? state.language,
         overlay: {
           ...state.overlay,
           windowOpacity: settings.windowOpacity ?? state.overlay.windowOpacity,
@@ -1522,6 +1573,8 @@ const ApplicationManager = {
   async initialize() {
     try {
       await StatusManager.transition(ProgramStatus.LOADING);
+
+      await initializeI18n();
 
       // 1. 설정 파일 로드 및 적용
       const savedConfig = await FileManager.loadConfig();

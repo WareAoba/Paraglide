@@ -14,7 +14,7 @@ const initialState = {
     mode: THEME.AUTO,
     accentColor: '#007bff'
   },
-  language: 'ko',
+  language: 'auto',
   overlay: {
     bounds: { 
       width: 320, 
@@ -48,6 +48,7 @@ const configSlice = createSlice({
           mode: newConfig.theme?.mode ?? state.theme.mode,
           accentColor: newConfig.theme?.accentColor ?? state.theme.accentColor
         },
+        language: newConfig.language ?? state.language,
         overlay: {
           ...state.overlay,
           ...newConfig.overlay,
@@ -91,6 +92,10 @@ const configSlice = createSlice({
           height: newBounds.height ?? state.overlay.bounds.height
         };
       }
+    },
+
+    updateLanguage: (state, action) => {
+      state.language = action.payload;
     },
 
     updateOverlaySettings: (state, action) => {

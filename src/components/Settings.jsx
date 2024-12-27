@@ -20,10 +20,12 @@ function Settings({ isVisible, onClose, icons }) {
       accentColor: '#007bff'
     },
     processMode: 'paragraph', // 기본 텍스트 처리 방식
-    viewMode: 'overview'
+    viewMode: 'overview',
+    language: 'auto'  // 기본값 추가
   });
   const [originalSettings, setOriginalSettings] = useState(null);
   const [showThemeDropdown, setShowThemeDropdown] = useState(false);
+  const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
   const dropdownRef = useRef(null);
   const [showColorPicker, setShowColorPicker] = useState(false);
   const colorPickerRef = useRef(null);
@@ -163,6 +165,32 @@ function Settings({ isVisible, onClose, icons }) {
     document.addEventListener('mousedown', handleColorpickerOutside);
     return () => document.removeEventListener('mousedown', handleColorpickerOutside);
   }, []);
+
+  const handleLanguageItemClick = async (lang) => {
+    try {
+      // 1. 드롭다운 즉시 닫기
+      setShowLanguageDropdown(false);
+  
+      // 2. 언어 변경 요청 먼저 실행
+      const success = await ipcRenderer.invoke('change-language', lang);
+      if (!success) {
+        console.error('언어 변경 실패');
+        return;
+      }
+  
+      // 3. 성공 시에만 설정 상태 업데이트
+      const newSettings = {
+        ...settings,
+        language: lang
+      };
+  
+      setSettings(newSettings);
+      await handleSettingChange(newSettings);
+  
+    } catch (error) {
+      console.error('언어 설정 변경 실패:', error);
+    }
+  };
 
   const handleThemeItemClick = async (mode) => {
     // setTimeout 제거하고 즉시 실행하도록 변경
@@ -342,6 +370,34 @@ function Settings({ isVisible, onClose, icons }) {
           {/* 앱 설정 그룹 */}
           <div className="settings-group">
             <h3>{t('settings.appearance.title')}</h3>
+            <label className="settings-label">
+  {t('settings.language.title')}
+  <div className="dropdown-wrapper language-dropdown" ref={dropdownRef}>
+  <button
+  className="dropdown-button"
+  onClick={(e) => {
+    e.stopPropagation();
+    setShowLanguageDropdown(!showLanguageDropdown);
+  }}
+>
+  <span>{t(`settings.language.${settings.language}`)}</span>
+  <svg width="10" height="6" viewBox="0 0 10 6">
+    <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="1.5" fill="none" />
+  </svg>
+</button>
+    <div className={`dropdown-menu ${showLanguageDropdown ? 'show' : ''}`}>
+      {['auto', 'ko', 'en', 'ja'].map((lang) => (
+        <div
+          key={lang}
+          className={`dropdown-item ${settings.language === lang ? 'active' : ''}`}
+          onClick={() => handleLanguageItemClick(lang)}
+        >
+          {t(`settings.language.${lang}`)}
+        </div>
+      ))}
+    </div>
+  </div>
+</label>
             <label>
               {t('settings.appearance.accentColor')}
               <div className="color-picker-container" ref={colorPickerRef}>

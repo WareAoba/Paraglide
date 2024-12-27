@@ -250,6 +250,13 @@
                 "dark": "다크"
             }
         },
+        "language": {
+            "title": "언어",
+            "auto": "자동",
+            "en": "English",
+            "ja": "日本語",
+            "ko": "한국어"
+        },
         "dataManagement": {
             "title": "데이터 관리",
             "clearLogs": "로그 파일 정리",

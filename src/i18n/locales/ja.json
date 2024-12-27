@@ -246,6 +246,13 @@
                 "dark": "ダーク"
             }
         },
+        "language": {
+            "title": "言語",
+            "auto": "自動",
+            "en": "English",
+            "ja": "日本語",
+            "ko": "한국어"
+        },
         "dataManagement": {
             "title": "データ管理",
             "clearLogs": "ログデータ削除",

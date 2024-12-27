@@ -289,11 +289,6 @@ input:focus + .slider {
   margin-left: 16px;  /* 텍스트와의 간격 */
 }
 
-.dropdown-wrapper {
-  position: relative;
-  z-index: 999;
-}
-
 .settings-button-group {
   position: absolute;
   bottom: 0;
@@ -381,6 +376,31 @@ input:focus + .slider {
 .settings-group.danger-zone button:hover {
   background-color: var(--danger-color);
   color: white;
+}
+
+/* 언어 드롭다운 전용 스타일 */
+.language-dropdown .dropdown-button {
+  position: relative; /* SVG 위치 기준점 */
+  text-align: center;
+  padding-right: 24px; /* 화살표 공간 */
+}
+
+.language-dropdown .dropdown-button span {
+  display: block;
+  width: 100%;
+  text-align: center;
+}
+
+.language-dropdown .dropdown-button svg {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.language-dropdown .dropdown-item {
+  text-align: center;
+  justify-content: center;
 }
 
 .color-picker-container {
