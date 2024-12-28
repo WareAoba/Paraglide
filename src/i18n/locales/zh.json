@@ -103,6 +103,7 @@
     "mainComponent": {
         "welcome": {
             "title": "Paraglide",
+            "newFile": "新建文件",
             "openFile": "打开文件",
             "logoAlt": "Paraglide 徽标",
             "titleAlt": "Paraglide 标题"
@@ -275,6 +276,12 @@
                 "cancel": "取消",
                 "confirm": "确认"
             }
+        },
+        "editor": {
+            "title": "编辑",
+            "fileName": "文件名",
+            "placeholder": "在此输入文本",
+            "save": "保存"
         },
         "console": {
             "header": {

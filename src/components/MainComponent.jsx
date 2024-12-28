@@ -70,6 +70,7 @@ function MainComponent() {
   const [backIcon, setBackIcon] = useState(null);
   const [folderIcon, setFolderIcon] = useState(null);
   const [finderIcon, setFinderIcon] = useState(null);
+  const [newFileIcon, setNewFileIcon] = useState(null);
 
   const searchRef = useRef(null);
 
@@ -398,7 +399,8 @@ function MainComponent() {
           'edit.svg',
           'go-back.svg',
           'folder.svg',
-          'finder.svg'
+          'finder.svg',
+          'new-file.svg'
         ];
 
         const iconPaths = await Promise.all(
@@ -426,6 +428,7 @@ function MainComponent() {
         setBackIcon(iconPaths[18]);
         setFolderIcon(iconPaths[19]);
         setFinderIcon(iconPaths[20]);
+        setNewFileIcon(iconPaths[21]);
       } catch (error) {
         console.error('아이콘 로드 실패:', error);
       }
@@ -841,7 +844,7 @@ ipcRenderer.invoke('generate-css-filter', accentColor, {
                   titlePath={state.titlePath}
                   theme={theme}
                   fileOpenIcon={fileOpenIcon}
-                  newFileIcon={textFileIcon}
+                  newFileIcon={newFileIcon}
                   />
                   </div>
                 </CSSTransition>

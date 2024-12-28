@@ -25,16 +25,19 @@
     background: transparent;
     border: 1px solid transparent;
     color: var(--text-color);
+    box-sizing: border-box;
+    border-radius: 8px;
     filter: brightness(0.8);
     font-size: 17px;
     padding: 8px 12px;
     flex: 1;
     min-width: 0;
+    transition: all 0.2s ease;
 }
   
   .file-name-input:hover,
   .file-name-input:focus {
-    border-color: var(--primary-color);
+    border: 1px solid var(--primary-color);
     outline: none;
   }
   

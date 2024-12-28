@@ -142,6 +142,7 @@
         "main": {
             "welcome": {
                 "title": "Paraglide",
+                "newFile": "새 파일",
                 "openFile": "파일 불러오기",
                 "dragDrop": {
                     "message": "텍스트 파일을 여기에 드롭하세요",
@@ -275,6 +276,12 @@
             "cancel": "취소",
             "confirm": "확인"
         }
+    },
+    "editor": {
+        "title": "편집",
+        "fileName": "파일명",
+        "placeholder": "여기에 텍스트를 입력하세요.",
+        "save": "저장"
     },
     "console": {
         "header": {

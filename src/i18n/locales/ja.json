@@ -273,6 +273,12 @@
             "confirm": "確認"
         }
     },
+    "editor": {
+        "title": "編集",
+        "fileName": "ファイル名",
+        "placeholder": "ここにテキストを入力",
+        "save": "保存"
+    },
     "console": {
         "header": {
             "title": "Terminal Logs ({count})",

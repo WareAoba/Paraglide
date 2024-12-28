@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import '../../CSS/Views/Editor.css';
 
 const { ipcRenderer } = window.require('electron');
 
 function Editor({ theme }) {
+    const { t } = useTranslation();
     const [content, setContent] = useState('');
-    const [fileName, setFileName] = useState('새 문서.txt');
+    const [fileName, setFileName] = useState('');
     const [isSaved, setIsSaved] = useState(true);
     const textareaRef = useRef(null);
     const backupTimeoutRef = useRef(null);
@@ -110,14 +112,14 @@ function Editor({ theme }) {
                               onChange={handleFileNameChange}
                               onKeyDown={handleFileNameKeyDown}
                               className="file-name-input"
-                              placeholder="파일 이름을 입력하세요"
+                              placeholder={t('editor.fileName')}
         />
         <div className="editor-controls">
           <button 
             className={`save-button ${!isSaved ? 'unsaved' : ''}`}
             onClick={handleSave}
           >
-            저장
+            {t('editor.save')}
           </button>
         </div>
       </div>
@@ -128,7 +130,7 @@ function Editor({ theme }) {
           setContent(e.target.value);
           setIsSaved(false);
         }}
-        placeholder="여기에 텍스트를 입력하세요..."
+        placeholder={t('editor.placeholder')}
       />
     </div>
   );

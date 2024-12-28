@@ -103,6 +103,7 @@
     "mainComponent": {
         "welcome": {
             "title": "Paraglide",
+            "newFile": "New File",
             "openFile": "Open File",
             "logoAlt": "Paraglide Logo",
             "titleAlt": "Paraglide Title"
@@ -275,6 +276,12 @@
             "cancel": "Cancel",
             "confirm": "Confirm"
         }
+    },
+    "editor": {
+        "title": "Edit",
+        "fileName": "File Name",
+        "placeholder": "Enter text here",
+        "save": "Save"
     },
     "console": {
         "header": {
