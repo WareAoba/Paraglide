@@ -33,12 +33,15 @@ const ProgramStatus = {
   READY: 'Ready',
   PROCESS: 'Process',
   PAUSE: 'Pause',
-  LOADING: 'Loading'
+  LOADING: 'Loading',
+  EDIT: 'Edit'
 };
 
 // 상수 정의
 const DEBOUNCE_TIME = 250;
 const DEFAULT_PROCESS_MODE = 'paragraph';
+const TEMP_DIR = path.join(os.tmpdir(), 'paraglide-backup');
+const TEMP_FILE = 'backup.json';
 
 // ContentManager 수정
 const ContentManager = {
@@ -211,7 +214,8 @@ const StatusManager = {
       [ProgramStatus.READY]: [ProgramStatus.LOADING],
       [ProgramStatus.LOADING]: [ProgramStatus.PROCESS, ProgramStatus.READY],
       [ProgramStatus.PROCESS]: [ProgramStatus.PAUSE, ProgramStatus.READY],
-      [ProgramStatus.PAUSE]: [ProgramStatus.PROCESS, ProgramStatus.READY]
+      [ProgramStatus.PAUSE]: [ProgramStatus.PROCESS, ProgramStatus.READY],
+      [ProgramStatus.EDIT]: [ProgramStatus.READY]
     };
     return allowedTransitions[fromStatus]?.includes(toStatus);
     
@@ -719,6 +723,99 @@ if (content) {
     }
   },
 
+  async saveTextFile({ content, fileName }) {
+    try {
+      let filePath;
+  
+      // 새 파일이면 저장 다이얼로그 표시
+      if (!globalState.currentFilePath) {
+        const result = await dialog.showSaveDialog(mainWindow, {
+          defaultPath: fileName,
+          filters: [{ name: 'Text Files', extensions: ['txt'] }]
+        });
+  
+        if (result.canceled) {
+          return { success: false, reason: 'canceled' };
+        }
+        
+        filePath = result.filePath;
+      } else {
+        filePath = globalState.currentFilePath;
+      }
+  
+      // 파일 저장
+      await fs.writeFile(filePath, content, 'utf8');
+  
+      // 상태 업데이트
+      if (!globalState.currentFilePath) {
+        globalState.currentFilePath = filePath;
+        mainWindow.setTitle(`${path.basename(filePath)} - Paraglide`);
+      }
+  
+      return { 
+        success: true, 
+        filePath 
+      };
+  
+    } catch (error) {
+      console.error('[Main] 파일 저장 실패:', error);
+      return { 
+        success: false, 
+        reason: error.message 
+      };
+    }
+  },
+
+  async backupContent({ content, fileName }) {
+    try {
+        // 임시 디렉토리 생성
+        await fs.mkdir(TEMP_DIR, { recursive: true });
+        
+        const backupData = {
+            content,
+            fileName,
+            timestamp: Date.now()
+        };
+
+        // 임시 파일에 저장
+        await fs.writeFile(
+            path.join(TEMP_DIR, TEMP_FILE),
+            JSON.stringify(backupData),
+            'utf8'
+        );
+
+        return { success: true };
+    } catch (error) {
+        console.error('[Main] 임시 저장 실패:', error);
+        return { success: false };
+    }
+},
+
+async restoreBackup() {
+    try {
+        const backupPath = path.join(TEMP_DIR, TEMP_FILE);
+        const exists = await fs.access(backupPath)
+            .then(() => true)
+            .catch(() => false);
+
+        if (!exists) return null;
+
+        const data = await fs.readFile(backupPath, 'utf8');
+        const backup = JSON.parse(data);
+
+        // 백업 파일이 24시간 이상 지난 경우 삭제
+        if (Date.now() - backup.timestamp > 24 * 60 * 60 * 1000) {
+            await fs.unlink(backupPath);
+            return null;
+        }
+
+        return backup;
+    } catch (error) {
+        console.error('[Main] 백업 복원 실패:', error);
+        return null;
+    }
+},
+
   async switchMode(newMode) {
     try {
       const filePath = globalState.currentFilePath;
@@ -778,8 +875,9 @@ if (content) {
   },
 };
 
+const LanguageManager = {
 // i18next 초기화 함수
-const initializeI18n = async () => {
+async initializeI18n () {
   try {
 
     const config = store.getState().config;
@@ -840,6 +938,40 @@ const initializeI18n = async () => {
     console.error('[Main] i18n 초기화 실패:', error);
     return false;
   }
+},
+
+async changeLanguage(lang) {
+  try {
+    // 초기화되지 않았다면 재초기화
+    if (!i18next.isInitialized) {
+      const initResult = await initializeI18n();
+      if (!initResult) {
+        throw new Error('i18next 재초기화 실패');
+      }
+    }
+
+    const effectiveLang = lang === 'auto' ? 
+      app.getLocale().split('-')[0] : 
+      lang;
+
+    await i18next.changeLanguage(effectiveLang);
+    
+    store.dispatch(configActions.updateLanguage(lang));
+    await FileManager.saveConfig({ language: lang });
+
+    BrowserWindow.getAllWindows().forEach(window => {
+      if (!window.isDestroyed()) {
+        window.webContents.send('language-changed', effectiveLang);
+      }
+    });
+
+    console.log('[Main] 언어 변경 성공:', effectiveLang);
+    return true;
+  } catch (error) {
+    console.error('[Main] 언어 변경 실패:', error);
+    return false;
+  }
+}
 };
 
 const ThemeManager = {
@@ -874,6 +1006,29 @@ const ThemeManager = {
     return config.theme.mode === THEME.AUTO ? 
       (nativeTheme.shouldUseDarkColors ? THEME.DARK : THEME.LIGHT) : 
       config.theme.mode;
+  },
+
+  generateCSSfilter(color, options) {
+    try {
+      // 모듈 불러오기
+      const module = require('hex-to-css-filter');
+      
+      // hexToCSSFilter 함수 직접 접근
+      if (typeof module.hexToCSSFilter === 'function') {
+        const result = module.hexToCSSFilter(color, options);
+        return result;
+      }
+      
+      throw new Error('hexToCSSFilter 함수를 찾을 수 없습니다');
+      
+    } catch (error) {
+      console.error('[Main] 필터 생성 실패:', error);
+      return {
+        filter: 'brightness(0) saturate(100%)',
+        success: false,
+        loss: 1
+      };
+    }
   },
 
   broadcastTheme() {
@@ -1147,36 +1302,7 @@ const IPCManager = {
 
     // 언어 변경 핸들러
     ipcMain.handle('change-language', async (_, lang) => {
-      try {
-        // 초기화되지 않았다면 재초기화
-        if (!i18next.isInitialized) {
-          const initResult = await initializeI18n();
-          if (!initResult) {
-            throw new Error('i18next 재초기화 실패');
-          }
-        }
-    
-        const effectiveLang = lang === 'auto' ? 
-          app.getLocale().split('-')[0] : 
-          lang;
-    
-        await i18next.changeLanguage(effectiveLang);
-        
-        store.dispatch(configActions.updateLanguage(lang));
-        await FileManager.saveConfig({ language: lang });
-    
-        BrowserWindow.getAllWindows().forEach(window => {
-          if (!window.isDestroyed()) {
-            window.webContents.send('language-changed', effectiveLang);
-          }
-        });
-    
-        console.log('[Main] 언어 변경 성공:', effectiveLang);
-        return true;
-      } catch (error) {
-        console.error('[Main] 언어 변경 실패:', error);
-        return false;
-      }
+      return await LanguageManager.changeLanguage(lang);
     });
   
     // 파일 관련 핸들러 - 통합
@@ -1199,6 +1325,18 @@ const IPCManager = {
         return { success: false };
       }
     });
+
+    ipcMain.handle('save-text-file', async (event, { content, fileName }) => {
+      return await FileManager.saveTextFile({ content, fileName });
+    });
+    
+    ipcMain.handle('backup-text-content', async (_, data) => {
+      return await FileManager.backupContent(data);
+  });
+  
+  ipcMain.handle('restore-backup', async () => {
+      return await FileManager.restoreBackup();
+  });
 
     ipcMain.handle('show-in-folder', (_, filePath) => {
       shell.showItemInFolder(filePath);
@@ -1248,6 +1386,11 @@ const IPCManager = {
     ipcMain.on('toggle-overlay', () => this.handleToggleOverlay());
     ipcMain.on('toggle-pause', () => this.handlePause());
     ipcMain.on('toggle-resume', () => this.handleResume());
+    ipcMain.handle('set-window-title', (event, title) => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.setTitle(`${title} - Paraglide`);
+      }
+  });
 
     // 설정 관련 핸들러
     ipcMain.handle('load-settings', async () => {
@@ -1282,27 +1425,9 @@ const IPCManager = {
       return ThemeManager.getCurrentTheme();
     });
 
-    ipcMain.handle('generate-css-filter', async (event, color, options) => { // --primary-color-filter 생성
-      try {
-        // 모듈 불러오기
-        const module = require('hex-to-css-filter');
-        
-        // hexToCSSFilter 함수 직접 접근
-        if (typeof module.hexToCSSFilter === 'function') {
-          const result = module.hexToCSSFilter(color, options);
-          return result;
-        }
-        
-        throw new Error('hexToCSSFilter 함수를 찾을 수 없습니다');
-        
-      } catch (error) {
-        console.error('[Main] 필터 생성 실패:', error);
-        return {
-          filter: 'brightness(0) saturate(100%)',
-          success: false,
-          loss: 1
-        };
-      }
+    // --primary-color-filter 생성
+    ipcMain.handle('generate-css-filter', async (event, color, options) => {
+      return ThemeManager.generateCSSfilter(color, options);
     });
 
     // 디버그 콘솔 핸들러
@@ -1350,6 +1475,14 @@ const IPCManager = {
       if (!settings) throw new Error('[Main] 설정 파일 찾기 실패');
       
       const state = store.getState().config;
+      const textProcessState = store.getState().textProcess;
+  
+      // 에디터 모드일 때는 viewMode 변경 무시
+      const newViewMode = textProcessState.programStatus === ProgramStatus.PROCESS && 
+                         textProcessState.processMode === 'editor' ? 
+                         'editor' : 
+                         settings.viewMode;
+  
       const newConfig = {
         ...state,
         theme: {
@@ -1365,7 +1498,7 @@ const IPCManager = {
           loadLastOverlayBounds: settings.loadLastOverlayBounds ?? state.overlay.loadLastOverlayBounds
         },
         processMode: settings.processMode ?? state.processMode,
-        viewMode: settings.viewMode ?? state.viewMode
+        viewMode: newViewMode ?? state.viewMode
       };
   
       store.dispatch(configActions.loadConfig(newConfig));
@@ -1610,7 +1743,7 @@ const ApplicationManager = {
     try {
       await StatusManager.transition(ProgramStatus.LOADING);
 
-      await initializeI18n();
+      await LanguageManager.initializeI18n();
 
       // 1. 설정 파일 로드 및 적용
       const savedConfig = await FileManager.loadConfig();

@@ -7,6 +7,7 @@ import '../CSS/Views/ComponentTransition.css';
 import Sidebar from './Sidebar';
 import Settings from './Settings';
 import Welcome from './Views/Welcome';
+import Editor from './Views/Editor';
 import Overview from './Views/Overview';
 import ListView from './Views/ListView';
 import DragDropOverlay from './Views/DragDropOverlay';
@@ -35,7 +36,7 @@ function MainComponent() {
     isSidebarVisible: false,
     programStatus: ProgramStatus.READY,
     isPaused: false,
-    viewMode: 'overview',
+    viewMode: null,
   });
 
   const [theme, setTheme] = useState({
@@ -223,10 +224,31 @@ function MainComponent() {
     };
 
     const handleViewModeUpdate = (event, newViewMode) => {
-      setState((prev) => ({
-        ...prev,
-        viewMode: newViewMode,
-      }));
+      // 에디터 모드로 변경될 때
+      if (newViewMode === 'editor') {
+        setState(prev => ({
+          ...prev,
+          viewMode: newViewMode,
+        }));
+        ipcRenderer.send('toggle-overlay', false); // 오버레이 윈도우 숨기기
+      } 
+      // 에디터 모드에서 다른 모드로 변경될 때
+      else if (state.viewMode === 'editor') {
+        // 이전 상태 복구
+        ipcRenderer.invoke('get-state').then(globalState => {
+          setState(prev => ({
+            ...prev,
+            viewMode: newViewMode,
+          }));
+        });
+      }
+      // 그 외의 viewMode 변경
+      else {
+        setState(prev => ({
+          ...prev,
+          viewMode: newViewMode,
+        }));
+      }
     };
 
     // 이벤트 리스너 등록
@@ -438,19 +460,64 @@ function MainComponent() {
     ipcRenderer.send('toggle-overlay');
   };
 
+  const handleNewFile = async () => {
+    const newState = {
+      programStatus: ProgramStatus.EDIT,  // PROCESS -> EDIT
+      paragraphs: [],
+      currentParagraph: 0,
+      currentNumber: null,
+      currentFilePath: null,
+      paragraphsMetadata: [],
+      isPaused: false,
+    };
+  
+    // 1. 로컬 상태 업데이트
+    setState(prev => ({
+      ...prev,
+      ...newState
+    }));
+  
+    // 2. 상태 업데이트 
+    ipcRenderer.send('update-state', newState);
+  };
+  
+  // viewMode 변경 시 에디터 보존 로직 추가
+  useEffect(() => {
+    const handleViewModeUpdate = (event, newViewMode) => {
+      // 에디터에서 다른 모드로 전환될 때도 허용
+      setState(prev => ({
+        ...prev,
+        viewMode: newViewMode,
+      }));
+  
+      // 에디터가 아닌 모드로 전환 시 오버레이 상태 복구
+      if (newViewMode !== 'editor') {
+        ipcRenderer.invoke('get-state').then(globalState => {
+        });
+      }
+    };
+  
+    ipcRenderer.on('view-mode-update', handleViewModeUpdate);
+    return () => {
+      ipcRenderer.removeListener('view-mode-update', handleViewModeUpdate);
+    };
+  }, [state.programStatus]);
+
   // 파일 로드 핸들러 수정
   const handleLoadFile = async () => {
     try {
       // 통합된 open-file 핸들러 사용
       const result = await ipcRenderer.invoke('open-file', {
-        source: 'dialog', // 다이얼로그를 통한 파일 열기임을 명시
+        source: 'dialog',
+        viewMode: 'overview' // 기본 모드 지정
       });
-
+  
       if (result.success) {
         const newState = await ipcRenderer.invoke('get-state');
         setState((prev) => ({
           ...prev,
           ...newState,
+          viewMode: 'overview', // 명시적으로 overview 모드 설정
           isSidebarVisible: false
         }));
       }
@@ -714,173 +781,194 @@ ipcRenderer.invoke('generate-css-filter', accentColor, {
       <DragDropOverlay isVisible={isDragging} />
   
       <div className="button-group-controls">
-        <button className="btn-icon" onClick={handleToggleSidebar}>
-          <img src={sidebarIcon} alt="Sidebar Icon" className="icon" />
-        </button>
-        <button className="btn-icon" onClick={() => setIsSettingsVisible(true)}>
-          <img src={settingsIcon} alt="Settings Icon" className="icon" />
-        </button>
-        {state.programStatus === ProgramStatus.PROCESS && (
-          <>
-            <button className="btn-icon" onClick={handleCompleteWork}>
-              <img src={homeIcon} alt="작업 종료" className="icon" />
-            </button>
-            <button
-              className={`btn-icon ${state.isPaused ? 'btn-danger' : 'btn-success'}`}
-              onClick={handleTogglePause}
-            >
-              {state.isPaused ? (
-                <img src={playIcon} alt="재생" className="icon" />
-              ) : (
-                <img src={pauseIcon} alt="일시정지" className="icon" />
-              )}
-            </button>
-            <button 
-              className={`btn-icon ${state.isOverlayVisible ? 'btn-active' : 'btn-outline'}`}
-              onClick={handleToggleOverlay}
-            >
-              {state.isOverlayVisible ?
-                <img src={eyeIcon} alt="오버레이 켜짐" className="icon" />
-                : 
-                <img src={eyeOffIcon} alt="오버레이 꺼짐" className="icon" />
-              }
-            </button>
-          </>
-        )}
-      </div>
+  <button className="btn-icon" onClick={handleToggleSidebar}>
+    <img src={sidebarIcon} alt="Sidebar Icon" className="icon" />
+  </button>
+  <button className="btn-icon" onClick={() => setIsSettingsVisible(true)}>
+    <img src={settingsIcon} alt="Settings Icon" className="icon" />
+  </button>
+  {(state.programStatus === ProgramStatus.PROCESS
+  || state.programStatus === ProgramStatus.EDIT) && (
+    <>
+      <button className="btn-icon" onClick={handleCompleteWork}>
+        <img src={homeIcon} alt="작업 종료" className="icon" />
+      </button>
+      {state.programStatus === ProgramStatus.PROCESS && (
+        <>
+          <button
+          className={`btn-icon ${state.isPaused
+          ? 'btn-danger' : 'btn-success'}`}
+          onClick={handleTogglePause}>
+            {state.isPaused ? <img src={playIcon}
+          alt="재생" className="icon" />
+          : <img src={pauseIcon}
+          alt="일시정지" className="icon" />}
+          </button>
+
+          <button
+          className={`btn-icon ${state.isOverlayVisible
+          ? 'btn-active' : 'btn-outline'}`}
+          onClick={handleToggleOverlay}>
+            {state.isOverlayVisible ? <img src={eyeIcon}
+          alt="오버레이 켜짐" className="icon" />
+          : <img src={eyeOffIcon}
+          alt="오버레이 꺼짐" className="icon" />}
+          </button>
+        </>
+      )}
+    </>
+  )}
+</div>
   
       <div className="content-area">
-        <TransitionGroup component={null}>
-        {state.programStatus === ProgramStatus.READY && (
-  <CSSTransition
-  key="welcome"
-  appear={true}
-  timeout={500}
-  classNames="welcome-viewport"
-  mountOnEnter
-  unmountOnExit
->
-<div className="welcome-wrapper">
-    <Welcome 
-      onLoadFile={handleLoadFile}
-      logoPath={state.logoPath}
-      titlePath={state.titlePath}
-      theme={theme}
-      fileOpenIcon={fileOpenIcon}
-    />
-  </div>
-  </CSSTransition>
-          )}
-  
-          {state.programStatus === ProgramStatus.PROCESS && (
-            <CSSTransition
-              key="main"
-              timeout={500}
-              classNames="viewport"
-              mountOnEnter
-              unmountOnExit
-            >
-              <div className="main-container" data-theme={theme.mode}>
-                <div className="view-container">
-                <TransitionGroup component={null}>
-                  {state.viewMode === 'overview' && (
-                    <CSSTransition
-                      key="overview"
-                      timeout={500}
-                      classNames="viewport"
-                      mountOnEnter
-                      unmountOnExit
-                    >
-                      <div className="view-wrapper">
-                        <Overview
-                          paragraphs={state.paragraphs}
-                          currentParagraph={state.currentParagraph}
-                          currentNumber={state.currentNumber}
-                          onParagraphClick={handleParagraphClick}
-                          theme={theme}
-                          hoveredSection={hoveredSection}
-                          onHoverChange={setHoveredSection}
-                          paragraphsMetadata={state.paragraphsMetadata}
-                          onCompleteWork={handleCompleteWork}
-                        />
-                      </div>
-                    </CSSTransition>
-                  )}
+      <TransitionGroup component={null}>
+        {(() => {
+          switch (state.programStatus) {
+            case ProgramStatus.READY:
+              return (
+                <CSSTransition
+                key="welcome"
+                timeout={500}
+                classNames="viewport"
+                mountOnEnter
+                unmountOnExit
+                >
+                  <div className="view-wrapper">
+                  <Welcome
+                  onLoadFile={handleLoadFile}
+                  onNewFile={handleNewFile}
+                  logoPath={state.logoPath}
+                  titlePath={state.titlePath}
+                  theme={theme}
+                  fileOpenIcon={fileOpenIcon}
+                  newFileIcon={textFileIcon}
+                  />
+                  </div>
+                </CSSTransition>
+              );
 
+            case ProgramStatus.EDIT:
+              return (
+                <CSSTransition
+                key="editor"
+                timeout={500}
+                classNames="viewport"
+                mountOnEnter
+                unmountOnExit
+                >
+                  <div className="view-wrapper">
+                    <Editor
+                    theme={theme} />
+                  </div>
+                </CSSTransition>
+              );
 
-                    {state.viewMode === 'listview' && (
-                      <CSSTransition
-                        key="listview"
-                        timeout={500}
-                        classNames="viewport"
-                        mountOnEnter
-                        unmountOnExit
-                      >
-                        <div className="view-wrapper">
-                          <ListView
+            case ProgramStatus.PROCESS:
+              return (
+                <CSSTransition
+                key="process"
+                timeout={500}
+                classNames="viewport"
+                mountOnEnter
+                unmountOnExit>
+                  <div className="main-container" data-theme={theme.mode}>
+                    <div className="view-container">
+                      <TransitionGroup component={null}>
+                        {state.viewMode === 'overview' ? (
+                          <CSSTransition
+                          key="overview"
+                          timeout={500}
+                          classNames="viewport"
+                          mountOnEnter
+                          unmountOnExit
+                          >
+                            <Overview
+                            paragraphs={state.paragraphs}
+                            currentParagraph={state.currentParagraph}
+                            currentNumber={state.currentNumber}
+                            onParagraphClick={handleParagraphClick}
+                            theme={theme}
+                            hoveredSection={hoveredSection}
+                            onHoverChange={setHoveredSection}
+                            paragraphsMetadata={state.paragraphsMetadata}
+                            onCompleteWork={handleCompleteWork}
+                            />
+                          </CSSTransition>
+                        ) : (
+                          <CSSTransition
+                          key="listview"
+                          timeout={500}
+                          classNames="viewport"
+                          mountOnEnter
+                          unmountOnExit>
+                            <ListView
                             paragraphs={state.paragraphs}
                             metadata={state.paragraphsMetadata}
                             currentParagraph={state.currentParagraph}
                             onParagraphSelect={handleParagraphSelect}
                             onCompleteWork={handleCompleteWork}
-                            theme={theme}
-                          />
-                        </div>
-                      </CSSTransition>
-                    )}
-                  </TransitionGroup>
-  
-                  {state.currentFilePath && (
-                    <div className="file-info-container">
-                    <div className="file-info-group">
-                      <span className="file-name">{path.basename(state.currentFilePath)}</span>
-                      <span className="paragraph-info">
-                        {(() => {
-                          const hasPageNumbers = state.paragraphsMetadata.some(meta => meta?.pageNumber != null);
-                          const currentPage = state.paragraphsMetadata[state.currentParagraph]?.pageNumber;
-                          
-                          if (!hasPageNumbers) {
-                            return t('common.pageInfo.none');
-                          }
-                  
-                          const maxPage = Math.max(
-                            ...state.paragraphsMetadata
-                              .filter(meta => meta?.pageNumber != null)
-                              .map(meta => meta.pageNumber)
-                          );
-                  
-                          return t('common.pageInfo.format', { 
-                            current: currentPage || '?',
-                            total: maxPage 
-                          });
-                        })()}
-                        {t('common.pageInfo.progress', { 
-                          percent: Math.round((state.currentParagraph + 1) / state.paragraphs.length * 100)
-                        })}
-                      </span>
+                            theme={theme} />
+                          </CSSTransition>
+                        )}
+                      </TransitionGroup>
+                      {state.currentFilePath && (
+                        <div className="file-info-container">
+                      <div className="file-info-group">
+                        <span className="file-name">{path.basename(state.currentFilePath)}</span>
+                        <span className="paragraph-info">
+                          {(() => {
+                            const hasPageNumbers = state.paragraphsMetadata.some(meta => meta?.pageNumber != null);
+                            const currentPage = state.paragraphsMetadata[state.currentParagraph]?.pageNumber;
+                            
+                            if (!hasPageNumbers) {
+                              return t('common.pageInfo.none');
+                            }
+                    
+                            const maxPage = Math.max(
+                              ...state.paragraphsMetadata
+                                .filter(meta => meta?.pageNumber != null)
+                                .map(meta => meta.pageNumber)
+                            );
+                    
+                            return t('common.pageInfo.format', { 
+                              current: currentPage || '?',
+                              total: maxPage 
+                            });
+                          })()}
+                          {t('common.pageInfo.progress', { 
+                            percent: Math.round((state.currentParagraph + 1) / state.paragraphs.length * 100)
+                          })}
+                        </span>
+                      </div>
+                      <div className="path-group">
+                        <span className="file-path">{t('mainComponent.fileInfo.path.separator')}{formatPath(state.currentFilePath)}</span>
+                      </div>
                     </div>
-                    <div className="path-group">
-                      <span className="file-path">{t('mainComponent.fileInfo.path.separator')}{formatPath(state.currentFilePath)}</span>
-                    </div>
-                  </div>
                   )}
+                  </div>
                 </div>
-              </div>
-            </CSSTransition>
-          )}
-        </TransitionGroup>
-      </div>
+              </CSSTransition>
+            );
+
+          default:
+            return null;
+        }
+      })()}
+    </TransitionGroup>
+  </div>
   
       <Settings
-        isVisible={isSettingsVisible}
-        onClose={() => setIsSettingsVisible(false)}
-        theme={theme}
-        icons={{
-          themeAuto: themeAutoIcon,
-          themeLight: themeLightIcon,
-          themeDark: themeDarkIcon,
-        }}
-      />
+  isVisible={isSettingsVisible}
+  onClose={() => setIsSettingsVisible(false)}
+  theme={theme}
+  programStatus={state.programStatus}
+  currentViewMode={state.viewMode}
+  icons={{
+    themeAuto: themeAutoIcon,
+    themeLight: themeLightIcon,
+    themeDark: themeDarkIcon,
+  }}
+/>
     </div>
   );
 };

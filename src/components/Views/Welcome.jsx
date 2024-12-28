@@ -2,7 +2,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import '../../CSS/Views/Welcome.css';
 
-function Welcome({ onLoadFile, logoPath, titlePath, theme, fileOpenIcon }) {
+function Welcome({ onLoadFile, onNewFile, logoPath, titlePath, theme, fileOpenIcon, newFileIcon }) {
   const { t } = useTranslation();
 
   return (
@@ -34,6 +34,14 @@ function Welcome({ onLoadFile, logoPath, titlePath, theme, fileOpenIcon }) {
         )}
       </div>
       <div className="button-container">
+        <button className="btn-primary" onClick={onNewFile}>
+          <img 
+            src={newFileIcon} 
+            alt={t('mainComponent.welcome.newFileAlt')} 
+            className="icon-primary" 
+          />
+          <span>{t('mainComponent.welcome.newFile')}</span>
+        </button>
         <button className="btn-primary" onClick={onLoadFile}>
           <img 
             src={fileOpenIcon} 

@@ -104,6 +104,7 @@
         "welcome": {
             "title": "Paraglide",
             "openFile": "ファイルを読み込む",
+            "newFile": "新規作成",
             "logoAlt": "Paraglide ロゴ",
             "titleAlt": "Paraglide タイトル"
         },

@@ -8,7 +8,7 @@ import '../CSS/Controllers/RangeSlider.css';
 import '../CSS/Controllers/Dropdown.css';
 const { ipcRenderer } = window.require('electron');
 
-function Settings({ isVisible, onClose, icons }) {
+function Settings({ isVisible, onClose, theme, programStatus, currentViewMode, icons }) {
   const { t } = useTranslation();
   const [settings, setSettings] = useState({
     windowOpacity: 1.0, // 창 전체 투명도
@@ -220,18 +220,22 @@ useEffect(() => {
 
   const handleViewModeChange = async () => {
     try {
-      const currentMode = settings.viewMode;
-      const newMode = currentMode === 'overview' ? 'listview' : 'overview';
-
+      // 에디터 모드일 때는 토글 비활성화
+      if (programStatus === 'Process' && currentViewMode === 'editor') {
+        return;
+      }
+  
+      const newMode = settings.viewMode === 'overview' ? 'listview' : 'overview';
+  
       const newSettings = {
         ...settings,
         viewMode: newMode
       };
-
+  
       setSettings(newSettings);
       await ipcRenderer.invoke('apply-settings', newSettings);
       ipcRenderer.send('update-view-mode', newMode);
-
+  
       setOriginalSettings(newSettings);
     } catch (error) {
       console.error('뷰 모드 전환 중 오류:', error);
