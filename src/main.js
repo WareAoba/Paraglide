@@ -510,14 +510,7 @@ const FileManager = {
       // 파일 확장자 검사
       const fileExtension = path.extname(filePath).toLowerCase();
       if (fileExtension !== '.txt') {
-        await dialog.showMessageBox(mainWindow, {
-          type: 'warning',
-          buttons: [i18next.t('common.buttons.confirm')],
-          defaultId: 0,
-          title: i18next.t('dialogs.fileError.title'),
-          message: i18next.t('dialogs.fileError.message'),
-          noLink: true
-        });
+        await DialogManager.show(DialogManager.DIALOGS.FILE_ERROR, mainWindow);
         return { success: false };
       }
 
@@ -527,14 +520,8 @@ const FileManager = {
           await fs.access(filePath);
         } catch (error) {
           if (error.code === 'ENOENT') {
-            await dialog.showMessageBox(mainWindow, {
-              type: 'warning',
-              buttons: [i18next.t('common.buttons.confirm')],
-              defaultId: 0,
-              title: i18next.t('dialogs.fileNotFound.title'),
-              message: i18next.t('dialogs.fileNotFound.message'),
-              noLink: true
-            });
+            await DialogManager.show(DialogManager.DIALOGS.FILE_NOT_FOUND, mainWindow
+            );
 
             // 로그에서 해당 파일 기록 삭제
             await this.clearLogs(filePath);
@@ -595,16 +582,7 @@ if (content) {
   
       if (!fileContent) {
         console.error('[Main] 파일 내용 없음:', filePath);
-        dialog.showMessageBoxSync(mainWindow, {
-          type: 'warning',
-          buttons: [i18next.t('common.buttons.confirm')],
-          defaultId: 1,
-          title: i18next.t('dialogs.emptyFile.title'), 
-          message: i18next.t('dialogs.emptyFile.message'),
-          cancelId: 1,
-          noLink: true,
-          normalizeAccessKeys: true,
-        });
+        await DialogManager.show(DialogManager.DIALOGS.EMPTY_FILE, mainWindow);
         return { success: false };
       }
   
@@ -627,13 +605,7 @@ if (content) {
       if (!processMode) {
         const shouldSuggestLine = TextProcessUtils.detectLineMode(fileContent);
         if (shouldSuggestLine) {
-          const choice = await dialog.showMessageBox(mainWindow, {
-            type: 'question',
-            buttons: [i18next.t('common.buttons.confirm'), i18next.t('common.buttons.cancel')],
-            defaultId: 0,
-            title: i18next.t('dialogs.processMode.title'),
-            message: i18next.t('dialogs.processMode.message')
-          });
+          const choice = await DialogManager.show(DialogManager.DIALOGS.PROCESS_MODE, mainWindow);
           processMode = choice.response === 0 ? 'line' : 'paragraph';
         } else {
           processMode = DEFAULT_PROCESS_MODE;
@@ -715,15 +687,7 @@ if (content) {
       
       // 에러 발생 시 안전하게 메시지 표시
       if (!mainWindow.isDestroyed()) {
-        await dialog.showMessageBox(mainWindow, {
-          type: 'error',
-          buttons: [i18next.t('common.buttons.confirm')],
-          defaultId: 0,
-          title: i18next.t('dialogs.fileOpenError.title'),  // ko.json에 추가 필요
-          message: i18next.t('dialogs.fileOpenError.message'),  // ko.json에 추가 필요
-          detail: error.message,
-          noLink: true
-        });
+        await DialogManager.show(DialogManager.DIALOGS.FILE_OPEN_ERROR, mainWindow);
       }
       
       return { success: false };
@@ -1066,6 +1030,127 @@ const ThemeManager = {
   }
 };
 
+const DialogManager = {
+  DIALOGS: {
+    EXIT_CONFIRM: 'EXIT_CONFIRM',
+    UNSAVED_CHANGES: 'UNSAVED_CHANGES',
+    FILE_ERROR: 'FILE_ERROR',
+    FILE_NOT_FOUND: 'FILE_NOT_FOUND',
+    EMPTY_FILE: 'EMPTY_FILE',
+    PROCESS_MODE: 'PROCESS_MODE',
+    ALREADY_RUNNING: 'ALREADY_RUNNING',
+    SWITCH_TO_EXISTING: 'SWITCH_TO_EXISTING',
+    FILE_OPEN_ERROR: 'FILE_OPEN_ERROR'
+  },
+
+  async show(dialogType, window = mainWindow) {
+    const defaultOptions = { noLink: true };
+
+    switch (dialogType) {
+      case this.DIALOGS.EXIT_CONFIRM:
+        return dialog.showMessageBoxSync(window, {
+          type: 'warning',
+          buttons: [i18next.t('common.buttons.exit'), i18next.t('common.buttons.cancel')],
+          defaultId: 1,
+          title: i18next.t('dialogs.exitConfirm.title'),
+          message: i18next.t('dialogs.exitConfirm.message'),
+          cancelId: 1,
+          ...defaultOptions
+        });
+
+        case this.DIALOGS.UNSAVED_CHANGES:
+          return dialog.showMessageBoxSync(window, {
+            type: 'warning',
+            buttons: [i18next.t('common.buttons.exit'), i18next.t('common.buttons.cancel')],
+            defaultId: 1,
+            title: i18next.t('dialogs.unsavedChanges.title'),
+            message: i18next.t('dialogs.unsavedChanges.message'),
+            cancelId: 1,
+            ...defaultOptions
+          });
+
+        case this.DIALOGS.FILE_ERROR:
+          return dialog.showMessageBoxSync(window, {
+            type: 'warning',
+            buttons: [i18next.t('common.buttons.confirm')],
+            defaultId: 0,
+            title: i18next.t('dialogs.fileError.title'),
+            message: i18next.t('dialogs.fileError.message'),
+            ...defaultOptions
+          });
+
+        case this.DIALOGS.FILE_NOT_FOUND:
+          return dialog.showMessageBoxSync(window, {
+            type: 'warning',
+            buttons: [i18next.t('common.buttons.confirm')],
+            defaultId: 0,
+            title: i18next.t('dialogs.fileNotFound.title'),
+            message: i18next.t('dialogs.fileNotFound.message'),
+            ...defaultOptions
+          });
+
+        case this.DIALOGS.EMPTY_FILE:
+          return dialog.showMessageBoxSync(window, {
+            type: 'warning',
+            buttons: [i18next.t('common.buttons.confirm')],
+            defaultId: 1,
+            title: i18next.t('dialogs.emptyFile.title'),
+            message: i18next.t('dialogs.emptyFile.message'),
+            cancelId: 1,
+            normalizeAccessKeys: true,
+            ...defaultOptions
+          });
+
+        case this.DIALOGS.PROCESS_MODE:
+          return dialog.showMessageBox(window, {
+            type: 'question',
+            buttons: [i18next.t('common.buttons.confirm'), i18next.t('common.buttons.cancel')],
+            defaultId: 0,
+            title: i18next.t('dialogs.processMode.title'),
+            message: i18next.t('dialogs.processMode.message'),
+            ...defaultOptions
+          });
+
+        case this.DIALOGS.ALREADY_RUNNING:
+          return dialog.showMessageBoxSync({
+            type: 'warning',
+            buttons: [i18next.t('common.buttons.confirm')],
+            title: i18next.t('dialogs.alreadyRunning.title'),
+            message: i18next.t('dialogs.alreadyRunning.message'),
+            detail: i18next.t('dialogs.alreadyRunning.detail'),
+            cancelId: 1,
+            normalizeAccessKeys: true,
+            ...defaultOptions
+          });
+
+        case this.DIALOGS.SWITCH_TO_EXISTING:
+          return dialog.showMessageBox(window, {
+            type: 'info',
+            buttons: [i18next.t('common.buttons.confirm')],
+            title: i18next.t('dialogs.switchToExisting.title'),
+            message: i18next.t('dialogs.switchToExisting.message'),
+            detail: i18next.t('dialogs.switchToExisting.detail'),
+            cancelId: 1,
+            normalizeAccessKeys: true,
+            ...defaultOptions
+          });
+
+        case this.DIALOGS.FILE_OPEN_ERROR:
+          return dialog.showMessageBox(window, {
+            type: 'error',
+            buttons: [i18next.t('common.buttons.confirm')],
+            defaultId: 0,
+            title: i18next.t('dialogs.fileOpenError.title'),
+            message: i18next.t('dialogs.fileOpenError.message'),
+            ...defaultOptions
+          });
+
+          default:
+        throw new Error(`Unknown dialog type: ${dialogType}`);
+    }
+  }
+};
+
 // WindowManager 정의
 
 const WindowManager = {
@@ -1086,11 +1171,12 @@ const WindowManager = {
     });
 
     mainWindow.setMenu(null);
-    mainWindow.webContents.openDevTools();
 
     // beforeunload 이벤트 핸들러 추가
     mainWindow.webContents.on('before-input-event', (event, input) => {
-      if (input.key === 'Alt' && input.type === 'keyDown') {
+      if (input.key === 'F12' && input.type === 'keyDown') {
+        mainWindow.webContents.toggleDevTools();
+      } else if (input.key === 'Alt' && input.type === 'keyDown') {
         event.preventDefault();
       }
     });
@@ -1107,15 +1193,7 @@ const WindowManager = {
             currentState.programStatus === ProgramStatus.EDIT) {
     
           // 공통 작업 중 경고
-          const workingChoice = dialog.showMessageBoxSync(mainWindow, {
-            type: 'warning',
-            buttons: [i18next.t('common.buttons.exit'), i18next.t('common.buttons.cancel')],
-            defaultId: 1,
-            title: i18next.t('dialogs.exitConfirm.title'),
-            message: i18next.t('dialogs.exitConfirm.message'),
-            cancelId: 1,
-            noLink: true,
-          });
+          const workingChoice = await DialogManager.show(DialogManager.DIALOGS.EXIT_CONFIRM, mainWindow);
           if (workingChoice === 1) return;
     
           // 에디터 모드에서는 저장 여부도 추가 확인
@@ -1126,15 +1204,7 @@ const WindowManager = {
             });
     
             if (!isEditorSaved) {
-              const saveChoice = dialog.showMessageBoxSync(mainWindow, {
-                type: 'warning',
-                buttons: [i18next.t('common.buttons.exit'), i18next.t('common.buttons.cancel')],
-                defaultId: 1,
-                title: i18next.t('dialogs.unsavedChanges.title'),  // ko.json에 추가 필요
-                message: i18next.t('dialogs.unsavedChanges.message'),  // ko.json에 추가 필요
-                cancelId: 1,
-                noLink: true,
-              });
+              const saveChoice = await DialogManager.show(DialogManager.DIALOGS.UNSAVED_CHANGES, mainWindow);
               if (saveChoice === 1) return;
             }
           }
@@ -1450,6 +1520,10 @@ ipcMain.handle('process-paragraphs', (_, content) => {
           window.webContents.send('view-mode-update', newViewMode);
         }
       });
+    });
+
+    ipcMain.handle('show-dialog', async (event, dialogType) => {
+      return await DialogManager.show(dialogType);
     });
 
     // 윈도우 관련 핸들러
@@ -1896,48 +1970,33 @@ const ApplicationManager = {
 // 앱 시작점
 const gotTheLock = app.requestSingleInstanceLock();
 
-if (!gotTheLock) {
-  LanguageManager.initializeI18n().then(() => {
-  // 다른 인스턴스가 실행 중이면 경고창을 표시하고 종료
-  dialog.showMessageBoxSync({
-    type: 'warning',
-    buttons: [i18next.t('common.buttons.confirm')],
-    title: i18next.t('dialogs.alreadyRunning.title'),
-    message: i18next.t('dialogs.alreadyRunning.message'),
-    detail: i18next.t('dialogs.alreadyRunning.detail'),
-    cancelId: 1,
-    noLink: true,
-    normalizeAccessKeys: true,
-  });
-  app.quit();
- });
-} else {
+// async IIFE로 래핑
+(async () => {
+  if (!gotTheLock) {
+    try {
+      await DialogManager.show(DialogManager.DIALOGS.ALREADY_RUNNING);
+    } finally {
+      app.quit();
+    }
+    return;
+  }
+
   // 두 번째 인스턴스 실행 시도 시 기존 창 포커스
-  app.on('second-instance', () => {
+  app.on('second-instance', async () => {
     if (mainWindow) {
       if (mainWindow.isMinimized()) mainWindow.restore();
       mainWindow.focus();
       
-      dialog.showMessageBox(mainWindow, {
-        type: 'info',
-        buttons: [i18next.t('common.buttons.confirm')],
-        title: i18next.t('dialogs.switchToExisting.title'),
-        message: i18next.t('dialogs.switchToExisting.message'),
-        detail: i18next.t('dialogs.switchToExisting.detail'),
-        cancelId: 1,
-        noLink: true,
-        normalizeAccessKeys: true,
-      });
+      await DialogManager.show(DialogManager.DIALOGS.SWITCH_TO_EXISTING, mainWindow);
     }
   });
 
   // 기존 앱 시작 로직
   app.whenReady().then(async () => {
-    // i18next 초기화를 먼저 수행
     await LanguageManager.initializeI18n();
     await ApplicationManager.initialize();
   });
-}
+})();
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {

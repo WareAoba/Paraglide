@@ -166,9 +166,12 @@ function Panel({
             <div className="current-file-info-header">
               <div className="current-file-name-container">
                 <div className="current-file-name-wrapper">
-                  <span className="current-file-name">
-                    {path.basename(currentFilePath || '')}
-                  </span>
+                <span className="current-file-name">
+  {currentFilePath ? 
+    path.basename(currentFilePath) : 
+    t('common.unknown')
+  }
+</span>
                 </div>
               </div>
             </div>
@@ -183,6 +186,7 @@ function Panel({
       </section>
     );
   };
+
   // 3. 컨텍스트 메뉴
 const RECENT_FILE = 'recent-file-menu';
 const CURRENT_FILE = 'current-file-menu';
@@ -255,6 +259,41 @@ const handleCurrentContextMenu = (event) => {
     </div>
   );
 
+  const handleEditModeSwitch = async () => {
+    const content = await ipcRenderer.invoke('read-file', currentFilePath);
+    await ipcRenderer.invoke('process-file-content', content, currentFilePath);
+  };
+
+  const handleWorkModeSwitch = async () => {
+    if (!isEditorSaved) {
+      const saveChoice = await ipcRenderer.invoke('show-dialog', 'UNSAVED_CHANGES');
+      if (saveChoice === 1) return false; // 취소 선택
+    }
+    await ipcRenderer.invoke('open-file', {
+      filePath: currentFilePath,
+      programStatus: ProgramStatus.PROCESS,
+      viewMode: 'overview'
+    });
+    return true;
+  };
+
+  const handleModeSwitch = async () => {
+    if (!currentFilePath) return;
+    
+    try {
+      let success = false;
+      if (status === ProgramStatus.PROCESS) {
+        await handleEditModeSwitch();
+        success = true;
+      } else if (status === ProgramStatus.EDIT) {
+        success = await handleWorkModeSwitch();
+      }
+      
+      if (success) onClose();
+    } catch (error) {
+      console.error('모드 전환 실패:', error);
+    }
+  };
 
   useEffect(() => {
     const container = document.querySelector('.current-file-name-container');
@@ -288,40 +327,16 @@ const handleCurrentContextMenu = (event) => {
             actionType="open"
             action={() => ipcRenderer.invoke('open-file')}
           />
-<ControlButton
-    icon={status === ProgramStatus.EDIT ? icons?.fileWorkIcon : icons?.editIcon}
-    label={status === ProgramStatus.EDIT ? 
-      t('sidebar.panel.controls.work') : 
-      t('sidebar.panel.controls.edit')
-    }
-    actionType={status === ProgramStatus.EDIT ? "process" : "edit"}
-    action={async () => {
-      if (currentFilePath) {
-        try {
-          if (status === ProgramStatus.PROCESS) {
-            // 편집 모드로 전환
-            const content = await ipcRenderer.invoke('read-file', currentFilePath);
-            await ipcRenderer.invoke('process-file-content', content, currentFilePath);
-          } else if (status === ProgramStatus.EDIT) {
-            // 작업 모드로 전환할 때만 저장 여부 확인
-            if (!isEditorSaved) {
-              const shouldProceed = window.confirm('파일이 저장되지 않았습니다. 작업 모드로 전환하시겠습니까?');
-              if (!shouldProceed) return;
+          <ControlButton
+            icon={status === ProgramStatus.EDIT ? icons?.fileWorkIcon : icons?.editIcon}
+            label={status === ProgramStatus.EDIT ? 
+              t('sidebar.panel.controls.work') : 
+              t('sidebar.panel.controls.edit')
             }
-            await ipcRenderer.invoke('open-file', {
-              filePath: currentFilePath,
-              programStatus: ProgramStatus.PROCESS,
-              viewMode: 'overview'
-            });
-          }
-          onClose();
-        } catch (error) {
-          console.error('모드 전환 실패:', error);
-        }
-      }
-    }}
-    isDisabled={status === ProgramStatus.READY}
-/>
+            actionType={status === ProgramStatus.EDIT ? "process" : "edit"}
+            action={handleModeSwitch}
+            isDisabled={status === ProgramStatus.READY}
+          />
           <ControlButton
             icon={icons?.searchIcon}
             label={t('sidebar.panel.controls.search')}

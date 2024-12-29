@@ -620,32 +620,38 @@ function MainComponent() {
 
   // handleCompleteWork 함수 수정
   const handleCompleteWork = async () => {
-    // EDIT 모드이고 저장되지 않은 변경사항이 있는지 확인
-    if (state.programStatus === ProgramStatus.EDIT && !isEditorSaved) {
-      const shouldProceed = window.confirm('저장되지 않은 변경사항이 있습니다. 정말로 나가시겠습니까?');
-      if (!shouldProceed) return;
+    try {
+      // 에디터 모드일 때만 확인
+      if (state.programStatus === ProgramStatus.EDIT && !isEditorSaved) {
+        // 저장되지 않은 변경사항이 있음을 알림
+        ipcRenderer.send('update-saved-state', isEditorSaved);
+        const saveChoice = await ipcRenderer.invoke('show-dialog', 'UNSAVED_CHANGES');
+        if (saveChoice === 1) return; // 취소
+      }
+  
+      // 공통 상태 객체 정의
+      const resetState = {
+        paragraphs: [],
+        currentParagraph: 0,
+        currentNumber: null,
+        currentFilePath: null,
+        isPaused: false,
+        isOverlayVisible: false,
+        programStatus: ProgramStatus.READY
+      };
+  
+      // IPC로 상태 업데이트 전송
+      ipcRenderer.send('update-state', resetState);
+  
+      // 로컬 상태 업데이트
+      setState(prev => ({
+        ...prev,
+        ...resetState
+      }));
+      setIsSearchVisible(false);
+    } catch (error) {
+      console.error('작업 종료 중 오류:', error);
     }
-  
-    // 공통 상태 객체 정의
-    const resetState = {
-      paragraphs: [],
-      currentParagraph: 0,
-      currentNumber: null,
-      currentFilePath: null,
-      isPaused: false,
-      isOverlayVisible: false,
-      programStatus: ProgramStatus.READY
-    };
-  
-    // IPC로 상태 업데이트 전송
-    ipcRenderer.send('update-state', resetState);
-  
-    // 로컬 상태 업데이트
-    setState(prev => ({
-      ...prev,
-      ...resetState
-    }));
-    setIsSearchVisible(false);
   };
 
 // themeCalc 함수 수정
