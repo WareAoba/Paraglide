@@ -122,7 +122,7 @@
             }
         },
         "paragraphInfo": {
-            "toNextPage": "距下一页还有{count}段",
+            "toNextPage": "距下一页还有{{count}}段",
             "lastParagraph": "这是最后一段。",
             "pageNumberHint": "💡可以输入页码来导航(例如: 1, 1p, 1页)。"
         },
@@ -179,7 +179,7 @@
                     "empty": "当前无打开的文件",
                     "pageInfo": {
                         "none": "无页面信息",
-                        "format": "第{current}/{total}页"
+                        "format": "第{{current}}/{{total}}页"
                     }
                 },
                 "recentFiles": {

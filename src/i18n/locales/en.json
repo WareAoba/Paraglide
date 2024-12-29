@@ -180,7 +180,7 @@
                     "empty": "No file is currently open",
                     "pageInfo": {
                         "none": "No Page Information",
-                        "format": "{current}/{total} Pages"
+                        "format": "{{current}}/{{total}} Pages"
                     }
                 },
                 "recentFiles": {

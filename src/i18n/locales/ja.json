@@ -290,12 +290,12 @@
     },
     "console": {
         "header": {
-            "title": "Terminal Logs ({count})",
+            "title": "Terminal Logs ({{count}})",
             "close": "×"
         },
         "content": {
             "noLogs": "ログはありません。",
-            "timestamp": "[{time}]"
+            "timestamp": "[{{time}}]"
         },
         "highlight": {
             "patterns": {
