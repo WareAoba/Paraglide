@@ -85,9 +85,17 @@
             "title": "無効なファイル",
             "message": "ファイルの内容が空または読み取れません。"
         },
+        "fileOpenError": {
+            "title": "ファイルオープンエラー",
+            "message": "ファイルの読み込みに失敗しました。"
+        },
         "exitConfirm": {
             "title": "作業終了",
-            "message": "編集中のファイルがあります。\n本当に終了しますか？"
+            "message": "作業中のファイルがあります。\n本当に終了しますか？"
+        },
+        "unsavedChanges": {
+            "title": "未保存の変更",
+            "message": "保存されていない変更があります。\n本当に終了しますか？"
         },
         "alreadyRunning": {
             "title": "実行中",
@@ -178,6 +186,7 @@
             "controls": {
                 "open": "開く",
                 "edit": "編集",
+                "work": "作業",
                 "search": "検索",
                 "console": "CLI"
             },

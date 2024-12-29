@@ -24,7 +24,9 @@ function Sidebar({
   metadata,
   isSearchVisible,
   onSelect,
-  wasInitiallySidebarOpen
+  wasInitiallySidebarOpen,
+  ProgramStatus,
+  isEditorSaved
 }) {
   const [files, setFiles] = React.useState([]);
   const [shouldRender, setShouldRender] = React.useState(false);
@@ -156,6 +158,8 @@ function Sidebar({
                   files={files}
                   theme={theme}
                   loadFileHistory={loadFileHistory}
+                  ProgramStatus={ProgramStatus}
+                  isEditorSaved={isEditorSaved}
                 />
               </CSSTransition>
             </>

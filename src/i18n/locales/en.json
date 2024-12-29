@@ -56,7 +56,7 @@
             },
             "file": {
                 "load": "파일 로드 실패",
- "empty": "File is empty or unreadable",
+            "empty": "File is empty or unreadable",
                 "notFound": "File does not exist"
             },
             "system": {
@@ -85,9 +85,17 @@
             "title": "Invalid File",
             "message": "The file is either empty or unreadable."
         },
+        "fileOpenError": {
+            "title": "File Open Error",
+            "message": "Failed to open the file."
+        },
         "exitConfirm": {
             "title": "Exit Confirmation",
-            "message": "You have unsaved work.\nAre you sure you want to exit?"
+            "message": "There is a processing file.\nAre you sure you want to exit?"
+        },
+        "unsavedChanges": {
+            "title": "Unsaved Changes",
+            "message": "You have unsaved works.\nAre you sure you want to exit?"
         },
         "alreadyRunning": {
             "title": "Already Running",
@@ -182,6 +190,7 @@
             "controls": {
                 "open": "Open",
                 "edit": "Edit",
+                "work": "Process",
                 "search": "Search",
                 "console": "Console"
             },

@@ -85,9 +85,17 @@
             "title": "잘못된 파일",
             "message": "파일 내용이 비어있거나 읽을 수 없습니다."
         },
+        "fileOpenError": {
+            "title": "파일 열기 오류",
+            "message": "파일을 열 수 없습니다."
+        },
         "exitConfirm": {
             "title": "작업 종료",
             "message": "작업 중인 파일이 있습니다.\n정말 종료하시겠습니까?"
+        },
+        "unsavedChanges": {
+            "title": "저장되지 않은 변경사항",
+            "message": "저장되지 않은 변경사항이 있습니다.\n작업을 종료하시겠습니까?"
         },
         "alreadyRunning": {
             "title": "실행 중",
@@ -182,6 +190,7 @@
             "controls": {
                 "open": "열기",
                 "edit": "편집",
+                "work": "작업",
                 "search": "검색",
                 "console": "콘솔"
             },

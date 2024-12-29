@@ -85,9 +85,17 @@
             "title": "无效文件",
             "message": "文件为空或无法读取。"
         },
+        "fileOpenError": {
+            "title": "文件打开错误",
+            "message": "无法打开文件。"
+        },
         "exitConfirm": {
             "title": "退出确认",
-            "message": "有未保存的工作。\n确定要退出吗？"
+            "message": "当前有正在处理的文件。\n确定要退出吗？"
+        },
+        "unsavedChanges": {
+            "title": "未保存的更改",
+            "message": "有未保存的更改。\n确定要退出吗？"
         },
         "alreadyRunning": {
             "title": "程序已运行",
@@ -182,6 +190,7 @@
             "controls": {
                 "open": "打开",
                 "edit": "编辑",
+                "work": "工作",
                 "search": "搜索",
                 "console": "控制台"
             },

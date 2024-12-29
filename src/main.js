@@ -16,6 +16,12 @@ const SystemListener = require('./SystemListener.jsx');  // 클래스로 import
 const jschardet = require('jschardet');
 const iconv = require('iconv-lite');
 
+// i18n 로케일 파일
+const ko = require('./i18n/locales/ko.json');
+const en = require('./i18n/locales/en.json');
+const ja = require('./i18n/locales/ja.json');
+const zh = require('./i18n/locales/zh.json');
+
 // 디바운스 함수 정의
 const debounce = (func, wait) => {
   let timeout;
@@ -116,6 +122,7 @@ let globalState = {
   isOverlayVisible: false,
   processMode: DEFAULT_PROCESS_MODE
 };
+let savedState = true;
 
 // 상태 업데이트 함수
 const updateState = async (newState) => {
@@ -505,10 +512,10 @@ const FileManager = {
       if (fileExtension !== '.txt') {
         await dialog.showMessageBox(mainWindow, {
           type: 'warning',
-          buttons: ['확인'],
+          buttons: [i18next.t('common.buttons.confirm')],
           defaultId: 0,
-          title: '파일 형식 오류',
-          message: '지원하지 않는 파일 형식입니다.\n(.txt 파일만 지원됩니다)',
+          title: i18next.t('dialogs.fileError.title'),
+          message: i18next.t('dialogs.fileError.message'),
           noLink: true
         });
         return { success: false };
@@ -522,10 +529,10 @@ const FileManager = {
           if (error.code === 'ENOENT') {
             await dialog.showMessageBox(mainWindow, {
               type: 'warning',
-              buttons: ['확인'],
+              buttons: [i18next.t('common.buttons.confirm')],
               defaultId: 0,
-              title: '파일 열기 오류',
-              message: '파일이 존재하지 않습니다.\n기록을 삭제합니다.',
+              title: i18next.t('dialogs.fileNotFound.title'),
+              message: i18next.t('dialogs.fileNotFound.message'),
               noLink: true
             });
 
@@ -590,10 +597,10 @@ if (content) {
         console.error('[Main] 파일 내용 없음:', filePath);
         dialog.showMessageBoxSync(mainWindow, {
           type: 'warning',
-          buttons: ['확인'],
+          buttons: [i18next.t('common.buttons.confirm')],
           defaultId: 1,
-          title: '잘못된 파일',
-          message: '파일 내용이 비어있거나 읽을 수 없습니다.',
+          title: i18next.t('dialogs.emptyFile.title'), 
+          message: i18next.t('dialogs.emptyFile.message'),
           cancelId: 1,
           noLink: true,
           normalizeAccessKeys: true,
@@ -622,10 +629,10 @@ if (content) {
         if (shouldSuggestLine) {
           const choice = await dialog.showMessageBox(mainWindow, {
             type: 'question',
-            buttons: ['확인', '취소'],
+            buttons: [i18next.t('common.buttons.confirm'), i18next.t('common.buttons.cancel')],
             defaultId: 0,
-            title: '모드 추천',
-            message: '문장 길이가 길어 보입니다. 줄 단위로 표시할까요?'
+            title: i18next.t('dialogs.processMode.title'),
+            message: i18next.t('dialogs.processMode.message')
           });
           processMode = choice.response === 0 ? 'line' : 'paragraph';
         } else {
@@ -710,10 +717,10 @@ if (content) {
       if (!mainWindow.isDestroyed()) {
         await dialog.showMessageBox(mainWindow, {
           type: 'error',
-          buttons: ['확인'],
+          buttons: [i18next.t('common.buttons.confirm')],
           defaultId: 0,
-          title: '오류',
-          message: '파일을 여는 중 오류가 발생했습니다.',
+          title: i18next.t('dialogs.fileOpenError.title'),  // ko.json에 추가 필요
+          message: i18next.t('dialogs.fileOpenError.message'),  // ko.json에 추가 필요
           detail: error.message,
           noLink: true
         });
@@ -723,12 +730,54 @@ if (content) {
     }
   },
 
-  async saveTextFile({ content, fileName }) {
+  async processFileContent(content, filePath) {
+    try {
+      const initialState = {
+        paragraphs: [content],
+        paragraphsMetadata: [{ startPos: 0, endPos: content.length }],
+        currentFilePath: filePath,
+        currentParagraph: 0,
+        programStatus: ProgramStatus.EDIT,
+        processMode: 'editor',
+        viewMode: 'editor'
+      };
+  
+      // Redux store 업데이트
+      store.dispatch(textProcessActions.updateContent(initialState));
+  
+      // 전역 상태 업데이트
+      await updateState({
+        ...initialState,
+        timestamp: Date.now()
+      });
+  
+      // 창 제목 업데이트
+      const formatFileName = (filePath, maxLength = 30) => {
+        const fileName = path.basename(filePath);
+        if (fileName.length > maxLength) {
+          return fileName.slice(0, maxLength - 3) + '...';
+        }
+        return fileName;
+      };
+      mainWindow.setTitle(`${formatFileName(filePath)} - Paraglide (편집)`);
+  
+      return { success: true };
+    } catch (error) {
+      console.error('[Main] 파일 처리 실패:', error);
+      return { success: false };
+    }
+  },
+
+  async saveTextFile({ content, fileName, currentFilePath, saveType }) {
     try {
       let filePath;
   
-      // 새 파일이면 저장 다이얼로그 표시
-      if (!globalState.currentFilePath) {
+      // 기존 파일 덮어쓰기
+      if (saveType === 'overwrite' && currentFilePath) {
+        filePath = currentFilePath;
+      } 
+      // 새 파일 저장
+      else {
         const result = await dialog.showSaveDialog(mainWindow, {
           defaultPath: fileName,
           filters: [{ name: 'Text Files', extensions: ['txt'] }]
@@ -739,18 +788,10 @@ if (content) {
         }
         
         filePath = result.filePath;
-      } else {
-        filePath = globalState.currentFilePath;
       }
   
       // 파일 저장
       await fs.writeFile(filePath, content, 'utf8');
-  
-      // 상태 업데이트
-      if (!globalState.currentFilePath) {
-        globalState.currentFilePath = filePath;
-        mainWindow.setTitle(`${path.basename(filePath)} - Paraglide`);
-      }
   
       return { 
         success: true, 
@@ -877,59 +918,37 @@ async restoreBackup() {
 
 const LanguageManager = {
 // i18next 초기화 함수
-async initializeI18n () {
+async initializeI18n() {
   try {
-
     const config = store.getState().config;
     const savedLanguage = config.language;
+    
+    console.log('[Main] 저장된 언어 설정:', savedLanguage);
     
     const effectiveLanguage = savedLanguage === 'auto' 
       ? app.getLocale().split('-')[0] 
       : savedLanguage;
-  
-      const supportedLanguages = ['ko', 'en', 'ja', 'zh'];
+
+    // 지원 언어 확인 및 기본값 설정
+    const supportedLanguages = ['ko', 'en', 'ja', 'zh'];
     const finalLanguage = supportedLanguages.includes(effectiveLanguage) 
       ? effectiveLanguage 
-      : (supportedLanguages.includes(app.getLocale().split('-')[0]) 
-          ? app.getLocale().split('-')[0] 
-          : 'en');
+      : 'en';  // 기본값을 'en'으로 변경
 
-          const resources = {
-            ko: require(isDev ? 
-              './i18n/locales/ko.json' : 
-              path.join(__dirname, './i18n/locales/ko.json')),
-            en: require(isDev ? 
-              './i18n/locales/en.json' : 
-              path.join(__dirname, './i18n/locales/en.json')),
-            ja: require(isDev ? 
-              './i18n/locales/ja.json' : 
-              path.join(__dirname, './i18n/locales/ja.json')),
-            zh: require(isDev ?
-              './i18n/locales/zh.json' : 
-              path.join(__dirname, './i18n/locales/zh.json'))
-          };
-
-    // 초기화 전 기존 인스턴스 정리
-    if (i18next.isInitialized) {
-      await i18next.destroy();
-    }
-
-    // main 프로세스용 i18next 초기화
+    // i18next 초기화
     await i18next.init({
       lng: finalLanguage,
       fallbackLng: 'en',
-      resources,
+      resources: {
+        ko: { translation: ko },
+        en: { translation: en },
+        ja: { translation: ja },
+        zh: { translation: zh }
+      },
       interpolation: {
         escapeValue: false
       },
-      react: null  // React 통합 비활성화
-    });
-
-    // 저장된 언어 설정을 모든 창에 전파
-    BrowserWindow.getAllWindows().forEach(window => {
-      if (!window.isDestroyed()) {
-        window.webContents.send('language-changed', finalLanguage);
-      }
+      initImmediate: false
     });
 
     console.log('[Main] i18next 초기화 완료:', finalLanguage);
@@ -1067,6 +1086,7 @@ const WindowManager = {
     });
 
     mainWindow.setMenu(null);
+    mainWindow.webContents.openDevTools();
 
     // beforeunload 이벤트 핸들러 추가
     mainWindow.webContents.on('before-input-event', (event, input) => {
@@ -1082,25 +1102,51 @@ const WindowManager = {
       e.preventDefault();
       const currentState = store.getState().textProcess;
       
-      if (currentState.programStatus === ProgramStatus.PROCESS) {
-        const choice = dialog.showMessageBoxSync(mainWindow, {
-          type: 'warning',
-          buttons: ['종료', '취소'],
-          defaultId: 1,
-          title: '작업 종료',
-          message: '작업 중인 파일이 있습니다.\n 정말 종료하시겠습니까?',
-          cancelId: 1,
-          noLink: true, // 버튼을 링크 스타일로 표시하지 않음
-          normalizeAccessKeys: true, // 단축키 정규화
-        });
-
-        if (choice === 1) {
-          return;
+      try {
+        if (currentState.programStatus === ProgramStatus.PROCESS || 
+            currentState.programStatus === ProgramStatus.EDIT) {
+    
+          // 공통 작업 중 경고
+          const workingChoice = dialog.showMessageBoxSync(mainWindow, {
+            type: 'warning',
+            buttons: [i18next.t('common.buttons.exit'), i18next.t('common.buttons.cancel')],
+            defaultId: 1,
+            title: i18next.t('dialogs.exitConfirm.title'),
+            message: i18next.t('dialogs.exitConfirm.message'),
+            cancelId: 1,
+            noLink: true,
+          });
+          if (workingChoice === 1) return;
+    
+          // 에디터 모드에서는 저장 여부도 추가 확인
+          if (currentState.programStatus === ProgramStatus.EDIT) {
+            mainWindow.webContents.send('editor-is-saved-check');
+            const isEditorSaved = await new Promise(resolve => {
+              ipcMain.once('editor-is-saved-result', (_, isSaved) => resolve(isSaved));
+            });
+    
+            if (!isEditorSaved) {
+              const saveChoice = dialog.showMessageBoxSync(mainWindow, {
+                type: 'warning',
+                buttons: [i18next.t('common.buttons.exit'), i18next.t('common.buttons.cancel')],
+                defaultId: 1,
+                title: i18next.t('dialogs.unsavedChanges.title'),  // ko.json에 추가 필요
+                message: i18next.t('dialogs.unsavedChanges.message'),  // ko.json에 추가 필요
+                cancelId: 1,
+                noLink: true,
+              });
+              if (saveChoice === 1) return;
+            }
+          }
         }
+        
+        isClosing = true;
+        ApplicationManager.exit();
+      } catch (error) {
+        console.error('종료 처리 중 오류:', error);
+        isClosing = true;
+        ApplicationManager.exit();
       }
-      
-      isClosing = true;
-      ApplicationManager.exit();
     });
 
     const startUrl = isDev
@@ -1212,9 +1258,11 @@ const WindowManager = {
 
   async updateWindowContent(window, eventName) {
     if (!window || window.isDestroyed()) return;
-  
+
     const state = store.getState().textProcess;
-    const currentParagraph = state.currentParagraph;
+    if (!state || !state.paragraphs) return;
+  
+    const currentParagraph = state.currentParagraph || 0;
   
     if (window === mainWindow) {
       const pageInfo = state.paragraphsMetadata[currentParagraph]?.pageInfo;
@@ -1326,9 +1374,27 @@ const IPCManager = {
       }
     });
 
-    ipcMain.handle('save-text-file', async (event, { content, fileName }) => {
-      return await FileManager.saveTextFile({ content, fileName });
+    ipcMain.handle('save-text-file', async (event, { content, fileName, currentFilePath, saveType }) => {
+      return await FileManager.saveTextFile({ content, fileName, currentFilePath, saveType });
     });
+
+    ipcMain.handle('process-file-content', async (_, content, filePath) => {
+      return await FileManager.processFileContent(content, filePath);
+    });
+
+    // 저장 상태 업데이트 리스너
+ipcMain.on('update-saved-state', (event, state) => {
+  savedState = state;
+});
+
+// 저장 상태 확인 핸들러
+ipcMain.handle('check-unsaved-sync', () => {
+  return !savedState;
+});
+
+ipcMain.handle('process-paragraphs', (_, content) => {
+  return TextProcessUtils.processParagraphs(content);
+});
     
     ipcMain.handle('backup-text-content', async (_, data) => {
       return await FileManager.backupContent(data);
@@ -1743,26 +1809,22 @@ const ApplicationManager = {
     try {
       await StatusManager.transition(ProgramStatus.LOADING);
 
-      await LanguageManager.initializeI18n();
-
-      // 1. 설정 파일 로드 및 적용
+      // 1. 설정 파일 로드 및 적용을 가장 먼저
       const savedConfig = await FileManager.loadConfig();
       await ConfigManager.loadAndValidateConfig(savedConfig);
 
-      // 2. 테마 관리자 초기화
+      // 2. i18next 초기화는 설정 로드 후에
+      await LanguageManager.initializeI18n();
+
+      // 3. 나머지 초기화
       ThemeManager.initialize();
-
-      // 3. IPC 핸들러 설정
       IPCManager.setupHandlers();
-
-      // 4. 윈도우 생성
       WindowManager.createMainWindow();
       WindowManager.createOverlayWindow();
 
-      // 5. 시스템 리스너 초기화
       systemListener = new SystemListener(mainWindow);
       await systemListener.initialize();
-      setupLogCapture(); // 로그 캡처
+      setupLogCapture();
 
       await StatusManager.transition(ProgramStatus.READY);
       console.log('[Main] 메인 프로세스 초기화 성공');
@@ -1799,18 +1861,20 @@ const ApplicationManager = {
 const gotTheLock = app.requestSingleInstanceLock();
 
 if (!gotTheLock) {
+  LanguageManager.initializeI18n().then(() => {
   // 다른 인스턴스가 실행 중이면 경고창을 표시하고 종료
   dialog.showMessageBoxSync({
     type: 'warning',
-    buttons: ['확인'],
-    title: '실행 중',
-    message: 'Paraglide가 이미 실행 중입니다.',
-    detail: '다중 실행은 지원하지 않습니다.',
+    buttons: [i18next.t('common.buttons.confirm')],
+    title: i18next.t('dialogs.alreadyRunning.title'),
+    message: i18next.t('dialogs.alreadyRunning.message'),
+    detail: i18next.t('dialogs.alreadyRunning.detail'),
     cancelId: 1,
     noLink: true,
     normalizeAccessKeys: true,
   });
   app.quit();
+ });
 } else {
   // 두 번째 인스턴스 실행 시도 시 기존 창 포커스
   app.on('second-instance', () => {
@@ -1820,10 +1884,10 @@ if (!gotTheLock) {
       
       dialog.showMessageBox(mainWindow, {
         type: 'info',
-        buttons: ['확인'],
-        title: '실행 중',
-        message: 'Paraglide가 이미 실행 중입니다.',
-        detail: '기존 창으로 이동합니다.',
+        buttons: [i18next.t('common.buttons.confirm')],
+        title: i18next.t('dialogs.switchToExisting.title'),
+        message: i18next.t('dialogs.switchToExisting.message'),
+        detail: i18next.t('dialogs.switchToExisting.detail'),
         cancelId: 1,
         noLink: true,
         normalizeAccessKeys: true,
@@ -1832,7 +1896,11 @@ if (!gotTheLock) {
   });
 
   // 기존 앱 시작 로직
-  app.whenReady().then(() => ApplicationManager.initialize());
+  app.whenReady().then(async () => {
+    // i18next 초기화를 먼저 수행
+    await LanguageManager.initializeI18n();
+    await ApplicationManager.initialize();
+  });
 }
 
 app.on('window-all-closed', () => {

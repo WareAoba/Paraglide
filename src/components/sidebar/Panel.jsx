@@ -19,7 +19,9 @@ function Panel({
   onClose,
   files,
   theme,
-  loadFileHistory
+  loadFileHistory,
+  isEditorSaved,
+  ProgramStatus
 }) {
 
   const { t } = useTranslation();
@@ -245,13 +247,40 @@ const handleCurrentContextMenu = (event) => {
             actionType="open"
             action={() => ipcRenderer.invoke('open-file')}
           />
-          <ControlButton
-            icon={icons?.editIcon}
-            label={t('sidebar.panel.controls.edit')}
-            actionType="edit"
-            action={onClose}
-            isDisabled={true}
-          />
+<ControlButton
+    icon={status === ProgramStatus.EDIT ? icons?.fileWorkIcon : icons?.editIcon}
+    label={status === ProgramStatus.EDIT ? 
+      t('sidebar.panel.controls.work') : 
+      t('sidebar.panel.controls.edit')
+    }
+    actionType={status === ProgramStatus.EDIT ? "process" : "edit"}
+    action={async () => {
+      if (currentFilePath) {
+        try {
+          if (status === ProgramStatus.PROCESS) {
+            // 편집 모드로 전환
+            const content = await ipcRenderer.invoke('read-file', currentFilePath);
+            await ipcRenderer.invoke('process-file-content', content, currentFilePath);
+          } else if (status === ProgramStatus.EDIT) {
+            // 작업 모드로 전환할 때만 저장 여부 확인
+            if (!isEditorSaved) {
+              const shouldProceed = window.confirm('파일이 저장되지 않았습니다. 작업 모드로 전환하시겠습니까?');
+              if (!shouldProceed) return;
+            }
+            await ipcRenderer.invoke('open-file', {
+              filePath: currentFilePath,
+              programStatus: ProgramStatus.PROCESS,
+              viewMode: 'overview'
+            });
+          }
+          onClose();
+        } catch (error) {
+          console.error('모드 전환 실패:', error);
+        }
+      }
+    }}
+    isDisabled={status === ProgramStatus.READY}
+/>
           <ControlButton
             icon={icons?.searchIcon}
             label={t('sidebar.panel.controls.search')}

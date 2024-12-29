@@ -18,7 +18,8 @@ const ProgramStatus = {
   READY: 'Ready',
   PROCESS: 'Process',
   PAUSE: 'Pause',
-  LOADING: 'Loading'
+  LOADING: 'Loading',
+  EDIT: 'Edit'
 };
 
 // MainComponent.js 수정
@@ -48,6 +49,7 @@ function MainComponent() {
   const [isSearchVisible, setIsSearchVisible] = useState(false);
   const [dragCounter, setDragCounter] = useState(0);
   const [hoveredSection, setHoveredSection] = useState(null);
+  const [isEditorSaved, setIsEditorSaved] = useState(true);
 
   const [playIcon, setPlayIcon] = useState(null);
   const [pauseIcon, setPauseIcon] = useState(null);
@@ -71,6 +73,7 @@ function MainComponent() {
   const [folderIcon, setFolderIcon] = useState(null);
   const [finderIcon, setFinderIcon] = useState(null);
   const [newFileIcon, setNewFileIcon] = useState(null);
+  const [fileWorkIcon, setFileWorkIcon] = useState(null);
 
   const searchRef = useRef(null);
 
@@ -322,28 +325,44 @@ function MainComponent() {
     e.stopPropagation();
     setDragCounter(0);
     setIsDragging(false);
-
+  
     const files = Array.from(e.dataTransfer.files);
     const txtFile = files.find((file) => file.name.endsWith('.txt'));
-
+  
     if (txtFile) {
       try {
-        // 파일 경로 추출 (Electron의 경우)
         const filePath = txtFile.path;
-
-        // 기존 open-file 핸들러 재사용
-        const result = await ipcRenderer.invoke('open-file', {
-          filePath,
-          source: 'drag-drop',
-        });
-
-        if (result.success) {
-          const newState = await ipcRenderer.invoke('get-state');
-          setState((prev) => ({
+  
+        // EDIT 모드일 때는 에디터에서 파일 열기
+        if (state.programStatus === ProgramStatus.EDIT) {
+          const content = await ipcRenderer.invoke('read-file', filePath);
+          setState(prev => ({
             ...prev,
-            ...newState,
-            isSidebarVisible: false
+            currentFilePath: filePath,
+            programStatus: ProgramStatus.EDIT,
+            viewMode: 'editor'
           }));
+  
+          // IPC 상태 업데이트
+          ipcRenderer.send('update-state', {
+            currentFilePath: filePath,
+            programStatus: ProgramStatus.EDIT
+          });
+        } else {
+          // PROCESS 모드 처리
+          const result = await ipcRenderer.invoke('open-file', {
+            filePath,
+            source: 'drag-drop',
+          });
+  
+          if (result.success) {
+            const newState = await ipcRenderer.invoke('get-state');
+            setState(prev => ({
+              ...prev,
+              ...newState,
+              isSidebarVisible: false
+            }));
+          }
         }
       } catch (error) {
         console.error('파일 로드 실패:', error);
@@ -400,7 +419,8 @@ function MainComponent() {
           'go-back.svg',
           'folder.svg',
           'finder.svg',
-          'new-file.svg'
+          'new-file.svg',
+          'file-work.svg'
         ];
 
         const iconPaths = await Promise.all(
@@ -429,6 +449,7 @@ function MainComponent() {
         setFolderIcon(iconPaths[19]);
         setFinderIcon(iconPaths[20]);
         setNewFileIcon(iconPaths[21]);
+        setFileWorkIcon(iconPaths[22]);
       } catch (error) {
         console.error('아이콘 로드 실패:', error);
       }
@@ -507,20 +528,24 @@ function MainComponent() {
   }, [state.programStatus]);
 
   // 파일 로드 핸들러 수정
-  const handleLoadFile = async () => {
+  const handleLoadFile = async (options = {}) => {
     try {
-      // 통합된 open-file 핸들러 사용
+      console.log('Loading file with options:', options); // 디버깅용
+  
       const result = await ipcRenderer.invoke('open-file', {
-        source: 'dialog',
-        viewMode: 'overview' // 기본 모드 지정
+        source: options.source || 'dialog',
+        viewMode: options.viewMode || 'overview',
+        filePath: options.filePath,
+        programStatus: options.programStatus
       });
   
       if (result.success) {
-        const newState = await ipcRenderer.invoke('get-state');
+        // 상태 업데이트
         setState((prev) => ({
           ...prev,
-          ...newState,
-          viewMode: 'overview', // 명시적으로 overview 모드 설정
+          currentFilePath: options.filePath || prev.currentFilePath,
+          programStatus: options.viewMode === 'editor' ? ProgramStatus.EDIT : ProgramStatus.PROCESS,
+          viewMode: options.viewMode || 'overview',
           isSidebarVisible: false
         }));
       }
@@ -594,7 +619,13 @@ function MainComponent() {
   };
 
   // handleCompleteWork 함수 수정
-  const handleCompleteWork = () => {
+  const handleCompleteWork = async () => {
+    // EDIT 모드이고 저장되지 않은 변경사항이 있는지 확인
+    if (state.programStatus === ProgramStatus.EDIT && !isEditorSaved) {
+      const shouldProceed = window.confirm('저장되지 않은 변경사항이 있습니다. 정말로 나가시겠습니까?');
+      if (!shouldProceed) return;
+    }
+  
     // 공통 상태 객체 정의
     const resetState = {
       paragraphs: [],
@@ -741,9 +772,10 @@ ipcRenderer.invoke('generate-css-filter', accentColor, {
         isSidebarVisible={state.isSidebarVisible}
         isSearchVisible={isSearchVisible}
         onFileSelect={handleSidebarFileSelect}
+        status={state.programStatus}  // 문자열이 아닌 상태값 직접 전달
+        ProgramStatus={ProgramStatus}
         theme={theme}
         onClose={handleCloseSidebar}
-        status={state.programStatus === ProgramStatus.READY ? 'ready' : 'process'}
         icons={{
           sidebarUnfold: sidebarUnfoldIcon,
           eye: eyeIcon,
@@ -755,6 +787,7 @@ ipcRenderer.invoke('generate-css-filter', accentColor, {
           deleteIcon: deleteIcon,
           openIcon: fileOpenIcon,
           editIcon: editIcon,
+          fileWorkIcon: fileWorkIcon,
           backIcon: backIcon,
           folderIcon: folderIcon,
           finderIcon: finderIcon
@@ -778,6 +811,7 @@ ipcRenderer.invoke('generate-css-filter', accentColor, {
         onShowDebugConsole={handleShowDebugConsole}
         isOverlayVisible={state.isOverlayVisible}
         wasInitiallySidebarOpen={state.wasInitiallySidebarOpen}
+        isEditorSaved={isEditorSaved}
         setState={setState}
       />
       
@@ -789,9 +823,9 @@ ipcRenderer.invoke('generate-css-filter', accentColor, {
   </button>
   <button className="btn-icon" onClick={() => setIsSettingsVisible(true)}>
     <img src={settingsIcon} alt="Settings Icon" className="icon" />
-  </button>
-  {(state.programStatus === ProgramStatus.PROCESS
-  || state.programStatus === ProgramStatus.EDIT) && (
+    </button>
+  {(state.programStatus === ProgramStatus.PROCESS || 
+    state.programStatus === ProgramStatus.EDIT) && (
     <>
       <button className="btn-icon" onClick={handleCompleteWork}>
         <img src={homeIcon} alt="작업 종료" className="icon" />
@@ -861,7 +895,10 @@ ipcRenderer.invoke('generate-css-filter', accentColor, {
                 >
                   <div className="view-wrapper">
                     <Editor
-                    theme={theme} />
+                    theme={theme}
+                    currentFilePath={state.currentFilePath}
+                    onSavedStateChange={setIsEditorSaved}
+                    />
                   </div>
                 </CSSTransition>
               );
