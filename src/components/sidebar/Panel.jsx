@@ -1,5 +1,5 @@
 // src/components/Views/Panel.js
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useContextMenu, Menu, Item } from 'react-contexify';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
@@ -25,6 +25,7 @@ function Panel({
 }) {
 
   const { t } = useTranslation();
+  const [editorDocInfo, setEditorDocInfo] = useState(null); // 에디터에서 받아올 문서 정보
   const isMac = os.platform() === 'darwin';
 
   // 1. 포맷팅 유틸리티
@@ -51,6 +52,8 @@ function Panel({
   };
 
   const formatPath = (fullPath) => {
+    if (!fullPath) return '';
+    
     const dirPath = path.dirname(fullPath);
     const parts = dirPath.split(path.sep);
     const truncatedPath = parts.slice(-3).join(path.sep);
@@ -112,6 +115,74 @@ function Panel({
     }
   };
 
+  useEffect(() => {
+    const handleEditorInfo = (_, { type, data }) => {
+      if (type === 'response') {
+        setEditorDocInfo(data);
+      }
+    };
+  
+    ipcRenderer.on('get-editor-info', handleEditorInfo);
+    
+    // 문서 정보 요청
+    ipcRenderer.send('get-editor-info', { type: 'request' });
+  
+    return () => {
+      ipcRenderer.removeListener('get-editor-info', handleEditorInfo);
+    };
+  }, []);
+
+  // 파일 정보 렌더링 함수 수정
+  const renderCurrentFileInfo = () => {
+    console.log('파일 정보 렌더링:', {
+      status,
+      ProgramStatus: ProgramStatus.EDIT,
+      isEditMode: status === ProgramStatus.EDIT,
+      editorDocInfo,
+      currentFile
+    });
+
+    const fileInfo = status === ProgramStatus.EDIT ? editorDocInfo : currentFile;
+    if (!fileInfo && !currentFilePath) return null;
+
+    const hasPageInfo = fileInfo?.totalPages > 0;
+    const pageInfo = hasPageInfo 
+      ? t('common.pageInfo.format', {
+          current: fileInfo.currentPage,
+          total: fileInfo.totalPages
+        })
+      : t('common.pageInfo.none');
+  
+    return (
+      <section className="sidebar-section current-file">
+        <h3>{t('sidebar.panel.sections.currentFile.title')}</h3>
+        <div
+          className="current-file-info"
+          onContextMenu={handleCurrentContextMenu}
+          style={{ cursor: 'context-menu' }}
+        >
+          <img src={icons?.textFileIcon} alt="파일" className="current-file-icon" />
+          <div className="current-file-content">
+            <div className="current-file-info-header">
+              <div className="current-file-name-container">
+                <div className="current-file-name-wrapper">
+                  <span className="current-file-name">
+                    {path.basename(currentFilePath || '')}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div className="current-page-info">
+              {pageInfo}
+            </div>
+            <div className="current-file-path">
+              {formatPath(currentFilePath) || t('common.unknown')}
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  };
   // 3. 컨텍스트 메뉴
 const RECENT_FILE = 'recent-file-menu';
 const CURRENT_FILE = 'current-file-menu';
@@ -206,37 +277,7 @@ const handleCurrentContextMenu = (event) => {
   return (
     <div className="panel-container">
       {/* 1. 현재 파일 섹션 */}
-      {currentFile && (
-        <section
-        className="sidebar-section current-file"
-        onContextMenu={handleCurrentContextMenu}>
-          <h3>현재 파일</h3>
-          <div className="section-content current-file-info">
-            <img src={icons?.textFileIcon} alt="파일" className="current-file-icon" />
-            <div className="current-file-content">
-              <div className="current-file-info-header">
-                <div className="current-file-name-container">
-                  <div className="current-file-name-wrapper">
-                    <span className="current-file-name">{path.basename(currentFilePath)}</span>
-                  </div>
-                </div>
-              </div>
-              <div className="current-page-info">
-                {(() => {
-                  const isValidPage = (page) => page && Number.isFinite(page) && page > 0;
-                  return (!isValidPage(currentFile.totalPages) || !isValidPage(currentFile.currentPage))
-                    ? t('common.pageInfo.none')
-                    : t('common.pageInfo.format', {
-                        current: currentFile.currentPage,
-                        total: currentFile.totalPages
-                      });
-                })()}
-              </div>
-              <div className="current-file-path">{formatPath(currentFilePath)}</div>
-            </div>
-          </div>
-        </section>
-      )}
+      {renderCurrentFileInfo()}
 
       {/* 2. 컨트롤 섹션 */}
       <section className="sidebar-section controls">

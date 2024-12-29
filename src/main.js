@@ -1408,6 +1408,10 @@ ipcMain.handle('process-paragraphs', (_, content) => {
       shell.showItemInFolder(filePath);
     });
 
+    ipcMain.on('get-editor-info', (event, { type, data }) => {
+      this.handleEditorEvent(type, data);
+    });
+
     ipcMain.handle('read-file', async (event, filePath) => fs.readFile(filePath, 'utf8'));
 
     // 리소스 관련 핸들러
@@ -1500,6 +1504,38 @@ ipcMain.handle('process-paragraphs', (_, content) => {
     ipcMain.on('show-debug-console', () => this.handleShowDebugConsole());
 
     handlersInitialized = true;
+  },
+
+  handleEditorEvent(type, data) {
+    try {
+      switch(type) {
+        case 'request':
+          // 모든 창에 요청 전달
+          BrowserWindow.getAllWindows().forEach(window => {
+            if (!window.isDestroyed()) {
+              window.webContents.send('get-editor-info', { type: 'request' });
+            }
+          });
+          break;
+  
+        case 'response':
+          // 응답 데이터를 모든 창에 전달
+          BrowserWindow.getAllWindows().forEach(window => {
+            if (!window.isDestroyed()) {
+              window.webContents.send('get-editor-info', { 
+                type: 'response',
+                data: data
+              });
+            }
+          });
+          break;
+  
+        default:
+          console.error('알 수 없는 에디터 이벤트 타입:', type);
+      }
+    } catch (error) {
+      console.error('에디터 이벤트 처리 중 오류:', error);
+    }
   },
 
   async handleGetLogoPath(type = 'logo') {

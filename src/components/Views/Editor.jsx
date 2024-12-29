@@ -15,7 +15,107 @@ function Editor({
     const [fileName, setFileName] = useState('');
     const [isSaved, setIsSaved] = useState(true);
     const textareaRef = useRef(null);
+    const [lastPosition, setLastPosition] = useState(null);
     const backupTimeoutRef = useRef(null);
+    
+    const [documentInfo, setDocumentInfo] = useState({ // 문서 분석 정보
+      totalPages: 0,
+      currentPage: 0,
+      paragraphCount: 0
+    });
+
+
+    const analyzeDocument = useCallback(() => {
+      if (!content) return;
+      
+      ipcRenderer.invoke('process-paragraphs', content).then(response => {
+        if (!response?.paragraphsMetadata) return;
+        
+        const cursorPosition = textareaRef.current?.selectionStart ?? 0;
+        const currentMeta = response.paragraphsMetadata.find(meta => 
+          meta?.startPos <= cursorPosition && cursorPosition <= meta?.endPos
+        );
+        
+        const docInfo = {
+          totalPages: Math.max(
+            ...response.paragraphsMetadata
+              .filter(meta => meta?.pageInfo)
+              .map(meta => meta.pageInfo.start)
+          ) || 0,
+          currentPage: currentMeta?.pageInfo?.start || 0,
+          paragraphCount: response.paragraphsToDisplay.length,
+          fileName: path.basename(currentFilePath || ''),
+          filePath: currentFilePath || ''
+        };
+  
+        setDocumentInfo(docInfo);
+        ipcRenderer.send('get-editor-info', {
+          type: 'response',
+          data: docInfo
+        });
+      });
+    }, [content, currentFilePath]);
+  
+      // 내용 변경시 분석 실행
+      useEffect(() => {
+        const debounceTimer = setTimeout(analyzeDocument, 300);
+        return () => clearTimeout(debounceTimer);
+      }, [content, analyzeDocument]);
+  
+      useEffect(() => {
+        const handleEditorInfoRequest = (_, { type }) => {
+          if (type === 'request') {
+            ipcRenderer.send('get-editor-info', {
+              type: 'response',
+              data: documentInfo
+            });
+          }
+        };
+      
+        ipcRenderer.on('get-editor-info', handleEditorInfoRequest);
+        return () => {
+          ipcRenderer.removeListener('get-editor-info', handleEditorInfoRequest);
+        };
+      }, [documentInfo]);
+
+        // 커서 위치의 페이지 번호 계산
+        const getCursorPageNumber = (position, metadata) => {
+          if (!position || !metadata) return 0;
+          const currentMeta = metadata.find(meta => 
+            meta?.startPos <= position && position <= meta?.endPos
+          );
+          return currentMeta?.pageInfo?.start || 0;
+        };
+
+ // 커서 위치 저장을 위한 핸들러 추가
+ const handleSelectionChange = useCallback(() => {
+  if (!textareaRef.current || !content) return;
+  const cursorPosition = textareaRef.current.selectionStart;
+  if (lastPosition?.position === cursorPosition) return;
+  analyzeDocument();
+  setLastPosition({ position: cursorPosition });
+}, [content, lastPosition, analyzeDocument]);
+
+  // 파일 로드 시 스크롤 위치 복원
+  const restoreScrollPosition = useCallback((content, position) => {
+    if (!textareaRef.current) return;
+  
+    requestAnimationFrame(() => {
+      // 1. 포커스 설정
+      textareaRef.current.focus();
+      
+      // 2. 커서 위치 설정
+      textareaRef.current.setSelectionRange(position, position);
+      
+      // 3. 스크롤 위치 계산 및 설정
+      const lines = content.substring(0, position).split('\n');
+      const lineHeight = parseInt(getComputedStyle(textareaRef.current).lineHeight);
+      const targetLine = lines.length;
+      const scrollTop = (targetLine - 1) * lineHeight;
+      
+      textareaRef.current.scrollTop = scrollTop;
+    });
+  }, []);
 
     const updateWindowTitle = useCallback((name, saved = true) => {
       const title = `${name}${saved ? '' : '*'}`;
@@ -43,52 +143,83 @@ function Editor({
   // 파일 로드
   useEffect(() => {
     const loadFile = async () => {
-      if (currentFilePath) {
-        try {
-          const { logData } = await ipcRenderer.invoke('get-file-history');
-          const fileLog = logData[currentFilePath];
-          const content = await ipcRenderer.invoke('read-file', currentFilePath);
-          
-          // IPC로 문단 처리 요청
-          const { paragraphs, paragraphsMetadata } = await ipcRenderer.invoke('process-paragraphs', content);
-          const lastPosition = fileLog?.lastPosition;
-  
-          setContent(content);
-          setFileName(path.basename(currentFilePath));
-          updateWindowTitle(path.basename(currentFilePath), true);
-          setIsSaved(true);
-  
-          if (lastPosition?.currentParagraph !== undefined) {
-            const targetMeta = paragraphsMetadata[lastPosition.currentParagraph];
-            // endPos로 커서 위치 설정
-            const position = targetMeta?.endPos || 0;
-  
-            requestAnimationFrame(() => {
-              if (textareaRef.current) {
-                textareaRef.current.focus();
-                textareaRef.current.setSelectionRange(position, position);
-                // 스크롤 위치 조정
-                const lineHeight = parseInt(getComputedStyle(textareaRef.current).lineHeight);
-                const lines = content.substring(0, position).split('\n').length;
-                textareaRef.current.scrollTop = lines * lineHeight;
-              }
-            });
-          }
-        } catch (error) {
-          console.error('파일 로드 실패:', error);
-        }
-      }
-    };
-    loadFile();
-  }, [currentFilePath, updateWindowTitle]);
+      if (!currentFilePath) return;
 
-    // 커서 위치 저장을 위한 핸들러 추가
-    const handleSelectionChange = () => {
-      if (textareaRef.current) {
-        const cursorPosition = textareaRef.current.selectionStart;
-        ipcRenderer.send('update-cursor-position', cursorPosition);
+      try {
+        const content = await ipcRenderer.invoke('read-file', currentFilePath);
+        
+        // 기본 상태 업데이트
+        setContent(content);
+        setFileName(path.basename(currentFilePath));
+        updateWindowTitle(path.basename(currentFilePath), true);
+        setIsSaved(true);
+
+        const response = await ipcRenderer.invoke('process-paragraphs', content);
+        
+        // 위치 복원 및 문서 정보 설정
+        const { logData } = await ipcRenderer.invoke('get-file-history');
+        const fileLog = logData[currentFilePath];
+        
+        let position = 0;
+        if (fileLog?.lastPosition?.metadata) {
+          const matchingMeta = response.paragraphsMetadata.find(meta =>
+            meta?.startPos === fileLog.lastPosition.metadata.startPos &&
+            meta?.endPos === fileLog.lastPosition.metadata.endPos
+          );
+          if (matchingMeta) {
+            position = matchingMeta.endPos;
+          }
+        }
+
+        // 위치 및 스크롤 복원 (한 번만 실행)
+        if (textareaRef.current) {
+          requestAnimationFrame(() => {
+            restoreScrollPosition(content, position);
+            // 초기 selection 이벤트 발생
+            const event = new Event('select', { bubbles: true });
+            textareaRef.current.dispatchEvent(event);
+          });
+        }
+
+        // 초기 문서 정보 설정
+        const docInfo = {
+          totalPages: Math.max(...response.paragraphsMetadata
+            .filter(meta => meta?.pageInfo)
+            .map(meta => meta.pageInfo.start)) || 0,
+          currentPage: getCursorPageNumber(position, response.paragraphsMetadata),
+          paragraphCount: response.paragraphsToDisplay.length,
+          fileName: path.basename(currentFilePath),
+          filePath: currentFilePath
+        };
+
+        setDocumentInfo(docInfo);
+        setLastPosition({ position, metadata: response.paragraphsMetadata[0] });
+
+      } catch (error) {
+        console.error('파일 로드 실패:', error);
       }
     };
+
+    loadFile();
+  }, [currentFilePath, restoreScrollPosition, updateWindowTitle]);
+
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      textarea.addEventListener('mouseup', handleSelectionChange);
+      textarea.addEventListener('keyup', handleSelectionChange);
+      textarea.addEventListener('scroll', () => {
+        // 스크롤 위치 저장
+        textarea.dataset.scrollTop = textarea.scrollTop;
+      });
+
+      return () => {
+        textarea.removeEventListener('mouseup', handleSelectionChange);
+        textarea.removeEventListener('keyup', handleSelectionChange);
+        textarea.removeEventListener('scroll', () => {});
+      };
+    }
+  }, [handleSelectionChange]);
 
   const handleContentChange = (e) => {
     setContent(e.target.value);
