@@ -1,82 +1,105 @@
 .text-editor {
-    flex: 1;
-    height: 0;
-    min-height: 0;
-    width: 95%;
-    margin-top: 60px;
-    background: var(--bg-color);
-    color: var(--text-color);
-    position: relative;
-    overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100%;
+  background: var(--bg-color);
+  color: var(--text-color);
+  position: relative;
 }
 
 .editor-header {
-    height: 2rem;
-    margin: 1rem 0;
-    padding-bottom: 0.5rem;
-    border-bottom: 1px solid var(--border-color);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 1rem;
+  margin-top: 60px;
+  height: 2rem;
+  margin: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  z-index: 1;
 }
 
 .file-name-input {
-    background: transparent;
-    border: 1px solid transparent;
-    color: var(--text-color);
-    box-sizing: border-box;
-    border-radius: 8px;
-    filter: brightness(0.8);
-    font-size: 17px;
-    padding: 8px 12px;
-    flex: 1;
-    min-width: 0;
-    transition: all 0.2s ease;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-color);
+  box-sizing: border-box;
+  border-radius: 8px;
+  filter: brightness(0.8);
+  font-size: 17px;
+  padding: 8px 12px;
+  flex: 1;
+  min-width: 0;
+  transition: all 0.2s ease;
 }
-  
-  .file-name-input:hover,
-  .file-name-input:focus {
-    border: 1px solid var(--primary-color);
-    outline: none;
-  }
-  
-  .editor-content {
-    height: calc(100% - 4rem);
-    resize: none;
-    padding: 1rem;
-    background: transparent;
-    color: var(--text-color);
-    border: none;
-    font-size: 17px;
-    line-height: 1.8;
-    width: 100%;
-    overflow-y: scroll;
-    overflow-x: hidden;
-    scrollbar-width: none;
+
+.file-name-input:hover,
+.file-name-input:focus {
+  border: 1px solid var(--primary-color);
+  outline: none;
 }
-  
-  .editor-content:focus {
-    outline: none;
-  }
-  
-  .save-button {
-    padding: 8px 20px; /* 패딩 증가 */
-    background: var(--primary-color);
-    color: var(--primary-text);
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 14px; /* 크기 지정 */
-    font-weight: 500; /* 두께 지정 */
-    transition: all 0.2s ease; /* 추가: 애니메이션 */
+
+.suneditor-container {
+  height: calc(100vh - 50px);
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+  background: var(--bg-color);
+}
+
+.sun-editor {
+  border: none !important;
+  background: var(--bg-color) !important;
+  height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.sun-editor .se-wrapper {
+  flex: 1 !important;
+  height: auto !important;
+  background: var(--bg-color) !important;
+}
+
+.sun-editor-editable {
+  background: var(--bg-color) !important;
+  color: var(--text-color) !important;
+  padding: 1rem !important;
+  overflow-y: auto !important;
+  height: 100% !important;
+  white-space: pre-wrap !important;
+  word-break: normal !important;
+}
+
+.save-button {
+  padding: 8px 20px;
+  background: var(--primary-color);
+  color: var(--primary-text);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  z-index: 1;
 }
 
 .save-button:hover {
-    opacity: 0.9;
-    transform: translateY(-1px);
+  opacity: 0.9;
+  transform: translateY(-1px);
 }
-  
+
 .save-button.unsaved {
-    background: var(--primary-color-shadow-up);
+  background: var(--primary-color-shadow-up);
+}
+
+/* 다크/라이트 테마 지원 */
+[data-theme='dark'] .monaco-editor {
+  background: var(--bg-color);
+}
+
+[data-theme='light'] .monaco-editor {
+  background: var(--bg-color);
 }

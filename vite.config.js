@@ -6,51 +6,22 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 5173,
-    strictPort: true,
-    hmr: {
-        protocol: 'ws',
-        host: 'localhost',
-        port: 5173
-      }
+    strictPort: true
   },
   optimizeDeps: {
-    include: ['@electron/remote'],
-    exclude: ['electron']
+    include: ['@monaco-editor/react']
   },
   resolve: {
-    extensions: ['.mjs', '.js', '.jsx', '.json', '.ts', '.tsx'],
     alias: {
-        '@': path.resolve(__dirname, 'src')
-      }
+      '@': path.resolve(__dirname, 'src')
+    }
   },
-  esbuild: {
-    loader: 'jsx',
-    include: /src\/.*\.jsx?$/,
-    exclude: []
-  },
-  base: './',  // 상대 경로로 변경
   build: {
     outDir: 'dist',
     emptyOutDir: true,
+    target: 'esnext',
     rollupOptions: {
-      external: ['electron'],
-      output: {
-        manualChunks: (id) => {
-          if (id.includes('node_modules')) {
-            if (id.includes('react')) return 'vendor-react';
-            return 'vendor';
-          }
-        }
-      }
-    }
-  },
-  css: {
-    devSourcemap: false,
-    postcss: {
-      map: false
-    },
-    preprocessorOptions: {
-      map: false
+      external: ['electron']
     }
   }
 });

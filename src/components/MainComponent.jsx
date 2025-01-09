@@ -7,7 +7,7 @@ import '../CSS/Views/ComponentTransition.css';
 import Sidebar from './Sidebar';
 import Settings from './Settings';
 import Welcome from './Views/Welcome';
-import Editor from './Views/Editor';
+import TextEditor from './Views/TextEditor';
 import Overview from './Views/Overview';
 import ListView from './Views/ListView';
 import DragDropOverlay from './Views/DragDropOverlay';
@@ -900,7 +900,7 @@ ipcRenderer.invoke('generate-css-filter', accentColor, {
                 unmountOnExit
                 >
                   <div className="view-wrapper">
-                    <Editor
+                    <TextEditor
                     theme={theme}
                     currentFilePath={state.currentFilePath}
                     onSavedStateChange={setIsEditorSaved}
