@@ -17,9 +17,10 @@ function TextEditor({
   const [fileName, setFileName] = useState('');
   const [isSaved, setIsSaved] = useState(true);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const initialContentRef = useRef('');
   const isLoadingRef = useRef(true);
   const [lastPosition, setLastPosition] = useState(null);
-  const [editor, setEditor] = useState(null);
+  const editorRef = useRef(null);
   const [initialContent, setInitialContent] = useState(''); // 초기 내용 저장용
   const [rawContent, setRawContent] = useState(''); // 원본 텍스트
   const [displayContent, setDisplayContent] = useState(''); // HTML 변환본
@@ -30,27 +31,28 @@ function TextEditor({
     paragraphCount: 0
   });
 
-  const handleEditorLoad = (sunEditor) => {  // useCallback 제거
-    console.log('[디버그] SunEditor 로드 콜백:', { 
-      sunEditor,
-      hasCore: !!sunEditor?.core
-    });
-    
-    if (!sunEditor?.core) return;
-    
-    setEditor(sunEditor);
+  const handleEditorLoad = (sunEditor) => {
+    if (!sunEditor?.core) {
+      console.log('[디버그] 에디터 코어 없음');
+      return;
+    }
+      
+    // ref로 직접 할당
+    editorRef.current = sunEditor;
     isLoadingRef.current = false;
     setIsInitialLoad(false);
+    
+    console.log('[디버그] 에디터 초기화 완료');
   };
 
   const analyzeDocument = useCallback(() => {
-    if (!content || !editor?.core) return;
+    if (!content || !editorRef.current?.core) return;
     
     ipcRenderer.invoke('process-paragraphs', content).then(response => {
       if (!response?.paragraphsMetadata) return;
       
       try {
-        const selection = editor.core.getSelection();
+        const selection = editorRef.current.core.getSelection();
         const cursorPosition = selection?.focusOffset ?? 0;
       
         // getCursorPageNumber 사용하여 현재 페이지 계산
@@ -77,7 +79,7 @@ function TextEditor({
         console.error('에디터 선택 영역 가져오기 실패:', error);
       }
     });
-  }, [content, currentFilePath, editor]);
+  }, [content, currentFilePath, editorRef]);
 
   // 내용 변경시 분석 실행
   useEffect(() => {
@@ -116,10 +118,10 @@ function TextEditor({
 
   // 커서 위치 저장을 위한 핸들러 추가
   const handleSelectionChange = useCallback(() => {
-    if (!editor?.core?.getSelection) return;
+    if (!editorRef.current?.core?.getSelection) return;
     
     try {
-      const selection = editor.core.getSelection();
+      const selection = editorRef.current.core.getSelection();
       const cursorPosition = selection?.focusOffset;
       
       if (lastPosition?.position === cursorPosition) return;
@@ -129,14 +131,14 @@ function TextEditor({
     } catch (error) {
       console.error('선택 영역 변경 처리 실패:', error);
     }
-  }, [content, lastPosition, analyzeDocument, editor]);
+  }, [content, lastPosition, analyzeDocument, editorRef]);
 
   const restoreScrollPosition = useCallback((content, position = 0, lines) => {
-    if (!editor?.core) return;
+    if (!editorRef.current?.core) return;
 
     const tryRestore = () => {
       try {
-        const editorCore = editor.core;
+        const editorCore = editorRef.current.core;
         if (!editorCore.context?.element) {
           setTimeout(tryRestore, 100);
           return;
@@ -215,10 +217,10 @@ function TextEditor({
     };
 
     setTimeout(tryRestore, 300);
-  }, [editor]);
+  }, [editorRef]);
 
   const updateWindowTitle = useCallback((name, saved = true) => {
-    const title = `${name}${saved ? '' : '*'}`;
+    const title = name + (saved ? '' : ' *');
     ipcRenderer.invoke('set-window-title', title);
   }, []);
 
@@ -233,11 +235,18 @@ function TextEditor({
   const handleFileNameKeyDown = (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      if (editor?.core) {
-        editor.core.focus();
+      if (editorRef.current?.core) {
+        editorRef.current.core.focus();
       }
       ipcRenderer.invoke('set-window-title', fileName);
     }
+  };
+
+  const normalizeContent = (text) => {
+    return text
+      .replace(/\r\n/g, '\n')
+      .replace(/\s+$/g, '')
+      .trim();
   };
 
   // HTML -> 텍스트 변환
@@ -259,13 +268,14 @@ function TextEditor({
       // 연속된 줄바꿈 정규화
       .replace(/\n\s*\n/g, '\n\n')
       // 앞뒤 공백 제거
-      .trim();
+      .replace(/\n+$/, '\n')        // 마지막 줄바꿈 정규화
+      .trimEnd();                   // trim() 대신 trimEnd() 사용
   };
 
   // 파일 로드
   useEffect(() => {
     const loadFile = async () => {
-      if (!currentFilePath || !editor?.core) return;
+      if (!currentFilePath || !editorRef.current?.core) return;
 
       try {
         isLoadingRef.current = true;
@@ -295,6 +305,13 @@ function TextEditor({
           line.trim().length === 0 ? '<div><br></div>' : `<div>${line}</div>`
         );
         const displayHTML = displayLines.join('');
+
+        console.log('파일 로드 시 내용 비교:', {
+          원본: fileContent,
+          HTML변환: displayHTML,
+          다시텍스트로: toRawContent(displayHTML),
+          일치여부: fileContent === toRawContent(displayHTML)
+        });
         
         // 4. 히스토리에서 위치 복원
         const { logData } = await ipcRenderer.invoke('get-file-history');
@@ -315,12 +332,31 @@ function TextEditor({
         // 5. 상태 업데이트
         await Promise.all([
           new Promise(resolve => {
-            setFileName(path.basename(currentFilePath));
-            setInitialContent(fileContent);
-            setRawContent(fileContent);
+            const newFileName = path.basename(currentFilePath);
+            const normalizedFileContent = normalizeContent(fileContent);
+            initialContentRef.current = normalizedFileContent;
+            
+            // 1. 초기 컨텐츠 설정
+            setInitialContent(normalizedFileContent); 
+            
+            // 2. 상태 업데이트 전 시점 체크
+            console.log('[디버그] 초기 설정:', {
+              파일명: newFileName,
+              초기내용: normalizedFileContent
+            });
+        
+            // 3. 나머지 상태 업데이트
             setContent(displayHTML);
+            setFileName(newFileName);
+            setRawContent(normalizedFileContent);
             setIsSaved(true);
             setLastPosition({ position });
+            updateWindowTitle(newFileName, true);
+        
+            // 4. 로딩 상태 해제 
+            isLoadingRef.current = false;
+            setIsInitialLoad(false);
+            
             resolve();
           })
         ]);
@@ -338,25 +374,34 @@ function TextEditor({
     };
 
     loadFile();
-  }, [currentFilePath, editor]);
+  }, [currentFilePath, editorRef]);
 
   const handleContentChange = useCallback((value) => {
-    console.log('[디버그] 내용 변경:', {
-      editor,
-      value: value.substring(0, 50) + '...'
-    });
-  
-    // 단순화된 조건
     if (isLoadingRef.current) {
-      console.log('[디버그] 로딩 중 - 변경 무시');
+      console.log('[디버그] 로딩 중 변경 무시');
       return;
     }
   
+    const newRawContent = toRawContent(value);
+    const currentNormalized = normalizeContent(newRawContent);
+    const initialNormalized = normalizeContent(initialContentRef.current);
+    
+    const hasChanged = currentNormalized !== initialNormalized;
+    
+    console.log('[디버그] 내용 변경:', {
+      현재: currentNormalized.slice(0, 20),
+      초기: initialNormalized.slice(0, 20),
+      변경됨: hasChanged
+    });
+    
     setContent(value);
-    setRawContent(toRawContent(value));
-    setIsSaved(false);
-    updateWindowTitle(fileName, false);
-  }, [fileName, isLoadingRef]);
+    setRawContent(newRawContent);
+    setIsSaved(!hasChanged);
+    
+    if (hasChanged) {
+      updateWindowTitle(fileName, false);
+    }
+  }, [fileName, toRawContent]);
 
   // isSaved 상태가 변경될 때마다 전역 변수 업데이트
   useEffect(() => {
@@ -452,7 +497,6 @@ function TextEditor({
           onSelect={handleSelectionChange}
           hideToolbar={true}
           getSunEditorInstance={handleEditorLoad}
-          onLoad={handleEditorLoad}
           setOptions={{
             defaultStyle: 'font-family: inherit;',
             mode: 'classic',
