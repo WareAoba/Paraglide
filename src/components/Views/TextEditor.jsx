@@ -31,6 +31,9 @@ function TextEditor({
     paragraphCount: 0
   });
 
+  const PAGE_NUMBER_PATTERN = /^\s*(\d+)\s*$/;
+  const STYLED_DIV_PATTERN = /<div[^>]*>(.*?)<\/div>/g;
+
   const handleEditorLoad = (sunEditor) => {
     if (!sunEditor?.core) {
       console.log('[디버그] 에디터 코어 없음');
@@ -135,7 +138,7 @@ function TextEditor({
 
   const restoreScrollPosition = useCallback((content, position = 0, lines) => {
     if (!editorRef.current?.core) return;
-
+  
     const tryRestore = () => {
       try {
         const editorCore = editorRef.current.core;
@@ -143,28 +146,29 @@ function TextEditor({
           setTimeout(tryRestore, 100);
           return;
         }
-
-        // 1. HTML 내용 생성
+  
+        // HTML 내용 설정
         const htmlContent = lines
           .map(line => line.isEmpty ? '<div><br></div>' : `<div>${line.text}</div>`)
           .join('');
-
-        console.log('1. 내용 설정:', {
-          HTML길이: htmlContent.length,
-          목표위치: position
-        });
-
-        // 2. 내용 설정 먼저 실행
+  
         editorCore.setContents(htmlContent);
-
-        // 3. 위치 복원은 약간의 지연 후 실행
+  
         setTimeout(() => {
           try {
             const wysiwyg = editorCore.context.element.wysiwyg;
+            
+            // 페이지 번호 스타일 적용
+            Array.from(wysiwyg.children).forEach(div => {
+              const text = div.textContent.trim();
+              if (PAGE_NUMBER_PATTERN.test(text)) {
+                div.classList.add('editor-page-number');
+              }
+            });
+
             const selection = editorCore.getSelection();
             const range = document.createRange();
         
-            // 목표 행과 노드 찾기
             const targetLine = lines.find(line => 
               line.htmlStart <= position && position <= line.htmlEnd
             );
@@ -174,34 +178,26 @@ function TextEditor({
               const targetDiv = divs[targetLine.lineNumber - 1];
               
               if (targetDiv?.firstChild) {
-                const offset = position - targetLine.htmlStart;
+                // 노드 길이 체크 추가
+                const nodeLength = targetDiv.firstChild.textContent.length;
+                const offset = Math.min(position - targetLine.htmlStart, nodeLength);
                 
-                console.log('2. 커서 설정 시도:', {
-                  현재위치: selection?.focusOffset,
-                  목표위치: position,
-                  노드내용: targetDiv.firstChild.textContent,
-                  상대위치: offset
+                console.log('커서 설정:', {
+                  노드길이: nodeLength,
+                  계산된오프셋: offset,
+                  원래목표위치: position - targetLine.htmlStart
                 });
         
-                // range 설정
                 range.setStart(targetDiv.firstChild, offset);
                 range.setEnd(targetDiv.firstChild, offset);
         
-                // selection 적용
                 selection.removeAllRanges();
                 selection.addRange(range);
                 
-                console.log('3. 커서 설정 후:', {
-                  설정위치: editorCore.getSelection()?.focusOffset,
-                  목표위치: position
-                });
-        
-                // 스크롤 이동
                 targetDiv.scrollIntoView({
                   behavior: 'smooth',
                   block: 'center'
                 });
-                setIsInitialLoad(false);
               }
             }
         
@@ -210,23 +206,18 @@ function TextEditor({
             console.error('커서 복원 실패:', error);
           }
         }, 100);
-
+  
       } catch (error) {
         console.error('복원 실패:', error);
       }
     };
-
+  
     setTimeout(tryRestore, 300);
   }, [editorRef]);
 
-  const updateWindowTitle = useCallback((name, saved = true) => {
-    const title = name + (saved ? '' : ' *');
-    ipcRenderer.invoke('set-window-title', title);
-  }, []);
-
   // 파일명 변경 핸들러
   const handleFileNameChange = (e) => {
-    const newFileName = e.target.value;
+    const newFileName = e.target.value || 'Untitled';
     setFileName(newFileName);
     setIsSaved(false);
   };
@@ -238,7 +229,6 @@ function TextEditor({
       if (editorRef.current?.core) {
         editorRef.current.core.focus();
       }
-      ipcRenderer.invoke('set-window-title', fileName);
     }
   };
 
@@ -270,6 +260,20 @@ function TextEditor({
       // 앞뒤 공백 제거
       .replace(/\n+$/, '\n')        // 마지막 줄바꿈 정규화
       .trimEnd();                   // trim() 대신 trimEnd() 사용
+  };
+
+  const applyPageNumberStyles = (lines) => {
+    if (typeof lines === 'string') {
+      lines = lines.split('\n');
+    }
+  
+    return lines.map(line => {
+      const trimmed = line.trim();
+      if (PAGE_NUMBER_PATTERN.test(trimmed)) {
+        return `<div style="font-size: 1.5em; font-weight: bold; margin: 0.5em 0;">${trimmed}</div>`;
+      }
+      return `<div>${line}</div>`;
+    }).join('\n'); // 개행문자 추가
   };
 
   // 파일 로드
@@ -304,7 +308,7 @@ function TextEditor({
         const displayLines = fileContent.split('\n').map(line => 
           line.trim().length === 0 ? '<div><br></div>' : `<div>${line}</div>`
         );
-        const displayHTML = displayLines.join('');
+        const displayHTML = applyPageNumberStyles(fileContent.split('\n'));
 
         console.log('파일 로드 시 내용 비교:', {
           원본: fileContent,
@@ -333,6 +337,9 @@ function TextEditor({
         await Promise.all([
           new Promise(resolve => {
             const newFileName = path.basename(currentFilePath);
+
+            setFileName(newFileName);
+
             const normalizedFileContent = normalizeContent(fileContent);
             initialContentRef.current = normalizedFileContent;
             
@@ -351,7 +358,6 @@ function TextEditor({
             setRawContent(normalizedFileContent);
             setIsSaved(true);
             setLastPosition({ position });
-            updateWindowTitle(newFileName, true);
         
             // 4. 로딩 상태 해제 
             isLoadingRef.current = false;
@@ -377,69 +383,94 @@ function TextEditor({
   }, [currentFilePath, editorRef]);
 
   const handleContentChange = useCallback((value) => {
-    if (isLoadingRef.current) {
-      console.log('[디버그] 로딩 중 변경 무시');
-      return;
-    }
-  
+    if (isLoadingRef.current) return;
+    const editorCore = editorRef.current?.core;
+    if (!editorCore) return;
+
+    // 현재 선택 영역 저장
+    const selection = window.getSelection();
+    const currentNode = selection.focusNode;
+    const currentOffset = selection.focusOffset;
+    const parentDiv = currentNode?.parentElement;
+    const divIndex = parentDiv ? Array.from(editorCore.context.element.wysiwyg.children)
+      .indexOf(parentDiv) : -1;
+
+    // 변경 감지
     const newRawContent = toRawContent(value);
     const currentNormalized = normalizeContent(newRawContent);
     const initialNormalized = normalizeContent(initialContentRef.current);
-    
     const hasChanged = currentNormalized !== initialNormalized;
-    
-    console.log('[디버그] 내용 변경:', {
-      현재: currentNormalized.slice(0, 20),
-      초기: initialNormalized.slice(0, 20),
-      변경됨: hasChanged
-    });
-    
-    setContent(value);
     setRawContent(newRawContent);
     setIsSaved(!hasChanged);
-    
-    if (hasChanged) {
-      updateWindowTitle(fileName, false);
-    }
-  }, [fileName, toRawContent]);
 
-  // isSaved 상태가 변경될 때마다 전역 변수 업데이트
-  useEffect(() => {
-    // isSaved 상태가 변경될 때마다 부모에게 알림
-    onSavedStateChange?.(isSaved);
-    ipcRenderer.send('update-saved-state', isSaved);
-  }, [isSaved, onSavedStateChange]);
+    try {
+      // 모든 div에 대해 페이지 번호 체크 및 스타일 적용
+      const divElements = editorCore.context.element.wysiwyg.getElementsByTagName('div');
+      Array.from(divElements).forEach(div => {
+        const text = div.textContent.trim();
+        if (PAGE_NUMBER_PATTERN.test(text)) {
+          div.classList.add('editor-page-number');
+        } else {
+          div.classList.remove('editor-page-number');
+        }
+      });
+
+      // 커서 복원
+      if (divIndex !== -1 && currentNode) {
+        const targetDiv = editorCore.context.element.wysiwyg.children[divIndex];
+        if (targetDiv?.firstChild) {
+          const range = document.createRange();
+          range.setStart(targetDiv.firstChild, currentOffset);
+          range.setEnd(targetDiv.firstChild, currentOffset);
+          selection.removeAllRanges();
+          selection.addRange(range);
+          targetDiv.firstChild.parentElement.focus();
+        }
+      }
+    } catch (error) {
+      console.error('스타일 업데이트 실패:', error);
+    }
+
+    ipcRenderer.send('update-editor-state', {
+      saved: !hasChanged,
+      filePath: currentFilePath
+    });
+}, [currentFilePath, toRawContent]);
 
   // 저장 처리
   const handleSave = useCallback(async () => {
     try {
-      // HTML을 순수 텍스트로 변환
-      const plainText = content
-        .replace(/<br\s*\/?>/g, '\n')  // <br> 태그를 개행으로
-        .replace(/<[^>]*>/g, '')       // 모든 HTML 태그 제거
-        .replace(/&nbsp;/g, ' ')       // &nbsp;를 공백으로
-        .replace(/&lt;/g, '<')         // HTML 엔티티 변환
-        .replace(/&gt;/g, '>')
-        .replace(/&amp;/g, '&');
+      // 현재 에디터의 내용을 직접 가져옴
+      const currentContent = editorRef.current?.core?.getContents() || '';
+      const currentRawContent = toRawContent(currentContent);
+  
+      console.log('저장 시도:', { currentRawContent }); 
   
       const result = await ipcRenderer.invoke('save-text-file', {
-        content: plainText,            // 변환된 텍스트 저장
+        content: currentRawContent,  // rawContent 대신 현재 내용 사용
         fileName,
         currentFilePath,
         saveType: currentFilePath ? 'overwrite' : 'new'
       });
   
+      // 3. 결과 처리
       if (result.success) {
         setIsSaved(true);
-        updateWindowTitle(fileName, true);
+        initialContentRef.current = currentRawContent;
+        // 새 파일 경로 업데이트
         if (!currentFilePath && result.filePath) {
           ipcRenderer.send('update-current-file-path', result.filePath);
         }
+        // 상태 업데이트
+        ipcRenderer.send('update-editor-state', {
+          saved: true,
+          filePath: result.filePath || currentFilePath
+        });
       }
     } catch (error) {
       console.error('저장 실패:', error);
     }
-  }, [content, fileName, currentFilePath]);
+  }, [fileName, currentFilePath, toRawContent]);
 
   useEffect(() => {
     // 저장 상태 체크 이벤트 리스너
@@ -456,18 +487,21 @@ function TextEditor({
   // 단축키 처리
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.ctrlKey || e.metaKey) {
-        switch(e.key.toLowerCase()) {
-          case 's':
-            e.preventDefault();
-            handleSave();
-            break;
-        }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+        // 이벤트 전파 중지 추가
+        e.stopPropagation();
+        e.preventDefault();
+        
+        // 약간의 지연 후 저장 실행
+        setTimeout(() => {
+          handleSave();
+        }, 0);
       }
     };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+  
+    // 캡처 단계에서 이벤트 처리
+    window.addEventListener('keydown', handleKeyDown, true);
+    return () => window.removeEventListener('keydown', handleKeyDown, true);
   }, [handleSave]);
 
   return (
@@ -482,32 +516,39 @@ function TextEditor({
           placeholder={t('editor.fileName')}
         />
         <div className="editor-controls">
-          <button 
-            className={`save-button ${!isSaved ? 'unsaved' : ''}`}
-            onClick={handleSave}
-          >
-            {t('editor.save')}
-          </button>
+        <button 
+  type="button"  // type 추가
+  className={`save-button ${!isSaved ? 'unsaved' : ''}`}
+  onClick={(e) => {  // 이벤트 핸들러 수정
+    e.preventDefault();
+    handleSave();
+  }}
+>
+  {t('editor.save')}
+</button>
         </div>
       </div>
       <div className="suneditor-container">
-        <SunEditor
-          setContents={content}
-          onChange={handleContentChange}
-          onSelect={handleSelectionChange}
-          hideToolbar={true}
-          getSunEditorInstance={handleEditorLoad}
-          setOptions={{
-            defaultStyle: 'font-family: inherit;',
-            mode: 'classic',
-            resizingBar: false,
-            charCounter: false,
-            buttonList: [],
-            width: '100%',
-            maxHeight: 'calc(100vh - 50px)',
-            styleWithCSS: true,
-          }}
-        />
+      <SunEditor
+  setContents={content}
+  onChange={handleContentChange}
+  onSelect={handleSelectionChange}
+  hideToolbar={true}
+  getSunEditorInstance={handleEditorLoad}
+  setOptions={{
+    shortcuts: { // 단축키 설정 추가
+      save: false // Ctrl+S 기본 동작 비활성화
+    },
+    defaultStyle: 'font-family: inherit;',
+    mode: 'classic',
+    resizingBar: false,
+    charCounter: false,
+    buttonList: [],
+    width: '100%',
+    maxHeight: 'calc(100vh - 50px)',
+    styleWithCSS: true
+  }}
+/>
       </div>
     </div>
   );

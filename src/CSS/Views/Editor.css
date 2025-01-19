@@ -1,15 +1,16 @@
 .text-editor {
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  height: 100%;
   width: 100%;
   background: var(--bg-color);
   color: var(--text-color);
   position: relative;
+  margin-top: 50px;
+  overflow: hidden; /* 추가 */
 }
 
 .editor-header {
-  margin-top: 60px;
   height: 2rem;
   margin: 1rem;
   padding-bottom: 0.5rem;
@@ -71,6 +72,12 @@
   height: 100% !important;
   white-space: pre-wrap !important;
   word-break: normal !important;
+}
+
+.editor-page-number {
+  font-size: 1.5em;
+  font-weight: bold;
+  margin: 0.5em 0;
 }
 
 .save-button {

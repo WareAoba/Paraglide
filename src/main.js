@@ -716,14 +716,21 @@ if (content) {
       });
   
       // 창 제목 업데이트
-      const formatFileName = (filePath, maxLength = 30) => {
-        const fileName = path.basename(filePath);
-        if (fileName.length > maxLength) {
-          return fileName.slice(0, maxLength - 3) + '...';
-        }
-        return fileName;
-      };
-      mainWindow.setTitle(`${formatFileName(filePath)} - Paraglide (편집)`);
+      ipcMain.on('update-editor-state', (_, { saved, filePath }) => {
+        // 파일명 포맷팅 함수 재사용
+        const formatFileName = (filePath, maxLength = 30) => {
+          if (!filePath) return 'Untitled';
+          const fileName = path.basename(filePath);
+          if (fileName.length > maxLength) {
+            return fileName.slice(0, maxLength - 3) + '...';
+          }
+          return fileName;
+        };
+      
+        const formattedName = formatFileName(filePath);
+        const title = `${formattedName}${saved ? '' : ' *'} - Paraglide (편집)`;
+        mainWindow.setTitle(title);
+      });
   
       return { success: true };
     } catch (error) {
@@ -1530,11 +1537,6 @@ ipcMain.handle('process-paragraphs', (_, content) => {
     ipcMain.on('toggle-overlay', () => this.handleToggleOverlay());
     ipcMain.on('toggle-pause', () => this.handlePause());
     ipcMain.on('toggle-resume', () => this.handleResume());
-    ipcMain.handle('set-window-title', (event, title) => {
-      if (mainWindow && !mainWindow.isDestroyed()) {
-          mainWindow.setTitle(`${title} - Paraglide`);
-      }
-  });
 
     // 설정 관련 핸들러
     ipcMain.handle('load-settings', async () => {
