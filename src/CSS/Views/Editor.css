@@ -75,6 +75,7 @@
   min-height: 300px;
   white-space: pre-wrap !important;
   word-break: normal !important;
+  padding-bottom: 30vh !important;
 }
 
 .editor-page-number {

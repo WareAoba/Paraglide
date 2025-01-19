@@ -31,7 +31,8 @@ function TextEditor({
     paragraphCount: 0
   });
 
-  const PAGE_NUMBER_PATTERN = /^\s*(\d+)\s*$/;
+  const PAGE_NUMBER_PATTERN = /^\s*(\d+)\s*$/;  // g 플래그 제거
+  const EXTRACT_NUMBER = /\d+/;  // 순수 숫자 추출용
   const STYLED_DIV_PATTERN = /<div[^>]*>(.*?)<\/div>/g;
 
   const handleEditorLoad = (sunEditor) => {
@@ -48,29 +49,80 @@ function TextEditor({
     console.log('[디버그] 에디터 초기화 완료');
   };
 
-  const analyzeDocument = useCallback(() => {
-    if (!content || !editorRef.current?.core) return;
+    // 커서 위치의 페이지 번호 계산
+    const getCursorPageNumber = useCallback(() => {
+      if (!editorRef.current?.core) return 0;
     
-    ipcRenderer.invoke('process-paragraphs', content).then(response => {
-      if (!response?.paragraphsMetadata) return;
+      try {
+        const editorCore = editorRef.current.core;
+        const selection = editorCore.getSelection();
+        if (!selection) return 0;
+    
+        // SunEditor API에 맞게 수정
+        const currentElement = selection.focusNode?.parentElement;
+        if (!currentElement) return 0;
+    
+        // 현재 요소부터 위로 올라가면서 페이지 번호 찾기
+        let element = currentElement.closest('div');
+        let pageNumber = 0;
+    
+        while (element) {
+          const text = element.textContent.trim();
+          console.log('[디버그] 페이지 검사:', { 
+            텍스트: text,
+            노드타입: element.nodeType,
+            매치: PAGE_NUMBER_PATTERN.test(text) 
+          });
+          
+          if (PAGE_NUMBER_PATTERN.test(text)) {
+            pageNumber = parseInt(text, 10);
+            break;
+          }
+          element = element.previousElementSibling;
+        }
+    
+        console.log('[디버그] 페이지 번호 추출:', {
+          현재페이지: pageNumber,
+          현재요소: currentElement.textContent
+        });
+    
+        return pageNumber;
+      } catch (error) {
+        console.error('커서 페이지 번호 추출 실패:', error);
+        return 0;
+      }
+    }, []);
+
+    const extractPageNumber = (text) => {
+      if (!text) return null;
+      const trimmed = text.trim();
+      return PAGE_NUMBER_PATTERN.test(trimmed) ? 
+        parseInt(trimmed.match(EXTRACT_NUMBER)[0], 10) : null;
+    };
+
+    const analyzeDocument = useCallback(() => {
+      if (!editorRef.current?.core) return;
       
       try {
-        const selection = editorRef.current.core.getSelection();
-        const cursorPosition = selection?.focusOffset ?? 0;
-      
-        // getCursorPageNumber 사용하여 현재 페이지 계산
-        const currentPage = getCursorPageNumber(cursorPosition, response.paragraphsMetadata);
+        const editorCore = editorRef.current.core;
+        const divElements = editorCore.context.element.wysiwyg.getElementsByTagName('div');
         
+        // 모든 페이지 번호 추출
+        const pageNumbers = Array.from(divElements)
+          .map(div => extractPageNumber(div.textContent))
+          .filter(num => num !== null);
+        
+        // 현재 커서 위치의 페이지 계산
+        const currentPage = getCursorPageNumber() || 0;
+        const totalPages = pageNumbers.length > 0 ? Math.max(...pageNumbers) : 0;
+    
         const docInfo = {
-          totalPages: Math.max(
-            ...response.paragraphsMetadata
-              .filter(meta => meta?.pageInfo)
-              .map(meta => meta.pageInfo.start)
-          ) || 0,
-          currentPage,
-          paragraphCount: response.paragraphsToDisplay.length,
           fileName: path.basename(currentFilePath || ''),
-          filePath: currentFilePath || ''
+          filePath: currentFilePath || '',
+          currentPage: currentPage || 0,
+          totalPages,
+          paragraphCount: divElements.length,
+          isValid: totalPages > 0 && currentPage > 0
         };
     
         setDocumentInfo(docInfo);
@@ -78,11 +130,23 @@ function TextEditor({
           type: 'response',
           data: docInfo
         });
+        
+        console.log('[디버그] 문서 분석:', {
+          현재페이지: currentPage,
+          전체페이지: totalPages,
+          총문단수: divElements.length
+        });
+    
       } catch (error) {
-        console.error('에디터 선택 영역 가져오기 실패:', error);
+        console.error('문서 분석 실패:', error);
+        setDocumentInfo(prev => ({
+          ...prev,
+          currentPage: 0,
+          totalPages: 0,
+          isValid: false
+        }));
       }
-    });
-  }, [content, currentFilePath, editorRef]);
+    }, [currentFilePath, getCursorPageNumber]);
 
   // 내용 변경시 분석 실행
   useEffect(() => {
@@ -106,35 +170,33 @@ function TextEditor({
     };
   }, [documentInfo]);
 
-  // 커서 위치의 페이지 번호 계산
-  const getCursorPageNumber = (position, metadata) => {
-    if (!position || !metadata) return 0;
-    
-    // 현재 커서 위치가 포함된 메타데이터 찾기
-    const currentMeta = metadata.find(meta => 
-      meta?.startPos <= position && position <= meta?.endPos
-    );
-    
-    // 해당 위치의 페이지 번호 반환
-    return currentMeta?.pageInfo?.start || 0;
-  };
-
   // 커서 위치 저장을 위한 핸들러 추가
   const handleSelectionChange = useCallback(() => {
-    if (!editorRef.current?.core?.getSelection) return;
-    
+    if (!editorRef.current?.core || isLoadingRef.current) return;
+  
     try {
-      const selection = editorRef.current.core.getSelection();
-      const cursorPosition = selection?.focusOffset;
-      
-      if (lastPosition?.position === cursorPosition) return;
-      
-      analyzeDocument();
-      setLastPosition({ position: cursorPosition });
+      const editorCore = editorRef.current.core;
+      const selection = editorCore.getSelection();
+      if (!selection) return;
+  
+      const currentNode = selection.focusNode;
+      if (!currentNode) return;
+  
+      // 페이지 정보 업데이트
+      const pageNumber = getCursorPageNumber();
+      if (pageNumber > 0) {
+        console.log('[디버그] 선택 영역 변경:', { 페이지: pageNumber });
+        setDocumentInfo(prev => ({
+          ...prev,
+          currentPage: pageNumber,
+          isValid: true
+        }));
+      }
+  
     } catch (error) {
       console.error('선택 영역 변경 처리 실패:', error);
     }
-  }, [content, lastPosition, analyzeDocument, editorRef]);
+  }, [getCursorPageNumber]);
 
   const restoreScrollPosition = useCallback((content, position = 0, lines) => {
     if (!editorRef.current?.core) return;
@@ -191,10 +253,26 @@ function TextEditor({
                   behavior: 'smooth',
                   block: 'center'
                 });
+
+                // 스크롤 위치 복원 후 페이지 번호 업데이트
+              setTimeout(() => {
+                const currentPage = getCursorPageNumber();
+                if (currentPage > 0) {
+                  setDocumentInfo(prev => ({
+                    ...prev,
+                    currentPage,
+                    isValid: true
+                  }));
+
+                  console.log('[디버그] 초기 커서 위치 페이지:', currentPage);
+                }
+              }, 100);
+
               }
             }
         
             wysiwyg.focus();
+
           } catch (error) {
             console.error('커서 복원 실패:', error);
           }
@@ -206,7 +284,7 @@ function TextEditor({
     };
   
     setTimeout(tryRestore, 300);
-  }, [editorRef]);
+  }, [editorRef, getCursorPageNumber]);
 
   // 파일명 변경 핸들러
   const handleFileNameChange = (e) => {
@@ -286,12 +364,12 @@ function TextEditor({
         // 1. 파일 로드
         const fileContent = await ipcRenderer.invoke('read-file', currentFilePath);
 
-          // 파일 로드 직후 에디터 상태 업데이트
-  ipcRenderer.send('update-editor-state', {
-    saved: true,
-    filePath: currentFilePath,
-    isEditing: true  // 편집 모드 표시
-  });
+        // 파일 로드 직후 에디터 상태 업데이트
+        ipcRenderer.send('update-editor-state', {
+          saved: true,
+          filePath: currentFilePath,
+          isEditing: true  // 편집 모드 표시
+        });
         
         // 2. 유효 행만 필터링하여 매핑
         const lines = fileContent.split('\n')
@@ -325,12 +403,12 @@ function TextEditor({
         editorCore.setContents(displayHTML);
         applyPageNumberStyles(editorCore);
 
-console.log('파일 로드 시 내용 비교:', {
-  원본: fileContent,
-  HTML변환: displayHTML,
-  다시텍스트로: toRawContent(displayHTML),
-  일치여부: fileContent === toRawContent(displayHTML)
-});
+        console.log('파일 로드 시 내용 비교:', {
+          원본: fileContent,
+          HTML변환: displayHTML,
+          다시텍스트로: toRawContent(displayHTML),
+          일치여부: fileContent === toRawContent(displayHTML)
+        });
         
         // 4. 히스토리에서 위치 복원
         const { logData } = await ipcRenderer.invoke('get-file-history');
@@ -399,17 +477,36 @@ console.log('파일 로드 시 내용 비교:', {
   }, [currentFilePath, editorRef]);
 
   const handleContentChange = useCallback((value) => {
-    if (isLoadingRef.current) return;
+    console.log('[디버그] handleContentChange 시작');  // 진입점 확인
+
+    if (isLoadingRef.current) {
+      console.log('[디버그] 로딩 중 - 처리 중단');
+      return;
+    }
+
     const editorCore = editorRef.current?.core;
-    if (!editorCore) return;
+    if (!editorCore) {
+      console.log('[디버그] 에디터 코어 없음');
+      return;
+    }
   
     // 현재 선택 영역 저장
     const selection = window.getSelection();
+    console.log('[디버그] 선택 영역:', {
+      있음: !!selection,
+      노드: !!selection?.focusNode
+    });
+
     const currentNode = selection.focusNode;
     const currentOffset = selection.focusOffset;
     const parentDiv = currentNode?.parentElement;
     const divIndex = parentDiv ? Array.from(editorCore.context.element.wysiwyg.children)
       .indexOf(parentDiv) : -1;
+
+    console.log('[디버그] DOM 상태:', {
+      divIndex,
+      parentDiv: !!parentDiv
+    });
   
     // 변경 감지 로직 통합
     const newRawContent = toRawContent(value);
@@ -439,6 +536,48 @@ console.log('파일 로드 시 내용 비교:', {
           range.setEnd(targetDiv.firstChild, currentOffset);
           selection.removeAllRanges();
           selection.addRange(range);
+    
+          // 스크롤 위치 최적화
+          const rect = targetDiv.getBoundingClientRect();
+          const editorRect = editorCore.context.element.wysiwyg.getBoundingClientRect();
+          const bottomTrigger = editorRect.bottom - (editorRect.height * 0.6);
+          
+          if (rect.bottom > bottomTrigger) {
+            console.log('[디버그] 스크롤 실행');
+            
+            // 부드러운 스크롤 적용
+            targetDiv.scrollIntoView({
+              behavior: 'smooth',
+              block: 'center'
+            });
+    
+            // 추가 여백을 위한 부드러운 스크롤
+            const container = editorCore.context.element.wysiwyg;
+            const additionalScroll = editorRect.height * 0.2;
+            
+            // requestAnimationFrame을 사용한 부드러운 스크롤
+            const startScrollTop = container.scrollTop;
+            const targetScrollTop = startScrollTop + additionalScroll;
+            const startTime = performance.now();
+            const duration = 300; // 300ms 동안 진행
+    
+            const animateScroll = (currentTime) => {
+              const elapsed = currentTime - startTime;
+              const progress = Math.min(elapsed / duration, 1);
+              
+              // easeOutCubic 이징 함수 적용
+              const easeProgress = 1 - Math.pow(1 - progress, 3);
+              
+              container.scrollTop = startScrollTop + (additionalScroll * easeProgress);
+              
+              if (progress < 1) {
+                requestAnimationFrame(animateScroll);
+              }
+            };
+    
+            requestAnimationFrame(animateScroll);
+          }
+    
           targetDiv.firstChild.parentElement.focus();
         }
       }
@@ -446,7 +585,7 @@ console.log('파일 로드 시 내용 비교:', {
       console.error('스타일 업데이트 실패:', error);
     }
 
-}, [currentFilePath, toRawContent]);
+  }, [currentFilePath, toRawContent]);
 
   // 저장 처리
   const handleSave = useCallback(async () => {
@@ -545,39 +684,45 @@ console.log('파일 로드 시 내용 비교:', {
           placeholder={t('editor.fileName')}
         />
         <div className="editor-controls">
-        <button 
-  type="button"  // type 추가
-  className={`save-button ${!isSaved ? 'unsaved' : ''}`}
-  onClick={(e) => {  // 이벤트 핸들러 수정
-    e.preventDefault();
-    handleSave();
-  }}
->
-  {t('editor.save')}
-</button>
+          <button 
+            type="button"
+            className={`save-button ${!isSaved ? 'unsaved' : ''}`}
+            onClick={(e) => {
+              e.preventDefault();
+              handleSave();
+            }}
+          >
+            {t('editor.save')}
+          </button>
         </div>
       </div>
       <div className="suneditor-container">
-      <SunEditor
-  setContents={content}
-  onChange={handleContentChange}
-  onSelect={handleSelectionChange}
-  hideToolbar={true}
-  getSunEditorInstance={handleEditorLoad}
-  setOptions={{
-    shortcuts: { // 단축키 설정 추가
-      save: false // Ctrl+S 기본 동작 비활성화
-    },
-    defaultStyle: 'font-family: inherit;',
-    mode: 'classic',
-    resizingBar: false,
-    charCounter: false,
-    buttonList: [],
-    width: '100%',
-    height: '100%',
-    styleWithCSS: true
-  }}
-/>
+        <SunEditor
+          setContents={content}
+          onChange={handleContentChange}
+          onSelect={handleSelectionChange}
+          onClick={handleSelectionChange}
+          onMouseUp={handleSelectionChange}
+          hideToolbar={true}
+          getSunEditorInstance={handleEditorLoad}
+          setOptions={{
+            shortcuts: {
+              save: false
+            },
+            events: {
+              click: handleSelectionChange,
+              mouseup: handleSelectionChange
+            },
+            defaultStyle: 'font-family: inherit;',
+            mode: 'classic',
+            resizingBar: false,
+            charCounter: false,
+            buttonList: [],
+            width: '100%',
+            height: '100%',
+            styleWithCSS: true
+          }}
+        />
       </div>
     </div>
   );
