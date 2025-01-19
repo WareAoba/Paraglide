@@ -157,15 +157,8 @@ function TextEditor({
         setTimeout(() => {
           try {
             const wysiwyg = editorCore.context.element.wysiwyg;
+            applyPageNumberStyles(editorCore);
             
-            // 페이지 번호 스타일 적용
-            Array.from(wysiwyg.children).forEach(div => {
-              const text = div.textContent.trim();
-              if (PAGE_NUMBER_PATTERN.test(text)) {
-                div.classList.add('editor-page-number');
-              }
-            });
-
             const selection = editorCore.getSelection();
             const range = document.createRange();
         
@@ -262,30 +255,43 @@ function TextEditor({
       .trimEnd();                   // trim() 대신 trimEnd() 사용
   };
 
-  const applyPageNumberStyles = (lines) => {
-    if (typeof lines === 'string') {
-      lines = lines.split('\n');
-    }
-  
-    return lines.map(line => {
-      const trimmed = line.trim();
-      if (PAGE_NUMBER_PATTERN.test(trimmed)) {
-        return `<div style="font-size: 1.5em; font-weight: bold; margin: 0.5em 0;">${trimmed}</div>`;
+  const applyPageNumberStyles = useCallback((editorCore) => {
+    if (!editorCore?.context?.element?.wysiwyg) return;
+    
+    const divElements = editorCore.context.element.wysiwyg.getElementsByTagName('div');
+    Array.from(divElements).forEach(div => {
+      const text = div.textContent.trim();
+      if (PAGE_NUMBER_PATTERN.test(text)) {
+        if (!div.classList.contains('editor-page-number')) {
+          div.classList.add('editor-page-number');
+        }
+      } else {
+        div.classList.remove('editor-page-number');
       }
-      return `<div>${line}</div>`;
-    }).join('\n'); // 개행문자 추가
-  };
+    });
+  }, []);
 
   // 파일 로드
   useEffect(() => {
     const loadFile = async () => {
-      if (!currentFilePath || !editorRef.current?.core) return;
-
+      if (!currentFilePath || !editorRef.current) {
+        console.log('[디버그] 파일 로드 실패: 필수 값 누락', { currentFilePath, editorRef: !!editorRef.current });
+        return;
+      }
+  
       try {
         isLoadingRef.current = true;
         setIsInitialLoad(true);
+    
         // 1. 파일 로드
         const fileContent = await ipcRenderer.invoke('read-file', currentFilePath);
+
+          // 파일 로드 직후 에디터 상태 업데이트
+  ipcRenderer.send('update-editor-state', {
+    saved: true,
+    filePath: currentFilePath,
+    isEditing: true  // 편집 모드 표시
+  });
         
         // 2. 유효 행만 필터링하여 매핑
         const lines = fileContent.split('\n')
@@ -304,18 +310,27 @@ function TextEditor({
             };
           });
     
-        // 3. HTML 변환
-        const displayLines = fileContent.split('\n').map(line => 
-          line.trim().length === 0 ? '<div><br></div>' : `<div>${line}</div>`
-        );
-        const displayHTML = applyPageNumberStyles(fileContent.split('\n'));
+        // 3. HTML 변환 및 스타일 적용
+        const displayHTML = fileContent.split('\n')
+          .map(line => line.trim().length === 0 ? '<div><br></div>' : `<div>${line}</div>`)
+          .join('');
+    
+        // editorCore 가져오기
+        const editorCore = editorRef.current.core;
+        if (!editorCore) {
+          throw new Error('에디터 코어가 초기화되지 않음');
+        }
+  
+        // 내용 설정 후 스타일 적용
+        editorCore.setContents(displayHTML);
+        applyPageNumberStyles(editorCore);
 
-        console.log('파일 로드 시 내용 비교:', {
-          원본: fileContent,
-          HTML변환: displayHTML,
-          다시텍스트로: toRawContent(displayHTML),
-          일치여부: fileContent === toRawContent(displayHTML)
-        });
+console.log('파일 로드 시 내용 비교:', {
+  원본: fileContent,
+  HTML변환: displayHTML,
+  다시텍스트로: toRawContent(displayHTML),
+  일치여부: fileContent === toRawContent(displayHTML)
+});
         
         // 4. 히스토리에서 위치 복원
         const { logData } = await ipcRenderer.invoke('get-file-history');
@@ -358,6 +373,7 @@ function TextEditor({
             setRawContent(normalizedFileContent);
             setIsSaved(true);
             setLastPosition({ position });
+            onSavedStateChange(true);
         
             // 4. 로딩 상태 해제 
             isLoadingRef.current = false;
@@ -386,7 +402,7 @@ function TextEditor({
     if (isLoadingRef.current) return;
     const editorCore = editorRef.current?.core;
     if (!editorCore) return;
-
+  
     // 현재 선택 영역 저장
     const selection = window.getSelection();
     const currentNode = selection.focusNode;
@@ -394,27 +410,26 @@ function TextEditor({
     const parentDiv = currentNode?.parentElement;
     const divIndex = parentDiv ? Array.from(editorCore.context.element.wysiwyg.children)
       .indexOf(parentDiv) : -1;
-
-    // 변경 감지
+  
+    // 변경 감지 로직 통합
     const newRawContent = toRawContent(value);
-    const currentNormalized = normalizeContent(newRawContent);
-    const initialNormalized = normalizeContent(initialContentRef.current);
-    const hasChanged = currentNormalized !== initialNormalized;
+    const hasChanged = newRawContent !== initialContentRef.current;
+    
+    setContent(value);
     setRawContent(newRawContent);
     setIsSaved(!hasChanged);
+    onSavedStateChange(!hasChanged);
+  
+    // 상태 업데이트
+    ipcRenderer.send('update-editor-state', {
+      saved: !hasChanged,
+      filePath: currentFilePath,
+      isEditing: true
+    });
 
     try {
-      // 모든 div에 대해 페이지 번호 체크 및 스타일 적용
-      const divElements = editorCore.context.element.wysiwyg.getElementsByTagName('div');
-      Array.from(divElements).forEach(div => {
-        const text = div.textContent.trim();
-        if (PAGE_NUMBER_PATTERN.test(text)) {
-          div.classList.add('editor-page-number');
-        } else {
-          div.classList.remove('editor-page-number');
-        }
-      });
-
+      applyPageNumberStyles(editorCore);
+      
       // 커서 복원
       if (divIndex !== -1 && currentNode) {
         const targetDiv = editorCore.context.element.wysiwyg.children[divIndex];
@@ -431,10 +446,6 @@ function TextEditor({
       console.error('스타일 업데이트 실패:', error);
     }
 
-    ipcRenderer.send('update-editor-state', {
-      saved: !hasChanged,
-      filePath: currentFilePath
-    });
 }, [currentFilePath, toRawContent]);
 
   // 저장 처리
@@ -456,6 +467,7 @@ function TextEditor({
       // 3. 결과 처리
       if (result.success) {
         setIsSaved(true);
+        onSavedStateChange(true);
         initialContentRef.current = currentRawContent;
         // 새 파일 경로 업데이트
         if (!currentFilePath && result.filePath) {
@@ -473,16 +485,33 @@ function TextEditor({
   }, [fileName, currentFilePath, toRawContent]);
 
   useEffect(() => {
-    // 저장 상태 체크 이벤트 리스너
     const handleIsSavedCheck = () => {
-      ipcRenderer.send('editor-is-saved-result', isSaved);
+      try {
+        // 현재 컨텐츠
+        const currentHTML = editorRef.current?.core?.getContents() || '';
+        const currentRaw = toRawContent(currentHTML);
+        
+        // 초기 컨텐츠와 동일한 방식으로 처리
+        const isContentSaved = currentRaw === initialContentRef.current;
+        
+        console.log('[디버그] 저장 상태 체크:', {
+          현재내용: currentRaw,
+          초기내용: initialContentRef.current,
+          저장여부: isContentSaved
+        });
+  
+        ipcRenderer.send('editor-is-saved-result', isContentSaved);
+      } catch (error) {
+        console.error('저장 상태 체크 실패:', error);
+        ipcRenderer.send('editor-is-saved-result', true);
+      }
     };
   
     ipcRenderer.on('editor-is-saved-check', handleIsSavedCheck);
     return () => {
       ipcRenderer.removeListener('editor-is-saved-check', handleIsSavedCheck);
     };
-  }, [isSaved]);
+  }, [toRawContent]);
 
   // 단축키 처리
   useEffect(() => {
@@ -545,7 +574,7 @@ function TextEditor({
     charCounter: false,
     buttonList: [],
     width: '100%',
-    maxHeight: 'calc(100vh - 50px)',
+    height: '100%',
     styleWithCSS: true
   }}
 />
