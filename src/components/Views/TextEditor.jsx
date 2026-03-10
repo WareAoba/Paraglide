@@ -672,6 +672,13 @@ function TextEditor({
     return () => window.removeEventListener('keydown', handleKeyDown, true);
   }, [handleSave]);
 
+  const pagePatterns = {
+    numberOnly: /^[1-9]\d*$/,  // 0으로 시작하지 않는 숫자만
+    koreanStyle: /^(?:\d+)\s*(?:페이지|페|p|P|page|Page)$/,
+    englishStyle: /^(?:page|p)\s*\d+$/i,
+    rangeStyle: /^(\d+)\s*[-~]\s*(\d+)(?:\s*(?:페이지|페|page|p))?$/i
+  };
+
   return (
     <div className="text-editor" data-theme={theme.mode}>
       <div className="editor-header">
