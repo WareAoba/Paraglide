@@ -6,13 +6,23 @@ import '../../CSS/Views/Console.css';
 
 const { ipcRenderer } = window.require('electron');
 
-const theme = 'dark';
-
 const Console = () => {
     const [logs, setLogs] = useState([]);
+    const [theme, setTheme] = useState('dark');
     const consoleRef = useRef(null);
 
     useEffect(() => {
+        // 초기 테마 로드
+        ipcRenderer.invoke('get-current-theme').then(initialTheme => {
+            if (initialTheme?.mode) setTheme(initialTheme.mode);
+        });
+
+        // 테마 변경 리스너
+        const handleThemeUpdate = (_, newTheme) => {
+            if (newTheme?.mode) setTheme(newTheme.mode);
+        };
+        ipcRenderer.on('theme-update', handleThemeUpdate);
+
         ipcRenderer.invoke('get-logs').then(initialLogs => {
             setLogs(initialLogs);
         });
@@ -29,6 +39,7 @@ const Console = () => {
         ipcRenderer.on('update-logs', handleNewLogs);
         return () => {
             ipcRenderer.removeListener('update-logs', handleNewLogs);
+            ipcRenderer.removeListener('theme-update', handleThemeUpdate);
         };
     }, []);
 

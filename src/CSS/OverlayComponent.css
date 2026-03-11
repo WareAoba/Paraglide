@@ -80,7 +80,7 @@
   border-color: var(--btn-border);
 }
 
-/* 단락 컨테이너 */
+/* 단락 컨테이너 — Flexbox column 레이아웃 */
 .paragraphs-view {
   flex: 1;
   display: flex;
@@ -88,15 +88,14 @@
   justify-content: center;
   align-items: center;
   overflow: hidden;
-  position: relative;
+  gap: 2px;
 }
 
 /* 단락 공통 스타일 */
 .overlay-paragraph {
-  min-height: 40px; /* 크기 축소 */
+  min-height: 40px;
   width: 96%;
-  left: 2%;
-  position: absolute;
+  flex-shrink: 0;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -106,6 +105,7 @@
   text-overflow: ellipsis;
   border-radius: 4px;
   transition: background-color var(--transition-default);
+  box-sizing: border-box;
 }
 
 .overlay-paragraph-text {

@@ -2,7 +2,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import "../CSS/OverlayComponent.css";
-import "../CSS/App.css";
 const { ipcRenderer } = window.require("electron");
 
 function OverlayComponent() {
@@ -107,7 +106,7 @@ function OverlayComponent() {
 
   const handleParagraphClick = (index) => {
     if (index !== undefined) {
-      ipcRenderer.send("set-current-paragraph", index);
+      ipcRenderer.send("move-to-position", index);
     }
   };
 
@@ -151,9 +150,6 @@ function OverlayComponent() {
             <div
               key={`prev-${idx}`}
               className={`overlay-paragraph overlay-paragraph-previous ${hoveredIndex === `prev-${idx}` ? "hovered" : ""}`}
-              style={{
-                top: `calc(50% - ${(state.previous.length - idx + 1) * 50}px)`,
-              }}
               onClick={() => handleParagraphClick(para.index)}
               onMouseEnter={() => setHoveredIndex(`prev-${idx}`)}
               onMouseLeave={() => setHoveredIndex(null)}
@@ -180,9 +176,6 @@ function OverlayComponent() {
             <div
               key={`next-${idx}`}
               className={`overlay-paragraph overlay-paragraph-next ${hoveredIndex === `next-${idx}` ? "hovered" : ""}`}
-              style={{
-                top: `calc(50% + ${(idx + 1) * 50}px)`,
-              }}
               onClick={() => handleParagraphClick(para.index)}
               onMouseEnter={() => setHoveredIndex(`next-${idx}`)}
               onMouseLeave={() => setHoveredIndex(null)}

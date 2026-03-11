@@ -269,6 +269,15 @@
             "zh": "中文",
             "ko": "한국어"
         },
+        "plugin": {
+            "title": "Photoshop Mode",
+            "enable": "Auto-paste via Photoshop API",
+            "port": "Port",
+            "connected": "Connected Plugins",
+            "installing": "Installing plugin...",
+            "installed": "Plugin installed. Please restart Photoshop.",
+            "installFailed": "Plugin auto-install failed."
+        },
         "dataManagement": {
             "title": "Data Management",
             "clearLogs": "Clear Log Files",

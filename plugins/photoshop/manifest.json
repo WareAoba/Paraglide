@@ -1,0 +1,46 @@
+{
+  "id": "com.paraglide.connector",
+  "name": "Paraglide Connector",
+  "version": "1.0.0",
+  "main": "index.js",
+  "host": [
+    {
+      "app": "PS",
+      "minVersion": "24.0.0"
+    }
+  ],
+  "manifestVersion": 5,
+  "entrypoints": [
+    {
+      "type": "command",
+      "id": "toggleConnection",
+      "label": {
+        "default": "Toggle Paraglide Connection"
+      }
+    },
+    {
+      "type": "panel",
+      "id": "mainPanel",
+      "label": {
+        "default": "Paraglide"
+      },
+      "minimumSize": { "width": 200, "height": 120 },
+      "maximumSize": { "width": 400, "height": 300 },
+      "preferredDockedSize": { "width": 240, "height": 160 },
+      "preferredFloatingSize": { "width": 240, "height": 200 },
+      "icons": [
+        { "width": 23, "height": 23, "path": "icons/icon_D.png", "scale": [1, 2], "theme": ["darkest", "dark", "medium"] },
+        { "width": 23, "height": 23, "path": "icons/icon_L.png", "scale": [1, 2], "theme": ["lightest", "light"] }
+      ]
+    }
+  ],
+  "icons": [
+    { "width": 48, "height": 48, "path": "icons/plugin-icon.png" }
+  ],
+  "requiredPermissions": {
+    "network": {
+      "domains": ["ws://localhost", "ws://127.0.0.1"]
+    },
+    "localFileSystem": "request"
+  }
+}

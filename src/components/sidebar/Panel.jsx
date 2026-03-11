@@ -3,7 +3,6 @@ import React, { useEffect, useState } from 'react';
 import { useContextMenu, Menu, Item } from 'react-contexify';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
-import '../../CSS/App.css';
 import '../../CSS/Sidebar/Panel.css';
 const { ipcRenderer } = window.require('electron');
 const path = window.require('path');

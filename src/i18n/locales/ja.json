@@ -264,6 +264,15 @@
             "zh": "中文",
             "ko": "한국어"
         },
+        "plugin": {
+            "title": "Photoshopモード",
+            "enable": "Photoshop APIで自動ペースト",
+            "port": "ポート",
+            "connected": "接続中のプラグイン",
+            "installing": "プラグインをインストール中...",
+            "installed": "プラグインがインストールされました。Photoshopを再起動してください。",
+            "installFailed": "プラグインの自動インストールに失敗しました。"
+        },
         "dataManagement": {
             "title": "データ管理",
             "clearLogs": "ログデータ削除",

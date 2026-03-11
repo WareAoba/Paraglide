@@ -20,7 +20,7 @@ module.exports = {
     certificateFile: process.env.WINDOWS_CODESIGN_FILE,
     certificatePassword: process.env.WINDOWS_CODESIGN_PASSWORD,
     asar: {
-      unpack: "**/{node_modules/node-global-key-listener,public}/**/*",
+      unpack: "**/public/**/*",
       compression: 'normal',
       smartUnpack: true
     },
@@ -97,6 +97,8 @@ module.exports = {
       "dist/**/*",
       "src/main.js",
       "src/SystemListener.jsx",
+      "src/main/**/*",
+      "src/store/**/*",
       "package.json"
     ],
     directories: {

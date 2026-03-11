@@ -8,9 +8,6 @@ export default defineConfig({
     port: 5173,
     strictPort: true
   },
-  optimizeDeps: {
-    include: ['@monaco-editor/react']
-  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, 'src')

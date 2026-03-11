@@ -21,8 +21,12 @@ function Settings({ isVisible, onClose, theme, programStatus, currentViewMode, i
     },
     processMode: 'paragraph', // 기본 텍스트 처리 방식
     viewMode: 'overview',
-    language: 'auto'  // 기본값 추가
+    language: 'auto',  // 기본값 추가
+    pluginServer: false
   });
+  const [pluginStatus, setPluginStatus] = useState({ running: false, plugins: [] });
+  const [pluginInstalling, setPluginInstalling] = useState(false);
+  const [pluginInstallMsg, setPluginInstallMsg] = useState(null);
   const [originalSettings, setOriginalSettings] = useState(null);
   const [showThemeDropdown, setShowThemeDropdown] = useState(false);
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
@@ -60,6 +64,8 @@ function Settings({ isVisible, onClose, theme, programStatus, currentViewMode, i
 
     if (isVisible) {
       loadSettings();
+      // 플러그인 상태 조회
+      ipcRenderer.invoke('get-plugin-status').then(setPluginStatus).catch(() => {});
     }
   }, [isVisible]);
 
@@ -86,7 +92,8 @@ function Settings({ isVisible, onClose, theme, programStatus, currentViewMode, i
         theme: {
           mode: newSettings.theme.mode,
           accentColor: newSettings.theme.accentColor
-        }
+        },
+        pluginServer: newSettings.pluginServer
       });
 
       if (newSettings.viewMode && newSettings.viewMode !== settings.viewMode) {
@@ -380,8 +387,9 @@ useEffect(() => {
               />
               <label className="checkbox" htmlFor="loadLastOverlayBounds">
                 <span>
-                  <svg width="12" height="10" viewBox="0 0 12 10"></svg>
+                  <svg width="12" height="10" viewBox="0 0 12 10">
                     <polyline points="1.5 6 4.5 9 10.5 1"></polyline>
+                </svg>
                 </span>
                 <span>{t('settings.overlay.remember')}</span>
               </label>
@@ -520,6 +528,68 @@ useEffect(() => {
                 </div>
               </div>
             </label>
+          </div>
+
+          {/* 포토샵 모드 그룹 */}
+          <div className="settings-group">
+            <h3>{t('settings.plugin.title')}</h3>
+            <div className="checkbox-wrapper">
+              <input
+                type="checkbox"
+                id="pluginServer"
+                checked={settings.pluginServer}
+                onChange={async (e) => {
+                  const enabled = e.target.checked;
+                  const newSettings = { ...settings, pluginServer: enabled };
+                  setSettings(newSettings);
+                  await handleSettingChange(newSettings);
+
+                  if (enabled) {
+                    // 플러그인 설치 여부 확인 → 미설치 시 자동 설치
+                    const installResult = await ipcRenderer.invoke('ensure-photoshop-plugin');
+                    if (installResult?.installed) {
+                      setPluginInstallMsg(t('settings.plugin.installed'));
+                    } else if (installResult?.alreadyInstalled) {
+                      setPluginInstallMsg(null);
+                    } else if (installResult?.error) {
+                      setPluginInstallMsg(t('settings.plugin.installFailed'));
+                    }
+                  } else {
+                    setPluginInstallMsg(null);
+                  }
+
+                  // 상태 갱신
+                  const status = await ipcRenderer.invoke('get-plugin-status');
+                  setPluginStatus(status);
+                }}
+              />
+              <label className="checkbox" htmlFor="pluginServer">
+                <span>
+                  <svg width="12" height="10" viewBox="0 0 12 10">
+                    <polyline points="1.5 6 4.5 9 10.5 1"></polyline>
+                  </svg>
+                </span>
+                <span>{t('settings.plugin.enable')}</span>
+              </label>
+            </div>
+            {pluginInstallMsg && (
+              <div className="plugin-status">
+                <div className="info-item">
+                  <p>{pluginInstallMsg}</p>
+                </div>
+              </div>
+            )}
+            {settings.pluginServer && (
+              <div className="plugin-status">
+                <div className="info-item">
+                  <p>{t('settings.plugin.port')}: 27182</p>
+                  <p>{t('settings.plugin.connected')}: {pluginStatus.plugins?.length || 0}</p>
+                  {pluginStatus.plugins?.map((p, i) => (
+                    <p key={i} className="plugin-item">└ {p.app} v{p.version}</p>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* 데이터 관리 그룹 */}
