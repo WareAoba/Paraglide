@@ -106,7 +106,9 @@ module.exports = {
       buildResources: 'assets'  // 리소스 디렉토리
     },
     extraResource: [
-      "./dist"  // Vite 빌드 출력을 리소스로 포함
+      "./dist",          // Vite 빌드 출력을 리소스로 포함
+      "./native/sendesc.exe",  // Windows Esc 키 전송 데몬
+      "./plugins/photoshop"    // Photoshop UXP 플러그인
     ]
   },
 

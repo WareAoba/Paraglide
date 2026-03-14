@@ -33,6 +33,10 @@ const useAppStore = create((set, get) => ({
   hoveredSection: null,
   isEditorSaved: true,
 
+  // ─── 플러그인 상태 ───
+  pluginServer: false,
+  pluginConnected: false,
+
   // ─── 테마 상태 ───
   theme: {
     mode: null,
@@ -57,9 +61,12 @@ const useAppStore = create((set, get) => ({
       ? updatedState.theme
       : prev.theme;
 
+    // state-update는 텍스트 처리 상태 전용 — viewMode는 별도 채널(view-mode-update)로만 변경
+    const { viewMode: _ignoredViewMode, ...safeState } = updatedState;
+
     return {
       ...prev,
-      ...updatedState,
+      ...safeState,
       theme: safeTheme,
       currentNumber: { ...pageInfo, display }
     };
@@ -154,6 +161,8 @@ const useAppStore = create((set, get) => ({
   setEditorSaved: (saved) => set({ isEditorSaved: saved }),
   setViewMode: (mode) => set({ viewMode: mode }),
   setOverlayVisible: (visible) => set({ isOverlayVisible: visible }),
+  setPluginServer: (enabled) => set({ pluginServer: enabled }),
+  setPluginConnected: (connected) => set({ pluginConnected: connected }),
 
   // 복합 상태 업데이트
   updateAfterFileLoad: (newState) => set((prev) => ({

@@ -2,14 +2,40 @@
   "id": "com.paraglide.connector",
   "name": "Paraglide Connector",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "index.html",
+  "manifestVersion": 5,
   "host": [
     {
       "app": "PS",
-      "minVersion": "24.0.0"
+      "minVersion": "24.2.0",
+      "data": {
+        "apiVersion": 2,
+        "loadEvent": "startup",
+        "enableMenuRecording": true
+      }
     }
   ],
-  "manifestVersion": 5,
+  "icons": [
+    {
+      "width": 23, "height": 23,
+      "path": "icons/dark.png",
+      "scale": [1, 2],
+      "theme": ["darkest", "dark", "medium"]
+    },
+    {
+      "width": 23, "height": 23,
+      "path": "icons/light.png",
+      "scale": [1, 2],
+      "theme": ["lightest", "light"]
+    },
+    {
+      "width": 48, "height": 48,
+      "path": "icons/plugin-icon.png",
+      "scale": [1, 2],
+      "theme": ["darkest", "dark", "medium", "lightest", "light", "all"],
+      "species": ["pluginList"]
+    }
+  ],
   "entrypoints": [
     {
       "type": "command",
@@ -24,23 +50,30 @@
       "label": {
         "default": "Paraglide"
       },
-      "minimumSize": { "width": 200, "height": 120 },
-      "maximumSize": { "width": 400, "height": 300 },
-      "preferredDockedSize": { "width": 240, "height": 160 },
-      "preferredFloatingSize": { "width": 240, "height": 200 },
       "icons": [
-        { "width": 23, "height": 23, "path": "icons/icon_D.png", "scale": [1, 2], "theme": ["darkest", "dark", "medium"] },
-        { "width": 23, "height": 23, "path": "icons/icon_L.png", "scale": [1, 2], "theme": ["lightest", "light"] }
-      ]
+        {
+          "width": 23, "height": 23,
+          "path": "icons/dark.png",
+          "scale": [1, 2],
+          "theme": ["darkest", "dark", "medium"]
+        },
+        {
+          "width": 23, "height": 23,
+          "path": "icons/light.png",
+          "scale": [1, 2],
+          "theme": ["lightest", "light"]
+        }
+      ],
+      "minimumSize": { "width": 220, "height": 200 },
+      "maximumSize": { "width": 240, "height": 220 },
+      "preferredDockedSize": { "width": 220, "height": 200 },
+      "preferredFloatingSize": { "width": 240, "height": 220 }
     }
-  ],
-  "icons": [
-    { "width": 48, "height": 48, "path": "icons/plugin-icon.png" }
   ],
   "requiredPermissions": {
     "network": {
-      "domains": ["ws://localhost", "ws://127.0.0.1"]
+      "domains": ["localhost", "127.0.0.1"]
     },
-    "localFileSystem": "request"
+    "clipboard": "readAndWrite"
   }
 }

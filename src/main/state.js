@@ -44,7 +44,8 @@ class AppState extends EventEmitter {
       },
       processMode: 'paragraph',
       viewMode: 'overview',
-      pluginServer: false
+      pluginServer: false,
+      pluginConnected: false
     };
 
     // ─── TextProcess + Runtime 통합 상태 (was: textProcessSlice + globalState) ───
@@ -96,7 +97,8 @@ class AppState extends EventEmitter {
       },
       processMode: newConfig.processMode ?? prev.processMode,
       viewMode: newConfig.viewMode ?? prev.viewMode,
-      pluginServer: newConfig.pluginServer ?? prev.pluginServer
+      pluginServer: newConfig.pluginServer ?? prev.pluginServer,
+      pluginConnected: newConfig.pluginConnected ?? prev.pluginConnected
     };
     this.emit('config-changed', this._config);
   }

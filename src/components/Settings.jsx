@@ -22,7 +22,8 @@ function Settings({ isVisible, onClose, theme, programStatus, currentViewMode, i
     processMode: 'paragraph', // 기본 텍스트 처리 방식
     viewMode: 'overview',
     language: 'auto',  // 기본값 추가
-    pluginServer: false
+    pluginServer: false,
+    pluginConnected: false
   });
   const [pluginStatus, setPluginStatus] = useState({ running: false, plugins: [] });
   const [pluginInstalling, setPluginInstalling] = useState(false);
@@ -93,7 +94,8 @@ function Settings({ isVisible, onClose, theme, programStatus, currentViewMode, i
           mode: newSettings.theme.mode,
           accentColor: newSettings.theme.accentColor
         },
-        pluginServer: newSettings.pluginServer
+        pluginServer: newSettings.pluginServer,
+        pluginConnected: newSettings.pluginConnected
       });
 
       if (newSettings.viewMode && newSettings.viewMode !== settings.viewMode) {
@@ -540,9 +542,20 @@ useEffect(() => {
                 checked={settings.pluginServer}
                 onChange={async (e) => {
                   const enabled = e.target.checked;
-                  const newSettings = { ...settings, pluginServer: enabled };
+                  const newSettings = {
+                    ...settings,
+                    pluginServer: enabled,
+                    // 포토샵 모드 ON 시 연결 기본 활성화, OFF 시 해제
+                    pluginConnected: enabled
+                  };
                   setSettings(newSettings);
                   await handleSettingChange(newSettings);
+
+                  // 렌더러에 변경 알림 (툴바 아이콘 표시/숨김 반영)
+                  ipcRenderer.send('notify-plugin-settings', {
+                    pluginServer: enabled,
+                    pluginConnected: enabled ? settings.pluginConnected : false
+                  });
 
                   if (enabled) {
                     // 플러그인 설치 여부 확인 → 미설치 시 자동 설치

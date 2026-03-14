@@ -11,6 +11,7 @@
 //     { "type": "request", "action": "moveNext" }
 //     { "type": "request", "action": "movePrev" }
 //     { "type": "request", "action": "getStatus" }
+//     { "type": "request", "action": "sendEsc" }
 //     { "type": "identify", "app": "Photoshop", "version": "26.0" }
 //
 //   ← Paraglide → 플러그인:
@@ -20,6 +21,7 @@
 
 const { state } = require('../state');
 const { PLUGIN_PORT } = require('../constants');
+const { spawn, exec } = require('child_process');
 
 let WebSocketServer = null;
 
@@ -27,6 +29,10 @@ const PluginBridge = {
   _server: null,
   _clients: new Map(),  // ws → { app, version, connectedAt }
   _started: false,
+  _pingTimer: null,
+  _daemon: null,        // sendesc.exe 데몬 프로세스
+  _daemonReady: false,
+  _escCallback: null,   // 대기 중인 Esc 응답 콜백
 
   initialize() {
     // WebSocket 서버 시작은 lazy — 실제 사용 시에만 로드
@@ -97,6 +103,16 @@ const PluginBridge = {
 
       this._started = true;
       console.log(`[PluginBridge] WebSocket 서버 시작 (port: ${PLUGIN_PORT})`);
+
+      // 30초마다 ping으로 idle 끊김 방지
+      this._pingTimer = setInterval(() => {
+        this._clients.forEach((_, ws) => {
+          if (ws.readyState === 1) {
+            try { ws.ping(); } catch { /* ignore */ }
+          }
+        });
+      }, 30000);
+
       return true;
     } catch (error) {
       console.error('[PluginBridge] 서버 시작 실패:', error);
@@ -106,6 +122,8 @@ const PluginBridge = {
 
   // 서버 중지
   stop() {
+    if (this._pingTimer) { clearInterval(this._pingTimer); this._pingTimer = null; }
+    this._stopDaemon();
     if (this._server) {
       this._clients.forEach((_, ws) => {
         try { ws.close(); } catch (e) { /* ignore */ }
@@ -136,6 +154,10 @@ const PluginBridge = {
 
       case 'request':
         this._handleRequest(ws, msg, IPCManager);
+        break;
+
+      case 'event':
+        this._handlePluginEvent(ws, msg, IPCManager);
         break;
 
       default:
@@ -179,11 +201,153 @@ const PluginBridge = {
         });
         break;
 
+      case 'sendEsc':
+        this._sendEscToPhotoshop(ws);
+        break;
+
       default:
         this._send(ws, {
           type: 'error',
           message: `Unknown action: ${msg.action}`
         });
+    }
+  },
+
+  // Photoshop에 Space+Esc 전송 (플랫폼별 분기)
+  _sendEscToPhotoshop(ws) {
+    if (process.platform === 'darwin') {
+      this._sendEscMac(ws);
+    } else {
+      this._sendEscWin(ws);
+    }
+  },
+
+  // ── Windows: C++ 데몬 경유 (~1ms 응답) ──
+  _sendEscWin(ws) {
+    this._ensureDaemon();
+
+    if (!this._daemon || !this._daemonReady) {
+      console.error('[PluginBridge] 데몬 미실행');
+      this._send(ws, { type: 'response', action: 'sendEsc', data: { success: false } });
+      return;
+    }
+
+    // 콜백 등록 (타임아웃 포함)
+    const timeout = setTimeout(() => {
+      this._escCallback = null;
+      console.error('[PluginBridge] Esc 응답 타임아웃');
+      this._send(ws, { type: 'response', action: 'sendEsc', data: { success: false } });
+    }, 2000);
+
+    this._escCallback = (line) => {
+      clearTimeout(timeout);
+      this._escCallback = null;
+      const success = line.trim() === 'ok';
+      console.log('[PluginBridge] Esc', success ? '성공' : '실패');
+      this._send(ws, { type: 'response', action: 'sendEsc', data: { success } });
+    };
+
+    this._daemon.stdin.write('esc\n');
+  },
+
+  // ── macOS: osascript 경유 ──
+  _sendEscMac(ws) {
+    // 1) PS 활성화 → 2) Space 키 → 3) Esc 키
+    const script = [
+      'tell application "Adobe Photoshop 2025" to activate',
+      'delay 0.05',
+      'tell application "System Events"',
+      '  key code 49',   // Space
+      '  delay 0.03',
+      '  key code 53',   // Escape
+      'end tell'
+    ].join('\n');
+
+    exec(`osascript -e '${script.replace(/'/g, "'\\''")}'`, { timeout: 3000 }, (err) => {
+      if (err) {
+        console.error('[PluginBridge] macOS Esc 실패:', err.message);
+        this._send(ws, { type: 'response', action: 'sendEsc', data: { success: false } });
+      } else {
+        console.log('[PluginBridge] macOS Esc 성공');
+        this._send(ws, { type: 'response', action: 'sendEsc', data: { success: true } });
+      }
+    });
+  },
+
+  // sendesc.exe 데몬 시작 (Windows 전용)
+  _ensureDaemon() {
+    if (process.platform !== 'win32') return;
+    if (this._daemon && !this._daemon.killed) return;
+
+    const path = require('path');
+    const fs = require('fs');
+    let exePath = path.join(__dirname, '..', '..', '..', 'native', 'sendesc.exe');
+    if (!fs.existsSync(exePath)) {
+      exePath = path.join(process.resourcesPath || '', 'sendesc.exe');
+    }
+    if (!fs.existsSync(exePath)) {
+      console.error('[PluginBridge] sendesc.exe 없음:', exePath);
+      return;
+    }
+
+    console.log('[PluginBridge] 데몬 시작:', exePath);
+    this._daemon = spawn(exePath, [], {
+      stdio: ['pipe', 'pipe', 'ignore'],
+      windowsHide: true
+    });
+    this._daemonReady = true;
+
+    // stdout 응답 처리
+    let buffer = '';
+    this._daemon.stdout.on('data', (data) => {
+      buffer += data.toString();
+      let idx;
+      while ((idx = buffer.indexOf('\n')) >= 0) {
+        const line = buffer.substring(0, idx);
+        buffer = buffer.substring(idx + 1);
+        if (this._escCallback) {
+          this._escCallback(line);
+        }
+      }
+    });
+
+    this._daemon.on('exit', (code) => {
+      console.log('[PluginBridge] 데몬 종료 (code=' + code + ')');
+      this._daemon = null;
+      this._daemonReady = false;
+    });
+
+    this._daemon.on('error', (err) => {
+      console.error('[PluginBridge] 데몬 에러:', err.message);
+      this._daemon = null;
+      this._daemonReady = false;
+    });
+  },
+
+  // 데몬 종료 (Windows 전용)
+  _stopDaemon() {
+    if (process.platform !== 'win32') return;
+    if (this._daemon && !this._daemon.killed) {
+      try {
+        this._daemon.stdin.write('quit\n');
+        setTimeout(() => {
+          if (this._daemon && !this._daemon.killed) {
+            this._daemon.kill();
+          }
+        }, 500);
+      } catch { /* ignore */ }
+    }
+    this._daemon = null;
+    this._daemonReady = false;
+    this._escCallback = null;
+  },
+
+  // 플러그인 이벤트 처리
+  _handlePluginEvent(ws, msg, IPCManager) {
+    console.log('[PluginBridge] 플러그인 이벤트 수신:', msg.event);
+    switch (msg.event) {
+      default:
+        console.log('[PluginBridge] 알 수 없는 플러그인 이벤트:', msg.event);
     }
   },
 

@@ -33,7 +33,9 @@ export default function useIPC(themeCalc, searchRef) {
           programStatus: initialState.programStatus,
           isOverlayVisible: initialState.isOverlayVisible,
           viewMode: savedSettings?.viewMode || 'overview',
-          theme: initialTheme
+          theme: initialTheme,
+          pluginServer: savedSettings?.pluginServer ?? false,
+          pluginConnected: savedSettings?.pluginServer ?? false
         });
 
         // 테마 계산 및 로고 로드
@@ -114,6 +116,11 @@ export default function useIPC(themeCalc, searchRef) {
       }
     };
 
+    const handlePluginSettingsChanged = (_, { pluginServer, pluginConnected }) => {
+      if (pluginServer !== undefined) store.setState({ pluginServer });
+      if (pluginConnected !== undefined) store.setState({ pluginConnected });
+    };
+
     // ─── 이벤트 리스너 등록 ───
     ipcRenderer.on('state-update', handleStateUpdate);
     ipcRenderer.on('theme-update', handleThemeUpdate);
@@ -124,6 +131,7 @@ export default function useIPC(themeCalc, searchRef) {
     ipcRenderer.on('toggle-sidebar', handleToggleSidebar);
     ipcRenderer.on('toggle-settings', handleToggleSettings);
     ipcRenderer.on('close-esc', handleCloseEsc);
+    ipcRenderer.on('plugin-settings-changed', handlePluginSettingsChanged);
 
     // 초기화
     initializeState();
@@ -139,6 +147,7 @@ export default function useIPC(themeCalc, searchRef) {
       ipcRenderer.removeListener('toggle-sidebar', handleToggleSidebar);
       ipcRenderer.removeListener('toggle-settings', handleToggleSettings);
       ipcRenderer.removeListener('close-esc', handleCloseEsc);
+      ipcRenderer.removeListener('plugin-settings-changed', handlePluginSettingsChanged);
       initialized.current = false;
     };
   }, [themeCalc, searchRef]);

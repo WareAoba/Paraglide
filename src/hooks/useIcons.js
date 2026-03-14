@@ -25,14 +25,16 @@ const ICON_NAMES = [
   'folder.svg',
   'finder.svg',
   'new-file.svg',
-  'file-work.svg'
+  'file-work.svg',
+  'photoshop.svg'
 ];
 
 const ICON_KEYS = [
   'play', 'pause', 'terminal', 'settings', 'sidebar', 'home',
   'eye', 'eyeOff', 'sidebarUnfold', 'search', 'pageJump',
   'textFile', 'delete', 'themeAuto', 'themeLight', 'themeDark',
-  'fileOpen', 'edit', 'back', 'folder', 'finder', 'newFile', 'fileWork'
+  'fileOpen', 'edit', 'back', 'folder', 'finder', 'newFile', 'fileWork',
+  'photoshop'
 ];
 
 export default function useIcons() {

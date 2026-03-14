@@ -138,6 +138,8 @@ const IPCManager = {
     // 뷰모드 전환 핸들러
     ipcMain.on('update-view-mode', async (event, newViewMode) => {
       state.updateViewMode(newViewMode);
+      // viewMode 변경을 즉시 설정 파일에 저장
+      await FileManager.saveConfig({ viewMode: newViewMode });
       BrowserWindow.getAllWindows().forEach(window => {
         if (!window.isDestroyed()) {
           window.webContents.send('view-mode-update', newViewMode);
@@ -172,7 +174,8 @@ const IPCManager = {
           language: config.language,
           processMode: config.processMode,
           viewMode: config.viewMode,
-          pluginServer: config.pluginServer ?? false
+          pluginServer: config.pluginServer ?? false,
+          pluginConnected: config.pluginConnected ?? false
         };
       } catch (error) {
         console.error('[Main] 설정 로드 실패:', error);
@@ -217,6 +220,16 @@ const IPCManager = {
     // 포토샵 플러그인 자동 설치 핸들러
     ipcMain.handle('ensure-photoshop-plugin', async () => {
       return this._ensurePhotoshopPlugin();
+    });
+
+    // 플러그인 설정 변경 알림 (Settings → MainComponent)
+    ipcMain.on('notify-plugin-settings', (event, data) => {
+      const { BrowserWindow } = require('electron');
+      BrowserWindow.getAllWindows().forEach(window => {
+        if (!window.isDestroyed()) {
+          window.webContents.send('plugin-settings-changed', data);
+        }
+      });
     });
 
     handlersInitialized = true;
@@ -316,15 +329,18 @@ const IPCManager = {
         },
         processMode: settings.processMode ?? currentConfig.processMode,
         viewMode: newViewMode ?? currentConfig.viewMode,
-        pluginServer: settings.pluginServer ?? currentConfig.pluginServer
+        pluginServer: settings.pluginServer ?? currentConfig.pluginServer,
+        pluginConnected: settings.pluginConnected ?? currentConfig.pluginConnected
       };
   
       state.loadConfig(newConfig);
 
       // 플러그인 서버 상태 변경 시 시작/중지
-      if (newConfig.pluginServer && !PluginBridge.isRunning()) {
+      // pluginServer(설정 토글) AND pluginConnected(연결 토글) 모두 켜져있을 때만 서버 시작
+      const shouldRun = newConfig.pluginServer && newConfig.pluginConnected;
+      if (shouldRun && !PluginBridge.isRunning()) {
         await PluginBridge.start();
-      } else if (!newConfig.pluginServer && PluginBridge.isRunning()) {
+      } else if (!shouldRun && PluginBridge.isRunning()) {
         PluginBridge.stop();
       }
       

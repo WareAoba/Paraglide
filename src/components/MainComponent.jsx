@@ -45,6 +45,8 @@ function MainComponent() {
   const hoveredSection = useAppStore((s) => s.hoveredSection);
   const isEditorSaved = useAppStore((s) => s.isEditorSaved);
   const theme = useAppStore((s) => s.theme);
+  const pluginServer = useAppStore((s) => s.pluginServer);
+  const pluginConnected = useAppStore((s) => s.pluginConnected);
 
   // ─── 스토어 액션 ───
   const toggleSidebar = useAppStore((s) => s.toggleSidebar);
@@ -55,6 +57,7 @@ function MainComponent() {
   const setEditorSaved = useAppStore((s) => s.setEditorSaved);
   const setOverlayVisible = useAppStore((s) => s.setOverlayVisible);
   const resetToReady = useAppStore((s) => s.resetToReady);
+  const setPluginConnected = useAppStore((s) => s.setPluginConnected);
 
   // ─── 커스텀 훅 ───
   const icons = useIcons();
@@ -182,6 +185,14 @@ function MainComponent() {
     ipcRenderer.send('show-debug-console');
   };
 
+  const handleTogglePluginConnection = async () => {
+    const newConnected = !pluginConnected;
+    setPluginConnected(newConnected);
+    await ipcRenderer.invoke('apply-settings', {
+      pluginConnected: newConnected
+    });
+  };
+
   // ─── 렌더링 ───
   return (
     <div
@@ -279,6 +290,13 @@ function MainComponent() {
                     ? <img src={icons.eye} alt="오버레이 켜짐" className="icon" />
                     : <img src={icons.eyeOff} alt="오버레이 꺼짐" className="icon" />}
                 </button>
+                {pluginServer && (
+                  <button
+                    className={`btn-icon ${pluginConnected ? 'btn-ps-active' : 'btn-ps-inactive'}`}
+                    onClick={handleTogglePluginConnection}>
+                    <img src={icons.photoshop} alt="Photoshop" className="icon" />
+                  </button>
+                )}
               </>
             )}
           </>

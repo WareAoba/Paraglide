@@ -74,6 +74,16 @@ const ConfigManager = {
                     savedConfig.overlay?.isVisible,
                     defaultConfig.overlay.isVisible
                 ),
+                visibleRanges: {
+                    before: this.validateNumber(
+                        savedConfig.overlay?.visibleRanges?.before,
+                        defaultConfig.overlay.visibleRanges?.before ?? 5
+                    ),
+                    after: this.validateNumber(
+                        savedConfig.overlay?.visibleRanges?.after,
+                        defaultConfig.overlay.visibleRanges?.after ?? 5
+                    )
+                },
             },
             processMode: this.validateProcessMode(
                 savedConfig.processMode, 
@@ -82,6 +92,14 @@ const ConfigManager = {
             viewMode: this.validateViewMode(
                 savedConfig.viewMode, 
                 defaultConfig.viewMode
+            ),
+            pluginServer: this.validateBoolean(
+                savedConfig.pluginServer,
+                defaultConfig.pluginServer ?? false
+            ),
+            pluginConnected: this.validateBoolean(
+                savedConfig.pluginConnected,
+                defaultConfig.pluginConnected ?? false
             )
         };
     },

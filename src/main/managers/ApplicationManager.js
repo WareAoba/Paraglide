@@ -59,6 +59,11 @@ const ApplicationManager = {
       await state.systemListener.initialize();
       setupLogCapture();
 
+      // 4. pluginServer 설정이 켜져 있으면 WebSocket 서버 자동 시작
+      if (state.config.pluginServer) {
+        await PluginBridge.start();
+      }
+
       await StatusManager.transition(ProgramStatus.READY);
       console.log('[Main] 메인 프로세스 초기화 성공');
     } catch (error) {
@@ -69,6 +74,10 @@ const ApplicationManager = {
 
   async exit() {
     try {
+      // 종료 전 설정 저장
+      const FileManager = require('./FileManager');
+      await FileManager.saveConfig(state.config);
+
       PluginBridge.stop();
 
       if (state.systemListener) {
