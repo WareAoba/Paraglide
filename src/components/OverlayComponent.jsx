@@ -77,6 +77,16 @@ function OverlayComponent() {
     };
     ipcRenderer.on("photoshop-mode-changed", handlePhotoshopMode);
 
+    // 플러그인 설정 변경 리스너 (pluginServer 토글 반영)
+    const handlePluginSettings = (_, { pluginServer, pluginConnected }) => {
+      setState(prev => ({
+        ...prev,
+        ...(pluginServer !== undefined && { pluginServer }),
+        ...(pluginConnected !== undefined && { pluginConnected })
+      }));
+    };
+    ipcRenderer.on("plugin-settings-changed", handlePluginSettings);
+
     // 초기 상태 로드
     ipcRenderer.invoke("get-state").then(initialState => {
       if (initialState) {
@@ -88,6 +98,7 @@ function OverlayComponent() {
       ipcRenderer.removeListener("paragraphs-updated", handleUpdate);
       ipcRenderer.removeListener("theme-update", handleThemeUpdate);
       ipcRenderer.removeListener("photoshop-mode-changed", handlePhotoshopMode);
+      ipcRenderer.removeListener("plugin-settings-changed", handlePluginSettings);
     };
   }, []);
 

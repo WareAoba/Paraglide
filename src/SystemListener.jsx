@@ -38,7 +38,12 @@ class SystemListener {
 
 		try {
 			ipcMain.on('program-status-update', (event, status) => {
+				const wasProcess = this.programStatus?.programStatus === 'Process';
 				this.programStatus = status;
+				// Process 상태 진입 시 클립보드 기준값 갱신 (Ready 동안 변경된 내용을 오감지하지 않도록)
+				if (!wasProcess && status?.programStatus === 'Process') {
+					this.lastClipboardText = clipboard.readText();
+				}
 			});
 
 			this.setupClipboardMonitor();
@@ -56,7 +61,13 @@ class SystemListener {
 	// ═══════════════ 클립보드 모니터링 ═══════════════
 
 	setupClipboardMonitor() {
+		// 시작 시점의 클립보드 내용을 기록하여 기존 내용을 "변경"으로 오감지하지 않도록 함
+		this.lastClipboardText = clipboard.readText();
+
 		this._clipboardInterval = setInterval(() => {
+			// Process 상태가 아니면 클립보드 감지 자체를 하지 않음
+			if (this.programStatus?.programStatus !== 'Process') return;
+
 			const currentText = clipboard.readText();
 			if (currentText !== this.lastClipboardText) {
 				console.log('[SystemListener] 클립보드 변경 감지');

@@ -35,7 +35,7 @@ export default function useIPC(themeCalc, searchRef) {
           viewMode: savedSettings?.viewMode || 'overview',
           theme: initialTheme,
           pluginServer: savedSettings?.pluginServer ?? false,
-          pluginConnected: savedSettings?.pluginServer ?? false
+          pluginConnected: (savedSettings?.pluginServer && savedSettings?.pluginConnected) ?? false
         });
 
         // 테마 계산 및 로고 로드

@@ -117,7 +117,6 @@ function MainComponent() {
     try {
       const result = await ipcRenderer.invoke('open-file', {
         source: options.source || 'dialog',
-        viewMode: options.viewMode || 'overview',
         filePath: options.filePath,
         programStatus: options.programStatus
       });
@@ -126,7 +125,7 @@ function MainComponent() {
         useAppStore.setState({
           currentFilePath: options.filePath || currentFilePath,
           programStatus: options.viewMode === 'editor' ? ProgramStatus.EDIT : ProgramStatus.PROCESS,
-          viewMode: options.viewMode || 'overview',
+          viewMode: options.viewMode || viewMode || 'overview',
           isSidebarVisible: false
         });
       }

@@ -59,8 +59,8 @@ const ApplicationManager = {
       await state.systemListener.initialize();
       setupLogCapture();
 
-      // 4. pluginServer 설정이 켜져 있으면 WebSocket 서버 자동 시작
-      if (state.config.pluginServer) {
+      // 4. pluginServer AND pluginConnected 모두 켜져 있을 때만 WebSocket 서버 자동 시작
+      if (state.config.pluginServer && state.config.pluginConnected) {
         await PluginBridge.start();
       }
 

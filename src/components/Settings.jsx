@@ -542,11 +542,11 @@ useEffect(() => {
                 checked={settings.pluginServer}
                 onChange={async (e) => {
                   const enabled = e.target.checked;
+                  const newConnected = enabled ? settings.pluginConnected : false;
                   const newSettings = {
                     ...settings,
                     pluginServer: enabled,
-                    // 포토샵 모드 ON 시 연결 기본 활성화, OFF 시 해제
-                    pluginConnected: enabled
+                    pluginConnected: newConnected
                   };
                   setSettings(newSettings);
                   await handleSettingChange(newSettings);
@@ -554,7 +554,7 @@ useEffect(() => {
                   // 렌더러에 변경 알림 (툴바 아이콘 표시/숨김 반영)
                   ipcRenderer.send('notify-plugin-settings', {
                     pluginServer: enabled,
-                    pluginConnected: enabled ? settings.pluginConnected : false
+                    pluginConnected: newConnected
                   });
 
                   if (enabled) {
