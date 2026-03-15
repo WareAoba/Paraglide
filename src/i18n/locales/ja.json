@@ -2,7 +2,7 @@
     "app": {
         "name": "Paraglide",
         "title": "Paraglide - テキスト段落処理ツール",
-        "version": "0.3.1 ベータ",
+        "version": "{{version}}",
         "credits": {
             "made": "作成: WareAoba",
             "contribute": "協力: Rinna, Latte"
@@ -85,9 +85,17 @@
             "title": "無効なファイル",
             "message": "ファイルの内容が空または読み取れません。"
         },
+        "fileOpenError": {
+            "title": "ファイルオープンエラー",
+            "message": "ファイルの読み込みに失敗しました。"
+        },
         "exitConfirm": {
             "title": "作業終了",
-            "message": "編集中のファイルがあります。\n本当に終了しますか？"
+            "message": "作業中のファイルがあります。\n本当に終了しますか？"
+        },
+        "unsavedChanges": {
+            "title": "未保存の変更",
+            "message": "保存されていない変更があります。\n本当に終了しますか？"
         },
         "alreadyRunning": {
             "title": "実行中",
@@ -104,6 +112,7 @@
         "welcome": {
             "title": "Paraglide",
             "openFile": "ファイルを読み込む",
+            "newFile": "新規作成",
             "logoAlt": "Paraglide ロゴ",
             "titleAlt": "Paraglide タイトル"
         },
@@ -177,6 +186,7 @@
             "controls": {
                 "open": "開く",
                 "edit": "編集",
+                "work": "作業",
                 "search": "検索",
                 "console": "CLI"
             },
@@ -254,6 +264,15 @@
             "zh": "中文",
             "ko": "한국어"
         },
+        "plugin": {
+            "title": "Photoshopモード",
+            "enable": "Photoshop APIで自動ペースト",
+            "port": "ポート",
+            "connected": "接続中のプラグイン",
+            "installing": "プラグインをインストール中...",
+            "installed": "プラグインがインストールされました。Photoshopを再起動してください。",
+            "installFailed": "プラグインの自動インストールに失敗しました。"
+        },
         "dataManagement": {
             "title": "データ管理",
             "clearLogs": "ログデータ削除",
@@ -261,7 +280,7 @@
         },
         "info": {
             "title": "情報",
-            "version": "Paraglide 0.3.1 ベータ",
+            "version": "Paraglide {{version}}",
             "credits": {
                 "made": "作成: WareAoba",
                 "contribute": "協力: Rinna, Latte"
@@ -272,14 +291,20 @@
             "confirm": "確認"
         }
     },
+    "editor": {
+        "title": "編集",
+        "fileName": "ファイル名",
+        "placeholder": "ここにテキストを入力",
+        "save": "保存"
+    },
     "console": {
         "header": {
-            "title": "Terminal Logs ({count})",
+            "title": "Terminal Logs ({{count}})",
             "close": "×"
         },
         "content": {
             "noLogs": "ログはありません。",
-            "timestamp": "[{time}]"
+            "timestamp": "[{{time}}]"
         },
         "highlight": {
             "patterns": {

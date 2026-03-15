@@ -2,39 +2,14 @@
 import React, { useState, useEffect, useCallback, useRef, forwardRef, useImperativeHandle } from 'react';
 import Hangul from 'hangul-js';
 import { useTranslation } from 'react-i18next';
-import '../../CSS/App.css';
 import '../../CSS/Sidebar/Search.css';
 import { debounce } from 'lodash';
+import { SearchUtils } from '../../store/utils/SearchUtils';
 
-// 검색 유틸리티 함수 모음
-const SearchUtils = {
-  removeSpaces: (text) => text.replace(/\s+/g, ''),
-  normalizeText: (text) => text.trim().toLowerCase(),
-  isChosung: (str) => /^[ㄱ-ㅎ]+$/.test(str)
-};
-
-// 1. 초성 검색 함수
-const searchChosung = (text, term) => {
-  const termChosung = SearchUtils.removeSpaces(term);
-  const textChosung = Hangul.disassemble(SearchUtils.removeSpaces(text), true)
-    .map(char => char[0])
-    .join('');
-  return textChosung.includes(termChosung);
-};
-
-// 2. 완전 일치 검색 함수
-const searchExactMatch = (text, term) => {
-  const cleanText = SearchUtils.removeSpaces(text);
-  const cleanTerm = SearchUtils.removeSpaces(term);
-  return cleanText.includes(cleanTerm);
-};
-
-// 3. 부분 일치 검색 함수
-const searchPartialMatch = (text, term) => {
-  const termDecomposed = Hangul.disassemble(SearchUtils.removeSpaces(term)).join('');
-  const textDecomposed = Hangul.disassemble(SearchUtils.removeSpaces(text)).join('');
-  return textDecomposed.includes(termDecomposed);
-};
+// 검색 함수는 SearchUtils 모듈의 메서드 참조
+const searchChosung = (text, term) => SearchUtils.searchChosung(text, term);
+const searchExactMatch = (text, term) => SearchUtils.searchExactMatch(text, term);
+const searchPartialMatch = (text, term) => SearchUtils.searchPartialMatch(text, term);
 
 // 4. 초성 하이라이트 함수
 const highlightChosung = (text, term) => {
@@ -353,7 +328,6 @@ const Search = forwardRef((props, ref) => {
   const clearSearch = useCallback(() => {
     setSearchTerm('');
     setResults([]);
-    setresults([]);
   }, []);
 
   useImperativeHandle(ref, () => ({

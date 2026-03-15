@@ -1,9 +1,8 @@
 // src/components/Views/Panel.js
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useContextMenu, Menu, Item } from 'react-contexify';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
-import '../../CSS/App.css';
 import '../../CSS/Sidebar/Panel.css';
 const { ipcRenderer } = window.require('electron');
 const path = window.require('path');
@@ -19,10 +18,13 @@ function Panel({
   onClose,
   files,
   theme,
-  loadFileHistory
+  loadFileHistory,
+  isEditorSaved,
+  ProgramStatus
 }) {
 
   const { t } = useTranslation();
+  const [editorDocInfo, setEditorDocInfo] = useState(null); // 에디터에서 받아올 문서 정보
   const isMac = os.platform() === 'darwin';
 
   // 1. 포맷팅 유틸리티
@@ -49,6 +51,8 @@ function Panel({
   };
 
   const formatPath = (fullPath) => {
+    if (!fullPath) return '';
+    
     const dirPath = path.dirname(fullPath);
     const parts = dirPath.split(path.sep);
     const truncatedPath = parts.slice(-3).join(path.sep);
@@ -108,6 +112,78 @@ function Panel({
     } catch (error) {
       console.error('파일 탐색기에서 열기 실패:', error);
     }
+  };
+
+  useEffect(() => {
+    const handleEditorInfo = (_, { type, data }) => {
+      if (type === 'response') {
+        setEditorDocInfo(data);
+      }
+    };
+  
+    ipcRenderer.on('get-editor-info', handleEditorInfo);
+    
+    // 문서 정보 요청
+    ipcRenderer.send('get-editor-info', { type: 'request' });
+  
+    return () => {
+      ipcRenderer.removeListener('get-editor-info', handleEditorInfo);
+    };
+  }, []);
+
+  // 파일 정보 렌더링 함수 수정
+  const renderCurrentFileInfo = () => {
+    console.log('파일 정보 렌더링:', {
+      status,
+      ProgramStatus: ProgramStatus.EDIT,
+      isEditMode: status === ProgramStatus.EDIT,
+      editorDocInfo,
+      currentFile
+    });
+
+    const fileInfo = status === ProgramStatus.EDIT ? editorDocInfo : currentFile;
+    if (!fileInfo && !currentFilePath) return null;
+
+    const hasPageInfo = fileInfo?.totalPages > 0;
+    const pageInfo = hasPageInfo 
+      ? t('common.pageInfo.format', {
+          current: fileInfo.currentPage,
+          total: fileInfo.totalPages
+        })
+      : t('common.pageInfo.none');
+  
+    return (
+      <section className="sidebar-section current-file">
+        <h3>{t('sidebar.panel.sections.currentFile.title')}</h3>
+        <div
+          className="current-file-info"
+          onContextMenu={handleCurrentContextMenu}
+          style={{ cursor: 'context-menu' }}
+        >
+          <img src={icons?.textFileIcon} alt="파일" className="current-file-icon" />
+          <div className="current-file-content">
+            <div className="current-file-info-header">
+              <div className="current-file-name-container">
+                <div className="current-file-name-wrapper">
+                <span className="current-file-name">
+  {currentFilePath ? 
+    path.basename(currentFilePath) : 
+    t('common.unknown')
+  }
+</span>
+                </div>
+              </div>
+            </div>
+            <div className="current-page-info">
+              {pageInfo}
+            </div>
+            <div className="current-file-path">
+              {formatPath(currentFilePath) || t('common.unknown')}
+            </div>
+          </div>
+        </div>
+      </section>
+    );
   };
 
   // 3. 컨텍스트 메뉴
@@ -182,6 +258,41 @@ const handleCurrentContextMenu = (event) => {
     </div>
   );
 
+  const handleEditModeSwitch = async () => {
+    const content = await ipcRenderer.invoke('read-file', currentFilePath);
+    await ipcRenderer.invoke('process-file-content', content, currentFilePath);
+  };
+
+  const handleWorkModeSwitch = async () => {
+    if (!isEditorSaved) {
+      const saveChoice = await ipcRenderer.invoke('show-dialog', 'UNSAVED_CHANGES');
+      if (saveChoice === 1) return false; // 취소 선택
+    }
+    await ipcRenderer.invoke('open-file', {
+      filePath: currentFilePath,
+      programStatus: ProgramStatus.PROCESS,
+      viewMode: 'overview'
+    });
+    return true;
+  };
+
+  const handleModeSwitch = async () => {
+    if (!currentFilePath) return;
+    
+    try {
+      let success = false;
+      if (status === ProgramStatus.PROCESS || status === ProgramStatus.PAUSE) {
+        await handleEditModeSwitch();
+        success = true;
+      } else if (status === ProgramStatus.EDIT) {
+        success = await handleWorkModeSwitch();
+      }
+      
+      if (success) onClose();
+    } catch (error) {
+      console.error('모드 전환 실패:', error);
+    }
+  };
 
   useEffect(() => {
     const container = document.querySelector('.current-file-name-container');
@@ -204,37 +315,7 @@ const handleCurrentContextMenu = (event) => {
   return (
     <div className="panel-container">
       {/* 1. 현재 파일 섹션 */}
-      {currentFile && (
-        <section
-        className="sidebar-section current-file"
-        onContextMenu={handleCurrentContextMenu}>
-          <h3>현재 파일</h3>
-          <div className="section-content current-file-info">
-            <img src={icons?.textFileIcon} alt="파일" className="current-file-icon" />
-            <div className="current-file-content">
-              <div className="current-file-info-header">
-                <div className="current-file-name-container">
-                  <div className="current-file-name-wrapper">
-                    <span className="current-file-name">{path.basename(currentFilePath)}</span>
-                  </div>
-                </div>
-              </div>
-              <div className="current-page-info">
-                {(() => {
-                  const isValidPage = (page) => page && Number.isFinite(page) && page > 0;
-                  return (!isValidPage(currentFile.totalPages) || !isValidPage(currentFile.currentPage))
-                    ? t('common.pageInfo.none')
-                    : t('common.pageInfo.format', {
-                        current: currentFile.currentPage,
-                        total: currentFile.totalPages
-                      });
-                })()}
-              </div>
-              <div className="current-file-path">{formatPath(currentFilePath)}</div>
-            </div>
-          </div>
-        </section>
-      )}
+      {renderCurrentFileInfo()}
 
       {/* 2. 컨트롤 섹션 */}
       <section className="sidebar-section controls">
@@ -246,11 +327,14 @@ const handleCurrentContextMenu = (event) => {
             action={() => ipcRenderer.invoke('open-file')}
           />
           <ControlButton
-            icon={icons?.editIcon}
-            label={t('sidebar.panel.controls.edit')}
-            actionType="edit"
-            action={onClose}
-            isDisabled={true}
+            icon={status === ProgramStatus.EDIT ? icons?.fileWorkIcon : icons?.editIcon}
+            label={status === ProgramStatus.EDIT ? 
+              t('sidebar.panel.controls.work') : 
+              t('sidebar.panel.controls.edit')
+            }
+            actionType={status === ProgramStatus.EDIT ? "process" : "edit"}
+            action={handleModeSwitch}
+            isDisabled={status === ProgramStatus.READY}
           />
           <ControlButton
             icon={icons?.searchIcon}

@@ -1,0 +1,91 @@
+{
+  "id": "d6a4ab9b",
+  "name": "Paraglide Connector",
+  "version": "1.0.0",
+  "description": {
+    "default": "Automatically insert translated text into Photoshop text layers via Paraglide connection.",
+    "ko": "Paraglide 연결을 통해 Photoshop 텍스트 레이어에 번역 텍스트를 자동 삽입합니다.",
+    "ja": "Paraglide接続でPhotoshopテキストレイヤーに翻訳テキストを自動挿入します。",
+    "zh": "通过 Paraglide 连接自动将翻译文本插入 Photoshop 文本图层。"
+  },
+  "main": "index.html",
+  "manifestVersion": 5,
+  "host": [
+    {
+      "app": "PS",
+      "minVersion": "24.2.0",
+      "data": {
+        "apiVersion": 2,
+        "loadEvent": "startup",
+        "enableMenuRecording": true
+      }
+    }
+  ],
+  "icons": [
+    {
+      "width": 23, "height": 23,
+      "path": "icons/dark.png",
+      "scale": [1, 2],
+      "theme": ["darkest", "dark", "medium"]
+    },
+    {
+      "width": 23, "height": 23,
+      "path": "icons/light.png",
+      "scale": [1, 2],
+      "theme": ["lightest", "light"]
+    },
+    {
+      "width": 48, "height": 48,
+      "path": "icons/plugin-icon.png",
+      "scale": [1, 2],
+      "theme": ["darkest", "dark", "medium", "lightest", "light", "all"],
+      "species": ["pluginList"]
+    }
+  ],
+  "entrypoints": [
+    {
+      "type": "command",
+      "id": "toggleConnection",
+      "label": {
+        "default": "Toggle Paraglide Connection",
+        "ko": "Paraglide 연결 전환",
+        "ja": "Paraglide接続の切り替え",
+        "zh": "切换 Paraglide 连接"
+      }
+    },
+    {
+      "type": "panel",
+      "id": "mainPanel",
+      "label": {
+        "default": "Paraglide",
+        "ko": "Paraglide",
+        "ja": "Paraglide",
+        "zh": "Paraglide"
+      },
+      "icons": [
+        {
+          "width": 23, "height": 23,
+          "path": "icons/dark.png",
+          "scale": [1, 2],
+          "theme": ["darkest", "dark", "medium"]
+        },
+        {
+          "width": 23, "height": 23,
+          "path": "icons/light.png",
+          "scale": [1, 2],
+          "theme": ["lightest", "light"]
+        }
+      ],
+      "minimumSize": { "width": 220, "height": 200 },
+      "maximumSize": { "width": 240, "height": 220 },
+      "preferredDockedSize": { "width": 220, "height": 200 },
+      "preferredFloatingSize": { "width": 240, "height": 220 }
+    }
+  ],
+  "requiredPermissions": {
+    "network": {
+      "domains": ["localhost", "127.0.0.1"]
+    },
+    "clipboard": "readAndWrite"
+  }
+}

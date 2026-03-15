@@ -1,10 +1,10 @@
 // src/store/utils/ConfigManager.js
-const store = require('../store');
-const { configActions, THEME } = require('../slices/configSlice');  // 추가
+const { state } = require('../../main/state');
+const { THEME } = require('../../main/constants');
 
 const ConfigManager = {
     validateConfig(savedConfig = {}) {
-        const defaultConfig = store.getState().config;
+        const defaultConfig = state.config;
         return this.validateConfigStructure(savedConfig) ? 
             this.mergeWithDefaults(savedConfig, defaultConfig) : 
             defaultConfig;
@@ -74,6 +74,16 @@ const ConfigManager = {
                     savedConfig.overlay?.isVisible,
                     defaultConfig.overlay.isVisible
                 ),
+                visibleRanges: {
+                    before: this.validateNumber(
+                        savedConfig.overlay?.visibleRanges?.before,
+                        defaultConfig.overlay.visibleRanges?.before ?? 5
+                    ),
+                    after: this.validateNumber(
+                        savedConfig.overlay?.visibleRanges?.after,
+                        defaultConfig.overlay.visibleRanges?.after ?? 5
+                    )
+                },
             },
             processMode: this.validateProcessMode(
                 savedConfig.processMode, 
@@ -82,23 +92,18 @@ const ConfigManager = {
             viewMode: this.validateViewMode(
                 savedConfig.viewMode, 
                 defaultConfig.viewMode
+            ),
+            pluginServer: this.validateBoolean(
+                savedConfig.pluginServer,
+                defaultConfig.pluginServer ?? false
+            ),
+            pluginConnected: this.validateBoolean(
+                savedConfig.pluginConnected,
+                defaultConfig.pluginConnected ?? false
             )
         };
     },
 
-    async loadAndValidateConfig(savedConfig) {
-        try {
-            const validConfig = this.validateConfig(savedConfig);
-            store.dispatch(configActions.loadConfig(validConfig));
-            return validConfig;
-        } catch (error) {
-            console.error('설정 검증 실패:', error);
-            const defaultConfig = store.getState().config;
-            store.dispatch(configActions.loadConfig(defaultConfig));
-            return defaultConfig;
-        }
-    },
-    
     // Helper functions
     validateBoolean(value, defaultValue) {
         return typeof value === 'boolean' ? value : defaultValue;
@@ -135,7 +140,7 @@ const ConfigManager = {
         // 중요: savedConfig가 null이거나 undefined일 때 처리
         const configToValidate = savedConfig || {};
         const validConfig = this.validateConfig(configToValidate);
-        store.dispatch(configActions.loadConfig(validConfig));
+        state.loadConfig(validConfig);
         return validConfig;
     }
 };

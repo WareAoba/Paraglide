@@ -1,56 +1,30 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
+import { readFileSync } from 'fs';
+
+const pkg = JSON.parse(readFileSync('./package.json', 'utf-8'));
 
 export default defineConfig({
   plugins: [react()],
+  define: {
+    __APP_VERSION__: JSON.stringify(pkg.version)
+  },
   server: {
     port: 5173,
-    strictPort: true,
-    hmr: {
-        protocol: 'ws',
-        host: 'localhost',
-        port: 5173
-      }
-  },
-  optimizeDeps: {
-    include: ['@electron/remote'],
-    exclude: ['electron']
+    strictPort: true
   },
   resolve: {
-    extensions: ['.mjs', '.js', '.jsx', '.json', '.ts', '.tsx'],
     alias: {
-        '@': path.resolve(__dirname, 'src')
-      }
+      '@': path.resolve(__dirname, 'src')
+    }
   },
-  esbuild: {
-    loader: 'jsx',
-    include: /src\/.*\.jsx?$/,
-    exclude: []
-  },
-  base: './',  // 상대 경로로 변경
   build: {
     outDir: 'dist',
     emptyOutDir: true,
+    target: 'esnext',
     rollupOptions: {
-      external: ['electron'],
-      output: {
-        manualChunks: (id) => {
-          if (id.includes('node_modules')) {
-            if (id.includes('react')) return 'vendor-react';
-            return 'vendor';
-          }
-        }
-      }
-    }
-  },
-  css: {
-    devSourcemap: false,
-    postcss: {
-      map: false
-    },
-    preprocessorOptions: {
-      map: false
+      external: ['electron']
     }
   }
 });

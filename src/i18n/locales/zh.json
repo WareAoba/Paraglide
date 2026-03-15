@@ -2,7 +2,7 @@
     "app": {
         "name": "Paraglide",
         "title": "Paraglide - 文本段落处理器",
-        "version": "0.3.1 beta",
+        "version": "{{version}}",
         "credits": {
             "made": "由 WareAoba 制作",
             "contribute": "贡献者: Rinna, Latte"
@@ -85,9 +85,17 @@
             "title": "无效文件",
             "message": "文件为空或无法读取。"
         },
+        "fileOpenError": {
+            "title": "文件打开错误",
+            "message": "无法打开文件。"
+        },
         "exitConfirm": {
             "title": "退出确认",
-            "message": "有未保存的工作。\n确定要退出吗？"
+            "message": "当前有正在处理的文件。\n确定要退出吗？"
+        },
+        "unsavedChanges": {
+            "title": "未保存的更改",
+            "message": "有未保存的更改。\n确定要退出吗？"
         },
         "alreadyRunning": {
             "title": "程序已运行",
@@ -103,6 +111,7 @@
     "mainComponent": {
         "welcome": {
             "title": "Paraglide",
+            "newFile": "新建文件",
             "openFile": "打开文件",
             "logoAlt": "Paraglide 徽标",
             "titleAlt": "Paraglide 标题"
@@ -113,7 +122,7 @@
             }
         },
         "paragraphInfo": {
-            "toNextPage": "距下一页还有{count}段",
+            "toNextPage": "距下一页还有{{count}}段",
             "lastParagraph": "这是最后一段。",
             "pageNumberHint": "💡可以输入页码来导航(例如: 1, 1p, 1页)。"
         },
@@ -170,7 +179,7 @@
                     "empty": "当前无打开的文件",
                     "pageInfo": {
                         "none": "无页面信息",
-                        "format": "第{current}/{total}页"
+                        "format": "第{{current}}/{{total}}页"
                     }
                 },
                 "recentFiles": {
@@ -181,6 +190,7 @@
             "controls": {
                 "open": "打开",
                 "edit": "编辑",
+                "work": "工作",
                 "search": "搜索",
                 "console": "控制台"
             },
@@ -258,6 +268,15 @@
                 "zh": "中文",
                 "ko": "한국어"
             },
+            "plugin": {
+                "title": "Photoshop 模式",
+                "enable": "通过 Photoshop API 自动粘贴",
+                "port": "端口",
+                "connected": "已连接的插件",
+                "installing": "正在安装插件...",
+                "installed": "插件已安装，请重启 Photoshop。",
+                "installFailed": "插件自动安装失败。"
+            },
             "dataManagement": {
                 "title": "数据管理",
                 "clearLogs": "清理日志文件",
@@ -265,7 +284,7 @@
             },
             "info": {
                 "title": "关于",
-                "version": "Paraglide 0.3.1 beta",
+                "version": "Paraglide {{version}}",
                 "credits": {
                     "made": "Made by WareAoba",
                     "contribute": "Contribute.. Rinna, Latte"
@@ -275,6 +294,12 @@
                 "cancel": "取消",
                 "confirm": "确认"
             }
+        },
+        "editor": {
+            "title": "编辑",
+            "fileName": "文件名",
+            "placeholder": "在此输入文本",
+            "save": "保存"
         },
         "console": {
             "header": {

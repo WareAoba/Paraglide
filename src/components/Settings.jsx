@@ -8,7 +8,7 @@ import '../CSS/Controllers/RangeSlider.css';
 import '../CSS/Controllers/Dropdown.css';
 const { ipcRenderer } = window.require('electron');
 
-function Settings({ isVisible, onClose, icons }) {
+function Settings({ isVisible, onClose, theme, programStatus, currentViewMode, icons }) {
   const { t } = useTranslation();
   const [settings, setSettings] = useState({
     windowOpacity: 1.0, // 창 전체 투명도
@@ -21,8 +21,13 @@ function Settings({ isVisible, onClose, icons }) {
     },
     processMode: 'paragraph', // 기본 텍스트 처리 방식
     viewMode: 'overview',
-    language: 'auto'  // 기본값 추가
+    language: 'auto',  // 기본값 추가
+    pluginServer: false,
+    pluginConnected: false
   });
+  const [pluginStatus, setPluginStatus] = useState({ running: false, plugins: [] });
+  const [pluginInstalling, setPluginInstalling] = useState(false);
+  const [pluginInstallMsg, setPluginInstallMsg] = useState(null);
   const [originalSettings, setOriginalSettings] = useState(null);
   const [showThemeDropdown, setShowThemeDropdown] = useState(false);
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
@@ -60,6 +65,8 @@ function Settings({ isVisible, onClose, icons }) {
 
     if (isVisible) {
       loadSettings();
+      // 플러그인 상태 조회
+      ipcRenderer.invoke('get-plugin-status').then(setPluginStatus).catch(() => {});
     }
   }, [isVisible]);
 
@@ -86,7 +93,9 @@ function Settings({ isVisible, onClose, icons }) {
         theme: {
           mode: newSettings.theme.mode,
           accentColor: newSettings.theme.accentColor
-        }
+        },
+        pluginServer: newSettings.pluginServer,
+        pluginConnected: newSettings.pluginConnected
       });
 
       if (newSettings.viewMode && newSettings.viewMode !== settings.viewMode) {
@@ -220,18 +229,22 @@ useEffect(() => {
 
   const handleViewModeChange = async () => {
     try {
-      const currentMode = settings.viewMode;
-      const newMode = currentMode === 'overview' ? 'listview' : 'overview';
-
+      // 에디터 모드일 때는 토글 비활성화
+      if ((programStatus === 'Process' || programStatus === 'Pause') && currentViewMode === 'editor') {
+        return;
+      }
+  
+      const newMode = settings.viewMode === 'overview' ? 'listview' : 'overview';
+  
       const newSettings = {
         ...settings,
         viewMode: newMode
       };
-
+  
       setSettings(newSettings);
       await ipcRenderer.invoke('apply-settings', newSettings);
       ipcRenderer.send('update-view-mode', newMode);
-
+  
       setOriginalSettings(newSettings);
     } catch (error) {
       console.error('뷰 모드 전환 중 오류:', error);
@@ -376,8 +389,9 @@ useEffect(() => {
               />
               <label className="checkbox" htmlFor="loadLastOverlayBounds">
                 <span>
-                  <svg width="12" height="10" viewBox="0 0 12 10"></svg>
+                  <svg width="12" height="10" viewBox="0 0 12 10">
                     <polyline points="1.5 6 4.5 9 10.5 1"></polyline>
+                </svg>
                 </span>
                 <span>{t('settings.overlay.remember')}</span>
               </label>
@@ -518,6 +532,79 @@ useEffect(() => {
             </label>
           </div>
 
+          {/* 포토샵 모드 그룹 */}
+          <div className="settings-group">
+            <h3>{t('settings.plugin.title')}</h3>
+            <div className="checkbox-wrapper">
+              <input
+                type="checkbox"
+                id="pluginServer"
+                checked={settings.pluginServer}
+                onChange={async (e) => {
+                  const enabled = e.target.checked;
+                  const newConnected = enabled ? settings.pluginConnected : false;
+                  const newSettings = {
+                    ...settings,
+                    pluginServer: enabled,
+                    pluginConnected: newConnected
+                  };
+                  setSettings(newSettings);
+                  await handleSettingChange(newSettings);
+
+                  // 렌더러에 변경 알림 (툴바 아이콘 표시/숨김 반영)
+                  ipcRenderer.send('notify-plugin-settings', {
+                    pluginServer: enabled,
+                    pluginConnected: newConnected
+                  });
+
+                  if (enabled) {
+                    // 플러그인 설치 여부 확인 → 미설치 시 자동 설치
+                    const installResult = await ipcRenderer.invoke('ensure-photoshop-plugin');
+                    if (installResult?.installed) {
+                      setPluginInstallMsg(t('settings.plugin.installed'));
+                    } else if (installResult?.alreadyInstalled) {
+                      setPluginInstallMsg(null);
+                    } else if (installResult?.error) {
+                      setPluginInstallMsg(t('settings.plugin.installFailed'));
+                    }
+                  } else {
+                    setPluginInstallMsg(null);
+                  }
+
+                  // 상태 갱신
+                  const status = await ipcRenderer.invoke('get-plugin-status');
+                  setPluginStatus(status);
+                }}
+              />
+              <label className="checkbox" htmlFor="pluginServer">
+                <span>
+                  <svg width="12" height="10" viewBox="0 0 12 10">
+                    <polyline points="1.5 6 4.5 9 10.5 1"></polyline>
+                  </svg>
+                </span>
+                <span>{t('settings.plugin.enable')}</span>
+              </label>
+            </div>
+            {pluginInstallMsg && (
+              <div className="plugin-status">
+                <div className="info-item">
+                  <p>{pluginInstallMsg}</p>
+                </div>
+              </div>
+            )}
+            {settings.pluginServer && (
+              <div className="plugin-status">
+                <div className="info-item">
+                  <p>{t('settings.plugin.port')}: 27182</p>
+                  <p>{t('settings.plugin.connected')}: {pluginStatus.plugins?.length || 0}</p>
+                  {pluginStatus.plugins?.map((p, i) => (
+                    <p key={i} className="plugin-item">└ {p.app} v{p.version}</p>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* 데이터 관리 그룹 */}
           <div className="settings-group danger-zone">
             <h3>{t('settings.dataManagement.title')}</h3>
@@ -528,7 +615,7 @@ useEffect(() => {
           <div className="settings-group">
             <h3>{t('settings.info.title')}</h3>
             <div className="info-item">
-              <p>{t('settings.info.version')}</p>
+              <p>Paraglide {__APP_VERSION__}</p>
               <p>{t('settings.info.credits.made')}</p>
               <p>{t('settings.info.credits.contribute')}</p>
             </div>

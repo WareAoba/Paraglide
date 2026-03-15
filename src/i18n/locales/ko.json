@@ -2,7 +2,7 @@
     "app": {
         "name": "Paraglide",
         "title": "Paraglide - 텍스트 단락 처리기",
-        "version": "0.3.1 beta",
+        "version": "{{version}}",
         "credits": {
             "made": "Made by WareAoba",
             "contribute": "Contribute.. Rinna, Latte"
@@ -85,9 +85,17 @@
             "title": "잘못된 파일",
             "message": "파일 내용이 비어있거나 읽을 수 없습니다."
         },
+        "fileOpenError": {
+            "title": "파일 열기 오류",
+            "message": "파일을 열 수 없습니다."
+        },
         "exitConfirm": {
             "title": "작업 종료",
             "message": "작업 중인 파일이 있습니다.\n정말 종료하시겠습니까?"
+        },
+        "unsavedChanges": {
+            "title": "저장되지 않은 변경사항",
+            "message": "저장되지 않은 변경사항이 있습니다.\n작업을 종료하시겠습니까?"
         },
         "alreadyRunning": {
             "title": "실행 중",
@@ -104,6 +112,7 @@
         "welcome": {
             "title": "Paraglide",
             "openFile": "파일 불러오기",
+            "newFile": "새 파일",
             "logoAlt": "Paraglide 로고",
             "titleAlt": "Paraglide 타이틀"
         },
@@ -113,7 +122,7 @@
             }
         },
         "paragraphInfo": {
-            "toNextPage": "다음 페이지까지 {count}단락 남음",
+            "toNextPage": "다음 페이지까지 {{count}}단락 남음",
             "lastParagraph": "마지막 단락입니다.",
             "pageNumberHint": "💡페이지 번호를 기입하여 표시할 수 있습니다. (예시: 1, 1p, 1페)."
         },
@@ -170,7 +179,7 @@
                     "empty": "현재 작업 중인 파일이 없습니다",
                     "pageInfo": {
                         "none": "페이지 정보 없음",
-                        "format": "{current}/{total}페이지"
+                        "format": "{{current}}/{{total}}페이지"
                     }
                 },
                 "recentFiles": {
@@ -181,6 +190,7 @@
             "controls": {
                 "open": "열기",
                 "edit": "편집",
+                "work": "작업",
                 "search": "검색",
                 "console": "콘솔"
             },
@@ -258,6 +268,15 @@
             "zh": "中文",
             "ko": "한국어"
         },
+        "plugin": {
+            "title": "포토샵 모드",
+            "enable": "포토샵 API를 통해 자동으로 붙여넣기 활성화",
+            "port": "포트",
+            "connected": "연결된 플러그인",
+            "installing": "플러그인 설치 중...",
+            "installed": "플러그인이 설치되었습니다. 포토샵을 재시작해주세요.",
+            "installFailed": "플러그인 자동 설치에 실패했습니다."
+        },
         "dataManagement": {
             "title": "데이터 관리",
             "clearLogs": "로그 파일 정리",
@@ -265,7 +284,7 @@
         },
         "info": {
             "title": "정보",
-            "version": "Paraglide 0.3.1 beta",
+            "version": "Paraglide {{version}}",
             "credits": {
                 "made": "Made by WareAoba",
                 "contribute": "Contribute.. Rinna, Latte"
@@ -275,6 +294,12 @@
             "cancel": "취소",
             "confirm": "확인"
         }
+    },
+    "editor": {
+        "title": "편집",
+        "fileName": "파일명",
+        "placeholder": "여기에 텍스트를 입력하세요.",
+        "save": "저장"
     },
     "console": {
         "header": {

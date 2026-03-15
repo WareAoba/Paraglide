@@ -1,0 +1,116 @@
+.text-editor {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  background: var(--bg-color);
+  color: var(--text-color);
+  position: relative;
+  margin-top: 50px;
+  overflow: hidden; /* 추가 */
+}
+
+.editor-header {
+  height: 2rem;
+  margin: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  z-index: 1;
+}
+
+.file-name-input {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-color);
+  box-sizing: border-box;
+  border-radius: 8px;
+  filter: brightness(0.8);
+  font-size: 17px;
+  padding: 8px 12px;
+  flex: 1;
+  min-width: 0;
+  transition: all 0.2s ease;
+}
+
+.file-name-input:hover,
+.file-name-input:focus {
+  border: 1px solid var(--primary-color);
+  outline: none;
+}
+
+.suneditor-container {
+  height: calc(100vh - 50px);
+  flex: 1;
+  overflow: auto;
+  position: relative;
+  background: var(--bg-color);
+}
+
+.sun-editor {
+  border: none !important;
+  background: var(--bg-color) !important;
+  height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.sun-editor .se-wrapper {
+  flex: 1 !important;
+  height: auto !important;
+  min-height: 300px;
+  background: var(--bg-color) !important;
+  overflow: auto !important;  /* 스크롤 허용 */
+}
+
+.sun-editor-editable {
+  background: var(--bg-color) !important;
+  color: var(--text-color) !important;
+  padding: 1rem !important;
+  overflow-y: auto !important;
+  height: auto !important;
+  min-height: 300px;
+  white-space: pre-wrap !important;
+  word-break: normal !important;
+  padding-bottom: 30vh !important;
+}
+
+.editor-page-number {
+  font-size: 1.5em;
+  font-weight: bold;
+  margin: 0.5em 0;
+}
+
+.save-button {
+  padding: 8px 20px;
+  background: var(--primary-color);
+  color: var(--primary-text);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  z-index: 1;
+}
+
+.save-button:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.save-button.unsaved {
+  background: var(--primary-color-shadow-up);
+}
+
+/* 다크/라이트 테마 지원 */
+[data-theme='dark'] .monaco-editor {
+  background: var(--bg-color);
+}
+
+[data-theme='light'] .monaco-editor {
+  background: var(--bg-color);
+}

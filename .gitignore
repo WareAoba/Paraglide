@@ -10,3 +10,4 @@ releases/
 *.iss
 package-lock.json
 certificates
+native/*.obj

@@ -2,7 +2,7 @@
     "app": {
         "name": "Paraglide",
         "title": "Paraglide - Paragraph Manager",
-        "version": "0.3.1 beta",
+        "version": "{{version}}",
         "credits": {
             "made": "Created by WareAoba",
             "contribute": "Contributors: Rinna, Latte"
@@ -56,7 +56,7 @@
             },
             "file": {
                 "load": "파일 로드 실패",
- "empty": "File is empty or unreadable",
+            "empty": "File is empty or unreadable",
                 "notFound": "File does not exist"
             },
             "system": {
@@ -66,7 +66,8 @@
                 "cssUpdate": "Failed to Update CSS Variables",
                 "filterGenerate": "Failed to Generate CSS Filter"
             }
-        }
+        },
+        "unknown": "Unknown"
     },
     "dialogs": {
         "fileError": {
@@ -85,9 +86,17 @@
             "title": "Invalid File",
             "message": "The file is either empty or unreadable."
         },
+        "fileOpenError": {
+            "title": "File Open Error",
+            "message": "Failed to open the file."
+        },
         "exitConfirm": {
             "title": "Exit Confirmation",
-            "message": "You have unsaved work.\nAre you sure you want to exit?"
+            "message": "There is a processing file.\nAre you sure you want to exit?"
+        },
+        "unsavedChanges": {
+            "title": "Unsaved Changes",
+            "message": "You have unsaved works.\nAre you sure you want to exit?"
         },
         "alreadyRunning": {
             "title": "Already Running",
@@ -103,6 +112,7 @@
     "mainComponent": {
         "welcome": {
             "title": "Paraglide",
+            "newFile": "New File",
             "openFile": "Open File",
             "logoAlt": "Paraglide Logo",
             "titleAlt": "Paraglide Title"
@@ -170,7 +180,7 @@
                     "empty": "No file is currently open",
                     "pageInfo": {
                         "none": "No Page Information",
-                        "format": "{current}/{total} Pages"
+                        "format": "{{current}}/{{total}} Pages"
                     }
                 },
                 "recentFiles": {
@@ -181,6 +191,7 @@
             "controls": {
                 "open": "Open",
                 "edit": "Edit",
+                "work": "Process",
                 "search": "Search",
                 "console": "Console"
             },
@@ -258,6 +269,15 @@
             "zh": "中文",
             "ko": "한국어"
         },
+        "plugin": {
+            "title": "Photoshop Mode",
+            "enable": "Auto-paste via Photoshop API",
+            "port": "Port",
+            "connected": "Connected Plugins",
+            "installing": "Installing plugin...",
+            "installed": "Plugin installed. Please restart Photoshop.",
+            "installFailed": "Plugin auto-install failed."
+        },
         "dataManagement": {
             "title": "Data Management",
             "clearLogs": "Clear Log Files",
@@ -265,7 +285,7 @@
         },
         "info": {
             "title": "Information",
-            "version": "Paraglide 0.3.1 beta",
+            "version": "Paraglide {{version}}",
             "credits": {
                 "made": "Created by WareAoba",
                 "contribute": "Contributors: Rinna, Latte"
@@ -275,6 +295,12 @@
             "cancel": "Cancel",
             "confirm": "Confirm"
         }
+    },
+    "editor": {
+        "title": "Edit",
+        "fileName": "File Name",
+        "placeholder": "Enter text here",
+        "save": "Save"
     },
     "console": {
         "header": {

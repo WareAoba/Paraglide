@@ -101,6 +101,15 @@
   2px 2px 5px var(--container-shadow-down);
 }
 
+/* 포토샵 연결 버튼 */
+.button-group-controls .btn-ps-active img {
+  filter: var(--icon-filter) !important;
+  opacity: 1;
+}
+.button-group-controls .btn-ps-inactive img {
+  filter: var(--icon-filter) !important;
+  opacity: 0.3;
+}
 
 .button-group-controls .btn-icon img[alt="Settings Icon"] {
   transition: transform 0.2s ease;

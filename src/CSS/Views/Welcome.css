@@ -58,44 +58,61 @@
 }
 
 .welcome-screen .button-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--spacing-xl);
-    padding: var(--spacing-sm);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 270px;
+  gap: 10px; /* 버튼 간격을 20px로 설정 */
+  padding: var(--spacing-sm); /* 기존 패딩 유지 */
 }
 
-  .welcome-screen .btn-primary {
-    display: flex;
-    align-items: center;
-    justify-content: center; /* 추가: 가로축 중앙 정렬 */
-    gap: 10px;
-    min-width: 200px;
-    height: 48px;
-    padding: 0 24px;
-    font-size: 1.1rem;
-    font-weight: 500;
-    font-family: inherit;
-    background-color: var(--primary-color);
-    color: var(--primary-text);
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.2s ease-out;
-    box-shadow:
-    5px 5px 5px var(--container-shadow-up),
-    -5px -5px 5px var(--container-shadow-down),
-    inset 0 0 0 transparent, inset 0 0 0 transparent;
+.welcome-screen .button-container button {
+  min-width: 200px;  /* 최소 너비 유지 */
+  width: 100%;        /* 버튼 너비를 컨테이너에 맞춤 */
+  margin: 0;
 }
 
+.welcome-screen .btn-primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-width: 200px;
+  height: 48px;
+  padding: 0 24px;
+  font-size: 1.1rem;
+  font-weight: 500;
+  font-family: inherit;
+  color: var(--primary-text);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease-out;
+  box-shadow:
+      5px 5px 5px var(--container-shadow-up),
+      -5px -5px 5px var(--container-shadow-down),
+      inset 0 0 0 transparent, 
+      inset 0 0 0 transparent;
+}
+
+/* 새 파일 버튼 스타일 */
+.welcome-screen .button-container button:first-child {
+  background-color: var(--success-color);
+}
+
+/* 파일 열기 버튼 스타일 */
+.welcome-screen .button-container button:last-child {
+  background-color: var(--primary-color);
+}
 
 .welcome-screen .btn-primary:hover {
-
   box-shadow:
-  5px 5px 5px var(--container-shadow-up),
-  -5px -5px 5px var(--container-shadow-down),
-  inset 10px 10px 20px rgba(37, 37, 37, 0.5),
-  inset -10px -10px 20px rgb(255, 255, 255, 0.1);
+    5px 5px 5px var(--container-shadow-up),
+    -5px -5px 5px var(--container-shadow-down),
+    inset 10px 10px 20px rgba(37, 37, 37, 0.5),
+    inset -10px -10px 20px rgb(255, 255, 255, 0.1);
 }
 
 .welcome-screen .icon-primary {

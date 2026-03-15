@@ -3,7 +3,6 @@ import React, { useEffect, useCallback } from 'react';
 import { CSSTransition } from 'react-transition-group';
 import Panel from './sidebar/Panel';
 import Search from './sidebar/Search';
-import '../CSS/App.css';
 import '../CSS/Sidebar.css';
 import '../CSS/Controllers/ReactContexify.css';
 const { ipcRenderer } = window.require('electron');
@@ -24,7 +23,9 @@ function Sidebar({
   metadata,
   isSearchVisible,
   onSelect,
-  wasInitiallySidebarOpen
+  wasInitiallySidebarOpen,
+  ProgramStatus,
+  isEditorSaved
 }) {
   const [files, setFiles] = React.useState([]);
   const [shouldRender, setShouldRender] = React.useState(false);
@@ -156,6 +157,8 @@ function Sidebar({
                   files={files}
                   theme={theme}
                   loadFileHistory={loadFileHistory}
+                  ProgramStatus={ProgramStatus}
+                  isEditorSaved={isEditorSaved}
                 />
               </CSSTransition>
             </>

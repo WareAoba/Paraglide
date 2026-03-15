@@ -173,6 +173,10 @@
   .control-button img[data-action="edit"] {
     filter: var(--success-filter);
   }
+
+  .control-button img[data-action="process"] {
+    filter: var(--success-filter);
+  }
   
   .control-button span {
     color: var(--text-third);
