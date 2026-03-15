@@ -133,3 +133,74 @@
   inset 4px 4px 8px rgba(0, 0, 0, 0.2),
   inset -4px -4px 8px rgba(0, 0, 0, 0.1);
 }
+
+/* 주석 알림 서클 */
+.listview-comment-alert {
+  position: absolute;
+  right: 10px;
+  top: calc(50% - 8px);
+  transform: translateY(-50%);
+  z-index: 10;
+  cursor: pointer;
+}
+
+.listview-comment-icon {
+  display: block;
+  width: 17px;
+  height: 17px;
+  color: currentColor;
+  opacity: 0.7;
+}
+
+.listview-comment-popup {
+  background: var(--bg-color);
+  border: 1px solid var(--border-color);
+  border-radius: 8px 8px 0 8px;
+  padding: 10px 14px;
+  min-width: 120px;
+  max-width: 300px;
+  z-index: 100;
+  font-size: 0.85em;
+  font-weight: 400;
+  text-align: left;
+  white-space: pre-wrap;
+  word-break: keep-all;
+  color: var(--text-color);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+  cursor: pointer;
+}
+
+.listview-comment-popup.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.listview-comment-popup::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  right: 0;
+  border-style: solid;
+  border-width: 7px 0 0 10px;
+  border-color: var(--border-color) transparent transparent transparent;
+}
+
+.listview-comment-popup::before {
+  content: '';
+  position: absolute;
+  top: calc(100% - 1px);
+  right: 1px;
+  border-style: solid;
+  border-width: 6px 0 0 9px;
+  border-color: var(--bg-color) transparent transparent transparent;
+  z-index: 1;
+}
+
+[data-theme="dark"] .listview-comment-popup {
+}
+
+.listview-comment-line + .listview-comment-line {
+  margin-top: 4px;
+}

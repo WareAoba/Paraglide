@@ -270,6 +270,7 @@
   font-weight: bold;
   flex-shrink: 0;
   cursor: pointer;
+  position: relative;
 }
 
 /* 호버 효과 */
@@ -309,4 +310,17 @@
 [data-theme="dark"] .overlay-paragraph-previous:hover,
 [data-theme="dark"] .overlay-paragraph-next:hover {
   background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* 주석 알림 서클 (오버레이) */
+.overlay-comment-icon {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 14px;
+  height: 14px;
+  color: var(--primary-color);
+  flex-shrink: 0;
+  pointer-events: none;
 }

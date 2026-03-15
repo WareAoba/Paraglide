@@ -9,7 +9,15 @@ const TextProcessUtils = {
 
   skipPatterns: {
     separator: /^[=\-]{3,}/,
-    comment: /^[\/\/#]/,
+    comment: /^#/,
+  },
+
+  isCommentLine(line) {
+    return /^\/\//.test(line.trim());
+  },
+
+  getCommentText(line) {
+    return line.trim().replace(/^\/\/\s*/, '');
   },
 
   processParagraphs(fileContent, mode = 'paragraph') {
@@ -26,11 +34,43 @@ const TextProcessUtils = {
     let currentIndex = 0;
     let currentParagraph = [];
     let lastStartPos = 0;
+    let pendingComments = [];
   
     for (let i = 0; i < allLines.length; i++) {
       const line = allLines[i].trimStart();
       const lineStartPos = normalizedContent.indexOf(allLines[i], currentIndex);
       
+      // 주석 라인 감지 (//) — 스킵하되 내용을 보존
+      if (line && this.isCommentLine(line)) {
+        if (mode === 'line') {
+          if (paragraphsMetadata.length > 0) {
+            // 한줄 모드: 바로 위(직전) 단락의 주석으로 취급
+            const lastMeta = paragraphsMetadata[paragraphsMetadata.length - 1];
+            if (!lastMeta.comments) lastMeta.comments = [];
+            lastMeta.comments.push(this.getCommentText(line));
+          } else {
+            // 한줄 모드 첫 시작(위 단락 없음): 다음 단락에 적용
+            pendingComments.push(this.getCommentText(line));
+          }
+        } else {
+          // 단락 모드
+          if (currentParagraph.length > 0) {
+            // 빌딩중인 단락에 붙어있으면 → 이 단락과 함께 flush
+            pendingComments.push(this.getCommentText(line));
+          } else if (paragraphsMetadata.length > 0) {
+            // 이미 flush된 직전 단락이 있으면 → 직전 단락에 부착
+            const lastMeta = paragraphsMetadata[paragraphsMetadata.length - 1];
+            if (!lastMeta.comments) lastMeta.comments = [];
+            lastMeta.comments.push(this.getCommentText(line));
+          } else {
+            // 위에 아무것도 없으면 → 다음 단락에 적용
+            pendingComments.push(this.getCommentText(line));
+          }
+        }
+        currentIndex = lineStartPos + line.length + 1;
+        continue;
+      }
+
       if (mode === 'line') {
         // 라인 모드: 각 줄을 개별 단위로 처리
         if (line && !this.shouldSkipParagraph(line)) {
@@ -45,8 +85,10 @@ const TextProcessUtils = {
               index: paragraphsToDisplay.length - 1,
               startPos: lineStartPos,
               endPos: lineStartPos + line.length,
-              length: line.length
+              length: line.length,
+              comments: pendingComments.length > 0 ? [...pendingComments] : null
             });
+            pendingComments = [];
           }
         }
       } else {
@@ -61,8 +103,10 @@ const TextProcessUtils = {
               index: paragraphsToDisplay.length - 1,
               startPos: lastStartPos,
               endPos: lineStartPos - 1,
-              length: cleanedPart.length
+              length: cleanedPart.length,
+              comments: pendingComments.length > 0 ? [...pendingComments] : null
             });
+            pendingComments = [];
             currentParagraph = [];
           }
         } else {
@@ -91,7 +135,8 @@ const TextProcessUtils = {
         index: paragraphsToDisplay.length - 1,
         startPos: lastStartPos,
         endPos: currentIndex - 1,
-        length: cleanedPart.length
+        length: cleanedPart.length,
+        comments: pendingComments.length > 0 ? [...pendingComments] : null
       });
     }
   

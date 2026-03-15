@@ -475,6 +475,34 @@ if (content) {
     }
   },
 
+  // update-editor-state 리스너 등록 여부 플래그
+  _editorStateListenerRegistered: false,
+
+  _ensureEditorStateListener() {
+    if (this._editorStateListenerRegistered) return;
+    this._editorStateListenerRegistered = true;
+
+    ipcMain.on('update-editor-state', (_, { saved, filePath: fp }) => {
+      // EDIT 모드가 아니면 무시
+      if (state.globalState.programStatus !== ProgramStatus.EDIT) return;
+
+      const formatFileName = (p, maxLength = 30) => {
+        if (!p) return 'Untitled';
+        const fileName = path.basename(p);
+        if (fileName.length > maxLength) {
+          return fileName.slice(0, maxLength - 3) + '...';
+        }
+        return fileName;
+      };
+
+      const formattedName = formatFileName(fp);
+      const title = `${formattedName}${saved ? '' : ' *'} - Paraglide (편집)`;
+      if (state.mainWindow && !state.mainWindow.isDestroyed()) {
+        state.mainWindow.setTitle(title);
+      }
+    });
+  },
+
   async processFileContent(content, filePath) {
     try {
       const initialState = {
@@ -496,22 +524,8 @@ if (content) {
         timestamp: Date.now()
       });
   
-      // 창 제목 업데이트
-      ipcMain.on('update-editor-state', (_, { saved, filePath: fp }) => {
-        // 파일명 포맷팅 함수 재사용
-        const formatFileName = (p, maxLength = 30) => {
-          if (!p) return 'Untitled';
-          const fileName = path.basename(p);
-          if (fileName.length > maxLength) {
-            return fileName.slice(0, maxLength - 3) + '...';
-          }
-          return fileName;
-        };
-      
-        const formattedName = formatFileName(fp);
-        const title = `${formattedName}${saved ? '' : ' *'} - Paraglide (편집)`;
-        state.mainWindow.setTitle(title);
-      });
+      // 창 제목 업데이트 리스너 등록 (중복 방지)
+      this._ensureEditorStateListener();
   
       return { success: true };
     } catch (error) {
@@ -666,6 +680,34 @@ async restoreBackup() {
     } catch (error) {
       console.error('[Main] 모드 전환 실패:', error);
       return { success: false };
+    }
+  },
+
+  // ─── 텍스트 매크로 저장/로드 ───
+  async loadTextMacros() {
+    try {
+      const configPath = FILE_PATHS.config;
+      const data = await fs.readFile(configPath, 'utf8');
+      const config = JSON.parse(data);
+      if (Array.isArray(config.textMacros)) {
+        return config.textMacros;
+      }
+    } catch (_) { /* 파일 없음 또는 파싱 실패 */ }
+    return ['…', '―', '♡', '♥'];
+  },
+
+  async saveTextMacros(macros) {
+    try {
+      const configPath = FILE_PATHS.config;
+      let config = {};
+      try {
+        const data = await fs.readFile(configPath, 'utf8');
+        config = JSON.parse(data);
+      } catch (_) { /* 새 config */ }
+      config.textMacros = Array.isArray(macros) ? macros.slice(0, 10) : [];
+      await fs.writeFile(configPath, JSON.stringify(config, null, 2));
+    } catch (error) {
+      console.error('[Main] 텍스트 매크로 저장 실패:', error);
     }
   },
 };

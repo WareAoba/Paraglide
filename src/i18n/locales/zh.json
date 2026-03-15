@@ -299,7 +299,19 @@
             "title": "编辑",
             "fileName": "文件名",
             "placeholder": "在此输入文本",
-            "save": "保存"
+            "save": "保存",
+            "toolbar": {
+                "fontSize": "字号",
+                "save": "保存",
+                "textMacro": "文本宏"
+            },
+            "macro": {
+                "empty": "(空)",
+                "edit": "编辑",
+                "delete": "删除",
+                "add": "添加槽位",
+                "inputPlaceholder": "输入文本"
+            }
         },
         "console": {
             "header": {

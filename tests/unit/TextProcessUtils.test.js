@@ -79,8 +79,12 @@ describe('shouldSkipParagraph', () => {
     expect(TextProcessUtils.shouldSkipParagraph('==================')).toBe(true);
   });
 
-  it('주석(// 시작)은 건너뜀', () => {
-    expect(TextProcessUtils.shouldSkipParagraph('// 이것은 주석')).toBe(true);
+  it('주석(// 시작)은 shouldSkipParagraph에서 건너뛰지 않음 (별도 처리)', () => {
+    expect(TextProcessUtils.shouldSkipParagraph('// 이것은 주석')).toBe(false);
+  });
+
+  it('#으로 시작하는 줄은 건너뜀', () => {
+    expect(TextProcessUtils.shouldSkipParagraph('# 헤더')).toBe(true);
   });
 
   it('일반 텍스트는 건너뛰지 않음', () => {
@@ -153,6 +157,39 @@ describe('processParagraphs - paragraph mode', () => {
       start: 10, end: 11, display: '10-11 페이지'
     });
   });
+
+  it('첫 시작이 주석이면 아래 단락에 적용', () => {
+    const content = '// 주석입니다\n\n본문 단락';
+    const result = TextProcessUtils.processParagraphs(content, 'paragraph');
+    expect(result.paragraphsToDisplay).toEqual(['본문 단락']);
+    expect(result.paragraphsMetadata[0].comments).toEqual(['주석입니다']);
+  });
+
+  it('여러 주석이 하나의 단락에 연결됨', () => {
+    const content = '// 첫 번째 주석\n// 두 번째 주석\n\n본문';
+    const result = TextProcessUtils.processParagraphs(content, 'paragraph');
+    expect(result.paragraphsMetadata[0].comments).toEqual(['첫 번째 주석', '두 번째 주석']);
+  });
+
+  it('주석이 없는 단락의 comments는 null', () => {
+    const content = '주석 없는 단락';
+    const result = TextProcessUtils.processParagraphs(content, 'paragraph');
+    expect(result.paragraphsMetadata[0].comments).toBeNull();
+  });
+
+  it('단락 아래 붙은 주석은 해당 단락의 comments', () => {
+    const content = '단락A\n// 메모\n\n단락B';
+    const result = TextProcessUtils.processParagraphs(content, 'paragraph');
+    expect(result.paragraphsMetadata[0].comments).toEqual(['메모']);
+    expect(result.paragraphsMetadata[1].comments).toBeNull();
+  });
+
+  it('빈 줄로 분리된 주석은 윗 단락에 부착', () => {
+    const content = '단락A\n\n// 주석\n\n단락B';
+    const result = TextProcessUtils.processParagraphs(content, 'paragraph');
+    expect(result.paragraphsMetadata[0].comments).toEqual(['주석']);
+    expect(result.paragraphsMetadata[1].comments).toBeNull();
+  });
 });
 
 // ═══════════════ processParagraphs (line mode) ═══════════════
@@ -175,6 +212,28 @@ describe('processParagraphs - line mode', () => {
     expect(result.paragraphsToDisplay).toEqual(['본문A', '본문B']);
     expect(result.paragraphsMetadata[0].pageNumber).toBe(1);
     expect(result.paragraphsMetadata[1].pageNumber).toBe(2);
+  });
+
+  it('// 주석은 바로 위 줄의 comments에 저장됨 (line 모드)', () => {
+    const content = '본문줄\n// 메모';
+    const result = TextProcessUtils.processParagraphs(content, 'line');
+    expect(result.paragraphsToDisplay).toEqual(['본문줄']);
+    expect(result.paragraphsMetadata[0].comments).toEqual(['메모']);
+  });
+
+  it('한줄 모드 첫 시작이 주석이면 아래 단락에 적용', () => {
+    const content = '// 첫주석\n본문줄';
+    const result = TextProcessUtils.processParagraphs(content, 'line');
+    expect(result.paragraphsToDisplay).toEqual(['본문줄']);
+    expect(result.paragraphsMetadata[0].comments).toEqual(['첫주석']);
+  });
+
+  it('한줄 모드 첫 시작 예외 이후에는 위 단락에 적용', () => {
+    const content = '// 첫주석\n줄A\n// 줄A의 메모\n줄B';
+    const result = TextProcessUtils.processParagraphs(content, 'line');
+    expect(result.paragraphsToDisplay).toEqual(['줄A', '줄B']);
+    expect(result.paragraphsMetadata[0].comments).toEqual(['첫주석', '줄A의 메모']);
+    expect(result.paragraphsMetadata[1].comments).toBeNull();
   });
 });
 

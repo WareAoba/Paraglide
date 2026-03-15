@@ -299,7 +299,19 @@
         "title": "편집",
         "fileName": "파일명",
         "placeholder": "여기에 텍스트를 입력하세요.",
-        "save": "저장"
+        "save": "저장",
+        "toolbar": {
+            "fontSize": "폰트 크기",
+            "save": "저장",
+            "textMacro": "텍스트 매크로"
+        },
+        "macro": {
+            "empty": "(비어있음)",
+            "edit": "편집",
+            "delete": "삭제",
+            "add": "슬롯 추가",
+            "inputPlaceholder": "텍스트 입력"
+        }
     },
     "console": {
         "header": {

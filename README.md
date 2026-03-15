@@ -115,7 +115,7 @@
  [Release 페이지](https://github.com/WareAoba/Paraglide/releases)에서 파일을 다운로드해주세요.
 
  - **Windows**:
-   - **Paraglide-win32-x64-setup.exe** 파일 설치
+   - **Paraglide-Setup-버전.exe** 파일 설치
    - 프로그램 그룹에 자동 등록
 
  - **macOS**:
@@ -157,11 +157,19 @@
 
  **빌드 및 컴파일**
 
- - 다음 명령어를 입력합니다.(**개발용 브랜치는 컴파일 확인이 안 돼있을 가능성이 있습니다.**)
+ - 포터블 패키지만 만들려면 다음 명령어를 입력합니다.
 
   ```bash
   npm run package
   ```
+
+ - Windows 설치 프로그램까지 만들려면 **Inno Setup 6**를 설치한 뒤 다음 명령어를 입력합니다.
+
+  ```bash
+  npm run make:win
+  ```
+
+ - 설치 프로그램 산출물은 **releases/windows** 폴더에 생성됩니다.
 
 
 ## 최근 추가 기능  

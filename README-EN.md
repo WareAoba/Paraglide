@@ -105,7 +105,7 @@ Feel free to suggest improvements or highlight areas that need refinement!
 Download the appropriate precompiled binary from the [Release Page](https://github.com/WareAoba/Paraglide/releases).
 
 - **Windows**:
- - Install **Paraglide-win32-x64-setup.exe**.
+ - Install **Paraglide-Setup-version.exe**.
  - Automatically registered in the program group.
 
 - **macOS**:
@@ -146,11 +146,19 @@ Download the appropriate precompiled binary from the [Release Page](https://gith
 
  **Building and Compiling**:
 
- - Run the following command to create a build:(**may not have been tested** for compilation.)
+ - Run the following command to create the portable packaged app:
 
   ```bash
-  npm run make
+  npm run package
   ```
+
+ - To create the Windows installer, install **Inno Setup 6** first and then run:
+
+  ```bash
+  npm run make:win
+  ```
+
+ - The installer output is written to **releases/windows**.
 
 
 ## Recent Updates

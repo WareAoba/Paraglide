@@ -276,6 +276,21 @@ const IPCManager = {
       });
     });
 
+    // ─── 텍스트 매크로 저장/로드 ───
+    ipcMain.handle('load-text-macros', async () => {
+      return await FileManager.loadTextMacros();
+    });
+
+    ipcMain.on('save-text-macros', async (event, macros) => {
+      await FileManager.saveTextMacros(macros);
+      // 모든 윈도우에 업데이트 알림
+      BrowserWindow.getAllWindows().forEach(window => {
+        if (!window.isDestroyed()) {
+          window.webContents.send('text-macros-updated', macros);
+        }
+      });
+    });
+
     handlersInitialized = true;
   },
 

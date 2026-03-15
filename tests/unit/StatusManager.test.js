@@ -12,9 +12,14 @@ describe('validateTransition', () => {
       .toBe(true);
   });
 
-  it('READY → PROCESS 불허', () => {
+  it('READY → PROCESS 허용 (파일 열기)', () => {
     expect(StatusManager.validateTransition(ProgramStatus.READY, ProgramStatus.PROCESS))
-      .toBeFalsy();
+      .toBe(true);
+  });
+
+  it('READY → EDIT 허용 (새 파일 편집)', () => {
+    expect(StatusManager.validateTransition(ProgramStatus.READY, ProgramStatus.EDIT))
+      .toBe(true);
   });
 
   it('READY → PAUSE 불허', () => {
@@ -54,6 +59,11 @@ describe('validateTransition', () => {
       .toBeFalsy();
   });
 
+  it('PROCESS → EDIT 허용 (파일 편집 전환)', () => {
+    expect(StatusManager.validateTransition(ProgramStatus.PROCESS, ProgramStatus.EDIT))
+      .toBe(true);
+  });
+
   // PAUSE → PROCESS, READY
   it('PAUSE → PROCESS 허용 (재개)', () => {
     expect(StatusManager.validateTransition(ProgramStatus.PAUSE, ProgramStatus.PROCESS))
@@ -70,15 +80,20 @@ describe('validateTransition', () => {
       .toBeFalsy();
   });
 
+  it('PAUSE → EDIT 허용 (파일 편집 전환)', () => {
+    expect(StatusManager.validateTransition(ProgramStatus.PAUSE, ProgramStatus.EDIT))
+      .toBe(true);
+  });
+
   // EDIT → READY
   it('EDIT → READY 허용', () => {
     expect(StatusManager.validateTransition(ProgramStatus.EDIT, ProgramStatus.READY))
       .toBe(true);
   });
 
-  it('EDIT → PROCESS 불허', () => {
+  it('EDIT → PROCESS 허용 (편집 후 이어서 작업)', () => {
     expect(StatusManager.validateTransition(ProgramStatus.EDIT, ProgramStatus.PROCESS))
-      .toBeFalsy();
+      .toBe(true);
   });
 
   it('EDIT → PAUSE 불허', () => {

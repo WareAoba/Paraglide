@@ -142,12 +142,8 @@ function MainComponent() {
 
   const handleSidebarFileSelect = async (filePath, lastPosition) => {
     try {
-      const content = await ipcRenderer.invoke('read-file', filePath);
-      if (!content) return;
-
-      const result = await ipcRenderer.invoke('process-file-content', content, filePath);
+      const result = await ipcRenderer.invoke('open-file', { filePath });
       if (result.success) {
-        ipcRenderer.send('move-to-position', lastPosition);
         useAppStore.setState({ isSidebarVisible: false });
       }
     } catch (error) {
@@ -345,6 +341,12 @@ function MainComponent() {
                         theme={theme}
                         currentFilePath={currentFilePath}
                         onSavedStateChange={setEditorSaved}
+                        icons={{
+                          save: icons.save,
+                          zoomIn: icons.zoomIn,
+                          zoomOut: icons.zoomOut,
+                          textAdd: icons.textAdd,
+                        }}
                       />
                     </div>
                   </CSSTransition>

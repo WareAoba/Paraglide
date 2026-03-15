@@ -300,7 +300,19 @@
         "title": "Edit",
         "fileName": "File Name",
         "placeholder": "Enter text here",
-        "save": "Save"
+        "save": "Save",
+        "toolbar": {
+            "fontSize": "Font Size",
+            "save": "Save",
+            "textMacro": "Text Macro"
+        },
+        "macro": {
+            "empty": "(empty)",
+            "edit": "Edit",
+            "delete": "Delete",
+            "add": "Add Slot",
+            "inputPlaceholder": "Enter text"
+        }
     },
     "console": {
         "header": {

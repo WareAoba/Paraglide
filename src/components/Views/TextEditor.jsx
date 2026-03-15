@@ -1,618 +1,190 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useEffect, useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import SunEditor from 'suneditor-react';
-import 'suneditor/dist/css/suneditor.min.css';
+import TextMacro from './TextMacro';
 import '../../CSS/Views/Editor.css';
 
 const { ipcRenderer } = window.require('electron');
-const path = window.require('path');  // path 모듈 추가
+const path = window.require('path');
+const { TextProcessUtils } = window.require(
+  path.join(process.cwd(), 'src', 'store', 'utils', 'TextProcessUtils')
+);
 
-function TextEditor({
-  theme,
-  currentFilePath,
-  onSavedStateChange
-}) {
+const FONT_SCALE_OPTIONS = [10, 15, 20, 25, 35, 50, 65, 80, 90, 100, 110, 125, 150, 175, 200, 250, 300];
+
+function escapeHtml(text) {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+function TextEditor({ theme, currentFilePath, onSavedStateChange, icons }) {
   const { t } = useTranslation();
-  const [content, setContent] = useState('');
-  const [fileName, setFileName] = useState('');
-  const [isSaved, setIsSaved] = useState(true);
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
-  const initialContentRef = useRef('');
-  const isLoadingRef = useRef(true);
-  const [lastPosition, setLastPosition] = useState(null);
   const editorRef = useRef(null);
-  const [initialContent, setInitialContent] = useState(''); // 초기 내용 저장용
-  const [rawContent, setRawContent] = useState(''); // 원본 텍스트
-  const [displayContent, setDisplayContent] = useState(''); // HTML 변환본
-  
-  const [documentInfo, setDocumentInfo] = useState({ // 문서 분석 정보
-    totalPages: 0,
-    currentPage: 0,
-    paragraphCount: 0
-  });
 
-  const PAGE_NUMBER_PATTERN = /^\s*(\d+)\s*$/;  // g 플래그 제거
-  const EXTRACT_NUMBER = /\d+/;  // 순수 숫자 추출용
-  const STYLED_DIV_PATTERN = /<div[^>]*>(.*?)<\/div>/g;
+  const isLoadingRef = useRef(false);
+  const initialContentRef = useRef('');
+  const isSavedRef = useRef(true);
+  const rafRef = useRef(null);
+  const [fontScale, setFontScale] = useState(100);
+  const [macroOpen, setMacroOpen] = useState(false);
+  const macroButtonRef = useRef(null);
+  const macroSlotsRef = useRef(['…', '―', '♡', '♥']);
 
-  const handleEditorLoad = (sunEditor) => {
-    if (!sunEditor?.core) {
-      console.log('[디버그] 에디터 코어 없음');
-      return;
-    }
-      
-    // ref로 직접 할당
-    editorRef.current = sunEditor;
-    isLoadingRef.current = false;
-    setIsInitialLoad(false);
-    
-    console.log('[디버그] 에디터 초기화 완료');
-  };
+  // ─── 에디터 DOM에서 plain text 추출 ───
+  const getPlainText = useCallback(() => {
+    const el = editorRef.current;
+    if (!el || el.childNodes.length === 0) return '';
 
-    // 커서 위치의 페이지 번호 계산
-    const getCursorPageNumber = useCallback(() => {
-      if (!editorRef.current?.core) return 0;
-    
-      try {
-        const editorCore = editorRef.current.core;
-        const selection = editorCore.getSelection();
-        if (!selection) return 0;
-    
-        // SunEditor API에 맞게 수정
-        const currentElement = selection.focusNode?.parentElement;
-        if (!currentElement) return 0;
-    
-        // 현재 요소부터 위로 올라가면서 페이지 번호 찾기
-        let element = currentElement.closest('div');
-        let pageNumber = 0;
-    
-        while (element) {
-          const text = element.textContent.trim();
-          console.log('[디버그] 페이지 검사:', { 
-            텍스트: text,
-            노드타입: element.nodeType,
-            매치: PAGE_NUMBER_PATTERN.test(text) 
-          });
-          
-          if (PAGE_NUMBER_PATTERN.test(text)) {
-            pageNumber = parseInt(text, 10);
-            break;
-          }
-          element = element.previousElementSibling;
+    const lines = [];
+    for (const child of el.childNodes) {
+      if (child.nodeType === Node.TEXT_NODE) {
+        lines.push(child.textContent);
+      } else if (child.nodeType === Node.ELEMENT_NODE) {
+        if (child.tagName === 'BR') {
+          lines.push('');
+        } else {
+          const isBrOnly = child.childNodes.length === 1 && child.firstChild.nodeName === 'BR';
+          lines.push(isBrOnly ? '' : child.textContent);
         }
-    
-        console.log('[디버그] 페이지 번호 추출:', {
-          현재페이지: pageNumber,
-          현재요소: currentElement.textContent
-        });
-    
-        return pageNumber;
-      } catch (error) {
-        console.error('커서 페이지 번호 추출 실패:', error);
-        return 0;
-      }
-    }, []);
-
-    const extractPageNumber = (text) => {
-      if (!text) return null;
-      const trimmed = text.trim();
-      return PAGE_NUMBER_PATTERN.test(trimmed) ? 
-        parseInt(trimmed.match(EXTRACT_NUMBER)[0], 10) : null;
-    };
-
-    const analyzeDocument = useCallback(() => {
-      if (!editorRef.current?.core) return;
-      
-      try {
-        const editorCore = editorRef.current.core;
-        const divElements = editorCore.context.element.wysiwyg.getElementsByTagName('div');
-        
-        // 모든 페이지 번호 추출
-        const pageNumbers = Array.from(divElements)
-          .map(div => extractPageNumber(div.textContent))
-          .filter(num => num !== null);
-        
-        // 현재 커서 위치의 페이지 계산
-        const currentPage = getCursorPageNumber() || 0;
-        const totalPages = pageNumbers.length > 0 ? Math.max(...pageNumbers) : 0;
-    
-        const docInfo = {
-          fileName: path.basename(currentFilePath || ''),
-          filePath: currentFilePath || '',
-          currentPage: currentPage || 0,
-          totalPages,
-          paragraphCount: divElements.length,
-          isValid: totalPages > 0 && currentPage > 0
-        };
-    
-        setDocumentInfo(docInfo);
-        ipcRenderer.send('get-editor-info', {
-          type: 'response',
-          data: docInfo
-        });
-        
-        console.log('[디버그] 문서 분석:', {
-          현재페이지: currentPage,
-          전체페이지: totalPages,
-          총문단수: divElements.length
-        });
-    
-      } catch (error) {
-        console.error('문서 분석 실패:', error);
-        setDocumentInfo(prev => ({
-          ...prev,
-          currentPage: 0,
-          totalPages: 0,
-          isValid: false
-        }));
-      }
-    }, [currentFilePath, getCursorPageNumber]);
-
-  // 내용 변경시 분석 실행
-  useEffect(() => {
-    const debounceTimer = setTimeout(analyzeDocument, 300);
-    return () => clearTimeout(debounceTimer);
-  }, [content, analyzeDocument]);
-
-  useEffect(() => {
-    const handleEditorInfoRequest = (_, { type }) => {
-      if (type === 'request') {
-        ipcRenderer.send('get-editor-info', {
-          type: 'response',
-          data: documentInfo
-        });
-      }
-    };
-  
-    ipcRenderer.on('get-editor-info', handleEditorInfoRequest);
-    return () => {
-      ipcRenderer.removeListener('get-editor-info', handleEditorInfoRequest);
-    };
-  }, [documentInfo]);
-
-  // 커서 위치 저장을 위한 핸들러 추가
-  const handleSelectionChange = useCallback(() => {
-    if (!editorRef.current?.core || isLoadingRef.current) return;
-  
-    try {
-      const editorCore = editorRef.current.core;
-      const selection = editorCore.getSelection();
-      if (!selection) return;
-  
-      const currentNode = selection.focusNode;
-      if (!currentNode) return;
-  
-      // 페이지 정보 업데이트
-      const pageNumber = getCursorPageNumber();
-      if (pageNumber > 0) {
-        console.log('[디버그] 선택 영역 변경:', { 페이지: pageNumber });
-        setDocumentInfo(prev => ({
-          ...prev,
-          currentPage: pageNumber,
-          isValid: true
-        }));
-      }
-  
-    } catch (error) {
-      console.error('선택 영역 변경 처리 실패:', error);
-    }
-  }, [getCursorPageNumber]);
-
-  const restoreScrollPosition = useCallback((content, position = 0, lines) => {
-    if (!editorRef.current?.core) return;
-  
-    const tryRestore = () => {
-      try {
-        const editorCore = editorRef.current.core;
-        if (!editorCore.context?.element) {
-          setTimeout(tryRestore, 100);
-          return;
-        }
-  
-        // HTML 내용 설정
-        const htmlContent = lines
-          .map(line => line.isEmpty ? '<div><br></div>' : `<div>${line.text}</div>`)
-          .join('');
-  
-        editorCore.setContents(htmlContent);
-  
-        setTimeout(() => {
-          try {
-            const wysiwyg = editorCore.context.element.wysiwyg;
-            applyPageNumberStyles(editorCore);
-            
-            const selection = editorCore.getSelection();
-            const range = document.createRange();
-        
-            const targetLine = lines.find(line => 
-              line.htmlStart <= position && position <= line.htmlEnd
-            );
-            
-            if (targetLine) {
-              const divs = wysiwyg.getElementsByTagName('div');
-              const targetDiv = divs[targetLine.lineNumber - 1];
-              
-              if (targetDiv?.firstChild) {
-                // 노드 길이 체크 추가
-                const nodeLength = targetDiv.firstChild.textContent.length;
-                const offset = Math.min(position - targetLine.htmlStart, nodeLength);
-                
-                console.log('커서 설정:', {
-                  노드길이: nodeLength,
-                  계산된오프셋: offset,
-                  원래목표위치: position - targetLine.htmlStart
-                });
-        
-                range.setStart(targetDiv.firstChild, offset);
-                range.setEnd(targetDiv.firstChild, offset);
-        
-                selection.removeAllRanges();
-                selection.addRange(range);
-                
-                targetDiv.scrollIntoView({
-                  behavior: 'smooth',
-                  block: 'center'
-                });
-
-                // 스크롤 위치 복원 후 페이지 번호 업데이트
-              setTimeout(() => {
-                const currentPage = getCursorPageNumber();
-                if (currentPage > 0) {
-                  setDocumentInfo(prev => ({
-                    ...prev,
-                    currentPage,
-                    isValid: true
-                  }));
-
-                  console.log('[디버그] 초기 커서 위치 페이지:', currentPage);
-                }
-              }, 100);
-
-              }
-            }
-        
-            wysiwyg.focus();
-
-          } catch (error) {
-            console.error('커서 복원 실패:', error);
-          }
-        }, 100);
-  
-      } catch (error) {
-        console.error('복원 실패:', error);
-      }
-    };
-  
-    setTimeout(tryRestore, 300);
-  }, [editorRef, getCursorPageNumber]);
-
-  // 파일명 변경 핸들러
-  const handleFileNameChange = (e) => {
-    const newFileName = e.target.value || 'Untitled';
-    setFileName(newFileName);
-    setIsSaved(false);
-  };
-
-  // 파일명 입력 핸들러 
-  const handleFileNameKeyDown = (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      if (editorRef.current?.core) {
-        editorRef.current.core.focus();
       }
     }
-  };
-
-  const normalizeContent = (text) => {
-    return text
-      .replace(/\r\n/g, '\n')
-      .replace(/\s+$/g, '')
-      .trim();
-  };
-
-  // HTML -> 텍스트 변환
-  const toRawContent = (html) => {
-    return html
-      // 빈 div 먼저 처리
-      .replace(/<div><br\s*\/?><\/div>/gi, '\n')
-      // div 내용 처리 - 줄바꿈 추가
-      .replace(/<div>(.*?)<\/div>/gi, '$1\n')
-      // 나머지 br 태그 처리
-      .replace(/<br\s*\/?>/gi, '\n')
-      // 남은 HTML 태그 제거
-      .replace(/<[^>]*>/g, '')
-      // HTML 엔티티 변환
-      .replace(/&nbsp;/g, ' ')
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
-      .replace(/&amp;/g, '&')
-      // 연속된 줄바꿈 정규화
-      .replace(/\n\s*\n/g, '\n\n')
-      // 앞뒤 공백 제거
-      .replace(/\n+$/, '\n')        // 마지막 줄바꿈 정규화
-      .trimEnd();                   // trim() 대신 trimEnd() 사용
-  };
-
-  const applyPageNumberStyles = useCallback((editorCore) => {
-    if (!editorCore?.context?.element?.wysiwyg) return;
-    
-    const divElements = editorCore.context.element.wysiwyg.getElementsByTagName('div');
-    Array.from(divElements).forEach(div => {
-      const text = div.textContent.trim();
-      if (PAGE_NUMBER_PATTERN.test(text)) {
-        if (!div.classList.contains('editor-page-number')) {
-          div.classList.add('editor-page-number');
-        }
-      } else {
-        div.classList.remove('editor-page-number');
-      }
-    });
+    return lines.join('\n').replace(/\u00A0/g, ' ');
   }, []);
 
-  // 파일 로드
-  useEffect(() => {
-    const loadFile = async () => {
-      if (!currentFilePath || !editorRef.current) {
-        console.log('[디버그] 파일 로드 실패: 필수 값 누락', { currentFilePath, editorRef: !!editorRef.current });
-        return;
-      }
-  
-      try {
-        isLoadingRef.current = true;
-        setIsInitialLoad(true);
-    
-        // 1. 파일 로드
-        const fileContent = await ipcRenderer.invoke('read-file', currentFilePath);
+  // ─── plain text → 에디터 DOM ───
+  const setEditorContent = useCallback((text) => {
+    const el = editorRef.current;
+    if (!el) return;
+    if (!text) { el.innerHTML = ''; return; }
+    el.innerHTML = text.split('\n')
+      .map(line => line ? `<div>${escapeHtml(line)}</div>` : '<div><br></div>')
+      .join('');
+  }, []);
 
-        // 파일 로드 직후 에디터 상태 업데이트
-        ipcRenderer.send('update-editor-state', {
-          saved: true,
-          filePath: currentFilePath,
-          isEditing: true  // 편집 모드 표시
-        });
-        
-        // 2. 유효 행만 필터링하여 매핑
-        const lines = fileContent.split('\n')
-          .map((line, index, array) => {
-            const prevLines = array.slice(0, index);
-            const startPos = prevLines.join('\n').length + (index > 0 ? 1 : 0);
-            
-            return {
-              lineNumber: index + 1,
-              text: line,
-              isEmpty: line.trim().length === 0,
-              originalStart: startPos,
-              originalEnd: startPos + line.length,
-              htmlStart: startPos + (prevLines.filter(l => l.length > 0).length * 3),
-              htmlEnd: startPos + line.length + (prevLines.filter(l => l.length > 0).length * 3)
-            };
-          });
-    
-        // 3. HTML 변환 및 스타일 적용
-        const displayHTML = fileContent.split('\n')
-          .map(line => line.trim().length === 0 ? '<div><br></div>' : `<div>${line}</div>`)
-          .join('');
-    
-        // editorCore 가져오기
-        const editorCore = editorRef.current.core;
-        if (!editorCore) {
-          throw new Error('에디터 코어가 초기화되지 않음');
-        }
-  
-        // 내용 설정 후 스타일 적용
-        editorCore.setContents(displayHTML);
-        applyPageNumberStyles(editorCore);
+  // ─── bare text 노드 → div 래핑 (초기 입력 시 발생하는 문제 수정) ───
+  const normalizeNodes = useCallback(() => {
+    const el = editorRef.current;
+    if (!el) return;
 
-        console.log('파일 로드 시 내용 비교:', {
-          원본: fileContent,
-          HTML변환: displayHTML,
-          다시텍스트로: toRawContent(displayHTML),
-          일치여부: fileContent === toRawContent(displayHTML)
-        });
-        
-        // 4. 히스토리에서 위치 복원
-        const { logData } = await ipcRenderer.invoke('get-file-history');
-        const fileLog = logData[currentFilePath];
-        
-        let position = 0;
-        if (fileLog?.lastPosition?.metadata) {
-          const targetLine = lines.find(line => 
-            line.originalStart <= fileLog.lastPosition.metadata.endPos &&
-            fileLog.lastPosition.metadata.endPos <= line.originalEnd
-          );
-          
-          if (targetLine) {
-            position = targetLine.htmlEnd;
-          }
-        }
+    const sel = window.getSelection();
+    const focusNode = sel.rangeCount > 0 ? sel.focusNode : null;
+    const focusOffset = sel.rangeCount > 0 ? sel.focusOffset : 0;
 
-        // 5. 상태 업데이트
-        await Promise.all([
-          new Promise(resolve => {
-            const newFileName = path.basename(currentFilePath);
-
-            setFileName(newFileName);
-
-            const normalizedFileContent = normalizeContent(fileContent);
-            initialContentRef.current = normalizedFileContent;
-            
-            // 1. 초기 컨텐츠 설정
-            setInitialContent(normalizedFileContent); 
-            
-            // 2. 상태 업데이트 전 시점 체크
-            console.log('[디버그] 초기 설정:', {
-              파일명: newFileName,
-              초기내용: normalizedFileContent
-            });
-        
-            // 3. 나머지 상태 업데이트
-            setContent(displayHTML);
-            setFileName(newFileName);
-            setRawContent(normalizedFileContent);
-            setIsSaved(true);
-            setLastPosition({ position });
-            onSavedStateChange(true);
-        
-            // 4. 로딩 상태 해제 
-            isLoadingRef.current = false;
-            setIsInitialLoad(false);
-            
-            resolve();
-          })
-        ]);
-  
-        await restoreScrollPosition(displayHTML, position, lines);
-        isLoadingRef.current = false;
-        setIsInitialLoad(false);
-        console.log('[디버그] 파일 로드 완료:', { isInitialLoad: false });
-  
-      } catch (error) {
-        console.error('파일 로드 실패:', error);
-        isLoadingRef.current = false;
-        setIsInitialLoad(false);
-      }
-    };
-
-    loadFile();
-  }, [currentFilePath, editorRef]);
-
-  const handleContentChange = useCallback((value) => {
-    console.log('[디버그] handleContentChange 시작');  // 진입점 확인
-
-    if (isLoadingRef.current) {
-      console.log('[디버그] 로딩 중 - 처리 중단');
-      return;
-    }
-
-    const editorCore = editorRef.current?.core;
-    if (!editorCore) {
-      console.log('[디버그] 에디터 코어 없음');
-      return;
-    }
-  
-    // 현재 선택 영역 저장
-    const selection = window.getSelection();
-    console.log('[디버그] 선택 영역:', {
-      있음: !!selection,
-      노드: !!selection?.focusNode
-    });
-
-    const currentNode = selection.focusNode;
-    const currentOffset = selection.focusOffset;
-    const parentDiv = currentNode?.parentElement;
-    const divIndex = parentDiv ? Array.from(editorCore.context.element.wysiwyg.children)
-      .indexOf(parentDiv) : -1;
-
-    console.log('[디버그] DOM 상태:', {
-      divIndex,
-      parentDiv: !!parentDiv
-    });
-  
-    // 변경 감지 로직 통합
-    const newRawContent = toRawContent(value);
-    const hasChanged = newRawContent !== initialContentRef.current;
-    
-    setContent(value);
-    setRawContent(newRawContent);
-    setIsSaved(!hasChanged);
-    onSavedStateChange(!hasChanged);
-  
-    // 상태 업데이트
-    ipcRenderer.send('update-editor-state', {
-      saved: !hasChanged,
-      filePath: currentFilePath,
-      isEditing: true
-    });
-
-    try {
-      applyPageNumberStyles(editorCore);
-      
-      // 커서 복원
-      if (divIndex !== -1 && currentNode) {
-        const targetDiv = editorCore.context.element.wysiwyg.children[divIndex];
-        if (targetDiv?.firstChild) {
-          const range = document.createRange();
-          range.setStart(targetDiv.firstChild, currentOffset);
-          range.setEnd(targetDiv.firstChild, currentOffset);
-          selection.removeAllRanges();
-          selection.addRange(range);
-    
-          // 스크롤 위치 최적화
-          const rect = targetDiv.getBoundingClientRect();
-          const editorRect = editorCore.context.element.wysiwyg.getBoundingClientRect();
-          const bottomTrigger = editorRect.bottom - (editorRect.height * 0.6);
-          
-          if (rect.bottom > bottomTrigger) {
-            console.log('[디버그] 스크롤 실행');
-            
-            // 부드러운 스크롤 적용
-            targetDiv.scrollIntoView({
-              behavior: 'smooth',
-              block: 'center'
-            });
-    
-            // 추가 여백을 위한 부드러운 스크롤
-            const container = editorCore.context.element.wysiwyg;
-            const additionalScroll = editorRect.height * 0.2;
-            
-            // requestAnimationFrame을 사용한 부드러운 스크롤
-            const startScrollTop = container.scrollTop;
-            const targetScrollTop = startScrollTop + additionalScroll;
-            const startTime = performance.now();
-            const duration = 300; // 300ms 동안 진행
-    
-            const animateScroll = (currentTime) => {
-              const elapsed = currentTime - startTime;
-              const progress = Math.min(elapsed / duration, 1);
-              
-              // easeOutCubic 이징 함수 적용
-              const easeProgress = 1 - Math.pow(1 - progress, 3);
-              
-              container.scrollTop = startScrollTop + (additionalScroll * easeProgress);
-              
-              if (progress < 1) {
-                requestAnimationFrame(animateScroll);
-              }
-            };
-    
-            requestAnimationFrame(animateScroll);
-          }
-    
-          targetDiv.firstChild.parentElement.focus();
+    for (const child of [...el.childNodes]) {
+      if (child.nodeType === Node.TEXT_NODE && child.textContent) {
+        const div = document.createElement('div');
+        div.textContent = child.textContent;
+        el.replaceChild(div, child);
+        if (focusNode === child) {
+          try {
+            const range = document.createRange();
+            range.setStart(div.firstChild, Math.min(focusOffset, div.firstChild.length));
+            range.collapse(true);
+            sel.removeAllRanges();
+            sel.addRange(range);
+          } catch (_) {}
         }
       }
-    } catch (error) {
-      console.error('스타일 업데이트 실패:', error);
+    }
+  }, []);
+
+  // ─── 시각적 데코레이션 (CSS 클래스만, 콘텐츠 변경 없음) ───
+  const applyDecorations = useCallback(() => {
+    const el = editorRef.current;
+    if (!el) return;
+
+    normalizeNodes();
+
+    const divs = el.children;
+    let paragraphIdx = 0;
+    let inParagraph = false;
+
+    for (let i = 0; i < divs.length; i++) {
+      const div = divs[i];
+      const text = div.textContent;
+      const trimmed = text.trim();
+      const isEmpty = !trimmed;
+      const isComment = !isEmpty && TextProcessUtils.isCommentLine(text);
+      const isPage = !isEmpty && !isComment && !!TextProcessUtils.extractPageNumber(trimmed);
+
+      div.classList.toggle('line-page-number', isPage);
+      div.classList.toggle('line-empty', isEmpty);
+      div.classList.toggle('line-comment', isComment);
+
+      if (isPage || isEmpty) {
+        div.classList.remove('line-paragraph-first');
+        div.removeAttribute('data-paragraph');
+        div.removeAttribute('data-paragraph-number');
+        if (inParagraph) { paragraphIdx++; inParagraph = false; }
+      } else {
+        const isFirst = !inParagraph;
+        div.classList.toggle('line-paragraph-first', isFirst);
+        div.setAttribute('data-paragraph', paragraphIdx);
+        if (isFirst) {
+          div.setAttribute('data-paragraph-number', paragraphIdx + 1);
+        } else {
+          div.removeAttribute('data-paragraph-number');
+        }
+        inParagraph = true;
+      }
     }
 
-  }, [currentFilePath, toRawContent]);
+    el.classList.toggle('is-empty', !el.textContent.trim());
+  }, [normalizeNodes]);
 
-  // 저장 처리
+  const scheduleDecorations = useCallback(() => {
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    rafRef.current = requestAnimationFrame(applyDecorations);
+  }, [applyDecorations]);
+
+  // ─── 입력 핸들러 ───
+  const handleInput = useCallback(() => {
+    if (isLoadingRef.current) return;
+
+    const currentText = getPlainText();
+    const changed = currentText !== initialContentRef.current;
+
+    if (isSavedRef.current === changed) {
+      isSavedRef.current = !changed;
+      onSavedStateChange(!changed);
+      ipcRenderer.send('update-editor-state', {
+        saved: !changed,
+        filePath: currentFilePath,
+        isEditing: true
+      });
+    }
+
+    scheduleDecorations();
+  }, [currentFilePath, getPlainText, onSavedStateChange, scheduleDecorations]);
+
+  // ─── 붙여넣기: plain text만 허용 ───
+  const handlePaste = useCallback((e) => {
+    e.preventDefault();
+    const text = e.clipboardData.getData('text/plain');
+    document.execCommand('insertText', false, text);
+  }, []);
+
+  // ─── 저장 ───
   const handleSave = useCallback(async () => {
     try {
-      // 현재 에디터의 내용을 직접 가져옴
-      const currentContent = editorRef.current?.core?.getContents() || '';
-      const currentRawContent = toRawContent(currentContent);
-  
-      console.log('저장 시도:', { currentRawContent }); 
-  
+      const content = getPlainText();
+      const fileName = currentFilePath ? path.basename(currentFilePath) : 'Untitled.txt';
+
       const result = await ipcRenderer.invoke('save-text-file', {
-        content: currentRawContent,  // rawContent 대신 현재 내용 사용
+        content,
         fileName,
         currentFilePath,
         saveType: currentFilePath ? 'overwrite' : 'new'
       });
-  
-      // 3. 결과 처리
+
       if (result.success) {
-        setIsSaved(true);
+        isSavedRef.current = true;
+        initialContentRef.current = content;
         onSavedStateChange(true);
-        initialContentRef.current = currentRawContent;
-        // 새 파일 경로 업데이트
         if (!currentFilePath && result.filePath) {
           ipcRenderer.send('update-current-file-path', result.filePath);
         }
-        // 상태 업데이트
         ipcRenderer.send('update-editor-state', {
           saved: true,
           filePath: result.filePath || currentFilePath
@@ -620,117 +192,268 @@ function TextEditor({
       }
     } catch (error) {
       console.error('저장 실패:', error);
+    } finally {
+      editorRef.current?.focus();
     }
-  }, [fileName, currentFilePath, toRawContent]);
+  }, [currentFilePath, getPlainText, onSavedStateChange]);
 
+  const handleFontScaleChange = useCallback((event) => {
+    setFontScale(Number(event.target.value));
+    window.requestAnimationFrame(() => editorRef.current?.focus());
+  }, []);
+
+  const handleZoomIn = useCallback(() => {
+    setFontScale(prev => {
+      const idx = FONT_SCALE_OPTIONS.indexOf(prev);
+      return idx < FONT_SCALE_OPTIONS.length - 1 ? FONT_SCALE_OPTIONS[idx + 1] : prev;
+    });
+    window.requestAnimationFrame(() => editorRef.current?.focus());
+  }, []);
+
+  const handleZoomOut = useCallback(() => {
+    setFontScale(prev => {
+      const idx = FONT_SCALE_OPTIONS.indexOf(prev);
+      return idx > 0 ? FONT_SCALE_OPTIONS[idx - 1] : prev;
+    });
+    window.requestAnimationFrame(() => editorRef.current?.focus());
+  }, []);
+
+  // ─── 매크로 슬롯 로드 ───
   useEffect(() => {
-    const handleIsSavedCheck = () => {
+    const loadMacros = async () => {
       try {
-        // 현재 컨텐츠
-        const currentHTML = editorRef.current?.core?.getContents() || '';
-        const currentRaw = toRawContent(currentHTML);
-        
-        // 초기 컨텐츠와 동일한 방식으로 처리
-        const isContentSaved = currentRaw === initialContentRef.current;
-        
-        console.log('[디버그] 저장 상태 체크:', {
-          현재내용: currentRaw,
-          초기내용: initialContentRef.current,
-          저장여부: isContentSaved
-        });
-  
-        ipcRenderer.send('editor-is-saved-result', isContentSaved);
-      } catch (error) {
-        console.error('저장 상태 체크 실패:', error);
-        ipcRenderer.send('editor-is-saved-result', true);
-      }
+        const saved = await ipcRenderer.invoke('load-text-macros');
+        if (Array.isArray(saved) && saved.length > 0) {
+          macroSlotsRef.current = saved.slice(0, 10);
+        }
+      } catch (_) { /* 기본값 사용 */ }
     };
-  
-    ipcRenderer.on('editor-is-saved-check', handleIsSavedCheck);
-    return () => {
-      ipcRenderer.removeListener('editor-is-saved-check', handleIsSavedCheck);
-    };
-  }, [toRawContent]);
+    loadMacros();
 
-  // 단축키 처리
+    const handleMacroUpdate = (_, macros) => {
+      if (Array.isArray(macros)) macroSlotsRef.current = macros;
+    };
+    ipcRenderer.on('text-macros-updated', handleMacroUpdate);
+    return () => ipcRenderer.removeListener('text-macros-updated', handleMacroUpdate);
+  }, []);
+
+  // ─── 매크로 텍스트 삽입 ───
+  const handleMacroInsert = useCallback((text) => {
+    const el = editorRef.current;
+    if (!el || !text) return;
+    el.focus();
+    document.execCommand('insertText', false, text);
+  }, []);
+
+  // ─── Ctrl+S 및 Ctrl+숫자 단축키 ───
   useEffect(() => {
     const handleKeyDown = (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
-        // 이벤트 전파 중지 추가
         e.stopPropagation();
         e.preventDefault();
-        
-        // 약간의 지연 후 저장 실행
-        setTimeout(() => {
-          handleSave();
-        }, 0);
+        handleSave();
+        return;
+      }
+
+      // Ctrl+숫자(1~9, 0) → 매크로 삽입
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey) {
+        const key = e.key;
+        let slotIdx = -1;
+        if (key >= '1' && key <= '9') {
+          slotIdx = parseInt(key, 10) - 1;
+        } else if (key === '0') {
+          slotIdx = 9;
+        }
+        if (slotIdx >= 0 && slotIdx < macroSlotsRef.current.length) {
+          const value = macroSlotsRef.current[slotIdx];
+          if (value) {
+            e.stopPropagation();
+            e.preventDefault();
+            handleMacroInsert(value);
+          }
+        }
       }
     };
-  
-    // 캡처 단계에서 이벤트 처리
     window.addEventListener('keydown', handleKeyDown, true);
     return () => window.removeEventListener('keydown', handleKeyDown, true);
-  }, [handleSave]);
+  }, [handleSave, handleMacroInsert]);
 
-  const pagePatterns = {
-    numberOnly: /^[1-9]\d*$/,  // 0으로 시작하지 않는 숫자만
-    koreanStyle: /^(?:\d+)\s*(?:페이지|페|p|P|page|Page)$/,
-    englishStyle: /^(?:page|p)\s*\d+$/i,
-    rangeStyle: /^(\d+)\s*[-~]\s*(\d+)(?:\s*(?:페이지|페|page|p))?$/i
-  };
+  // ─── Enter 시 <div> 생성 보장 ───
+  useEffect(() => {
+    document.execCommand('defaultParagraphSeparator', false, 'div');
+  }, []);
 
+  useEffect(() => () => {
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+  }, []);
+
+  // ─── 파일 로드 ───
+  useEffect(() => {
+    const el = editorRef.current;
+    if (!el) return;
+
+    if (!currentFilePath) {
+      el.innerHTML = '';
+      el.classList.add('is-empty');
+      initialContentRef.current = '';
+      isSavedRef.current = true;
+      onSavedStateChange(true);
+      setTimeout(() => el.focus(), 50);
+      return;
+    }
+
+    const loadFile = async () => {
+      try {
+        isLoadingRef.current = true;
+
+        const fileContent = await ipcRenderer.invoke('read-file', currentFilePath);
+        const normalized = fileContent.replace(/\r\n/g, '\n');
+
+        initialContentRef.current = normalized;
+        setEditorContent(normalized);
+        applyDecorations();
+
+        isSavedRef.current = true;
+        onSavedStateChange(true);
+        ipcRenderer.send('update-editor-state', {
+          saved: true,
+          filePath: currentFilePath,
+          isEditing: true
+        });
+
+        // 히스토리에서 스크롤 위치 복원
+        try {
+          const { logData } = await ipcRenderer.invoke('get-file-history');
+          const fileLog = logData?.[currentFilePath];
+          if (fileLog?.lastPosition?.metadata) {
+            const targetPos = fileLog.lastPosition.metadata.endPos;
+            const lines = normalized.split('\n');
+            let pos = 0;
+            let targetIdx = 0;
+            for (let i = 0; i < lines.length; i++) {
+              if (pos + lines[i].length >= targetPos) {
+                targetIdx = i;
+                break;
+              }
+              pos += lines[i].length + 1;
+            }
+            if (el.children[targetIdx]) {
+              setTimeout(() => {
+                el.children[targetIdx].scrollIntoView({ behavior: 'smooth', block: 'center' });
+              }, 200);
+            }
+          }
+        } catch (_) { /* 히스토리 없음 */ }
+
+        isLoadingRef.current = false;
+        setTimeout(() => el.focus(), 150);
+      } catch (error) {
+        console.error('파일 로드 실패:', error);
+        isLoadingRef.current = false;
+      }
+    };
+
+    loadFile();
+  }, [currentFilePath, setEditorContent, applyDecorations, onSavedStateChange]);
+
+  // ─── IPC: 에디터 정보 응답 ───
+  useEffect(() => {
+    const handleRequest = (_, { type }) => {
+      if (type !== 'request') return;
+
+      const text = getPlainText();
+      const lines = text.split('\n');
+      const pageNumbers = lines
+        .map(l => TextProcessUtils.extractPageNumber(l.trim()))
+        .filter(Boolean)
+        .map(p => p.start);
+
+      ipcRenderer.send('get-editor-info', {
+        type: 'response',
+        data: {
+          fileName: currentFilePath ? path.basename(currentFilePath) : '',
+          filePath: currentFilePath || '',
+          currentPage: 0,
+          totalPages: pageNumbers.length > 0 ? Math.max(...pageNumbers) : 0,
+          paragraphCount: lines.filter(l => l.trim()).length,
+          isValid: pageNumbers.length > 0,
+        }
+      });
+    };
+
+    ipcRenderer.on('get-editor-info', handleRequest);
+    return () => ipcRenderer.removeListener('get-editor-info', handleRequest);
+  }, [currentFilePath, getPlainText]);
+
+  // ─── IPC: 저장 상태 체크 ───
+  useEffect(() => {
+    const handle = () => {
+      ipcRenderer.send('editor-is-saved-result', getPlainText() === initialContentRef.current);
+    };
+    ipcRenderer.on('editor-is-saved-check', handle);
+    return () => ipcRenderer.removeListener('editor-is-saved-check', handle);
+  }, [getPlainText]);
+
+  // ─── 렌더링 ───
   return (
     <div className="text-editor" data-theme={theme.mode}>
-      <div className="editor-header">
-        <input
-          type="text"
-          value={fileName}
-          onChange={handleFileNameChange}
-          onKeyDown={handleFileNameKeyDown}
-          className="file-name-input"
-          placeholder={t('editor.fileName')}
-        />
-        <div className="editor-controls">
-          <button 
-            type="button"
-            className={`save-button ${!isSaved ? 'unsaved' : ''}`}
-            onClick={(e) => {
-              e.preventDefault();
-              handleSave();
-            }}
-          >
-            {t('editor.save')}
-          </button>
-        </div>
+      <div
+        ref={editorRef}
+        className="editor-body is-empty"
+        style={{ '--editor-font-scale': fontScale }}
+        contentEditable
+        suppressContentEditableWarning
+        onInput={handleInput}
+        onPaste={handlePaste}
+        spellCheck={false}
+        data-placeholder={t('editor.placeholder')}
+      />
+      <div className="editor-toolbar">
+        <button
+          type="button"
+          className="editor-toolbar-icon"
+          onClick={handleZoomOut}
+          title={t('editor.toolbar.fontSize')}
+          disabled={fontScale <= FONT_SCALE_OPTIONS[0]}
+        >
+          <img src={icons?.zoomOut} alt="Zoom Out" className="icon" />
+        </button>
+        <span className="editor-toolbar-scale">{fontScale}%</span>
+        <button
+          type="button"
+          className="editor-toolbar-icon"
+          onClick={handleZoomIn}
+          title={t('editor.toolbar.fontSize')}
+          disabled={fontScale >= FONT_SCALE_OPTIONS[FONT_SCALE_OPTIONS.length - 1]}
+        >
+          <img src={icons?.zoomIn} alt="Zoom In" className="icon" />
+        </button>
+        <div className="editor-toolbar-divider" />
+        <button
+          type="button"
+          className="editor-toolbar-icon"
+          onClick={handleSave}
+          title={t('editor.toolbar.save')}
+        >
+          <img src={icons?.save} alt="Save" className="icon" />
+        </button>
+        <div className="editor-toolbar-divider" />
+        <button
+          ref={macroButtonRef}
+          type="button"
+          className="editor-toolbar-icon"
+          onClick={() => setMacroOpen(prev => !prev)}
+          title={t('editor.toolbar.textMacro')}
+        >
+          <img src={icons?.textAdd} alt="Text Macro" className="icon" />
+        </button>
       </div>
-      <div className="suneditor-container">
-        <SunEditor
-          setContents={content}
-          onChange={handleContentChange}
-          onSelect={handleSelectionChange}
-          onClick={handleSelectionChange}
-          onMouseUp={handleSelectionChange}
-          hideToolbar={true}
-          getSunEditorInstance={handleEditorLoad}
-          setOptions={{
-            shortcuts: {
-              save: false
-            },
-            events: {
-              click: handleSelectionChange,
-              mouseup: handleSelectionChange
-            },
-            defaultStyle: 'font-family: inherit;',
-            mode: 'classic',
-            resizingBar: false,
-            charCounter: false,
-            buttonList: [],
-            width: '100%',
-            height: '100%',
-            styleWithCSS: true
-          }}
-        />
-      </div>
+      <TextMacro
+        isOpen={macroOpen}
+        onClose={() => setMacroOpen(false)}
+        onInsert={(text) => { setMacroOpen(false); handleMacroInsert(text); }}
+        anchorRef={macroButtonRef}
+      />
     </div>
   );
 }

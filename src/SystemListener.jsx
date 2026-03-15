@@ -38,15 +38,29 @@ class SystemListener {
 
 		try {
 			ipcMain.on('program-status-update', (event, status) => {
-				const wasProcess = this.programStatus?.programStatus === 'Process';
+				const prevStatus = this.programStatus?.programStatus;
 				this.programStatus = status;
+
 				// Process 상태 진입 시 클립보드 기준값 갱신 (Ready 동안 변경된 내용을 오감지하지 않도록)
-				if (!wasProcess && status?.programStatus === 'Process') {
+				if (prevStatus !== 'Process' && status?.programStatus === 'Process') {
 					this.lastClipboardText = clipboard.readText();
+				}
+
+				// Process/Pause → 네비게이션 단축키 + 클립보드 기능 등록, 그 외(Ready/Edit) → 해제
+				const isActive = status?.programStatus === 'Process' || status?.programStatus === 'Pause';
+				const wasActive = prevStatus === 'Process' || prevStatus === 'Pause';
+				if (isActive && !wasActive) {
+					this._registerNavigationShortcuts();
+					this._startClipboardMonitor();
+					this._registerPasteHandler();
+				} else if (!isActive && wasActive) {
+					this._unregisterNavigationShortcuts();
+					this._stopClipboardMonitor();
+					this._unregisterPasteHandler();
+					this.currentParagraphText = null;
 				}
 			});
 
-			this.setupClipboardMonitor();
 			this.setupKeyboardListener();
 			this.setupAppShortcuts();
 			this._initialized = true;
@@ -60,12 +74,12 @@ class SystemListener {
 
 	// ═══════════════ 클립보드 모니터링 ═══════════════
 
-	setupClipboardMonitor() {
-		// 시작 시점의 클립보드 내용을 기록하여 기존 내용을 "변경"으로 오감지하지 않도록 함
+	/** Process/Pause 진입 시 클립보드 변경 감시 시작 */
+	_startClipboardMonitor() {
+		if (this._clipboardInterval) return; // 이미 실행 중
 		this.lastClipboardText = clipboard.readText();
 
 		this._clipboardInterval = setInterval(() => {
-			// Process 상태가 아니면 클립보드 감지 자체를 하지 않음
 			if (this.programStatus?.programStatus !== 'Process') return;
 
 			const currentText = clipboard.readText();
@@ -75,6 +89,14 @@ class SystemListener {
 				this.lastClipboardText = currentText;
 			}
 		}, 500);
+	}
+
+	/** Ready/Edit 전환 시 클립보드 변경 감시 중지 */
+	_stopClipboardMonitor() {
+		if (this._clipboardInterval) {
+			clearInterval(this._clipboardInterval);
+			this._clipboardInterval = null;
+		}
 	}
 
 	/**
@@ -118,48 +140,11 @@ class SystemListener {
 
 	setupKeyboardListener() {
 		try {
-			// ── Ctrl+V 붙여넣기 감지 (글로벌) ──
+			// ── Ctrl+V 붙여넣기 헬퍼 준비 (PowerShell/osascript/xdotool) ──
 			this._setupPasteHelper();
-			this._registerPasteHandler();
 
-			// ── 네비게이션 단축키 (글로벌) ──
-			globalShortcut.register('Shift+Right', () => {
-				console.log('[글로벌 단축키] Shift+Right');
-				this.moveToNext();
-			});
-
-			globalShortcut.register('Shift+Left', () => {
-				console.log('[글로벌 단축키] Shift+Left');
-				this.moveToPrev();
-			});
-
-			globalShortcut.register('Shift+Up', () => {
-				console.log('[글로벌 단축키] Shift+Up');
-				this.toggleResume();
-			});
-
-			globalShortcut.register('Shift+Down', () => {
-				console.log('[글로벌 단축키] Shift+Down');
-				this.togglePause();
-			});
-
-			// ── 페이지/오버레이 단축키 (글로벌) ──
-			globalShortcut.register('Shift+Alt+Right', () => {
-				console.log('[글로벌 단축키] Shift+Alt+Right');
-				this.moveToNextPage();
-			});
-
-			globalShortcut.register('Shift+Alt+Left', () => {
-				console.log('[글로벌 단축키] Shift+Alt+Left');
-				this.moveToPrevPage();
-			});
-
-			globalShortcut.register('Shift+Alt+Up', () => {
-				console.log('[글로벌 단축키] Shift+Alt+Up');
-				this.toggleOverlay();
-			});
-
-			console.log('[SystemListener] 글로벌 키보드 리스너 설정 완료');
+			// Ctrl+V 핸들러와 네비게이션 단축키는 Process/Pause 진입 시에만 등록됨
+			console.log('[SystemListener] 글로벌 키보드 리스너 설정 완료 (단축키는 Process/Pause 시 등록)');
 		} catch (error) {
 			console.error('[SystemListener] 글로벌 키보드 리스너 설정 실패:', error);
 		}
@@ -181,6 +166,38 @@ class SystemListener {
 			console.log('[SystemListener] 글로벌 단축키 해제됨');
 		} catch (error) {
 			console.error('[SystemListener] 글로벌 단축키 해제 중 오류:', error);
+		}
+	}
+
+	// ═══════════════ 네비게이션 단축키 등록/해제 (Process/Pause 전용) ═══════════════
+
+	_registerNavigationShortcuts() {
+		try {
+			globalShortcut.register('Shift+Right', () => this.moveToNext());
+			globalShortcut.register('Shift+Left', () => this.moveToPrev());
+			globalShortcut.register('Shift+Up', () => this.toggleResume());
+			globalShortcut.register('Shift+Down', () => this.togglePause());
+			globalShortcut.register('Shift+Alt+Right', () => this.moveToNextPage());
+			globalShortcut.register('Shift+Alt+Left', () => this.moveToPrevPage());
+			globalShortcut.register('Shift+Alt+Up', () => this.toggleOverlay());
+			console.log('[SystemListener] 네비게이션 단축키 등록됨 (Process/Pause)');
+		} catch (error) {
+			console.error('[SystemListener] 네비게이션 단축키 등록 실패:', error);
+		}
+	}
+
+	_unregisterNavigationShortcuts() {
+		try {
+			globalShortcut.unregister('Shift+Right');
+			globalShortcut.unregister('Shift+Left');
+			globalShortcut.unregister('Shift+Up');
+			globalShortcut.unregister('Shift+Down');
+			globalShortcut.unregister('Shift+Alt+Right');
+			globalShortcut.unregister('Shift+Alt+Left');
+			globalShortcut.unregister('Shift+Alt+Up');
+			console.log('[SystemListener] 네비게이션 단축키 해제됨 (Ready/Edit)');
+		} catch (error) {
+			console.error('[SystemListener] 네비게이션 단축키 해제 실패:', error);
 		}
 	}
 
@@ -249,13 +266,13 @@ class SystemListener {
 	}
 
 	/**
-	 * Ctrl+V 글로벌 단축키 등록
+	 * Ctrl+V 글로벌 단축키 등록 (Process/Pause 진입 시 호출)
 	 * 
 	 * 동작 흐름:
 	 *   1. globalShortcut이 Ctrl+V를 가로챔 (실제 붙여넣기 차단됨)
 	 *   2. 클립보드 내용이 현재 단락과 일치하면 → 다음 단락으로 이동
-	 *   3. Ctrl+V 등록 해제 → 네이티브로 키 재주입 → 실제 붙여넣기 수행
-	 *   4. 재주입 완료 후 재등록
+	 *   3. 등록 해제 → 네이티브로 키 재주입 → 실제 붙여넣기 수행
+	 *   4. 재주입 완료 후 재등록 (단, 여전히 Process/Pause 상태일 때만)
 	 */
 	_registerPasteHandler() {
 		if (this._pasteHandlerRegistered) return;
@@ -277,13 +294,28 @@ class SystemListener {
 				this._pasteHandlerRegistered = false;
 				globalShortcut.unregister('CommandOrControl+V');
 				this._simulatePaste(() => {
-					// 재주입 완료 후 재등록 (약간의 딜레이로 중복 방지)
-					setTimeout(() => this._registerPasteHandler(), 50);
+					// 재주입 완료 후 재등록 — 여전히 활성 모드일 때만
+					setTimeout(() => {
+						const status = this.programStatus?.programStatus;
+						if (status === 'Process' || status === 'Pause') {
+							this._registerPasteHandler();
+						}
+					}, 50);
 				});
 			});
 			this._pasteHandlerRegistered = true;
 		} catch (error) {
 			console.error('[SystemListener] Ctrl+V 핸들러 등록 실패:', error);
+		}
+	}
+
+	/** Ctrl+V 핸들러 해제 (Ready/Edit 전환 시 호출) */
+	_unregisterPasteHandler() {
+		if (this._pasteHandlerRegistered) {
+			try {
+				globalShortcut.unregister('CommandOrControl+V');
+			} catch {}
+			this._pasteHandlerRegistered = false;
 		}
 	}
 
@@ -406,37 +438,15 @@ class SystemListener {
 	// ═══════════════ 포토샵 모드: 클립보드 일시 중지/복구 ═══════════════
 
 	suspendClipboardOps() {
-		// 클립보드 변경 감시 중지
-		if (this._clipboardInterval) {
-			clearInterval(this._clipboardInterval);
-			this._clipboardInterval = null;
-		}
-
-		// Ctrl+V 붙여넣기 감지 해제
-		if (this._pasteHandlerRegistered) {
-			try {
-				globalShortcut.unregister('CommandOrControl+V');
-			} catch {}
-			this._pasteHandlerRegistered = false;
-		}
-
+		this._stopClipboardMonitor();
+		this._unregisterPasteHandler();
 		console.log('[SystemListener] 클립보드 관련 기능 일시 중지 (포토샵 모드)');
 	}
 
 	resumeClipboardOps() {
-		// 현재 클립보드 값으로 갱신 (재개 시 외부 변경 오감지 방지)
 		this.lastClipboardText = clipboard.readText();
-
-		// 클립보드 변경 감시 재개
-		if (!this._clipboardInterval) {
-			this.setupClipboardMonitor();
-		}
-
-		// Ctrl+V 붙여넣기 감지 재등록
-		if (!this._pasteHandlerRegistered) {
-			this._registerPasteHandler();
-		}
-
+		this._startClipboardMonitor();
+		this._registerPasteHandler();
 		console.log('[SystemListener] 클립보드 관련 기능 복구');
 	}
 
@@ -445,10 +455,8 @@ class SystemListener {
 	destroy() {
 		this.clearKeyboardListener();
 		this.clearAppShortcuts();
-		if (this._clipboardInterval) {
-			clearInterval(this._clipboardInterval);
-			this._clipboardInterval = null;
-		}
+		this._stopClipboardMonitor();
+		this.currentParagraphText = null;
 	}
 
 	showErrorDialog(message) {

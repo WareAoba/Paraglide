@@ -26,7 +26,11 @@ const ICON_NAMES = [
   'finder.svg',
   'new-file.svg',
   'file-work.svg',
-  'photoshop.svg'
+  'photoshop.svg',
+  'save.svg',
+  'zoom_in.svg',
+  'zoom_out.svg',
+  'text-add.svg'
 ];
 
 const ICON_KEYS = [
@@ -34,7 +38,7 @@ const ICON_KEYS = [
   'eye', 'eyeOff', 'sidebarUnfold', 'search', 'pageJump',
   'textFile', 'delete', 'themeAuto', 'themeLight', 'themeDark',
   'fileOpen', 'edit', 'back', 'folder', 'finder', 'newFile', 'fileWork',
-  'photoshop'
+  'photoshop', 'save', 'zoomIn', 'zoomOut', 'textAdd'
 ];
 
 export default function useIcons() {

@@ -1,116 +1,436 @@
+/* ─── 에디터 컨테이너 ─── */
 .text-editor {
   display: flex;
-  flex-direction: column;
-  height: 100%;
+  flex-direction: row;
+  height: calc(100% - 50px);
   width: 100%;
   background: var(--bg-color);
   color: var(--text-color);
   position: relative;
   margin-top: 50px;
-  overflow: hidden; /* 추가 */
+  overflow: hidden;
 }
 
-.editor-header {
-  height: 2rem;
-  margin: 1rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid var(--border-color);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 1rem;
-  z-index: 1;
-}
-
-.file-name-input {
-  background: transparent;
-  border: 1px solid transparent;
-  color: var(--text-color);
-  box-sizing: border-box;
-  border-radius: 8px;
-  filter: brightness(0.8);
-  font-size: 17px;
-  padding: 8px 12px;
+/* ─── 에디터 본체 (편집 + 스크롤 영역) ─── */
+.editor-body {
+  --editor-font-scale: 100;
   flex: 1;
   min-width: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  margin: 1.5rem 0.5rem 1rem 1rem;
+  padding: 1.5rem 2rem 30vh 2.5rem;
+  outline: none;
+  font-size: calc(15px * var(--editor-font-scale) / 100);
+  line-height: 1.8;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--text-color);
+  caret-color: var(--primary-color);
+  cursor: text;
+}
+
+/* ─── 빈 에디터 플레이스홀더 ─── */
+.editor-body.is-empty::before {
+  content: attr(data-placeholder);
+  color: var(--text-color);
+  opacity: 0.25;
+  pointer-events: none;
+  font-style: italic;
+}
+
+/* ─── 라인 기본 스타일 ─── */
+.editor-body > div {
+  position: relative;
+  padding: 1px 0 1px 0.75rem;
+  border-left: 2px solid transparent;
+  min-height: 1em;
+  transition: border-color 0.15s ease;
+}
+
+/* ─── 단락 소속 라인 (좌측 보더) ─── */
+.editor-body > div[data-paragraph] {
+  border-left-color: var(--border-color);
+}
+
+/* ─── 단락 첫 줄 (액센트 보더) ─── */
+.editor-body > div.line-paragraph-first {
+  border-left-color: var(--primary-color);
+  padding-top: 0.15em;
+}
+
+/* ─── 단락 번호 ─── */
+.editor-body > div.line-paragraph-first::before {
+  content: attr(data-paragraph-number);
+  position: absolute;
+  right: calc(100% + 0.55rem);
+  top: 0;
+  font-size: 0.75em;
+  line-height: 2.4;
+  color: var(--text-color);
+  opacity: 0.2;
+  user-select: none;
+  pointer-events: none;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─── 페이지 번호 라인 ─── */
+.editor-body > div.line-page-number {
+  font-size: 1.45em;
+  font-weight: 600;
+  color: var(--primary-color);
+  border-left-color: transparent;
+  padding: 0.3em 0 0.3em 0.75rem;
+  margin: 0.3em 0;
+  opacity: 0.8;
+}
+
+/* ─── 주석 라인 ─── */
+.editor-body > div.line-comment {
+  opacity: 0.35;
+  font-style: italic;
+}
+
+/* ─── 빈 줄 (단락 구분) ─── */
+.editor-body > div.line-empty {
+  min-height: 0.9em;
+  border-left-color: transparent;
+}
+
+/* ─── 스크롤바 ─── */
+.editor-body {
+  overflow-y: scroll;
+}
+.editor-body::-webkit-scrollbar {
+  width: 8px;
+}
+.editor-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+.editor-body::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--text-color) 20%, transparent);
+  border-radius: 4px;
+}
+.editor-body::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-color);
+}
+
+/* ─── 툴바 ─── */
+.editor-toolbar {
+  flex-shrink: 0;
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.5rem 0.35rem;
+  margin: 1.5rem 1rem 1rem 0;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--bg-color) 85%, var(--text-color) 15%);
+  border: 1px solid var(--border-color);
+}
+
+.editor-toolbar-icon {
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  outline: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  width: 30px;
+  height: 30px;
   transition: all 0.2s ease;
 }
 
-.file-name-input:hover,
-.file-name-input:focus {
-  border: 1px solid var(--primary-color);
-  outline: none;
+.editor-toolbar-icon img {
+  width: 16px;
+  height: 16px;
+  filter: var(--icon-filter);
+  opacity: 0.7;
+  transition: opacity 0.15s ease;
 }
 
-.suneditor-container {
-  height: calc(100vh - 50px);
-  flex: 1;
-  overflow: auto;
-  position: relative;
+.editor-toolbar-icon:hover {
+  background: color-mix(in srgb, var(--primary-color) 12%, transparent);
+}
+
+.editor-toolbar-icon:hover img {
+  filter: var(--primary-color-filter);
+  opacity: 1;
+}
+
+.editor-toolbar-icon:active {
+  transform: scale(0.92);
+}
+
+.editor-toolbar-icon:disabled {
+  cursor: default;
+  opacity: 0.3;
+}
+
+.editor-toolbar-icon:disabled:hover {
+  background: none;
+}
+
+.editor-toolbar-icon:disabled:hover img {
+  filter: var(--icon-filter);
+  opacity: 0.7;
+}
+
+.editor-toolbar-scale {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-color);
+  opacity: 0.5;
+  width: 30px;
+  text-align: center;
+  user-select: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.editor-toolbar-divider {
+  width: 24px;
+  height: 1px;
+  background: var(--border-color);
+  margin: 0.2rem 0;
+}
+
+/* ─── 텍스트 매크로 팝업 ─── */
+.text-macro-popup {
+  position: absolute;
+  right: 50px;
+  top: 0;
+  width: 220px;
+  max-height: 400px;
   background: var(--bg-color);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  /* 열기/닫기 트랜지션 */
+  opacity: 0;
+  transform: translateX(8px) scale(0.96);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  pointer-events: none;
 }
 
-.sun-editor {
-  border: none !important;
-  background: var(--bg-color) !important;
-  height: 100% !important;
-  display: flex !important;
-  flex-direction: column !important;
+.text-macro-popup.visible {
+  opacity: 1;
+  transform: translateX(0) scale(1);
+  pointer-events: auto;
 }
 
-.sun-editor .se-wrapper {
-  flex: 1 !important;
-  height: auto !important;
-  min-height: 300px;
-  background: var(--bg-color) !important;
-  overflow: auto !important;  /* 스크롤 허용 */
+.text-macro-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-color);
+  opacity: 0.7;
+  user-select: none;
 }
 
-.sun-editor-editable {
-  background: var(--bg-color) !important;
-  color: var(--text-color) !important;
-  padding: 1rem !important;
-  overflow-y: auto !important;
-  height: auto !important;
-  min-height: 300px;
-  white-space: pre-wrap !important;
-  word-break: normal !important;
-  padding-bottom: 30vh !important;
+.text-macro-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.35rem;
 }
 
-.editor-page-number {
-  font-size: 1.5em;
-  font-weight: bold;
-  margin: 0.5em 0;
+.text-macro-list::-webkit-scrollbar {
+  width: 4px;
+}
+.text-macro-list::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--text-color) 20%, transparent);
+  border-radius: 2px;
 }
 
-.save-button {
-  padding: 8px 20px;
-  background: var(--primary-color);
-  color: var(--primary-text);
-  border: none;
+.text-macro-slot {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.4rem;
   border-radius: 6px;
   cursor: pointer;
-  font-size: 14px;
-  font-weight: 500;
-  transition: all 0.2s ease;
-  z-index: 1;
+  min-height: 32px;
+  transition: background 0.15s ease, opacity 0.2s ease, transform 0.2s ease, box-shadow 0.15s ease;
 }
 
-.save-button:hover {
-  opacity: 0.9;
-  transform: translateY(-1px);
+.text-macro-slot:hover {
+  background: color-mix(in srgb, var(--primary-color) 10%, transparent);
 }
 
-.save-button.unsaved {
-  background: var(--primary-color-shadow-up);
+/* 드래그 핸들 */
+.text-macro-slot-drag {
+  flex-shrink: 0;
+  width: 14px;
+  font-size: 0.6rem;
+  color: var(--text-color);
+  opacity: 0;
+  cursor: grab;
+  user-select: none;
+  transition: opacity 0.15s ease;
+  text-align: center;
+  line-height: 1;
 }
 
-/* 다크/라이트 테마 지원 */
-[data-theme='dark'] .monaco-editor {
+.text-macro-slot:hover .text-macro-slot-drag {
+  opacity: 0.35;
+}
+
+.text-macro-slot-drag:active {
+  cursor: grabbing;
+}
+
+/* 드래그 상태 */
+.text-macro-slot.dragging {
+  opacity: 0.3;
+  transform: scale(0.95);
+}
+
+.text-macro-slot.drag-over {
+  box-shadow: 0 -2px 0 0 var(--primary-color) inset;
+}
+
+.text-macro-slot-key {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--primary-color);
+  background: color-mix(in srgb, var(--primary-color) 12%, transparent);
+  border-radius: 4px;
+  user-select: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.text-macro-slot-value {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.8rem;
+  color: var(--text-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.text-macro-slot-value.empty {
+  opacity: 0.3;
+  font-style: italic;
+}
+
+.text-macro-slot-actions {
+  flex-shrink: 0;
+  display: flex;
+  gap: 0.15rem;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.text-macro-slot:hover .text-macro-slot-actions {
+  opacity: 1;
+}
+
+.text-macro-slot-btn {
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  color: var(--text-color);
+  opacity: 0.5;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  transition: all 0.15s ease;
+}
+
+.text-macro-slot-btn:hover {
+  opacity: 1;
+  background: color-mix(in srgb, var(--primary-color) 15%, transparent);
+  color: var(--primary-color);
+}
+
+.text-macro-slot-btn.delete:hover {
+  background: color-mix(in srgb, #ff4444 15%, transparent);
+  color: #ff4444;
+}
+
+/* 매크로 슬롯 편집 모드 */
+.text-macro-slot-edit {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.4rem;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--primary-color) 6%, transparent);
+  min-height: 32px;
+  animation: macro-slot-fade-in 0.15s ease;
+}
+
+.text-macro-slot-edit input {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
   background: var(--bg-color);
+  color: var(--text-color);
+  font-size: 0.8rem;
+  padding: 0.2rem 0.4rem;
+  outline: none;
+  font-family: inherit;
+  transition: border-color 0.15s ease;
 }
 
-[data-theme='light'] .monaco-editor {
-  background: var(--bg-color);
+.text-macro-slot-edit input:focus {
+  border-color: var(--primary-color);
+}
+
+/* 슬롯 추가 버튼 */
+.text-macro-add {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  padding: 0.35rem;
+  margin: 0.15rem 0.35rem 0.35rem;
+  border: 1px dashed var(--border-color);
+  border-radius: 6px;
+  background: none;
+  color: var(--text-color);
+  opacity: 0.4;
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  width: calc(100% - 0.7rem);
+}
+
+.text-macro-add:hover {
+  opacity: 0.8;
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+@keyframes macro-slot-fade-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
 }

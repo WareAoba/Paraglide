@@ -295,7 +295,19 @@
         "title": "編集",
         "fileName": "ファイル名",
         "placeholder": "ここにテキストを入力",
-        "save": "保存"
+        "save": "保存",
+        "toolbar": {
+            "fontSize": "文字サイズ",
+            "save": "保存",
+            "textMacro": "テキストマクロ"
+        },
+        "macro": {
+            "empty": "(空)",
+            "edit": "編集",
+            "delete": "削除",
+            "add": "スロット追加",
+            "inputPlaceholder": "テキスト入力"
+        }
     },
     "console": {
         "header": {

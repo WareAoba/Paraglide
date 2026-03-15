@@ -1,5 +1,6 @@
 // src/components/Views/Overview.js
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import '../../CSS/Views/Overview.css';
 
@@ -16,6 +17,9 @@ function Overview({
 }) {
   
   const { t } = useTranslation();
+  const [commentPopup, setCommentPopup] = useState(false);
+  const [popupPos, setPopupPos] = useState(null);
+  const commentCircleRef = useRef(null);
   const isFirstParagraph = currentParagraph === 0;
   const isLastParagraph = currentParagraph === paragraphs.length - 1;
 
@@ -56,6 +60,27 @@ function Overview({
     return remainingParagraphs > 0
       ? t('mainComponent.paragraphInfo.toNextPage', { count: remainingParagraphs })
       : t('mainComponent.paragraphInfo.lastParagraph');
+  };
+
+  const currentComments = paragraphsMetadata[currentParagraph]?.comments;
+
+  // currentParagraph 변경 시 팝업 닫기
+  useEffect(() => {
+    setCommentPopup(false);
+  }, [currentParagraph]);
+
+  const handleCommentClick = (e) => {
+    e.stopPropagation();
+    if (commentPopup) {
+      setCommentPopup(false);
+    } else {
+      const rect = commentCircleRef.current.getBoundingClientRect();
+      setPopupPos({
+        top: rect.top - 8,
+        left: rect.left + rect.width / 2
+      });
+      setCommentPopup(true);
+    }
   };
 
   return (
@@ -104,6 +129,33 @@ function Overview({
           <div className="overview-paragraph-wrapper">
             {paragraphs[currentParagraph]}
           </div>
+          {currentComments && (
+            <div className="overview-comment-alert" onClick={handleCommentClick}>
+              <svg className="overview-comment-icon" ref={commentCircleRef} viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+                <path d="M448 256c0-106-86-192-192-192S64 150 64 256s86 192 192 192 192-86 192-192z" fill="none" stroke="currentColor" strokeMiterlimit="10" strokeWidth="32"/>
+                <path d="M250.26 166.05L256 288l5.73-121.95a5.74 5.74 0 00-5.79-6h0a5.74 5.74 0 00-5.68 6z" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="32"/>
+                <path d="M256 367.91a20 20 0 1120-20 20 20 0 01-20 20z" fill="currentColor"/>
+              </svg>
+            </div>
+          )}
+          {createPortal(
+            <div
+              className={`overview-comment-popup ${commentPopup && currentComments ? 'visible' : ''}`}
+              data-theme={theme.mode}
+              style={popupPos ? {
+                position: 'absolute',
+                top: `${popupPos.top + window.scrollY}px`,
+                left: `${popupPos.left}px`,
+                transform: commentPopup ? 'translateX(-50%) translateY(-100%)' : 'translateX(-50%) translateY(calc(-100% + 4px))'
+              } : { position: 'absolute', visibility: 'hidden' }}
+              onClick={(e) => { e.stopPropagation(); setCommentPopup(false); }}
+            >
+              {currentComments?.map((c, i) => (
+                <div key={i} className="overview-comment-line">{c.length > 24 ? c.slice(0, 24) + '…' : c}</div>
+              )).slice(0, 6)}
+            </div>,
+            document.body
+          )}
           <div className="overview-paragraph-number">
             {getPageParagraphInfo(currentParagraph)}
           </div>

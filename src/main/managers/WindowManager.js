@@ -244,6 +244,7 @@ const WindowManager = {
           metadata: textState.paragraphsMetadata[currentParagraph + 1 + idx]
         })),
         currentParagraph: currentParagraph,
+        currentMetadata: textState.paragraphsMetadata[currentParagraph],
         currentNumber: { ...pageInfo, display },
         isPaused: state.globalState.isPaused,
         pluginConnected: state._photoshopModeActive,

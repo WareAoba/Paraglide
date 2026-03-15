@@ -17,11 +17,11 @@ const StatusManager = {
 
   validateTransition(fromStatus, toStatus) {
     const allowedTransitions = {
-      [ProgramStatus.READY]: [ProgramStatus.LOADING],
+      [ProgramStatus.READY]: [ProgramStatus.LOADING, ProgramStatus.PROCESS, ProgramStatus.EDIT],
       [ProgramStatus.LOADING]: [ProgramStatus.PROCESS, ProgramStatus.READY],
-      [ProgramStatus.PROCESS]: [ProgramStatus.PAUSE, ProgramStatus.READY],
-      [ProgramStatus.PAUSE]: [ProgramStatus.PROCESS, ProgramStatus.READY],
-      [ProgramStatus.EDIT]: [ProgramStatus.READY]
+      [ProgramStatus.PROCESS]: [ProgramStatus.PAUSE, ProgramStatus.READY, ProgramStatus.EDIT],
+      [ProgramStatus.PAUSE]: [ProgramStatus.PROCESS, ProgramStatus.READY, ProgramStatus.EDIT],
+      [ProgramStatus.EDIT]: [ProgramStatus.READY, ProgramStatus.PROCESS]
     };
     return allowedTransitions[fromStatus]?.includes(toStatus);
     
