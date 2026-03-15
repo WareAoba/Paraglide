@@ -2,7 +2,7 @@
     "app": {
         "name": "Paraglide",
         "title": "Paraglide - テキスト段落処理ツール",
-        "version": "0.3.1 ベータ",
+        "version": "{{version}}",
         "credits": {
             "made": "作成: WareAoba",
             "contribute": "協力: Rinna, Latte"
@@ -280,7 +280,7 @@
         },
         "info": {
             "title": "情報",
-            "version": "Paraglide 0.3.1 ベータ",
+            "version": "Paraglide {{version}}",
             "credits": {
                 "made": "作成: WareAoba",
                 "contribute": "協力: Rinna, Latte"

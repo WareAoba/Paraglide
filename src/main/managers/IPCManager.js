@@ -605,7 +605,7 @@ const IPCManager = {
    */
   async _ensurePhotoshopPlugin() {
     try {
-      const pluginId = 'com.paraglide.connector';
+      const pluginId = 'd6a4ab9b';
       const targetDir = this._getUXPDevelopPath(pluginId);
 
       if (!targetDir) {

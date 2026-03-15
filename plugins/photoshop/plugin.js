@@ -27,6 +27,28 @@ let escSentCount = 0;
 let layerCountBeforeModal = -1;  // 모달 진입 전 레이어 수
 let layerIdsBeforeModal = new Set(); // 모달 진입 전 레이어 ID
 
+// ═══════════════ 다국어 ═══════════════
+
+const i18n = {
+  en: { connected: 'Connected', disconnected: 'Disconnected' },
+  ko: { connected: '연결됨', disconnected: '연결끊김' },
+  ja: { connected: '接続中', disconnected: '未接続' },
+  zh: { connected: '已连接', disconnected: '未连接' }
+};
+
+function detectLang() {
+  try {
+    const locale = (psApp.locale || navigator.language || 'en').toLowerCase();
+    if (locale.startsWith('ko')) return 'ko';
+    if (locale.startsWith('ja')) return 'ja';
+    if (locale.startsWith('zh')) return 'zh';
+  } catch {}
+  return 'en';
+}
+
+const lang = detectLang();
+const t = i18n[lang] || i18n.en;
+
 // 활성 여부: 연결됨 + 텍스트 있음
 function isActive() {
   return connected && !!paragraph.text;
@@ -112,7 +134,7 @@ function updateUI() {
     }
   }
   if (statusLabel) {
-    statusLabel.textContent = connected ? '연결됨' : '연결끊김';
+    statusLabel.textContent = connected ? t.connected : t.disconnected;
   }
   if (toggleLabel && toggleInput) {
     toggleLabel.textContent = toggleInput.checked ? 'ON' : 'OFF';

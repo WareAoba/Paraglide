@@ -2,7 +2,7 @@
     "app": {
         "name": "Paraglide",
         "title": "Paraglide - 文本段落处理器",
-        "version": "0.3.1 beta",
+        "version": "{{version}}",
         "credits": {
             "made": "由 WareAoba 制作",
             "contribute": "贡献者: Rinna, Latte"
@@ -284,7 +284,7 @@
             },
             "info": {
                 "title": "关于",
-                "version": "Paraglide 0.3.1 beta",
+                "version": "Paraglide {{version}}",
                 "credits": {
                     "made": "Made by WareAoba",
                     "contribute": "Contribute.. Rinna, Latte"

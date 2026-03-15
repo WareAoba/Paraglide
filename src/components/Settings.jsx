@@ -615,7 +615,7 @@ useEffect(() => {
           <div className="settings-group">
             <h3>{t('settings.info.title')}</h3>
             <div className="info-item">
-              <p>{t('settings.info.version')}</p>
+              <p>Paraglide {__APP_VERSION__}</p>
               <p>{t('settings.info.credits.made')}</p>
               <p>{t('settings.info.credits.contribute')}</p>
             </div>

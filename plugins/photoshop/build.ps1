@@ -1,12 +1,17 @@
-# Paraglide Connector — UXP Plugin 패키징 스크립트
+# Paraglide Connector — UXP Plugin 직접 설치 스크립트
 # 사용법: PowerShell에서 .\build.ps1 실행
+#
+# UXP Develop 경로에 플러그인을 직접 복사합니다.
+# 사전 조건: Creative Cloud Desktop → 설정 → 개발자 모드 활성화
 
 $ErrorActionPreference = "Stop"
 $pluginDir = $PSScriptRoot
-$outputName = "Paraglide-Connector.ccx"
-$outputPath = Join-Path $pluginDir $outputName
+$pluginId = "d6a4ab9b"
 
-# 패키징할 파일 목록
+# 설치 대상 경로 (UXP Develop — Photoshop 버전 무관)
+$targetDir = Join-Path $env:APPDATA "Adobe\UXP\Develop\$pluginId"
+
+# 복사할 파일 목록
 $files = @(
     "manifest.json",
     "index.html",
@@ -17,52 +22,46 @@ $files = @(
     "TitleLight.png"
 )
 
-# icons 폴더의 모든 png 파일
-$iconFiles = Get-ChildItem -Path (Join-Path $pluginDir "icons") -Filter "*.png" | ForEach-Object { "icons\$($_.Name)" }
+Write-Host ""
+Write-Host "Paraglide Connector — Photoshop UXP Plugin 설치" -ForegroundColor Cyan
+Write-Host "대상: $targetDir" -ForegroundColor Gray
+Write-Host ""
 
-# 기존 ccx 파일 삭제
-if (Test-Path $outputPath) {
-    Remove-Item $outputPath -Force
+# 대상 디렉토리 생성
+if (!(Test-Path $targetDir)) {
+    New-Item -ItemType Directory -Path $targetDir -Force | Out-Null
+}
+$iconsTarget = Join-Path $targetDir "icons"
+if (!(Test-Path $iconsTarget)) {
+    New-Item -ItemType Directory -Path $iconsTarget -Force | Out-Null
 }
 
-# 임시 폴더에 파일 수집
-$tempDir = Join-Path $env:TEMP "paraglide-ccx-build"
-if (Test-Path $tempDir) { Remove-Item $tempDir -Recurse -Force }
-New-Item -ItemType Directory -Path $tempDir | Out-Null
-New-Item -ItemType Directory -Path (Join-Path $tempDir "icons") | Out-Null
-
+# 파일 복사
 foreach ($f in $files) {
     $src = Join-Path $pluginDir $f
     if (Test-Path $src) {
-        Copy-Item $src (Join-Path $tempDir $f)
+        Copy-Item $src (Join-Path $targetDir $f) -Force
+        Write-Host "  복사: $f" -ForegroundColor DarkGray
     } else {
         Write-Warning "파일 없음: $f"
     }
 }
 
-foreach ($f in $iconFiles) {
-    $src = Join-Path $pluginDir $f
-    Copy-Item $src (Join-Path $tempDir $f)
+# icons 폴더 복사
+$iconFiles = Get-ChildItem -Path (Join-Path $pluginDir "icons") -Filter "*.png"
+foreach ($icon in $iconFiles) {
+    Copy-Item $icon.FullName (Join-Path $iconsTarget $icon.Name) -Force
+    Write-Host "  복사: icons\$($icon.Name)" -ForegroundColor DarkGray
 }
 
-# ZIP 생성 후 .ccx로 이름 변경
-$zipPath = $outputPath -replace '\.ccx$', '.zip'
-Compress-Archive -Path (Join-Path $tempDir "*") -DestinationPath $zipPath -Force
-Rename-Item $zipPath $outputName
-
-# 임시 폴더 정리
-Remove-Item $tempDir -Recurse -Force
-
-$size = (Get-Item $outputPath).Length
 Write-Host ""
-Write-Host "빌드 완료: $outputName ($size bytes)" -ForegroundColor Green
+Write-Host "설치 완료!" -ForegroundColor Green
 Write-Host ""
-Write-Host "설치 방법:" -ForegroundColor Cyan
-Write-Host "  1. Creative Cloud Desktop 열기"
-Write-Host "  2. Stock & Marketplace > 플러그인 탭"
-Write-Host "  3. 우측 상단 ... 메뉴 > '파일에서 플러그인 설치'"
-Write-Host "  4. $outputName 선택"
+Write-Host "다음 단계:" -ForegroundColor Yellow
+Write-Host "  1. Creative Cloud Desktop → 설정(톱니바퀴) → '베타 앱' 또는 '설정'"
+Write-Host "     → 'UXP 개발자 모드 활성화' 체크 (이미 했으면 건너뛰기)"
+Write-Host "  2. Photoshop 재시작"
+Write-Host "  3. Photoshop 메뉴: Plugins → Paraglide"
 Write-Host ""
-Write-Host "또는 수동 설치:" -ForegroundColor Cyan
-Write-Host "  폴더를 아래 경로에 복사:"
-Write-Host "  %APPDATA%\Adobe\UXP\PluginsStorage\PHSP\Internal\"
+Write-Host "제거하려면:" -ForegroundColor Gray
+Write-Host "  Remove-Item '$targetDir' -Recurse -Force"

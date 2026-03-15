@@ -1,7 +1,13 @@
 {
-  "id": "com.paraglide.connector",
+  "id": "d6a4ab9b",
   "name": "Paraglide Connector",
   "version": "1.0.0",
+  "description": {
+    "default": "Automatically insert translated text into Photoshop text layers via Paraglide connection.",
+    "ko": "Paraglide 연결을 통해 Photoshop 텍스트 레이어에 번역 텍스트를 자동 삽입합니다.",
+    "ja": "Paraglide接続でPhotoshopテキストレイヤーに翻訳テキストを自動挿入します。",
+    "zh": "通过 Paraglide 连接自动将翻译文本插入 Photoshop 文本图层。"
+  },
   "main": "index.html",
   "manifestVersion": 5,
   "host": [
@@ -41,14 +47,20 @@
       "type": "command",
       "id": "toggleConnection",
       "label": {
-        "default": "Toggle Paraglide Connection"
+        "default": "Toggle Paraglide Connection",
+        "ko": "Paraglide 연결 전환",
+        "ja": "Paraglide接続の切り替え",
+        "zh": "切换 Paraglide 连接"
       }
     },
     {
       "type": "panel",
       "id": "mainPanel",
       "label": {
-        "default": "Paraglide"
+        "default": "Paraglide",
+        "ko": "Paraglide",
+        "ja": "Paraglide",
+        "zh": "Paraglide"
       },
       "icons": [
         {

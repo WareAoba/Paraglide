@@ -2,7 +2,7 @@
     "app": {
         "name": "Paraglide",
         "title": "Paraglide - Paragraph Manager",
-        "version": "0.3.1 beta",
+        "version": "{{version}}",
         "credits": {
             "made": "Created by WareAoba",
             "contribute": "Contributors: Rinna, Latte"
@@ -285,7 +285,7 @@
         },
         "info": {
             "title": "Information",
-            "version": "Paraglide 0.3.1 beta",
+            "version": "Paraglide {{version}}",
             "credits": {
                 "made": "Created by WareAoba",
                 "contribute": "Contributors: Rinna, Latte"
