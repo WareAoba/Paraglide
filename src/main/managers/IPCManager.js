@@ -113,6 +113,7 @@ const IPCManager = {
 
     // 클립보드 관련 핸들러
     ipcMain.on('copy-to-clipboard', (event, content) => {
+      if (state._photoshopModeActive) return;
       state.mainWindow?.webContents.send('notify-clipboard-change');
       state.systemListener.notifyInternalClipboardChange();
       clipboard.writeText(content);
@@ -128,6 +129,21 @@ const IPCManager = {
     ipcMain.on('move-to-next-page', () => IPCManager.handleMove('next', 'page'));
     ipcMain.on('move-to-prev-page', () => IPCManager.handleMove('prev', 'page'));
     ipcMain.on('move-to-position', (event, position) => this.handleMoveToPosition(position));
+
+    // 오버레이 수동 드래그 핸들러
+    let dragStart = null;
+    ipcMain.on('overlay-drag-start', (_, pos) => {
+      if (!state.overlayWindow) return;
+      const bounds = state.overlayWindow.getBounds();
+      dragStart = { mouseX: pos.x, mouseY: pos.y, winX: bounds.x, winY: bounds.y };
+    });
+    ipcMain.on('overlay-drag-move', (_, pos) => {
+      if (!state.overlayWindow || !dragStart) return;
+      state.overlayWindow.setPosition(
+        dragStart.winX + (pos.x - dragStart.mouseX),
+        dragStart.winY + (pos.y - dragStart.mouseY)
+      );
+    });
 
     // 모드 전환 핸들러
     ipcMain.on('switch-mode', async (event, newMode) => {
@@ -153,7 +169,13 @@ const IPCManager = {
 
     // 윈도우 관련 핸들러
     ipcMain.on('toggle-overlay', () => this.handleToggleOverlay());
-    ipcMain.on('toggle-pause', () => this.handlePause());
+    ipcMain.on('toggle-pause', () => {
+      if (state.globalState.isPaused) {
+        this.handleResume();
+      } else {
+        this.handlePause();
+      }
+    });
     ipcMain.on('toggle-resume', () => this.handleResume());
 
     // 설정 관련 핸들러
@@ -189,6 +211,14 @@ const IPCManager = {
     // 테마 관련 핸들러
     ipcMain.handle('get-current-theme', () => {
       return ThemeManager.getCurrentTheme();
+    });
+
+    // 테마 변수 중계 (메인 윈도우 → 오버레이 윈도우)
+    ipcMain.on('update-theme-variables', (event, variables) => {
+      state._lastThemeVariables = variables;
+      if (state.overlayWindow && !state.overlayWindow.isDestroyed()) {
+        state.overlayWindow.webContents.send('update-theme-variables', variables);
+      }
     });
 
     // --primary-color-filter 생성
@@ -228,6 +258,20 @@ const IPCManager = {
       BrowserWindow.getAllWindows().forEach(window => {
         if (!window.isDestroyed()) {
           window.webContents.send('plugin-settings-changed', data);
+        }
+      });
+    });
+
+    // 오버레이에서 플러그인 연결 토글
+    ipcMain.on('toggle-plugin-connection', async () => {
+      const current = state.config.pluginConnected;
+      const newVal = !current;
+      await this.handleApplySettings({ pluginConnected: newVal });
+      // 모든 윈도우에 변경 알림
+      const { BrowserWindow } = require('electron');
+      BrowserWindow.getAllWindows().forEach(window => {
+        if (!window.isDestroyed()) {
+          window.webContents.send('plugin-settings-changed', { pluginConnected: newVal });
         }
       });
     });
@@ -308,7 +352,8 @@ const IPCManager = {
       const textProcessState = state.textProcess;
   
       // 에디터 모드일 때는 viewMode 변경 무시
-      const newViewMode = textProcessState.programStatus === ProgramStatus.PROCESS && 
+      const newViewMode = (textProcessState.programStatus === ProgramStatus.PROCESS ||
+                          textProcessState.programStatus === ProgramStatus.PAUSE) && 
                          textProcessState.processMode === 'editor' ? 
                          'editor' : 
                          settings.viewMode;
@@ -436,13 +481,14 @@ const IPCManager = {
       // 1. 현재 단락으로 이동
       state.updateCurrentParagraph(position);
       
-      // 2. 일시정지 해제
+      // 2. 일시정지 해제 + 프로세스 상태 복원
       state.globalState.isPaused = false;
       
-      // 3. 상태 업데이트 (isPaused 포함)
+      // 3. 상태 업데이트 (isPaused + programStatus 포함)
       updateState({
         ...state.textProcess,
         isPaused: false,
+        programStatus: ProgramStatus.PROCESS,
         timestamp: Date.now()
       });
   
@@ -477,12 +523,12 @@ const IPCManager = {
   handlePause() {
     if (!state.globalState.isPaused) {
       state.globalState.isPaused = true;
-      updateState({ isPaused: true });
+      updateState({ isPaused: true, programStatus: ProgramStatus.PAUSE });
     }
   },
   
   handleResume() {
-      updateState({ isPaused: false });
+      updateState({ isPaused: false, programStatus: ProgramStatus.PROCESS });
       const textState = state.textProcess;
       const currentContent = textState.paragraphs[textState.currentParagraph];
       if (currentContent) {

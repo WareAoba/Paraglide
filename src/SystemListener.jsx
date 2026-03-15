@@ -248,6 +248,7 @@ class SystemListener {
 	 */
 	_registerPasteHandler() {
 		if (this._pasteHandlerRegistered) return;
+		if (state._photoshopModeActive) return;
 
 		try {
 			globalShortcut.register('CommandOrControl+V', () => {
@@ -389,6 +390,43 @@ class SystemListener {
 
 	toggleOverlay() {
 		getIPCManager().handleToggleOverlay();
+	}
+
+	// ═══════════════ 포토샵 모드: 클립보드 일시 중지/복구 ═══════════════
+
+	suspendClipboardOps() {
+		// 클립보드 변경 감시 중지
+		if (this._clipboardInterval) {
+			clearInterval(this._clipboardInterval);
+			this._clipboardInterval = null;
+		}
+
+		// Ctrl+V 붙여넣기 감지 해제
+		if (this._pasteHandlerRegistered) {
+			try {
+				globalShortcut.unregister('CommandOrControl+V');
+			} catch {}
+			this._pasteHandlerRegistered = false;
+		}
+
+		console.log('[SystemListener] 클립보드 관련 기능 일시 중지 (포토샵 모드)');
+	}
+
+	resumeClipboardOps() {
+		// 현재 클립보드 값으로 갱신 (재개 시 외부 변경 오감지 방지)
+		this.lastClipboardText = clipboard.readText();
+
+		// 클립보드 변경 감시 재개
+		if (!this._clipboardInterval) {
+			this.setupClipboardMonitor();
+		}
+
+		// Ctrl+V 붙여넣기 감지 재등록
+		if (!this._pasteHandlerRegistered) {
+			this._registerPasteHandler();
+		}
+
+		console.log('[SystemListener] 클립보드 관련 기능 복구');
 	}
 
 	// ═══════════════ 정리 ═══════════════

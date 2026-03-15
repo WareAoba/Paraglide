@@ -134,6 +134,8 @@ const PluginBridge = {
       this._started = false;
       console.log('[PluginBridge] 서버 중지됨');
     }
+    // 포토샵 모드 해제 확인
+    this._checkPhotoshopModeTransition();
   },
 
   // 메시지 처리
@@ -392,11 +394,62 @@ const PluginBridge = {
     });
   },
 
+  // ═══════════════ 포토샵 모드 전환 ═══════════════
+
+  /** 포토샵 모드 활성 조건: 서버 실행 중 + Photoshop 플러그인 연결됨 */
+  isPhotoshopModeActive() {
+    return this._started && this._hasPhotoshopClient();
+  },
+
+  _hasPhotoshopClient() {
+    for (const [, info] of this._clients) {
+      if (info.app === 'Photoshop') return true;
+    }
+    return false;
+  },
+
+  /** 포토샵 모드 상태 전환 체크 (연결/해제/서버 중지 시 호출) */
+  _checkPhotoshopModeTransition() {
+    const wasActive = state._photoshopModeActive;
+    const isNowActive = this.isPhotoshopModeActive();
+
+    if (!wasActive && isNowActive) {
+      this._enterPhotoshopMode();
+    } else if (wasActive && !isNowActive) {
+      this._exitPhotoshopMode();
+    }
+  },
+
+  _enterPhotoshopMode() {
+    state._photoshopModeActive = true;
+    console.log('[PluginBridge] 포토샵 모드 활성화 — 클립보드 완전 분리');
+    state.systemListener?.suspendClipboardOps();
+  },
+
+  _exitPhotoshopMode() {
+    state._photoshopModeActive = false;
+    console.log('[PluginBridge] 포토샵 모드 비활성화 — 클립보드 복구');
+    state.systemListener?.resumeClipboardOps();
+
+    // 현재 단락을 다시 클립보드로 복사
+    const textState = state.textProcess;
+    const currentContent = textState.paragraphs[textState.currentParagraph];
+    if (currentContent) {
+      const ContentManager = require('./ContentManager');
+      ContentManager.copyAndLogDebouncer(currentContent, true);
+    }
+  },
+
   // 연결 상태 변경 알림 (렌더러에 전달)
   _notifyConnectionChange() {
     const plugins = this.getConnectedPlugins();
     if (state.mainWindow && !state.mainWindow.isDestroyed()) {
       state.mainWindow.webContents.send('plugin-connection-changed', plugins);
+    }
+    this._checkPhotoshopModeTransition();
+    // 오버레이에도 포토샵 모드 상태 전달
+    if (state.overlayWindow && !state.overlayWindow.isDestroyed()) {
+      state.overlayWindow.webContents.send('photoshop-mode-changed', state._photoshopModeActive);
     }
   },
 

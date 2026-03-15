@@ -44,6 +44,7 @@ const WindowManager = {
       
       try {
         if (currentState.programStatus === ProgramStatus.PROCESS || 
+            currentState.programStatus === ProgramStatus.PAUSE ||
             currentState.programStatus === ProgramStatus.EDIT) {
     
           // 공통 작업 중 경고
@@ -136,6 +137,10 @@ const WindowManager = {
 
     state.overlayWindow.webContents.on('did-finish-load', () => {
       state.overlayWindow.webContents.send('update-content-opacity', config.overlay.contentOpacity);
+      // 캐시된 테마 변수 전달
+      if (state._lastThemeVariables) {
+        state.overlayWindow.webContents.send('update-theme-variables', state._lastThemeVariables);
+      }
     });
   
     const overlayUrl = isDev
@@ -241,6 +246,8 @@ const WindowManager = {
         currentParagraph: currentParagraph,
         currentNumber: { ...pageInfo, display },
         isPaused: state.globalState.isPaused,
+        pluginConnected: state._photoshopModeActive,
+        pluginServer: state.config.pluginServer,
         theme: {
           mode: ThemeManager.getEffectiveMode(),
           accentColor: state.config.theme.accentColor

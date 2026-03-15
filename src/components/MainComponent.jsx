@@ -230,7 +230,7 @@ function MainComponent() {
         }}
         titlePath={titlePath}
         currentFilePath={currentFilePath}
-        currentFile={programStatus === ProgramStatus.PROCESS ? {
+        currentFile={(programStatus === ProgramStatus.PROCESS || programStatus === ProgramStatus.PAUSE) ? {
           name: path.basename(currentFilePath || ''),
           path: currentFilePath,
           currentPage: paragraphsMetadata[currentParagraph]?.pageNumber || 1,
@@ -269,12 +269,14 @@ function MainComponent() {
           <img src={icons.settings} alt="Settings Icon" className="icon" />
         </button>
         {(programStatus === ProgramStatus.PROCESS ||
+          programStatus === ProgramStatus.PAUSE ||
           programStatus === ProgramStatus.EDIT) && (
           <>
             <button className="btn-icon" onClick={handleCompleteWork}>
               <img src={icons.home} alt="작업 종료" className="icon" />
             </button>
-            {programStatus === ProgramStatus.PROCESS && (
+            {(programStatus === ProgramStatus.PROCESS ||
+              programStatus === ProgramStatus.PAUSE) && (
               <>
                 <button
                   className={`btn-icon ${isPaused ? 'btn-danger' : 'btn-success'}`}
@@ -349,6 +351,7 @@ function MainComponent() {
                   </CSSTransition>
                 );
 
+              case ProgramStatus.PAUSE:
               case ProgramStatus.PROCESS:
                 return (
                   <CSSTransition

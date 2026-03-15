@@ -99,7 +99,7 @@ const useAppStore = create((set, get) => ({
   })),
 
   setSearchVisible: (visible, fromSidebar = false) => set((s) => {
-    if (s.programStatus !== ProgramStatus.PROCESS) return s;
+    if (s.programStatus !== ProgramStatus.PROCESS && s.programStatus !== ProgramStatus.PAUSE) return s;
 
     const newSearchState = visible;
 
@@ -131,7 +131,7 @@ const useAppStore = create((set, get) => ({
 
   toggleSearch: (forceValue = null, fromSidebar = false) => {
     const s = get();
-    if (s.programStatus !== ProgramStatus.PROCESS) return;
+    if (s.programStatus !== ProgramStatus.PROCESS && s.programStatus !== ProgramStatus.PAUSE) return;
 
     const newSearchState = forceValue === null ? !s.isSearchVisible : Boolean(forceValue);
     get().setSearchVisible(newSearchState, fromSidebar);

@@ -281,7 +281,7 @@ const handleCurrentContextMenu = (event) => {
     
     try {
       let success = false;
-      if (status === ProgramStatus.PROCESS) {
+      if (status === ProgramStatus.PROCESS || status === ProgramStatus.PAUSE) {
         await handleEditModeSwitch();
         success = true;
       } else if (status === ProgramStatus.EDIT) {

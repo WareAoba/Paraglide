@@ -14,11 +14,18 @@ const ContentManager = {
         return;
       }
   
+      const isPhotoshopMode = state._photoshopModeActive;
+
       state.systemListener.setCurrentParagraphText(content);
-      state.mainWindow?.webContents.send('notify-clipboard-change');
-      state.systemListener.notifyInternalClipboardChange();
-      clipboard.writeText(content);
-      process.stdout.write(`[Main] 복사 성공: ${content.substring(0, 20)}...`);
+
+      if (!isPhotoshopMode) {
+        state.mainWindow?.webContents.send('notify-clipboard-change');
+        state.systemListener.notifyInternalClipboardChange();
+        clipboard.writeText(content);
+        process.stdout.write(`[Main] 복사 성공: ${content.substring(0, 20)}...`);
+      } else {
+        process.stdout.write(`[Main] 포토샵 모드 — 클립보드 생략: ${content.substring(0, 20)}...`);
+      }
   
       const textState = state.textProcess;
   

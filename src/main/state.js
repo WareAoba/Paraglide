@@ -26,6 +26,9 @@ class AppState extends EventEmitter {
     this.systemListener = null;
     this.savedState = true;
 
+    // ─── 포토샵 모드 (클립보드 분리) ───
+    this._photoshopModeActive = false;
+
     // ─── Config 상태 (was: configSlice) ───
     this._config = {
       theme: {
@@ -254,7 +257,8 @@ const updateState = async (newState) => {
 
   // 오버레이 창 처리
   if (state.overlayWindow && !state.overlayWindow.isDestroyed()) {
-    const shouldShow = state._globalState.programStatus === ProgramStatus.PROCESS && 
+    const shouldShow = (state._globalState.programStatus === ProgramStatus.PROCESS ||
+                        state._globalState.programStatus === ProgramStatus.PAUSE) && 
                       state._globalState.isOverlayVisible;
     
     if (shouldShow) {

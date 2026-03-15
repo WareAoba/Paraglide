@@ -230,7 +230,7 @@ useEffect(() => {
   const handleViewModeChange = async () => {
     try {
       // 에디터 모드일 때는 토글 비활성화
-      if (programStatus === 'Process' && currentViewMode === 'editor') {
+      if ((programStatus === 'Process' || programStatus === 'Pause') && currentViewMode === 'editor') {
         return;
       }
   
