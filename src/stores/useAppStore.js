@@ -37,6 +37,9 @@ const useAppStore = create((set, get) => ({
   pluginServer: false,
   pluginConnected: false,
 
+  // ─── 알림 상태 ───
+  toastMessage: null,
+
   // ─── 테마 상태 ───
   theme: {
     mode: null,
@@ -163,6 +166,7 @@ const useAppStore = create((set, get) => ({
   setOverlayVisible: (visible) => set({ isOverlayVisible: visible }),
   setPluginServer: (enabled) => set({ pluginServer: enabled }),
   setPluginConnected: (connected) => set({ pluginConnected: connected }),
+  setToastMessage: (msg) => set({ toastMessage: msg }),
 
   // 복합 상태 업데이트
   updateAfterFileLoad: (newState) => set((prev) => ({

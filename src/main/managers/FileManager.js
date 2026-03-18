@@ -4,6 +4,7 @@ const path = require('path');
 const fs = require('fs').promises;
 const crypto = require('crypto');
 const { TextProcessUtils } = require('../../store/utils/TextProcessUtils');
+const { ParaFileFormat } = require('../../store/utils/ParaFileFormat');
 const { ConfigManager } = require('../../store/utils/ConfigManager');
 const { ProgramStatus, DEFAULT_PROCESS_MODE, FILE_PATHS, TEMP_DIR, TEMP_FILE } = require('../constants');
 const { state, updateState } = require('../state');
@@ -289,7 +290,7 @@ const FileManager = {
     try {
       // 파일 확장자 검사
       const fileExtension = path.extname(filePath).toLowerCase();
-      if (fileExtension !== '.txt') {
+      if (fileExtension !== '.txt' && fileExtension !== '.para') {
         await DialogManager.show(DialogManager.DIALOGS.FILE_ERROR, state.mainWindow);
         return { success: false };
       }
@@ -363,6 +364,63 @@ if (content) {
         console.error('[Main] 파일 내용 없음:', filePath);
         await DialogManager.show(DialogManager.DIALOGS.EMPTY_FILE, state.mainWindow);
         return { success: false };
+      }
+
+      // ─── .para 메타데이터 처리 ───
+      let paraMetadata = null;
+      const isParaFile = fileExtension === '.para';
+
+      if (isParaFile) {
+        // 암호화 확인
+        if (ParaFileFormat.isEncrypted(fileContent)) {
+          const password = await DialogManager.show(DialogManager.DIALOGS.PARA_DECRYPT, state.mainWindow);
+          if (!password) {
+            return { success: false, reason: 'decrypt-canceled' };
+          }
+          const decryptResult = ParaFileFormat.decrypt(fileContent, password);
+          if (!decryptResult.success) {
+            await DialogManager.show(DialogManager.DIALOGS.PARA_DECRYPT_FAILED, state.mainWindow);
+            return { success: false, reason: 'decrypt-failed' };
+          }
+          fileContent = decryptResult.content;
+        }
+
+        // .para 포맷 파싱 → 평문 + 메타데이터 분리
+        const parsed = ParaFileFormat.parse(fileContent);
+        fileContent = parsed.plainText;
+        paraMetadata = parsed.metadata;
+        console.log('[Main] .para 메타데이터 로드 완료:', {
+          hasImage: !!paraMetadata.integral.image,
+          pages: paraMetadata.pages.size,
+          paragraphs: paraMetadata.paragraphs.length
+        });
+      } else if (ParaFileFormat.isParaFormat(fileContent)) {
+        // .txt지만 내용이 .para 포맷인 경우
+        const parsed = ParaFileFormat.parse(fileContent);
+        fileContent = parsed.plainText;
+        paraMetadata = parsed.metadata;
+      } else {
+        // 순수 txt → 기본 메타데이터 생성
+        paraMetadata = ParaFileFormat.createDefaultMetadata();
+      }
+
+      // 메타데이터를 상태에 저장
+      state._paraMetadata = paraMetadata;
+
+      // ─── 이미지 파일 존재 확인 ───
+      if (paraMetadata.integral.image) {
+        const imageDir = path.dirname(filePath);
+        const imagePath = path.resolve(imageDir, paraMetadata.integral.image);
+        try {
+          await fs.access(imagePath);
+        } catch {
+          // 이미지를 찾을 수 없으면 무시하고 렌더러에 알림
+          console.warn('[Main] .para 이미지 파일을 찾을 수 없음:', imagePath);
+          paraMetadata.integral.image = null;
+          if (state.mainWindow && !state.mainWindow.isDestroyed()) {
+            state.mainWindow.webContents.send('para-image-missing');
+          }
+        }
       }
   
       // 1. 설정의 processMode 먼저 확인
@@ -534,9 +592,16 @@ if (content) {
     }
   },
 
-  async saveTextFile({ content, fileName, currentFilePath, saveType }) {
+  async saveTextFile({ content, fileName, currentFilePath, saveType, format, metadata, password }) {
     try {
       let filePath;
+
+      // 저장 포맷 결정
+      const saveFormat = format || 'txt';
+      const fileExtension = saveFormat === 'para' ? '.para' : '.txt';
+      const defaultFileName = fileName ? 
+        path.basename(fileName, path.extname(fileName)) + fileExtension : 
+        'Untitled' + fileExtension;
   
       // 기존 파일 덮어쓰기
       if (saveType === 'overwrite' && currentFilePath) {
@@ -544,9 +609,19 @@ if (content) {
       } 
       // 새 파일 저장
       else {
+        const filters = saveFormat === 'para' 
+          ? [
+              { name: 'Paraglide Files', extensions: ['para'] },
+              { name: 'Text Files', extensions: ['txt'] }
+            ]
+          : [
+              { name: 'Text Files', extensions: ['txt'] },
+              { name: 'Paraglide Files', extensions: ['para'] }
+            ];
+
         const result = await dialog.showSaveDialog(state.mainWindow, {
-          defaultPath: fileName,
-          filters: [{ name: 'Text Files', extensions: ['txt'] }]
+          defaultPath: defaultFileName,
+          filters
         });
   
         if (result.canceled) {
@@ -555,9 +630,49 @@ if (content) {
         
         filePath = result.filePath;
       }
+
+      // 저장할 확장자에 따라 내용 결정
+      const actualExtension = path.extname(filePath).toLowerCase();
+      let saveContent;
+
+      if (actualExtension === '.para') {
+        // .para 포맷: 메타데이터 포함
+        let meta;
+        if (metadata) {
+          // 렌더러에서 직접 전달된 메타데이터 사용
+          meta = { ...metadata };
+          // pages를 Map으로 변환 (IPC에서 직렬화된 경우)
+          if (meta.pages && !(meta.pages instanceof Map)) {
+            meta.pages = new Map(Object.entries(meta.pages).map(([k, v]) => [Number(k), v]));
+          }
+        } else {
+          meta = state._paraMetadata || ParaFileFormat.createDefaultMetadata();
+        }
+        // 타임스탬프 갱신
+        meta.integral.timestamp = Date.now();
+        
+        // 평문에서 기존 메타데이터 라인 제거 후 직렬화
+        const cleanContent = ParaFileFormat.stripMetadata(content);
+        saveContent = ParaFileFormat.serialize(cleanContent, meta);
+
+        // 암호화 요청이 있는 경우
+        if (password) {
+          meta.integral.encrypted = true;
+          saveContent = ParaFileFormat.encrypt(
+            ParaFileFormat.serialize(cleanContent, meta),
+            password
+          );
+        }
+
+        // 메타데이터 상태 갱신
+        state._paraMetadata = meta;
+      } else {
+        // .txt 포맷: 메타데이터 완전 제거, 순수 평문만 저장
+        saveContent = ParaFileFormat.stripMetadata(content);
+      }
   
       // 파일 저장
-      await fs.writeFile(filePath, content, 'utf8');
+      await fs.writeFile(filePath, saveContent, 'utf8');
   
       return { 
         success: true, 
@@ -708,6 +823,34 @@ async restoreBackup() {
       await fs.writeFile(configPath, JSON.stringify(config, null, 2));
     } catch (error) {
       console.error('[Main] 텍스트 매크로 저장 실패:', error);
+    }
+  },
+
+  // ─── 텍스트 스타일 저장/로드 ───
+  async loadTextStyles() {
+    try {
+      const configPath = FILE_PATHS.config;
+      const data = await fs.readFile(configPath, 'utf8');
+      const config = JSON.parse(data);
+      if (Array.isArray(config.textStyles)) {
+        return config.textStyles;
+      }
+    } catch (_) { /* 파일 없음 또는 파싱 실패 */ }
+    return ['기본'];
+  },
+
+  async saveTextStyles(styles) {
+    try {
+      const configPath = FILE_PATHS.config;
+      let config = {};
+      try {
+        const data = await fs.readFile(configPath, 'utf8');
+        config = JSON.parse(data);
+      } catch (_) { /* 새 config */ }
+      config.textStyles = Array.isArray(styles) ? styles.slice(0, 10) : [];
+      await fs.writeFile(configPath, JSON.stringify(config, null, 2));
+    } catch (error) {
+      console.error('[Main] 텍스트 스타일 저장 실패:', error);
     }
   },
 };

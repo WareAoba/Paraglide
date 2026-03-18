@@ -1,5 +1,5 @@
 // src/components/MainComponent.jsx
-import React, { useCallback, useRef } from 'react';
+import React, { useCallback, useRef, useEffect, useState } from 'react';
 import { CSSTransition, TransitionGroup } from 'react-transition-group';
 import { useTranslation } from 'react-i18next';
 import '../CSS/MainComponent.css';
@@ -58,6 +58,22 @@ function MainComponent() {
   const setOverlayVisible = useAppStore((s) => s.setOverlayVisible);
   const resetToReady = useAppStore((s) => s.resetToReady);
   const setPluginConnected = useAppStore((s) => s.setPluginConnected);
+
+  // ─── 토스트 알림 ───
+  const toastMessage = useAppStore((s) => s.toastMessage);
+  const setToastMessage = useAppStore((s) => s.setToastMessage);
+  const [toastVisible, setToastVisible] = useState(false);
+
+  useEffect(() => {
+    if (toastMessage) {
+      setToastVisible(true);
+      const timer = setTimeout(() => {
+        setToastVisible(false);
+        setTimeout(() => setToastMessage(null), 300);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [toastMessage, setToastMessage]);
 
   // ─── 커스텀 훅 ───
   const icons = useIcons();
@@ -346,6 +362,10 @@ function MainComponent() {
                           zoomIn: icons.zoomIn,
                           zoomOut: icons.zoomOut,
                           textAdd: icons.textAdd,
+                          fileOpen: icons.fileOpen,
+                          folder: icons.folder,
+                          delete: icons.delete,
+                          locate: icons.locate,
                         }}
                       />
                     </div>
@@ -459,6 +479,12 @@ function MainComponent() {
           themeDark: icons.themeDark,
         }}
       />
+
+      {toastMessage && (
+        <div className={`para-toast ${toastVisible ? 'visible' : ''}`}>
+          {toastMessage}
+        </div>
+      )}
     </div>
   );
 }

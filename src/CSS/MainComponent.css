@@ -206,3 +206,26 @@
   min-width: fit-content;
   overflow: visible;
 }
+
+/* ─── 토스트 알림 ─── */
+.para-toast {
+  position: fixed;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--bg-tertiary, #333);
+  color: var(--text-color, #eee);
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-size: 13px;
+  z-index: 9999;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.para-toast.visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}

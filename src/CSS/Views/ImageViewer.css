@@ -1,0 +1,338 @@
+/*
+ * ── [독립 컨테이너 2] 이미지 뷰어 ──
+ * 다른 컨테이너(에디터 본체·툴바)와 절대 합치지 말 것.
+ * 자체 높이는 부모 stretch에 의해 다른 컨테이너와 동일하게 유지된다.
+ */
+.image-viewer {
+  display: flex;
+  flex-direction: column;
+  width: 50%;
+  min-width: 300px;
+  max-width: 65%;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--bg-color) 95%, #000 5%);
+  user-select: none;
+  overflow: hidden;
+}
+
+.image-viewer--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.image-viewer__placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  width: 100%;
+  color: var(--text-color);
+  opacity: 0.25;
+  font-style: italic;
+  font-size: 0.9rem;
+}
+
+/* ─── 네비게이션 바 ─── */
+.image-viewer__nav {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.75rem;
+  background: color-mix(in srgb, var(--bg-color) 85%, var(--text-color) 15%);
+  border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.image-viewer__nav-btn {
+  border: none;
+  background: none;
+  color: var(--text-color);
+  cursor: pointer;
+  font-size: 0.75rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  opacity: 0.7;
+  transition: all 0.15s ease;
+}
+
+.image-viewer__nav-btn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--primary-color) 15%, transparent);
+  color: var(--primary-color);
+  opacity: 1;
+}
+
+.image-viewer__nav-btn:disabled {
+  opacity: 0.2;
+  cursor: default;
+}
+
+.image-viewer__page-info {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-color);
+  opacity: 0.7;
+  font-variant-numeric: tabular-nums;
+  min-width: 70px;
+  text-align: center;
+}
+
+.image-viewer__page-sub {
+  font-size: 0.65rem;
+  font-weight: 400;
+  opacity: 0.5;
+  margin-left: 0.3rem;
+}
+
+/* ─── 페이지 점프 입력 ─── */
+.image-viewer__page-info {
+  cursor: pointer;
+}
+
+.image-viewer__page-input {
+  width: 50px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  border: 1px solid var(--primary-color);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--bg-color) 90%, var(--primary-color) 10%);
+  color: var(--text-color);
+  padding: 0.15rem 0.3rem;
+  outline: none;
+}
+
+.image-viewer__page-input::placeholder {
+  opacity: 0.35;
+}
+
+/* ─── 커서 동기화 토글 ─── */
+.image-viewer__sync-btn {
+  opacity: 0.35;
+  transition: all 0.15s ease;
+}
+
+.image-viewer__sync-btn.is-active {
+  opacity: 0.85;
+}
+
+.image-viewer__sync-btn.is-active:hover {
+  opacity: 1;
+}
+
+.image-viewer__sync-icon {
+  width: 14px;
+  height: 14px;
+  filter: var(--icon-filter);
+  opacity: 0.8;
+}
+
+.image-viewer__sync-btn.is-active .image-viewer__sync-icon {
+  filter: var(--primary-color-filter);
+  opacity: 1;
+}
+
+/* ─── 파일명 ─── */
+.image-viewer__filename {
+  font-size: 0.7rem;
+  color: var(--text-color);
+  opacity: 0.5;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 140px;
+  flex-shrink: 1;
+}
+
+/* ─── 줌 컨트롤 ─── */
+.image-viewer__zoom-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.image-viewer__zoom-btn {
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 0.15rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  opacity: 0.6;
+  transition: all 0.15s ease;
+  width: 22px;
+  height: 22px;
+  color: var(--text-color);
+  font-size: 0.85rem;
+}
+
+.image-viewer__zoom-btn:hover {
+  background: color-mix(in srgb, var(--primary-color) 15%, transparent);
+  opacity: 1;
+}
+
+.image-viewer__zoom-icon {
+  width: 14px;
+  height: 14px;
+  filter: var(--icon-filter);
+  opacity: 0.8;
+}
+
+.image-viewer__zoom-btn:hover .image-viewer__zoom-icon {
+  filter: var(--primary-color-filter);
+  opacity: 1;
+}
+
+.image-viewer__zoom-info {
+  font-size: 0.65rem;
+  color: var(--text-color);
+  opacity: 0.5;
+  font-variant-numeric: tabular-nums;
+  min-width: 30px;
+  text-align: center;
+  cursor: pointer;
+  padding: 0.1rem 0.2rem;
+  border-radius: 3px;
+  transition: all 0.15s ease;
+}
+
+.image-viewer__zoom-info:hover {
+  background: color-mix(in srgb, var(--primary-color) 10%, transparent);
+  opacity: 0.8;
+}
+
+/* ─── 이미지 캔버스 (스크롤 영역) ─── */
+.image-viewer__canvas {
+  flex: 1;
+  overflow: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+}
+
+.image-viewer__canvas::-webkit-scrollbar {
+  display: block;
+  width: 6px;
+  height: 6px;
+}
+
+.image-viewer__canvas::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.image-viewer__canvas::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--text-color) 15%, transparent);
+  border-radius: 3px;
+}
+
+.image-viewer__canvas::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-color);
+}
+
+/* ─── 이미지 ─── */
+.image-viewer__img {
+  max-width: none;
+  height: auto;
+  object-fit: contain;
+  display: block;
+  border-radius: 2px;
+  transition: width 0.1s ease;
+  pointer-events: none;
+}
+
+/* fit 모드: 원본 비율 유지하며 컨테이너에 최대한 채움 */
+.image-viewer__img--fit {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+
+/* ─── 이미지 뷰어가 열려 있을 때 에디터 레이아웃 ─── */
+.text-editor.with-image-viewer .editor-body-wrapper {
+  margin-left: 0.5rem;
+}
+
+/* ─── 하단 상태 바 ─── */
+.image-viewer__status-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3rem 0.75rem;
+  background: color-mix(in srgb, var(--bg-color) 85%, var(--text-color) 15%);
+  border-top: 1px solid var(--border-color);
+  flex-shrink: 0;
+  min-height: 26px;
+}
+
+/* ─── 흑백/컬러 뱃지 ─── */
+.image-viewer__color-badge {
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 0.1rem 0.4rem;
+  border-radius: 3px;
+  flex-shrink: 0;
+  letter-spacing: 0.02em;
+}
+
+.image-viewer__color-badge.is-grayscale {
+  background: color-mix(in srgb, var(--text-color) 15%, transparent);
+  color: var(--text-color);
+  opacity: 0.7;
+}
+
+.image-viewer__color-badge.is-color {
+  background: color-mix(in srgb, var(--primary-color) 20%, transparent);
+  color: var(--primary-color);
+}
+
+/* ─── 블랙포인트 인디케이터 ─── */
+.image-viewer__black-point {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.15rem 0.4rem;
+  background: color-mix(in srgb, var(--bg-color) 60%, var(--text-color) 40%);
+  border-radius: 4px;
+  font-size: 0.65rem;
+  flex-shrink: 0;
+}
+
+.image-viewer__bp-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  flex-shrink: 0;
+}
+
+.image-viewer__bp-hex {
+  font-family: monospace;
+  color: var(--text-color);
+  opacity: 0.9;
+  font-size: 0.65rem;
+  letter-spacing: 0.02em;
+}
+
+.image-viewer__bp-copy {
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 0 0.15rem;
+  font-size: 0.7rem;
+  opacity: 0.6;
+  transition: opacity 0.15s ease;
+  line-height: 1;
+}
+
+.image-viewer__bp-copy:hover {
+  opacity: 1;
+}

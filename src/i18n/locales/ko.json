@@ -303,7 +303,11 @@
         "toolbar": {
             "fontSize": "폰트 크기",
             "save": "저장",
-            "textMacro": "텍스트 매크로"
+            "load": "불러오기",
+            "textMacro": "텍스트 매크로",
+            "imageViewer": "이미지 뷰어",
+            "closeViewer": "뷰어 닫기",
+            "textStyle": "텍스트 스타일"
         },
         "macro": {
             "empty": "(비어있음)",
@@ -311,6 +315,24 @@
             "delete": "삭제",
             "add": "슬롯 추가",
             "inputPlaceholder": "텍스트 입력"
+        },
+        "align": {
+            "left": "왼쪽 정렬",
+            "center": "가운데 정렬",
+            "right": "오른쪽 정렬"
+        },
+        "style": {
+            "title": "텍스트 스타일",
+            "preset1": "평문",
+            "preset2": "강조",
+            "preset3": "독백",
+            "preset4": "생각",
+            "preset5": "아나운스",
+            "preset6": "신남",
+            "preset7": "깜짝",
+            "preset8": "분노",
+            "preset9": "커스텀1",
+            "preset10": "커스텀2"
         }
     },
     "console": {

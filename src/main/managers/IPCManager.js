@@ -53,7 +53,11 @@ const IPCManager = {
         if (!options.filePath) {
           const result = await dialog.showOpenDialog(state.mainWindow, {
             properties: ['openFile'],
-            filters: [{ name: 'Text Files', extensions: ['txt'] }]
+            filters: [
+              { name: 'Supported Files', extensions: ['txt', 'para'] },
+              { name: 'Paraglide Files', extensions: ['para'] },
+              { name: 'Text Files', extensions: ['txt'] }
+            ]
           });
           
           if (result.canceled || !result.filePaths[0]) return null;
@@ -67,8 +71,8 @@ const IPCManager = {
       }
     });
 
-    ipcMain.handle('save-text-file', async (event, { content, fileName, currentFilePath, saveType }) => {
-      return await FileManager.saveTextFile({ content, fileName, currentFilePath, saveType });
+    ipcMain.handle('save-text-file', async (event, { content, fileName, currentFilePath, saveType, format, metadata, password }) => {
+      return await FileManager.saveTextFile({ content, fileName, currentFilePath, saveType, format, metadata, password });
     });
 
     ipcMain.handle('process-file-content', async (_, content, filePath) => {
@@ -106,6 +110,20 @@ const IPCManager = {
     });
 
     ipcMain.handle('read-file', async (event, filePath) => fs.readFile(filePath, 'utf8'));
+
+    // 에디터용 파일 열기 다이얼로그 (파일 경로만 반환, 프로세스 상태 변경 없음)
+    ipcMain.handle('show-open-file-dialog', async () => {
+      const result = await dialog.showOpenDialog(state.mainWindow, {
+        properties: ['openFile'],
+        filters: [
+          { name: 'Supported Files', extensions: ['txt', 'para'] },
+          { name: 'Paraglide Files', extensions: ['para'] },
+          { name: 'Text Files', extensions: ['txt'] }
+        ]
+      });
+      if (result.canceled || !result.filePaths[0]) return null;
+      return result.filePaths[0];
+    });
 
     // 리소스 관련 핸들러
     ipcMain.handle('get-logo-path', async (_, type) => this.handleGetLogoPath(type));
@@ -289,6 +307,126 @@ const IPCManager = {
           window.webContents.send('text-macros-updated', macros);
         }
       });
+    });
+
+    // ─── 텍스트 스타일 저장/로드 ───
+    ipcMain.handle('load-text-styles', async () => {
+      return await FileManager.loadTextStyles();
+    });
+
+    ipcMain.on('save-text-styles', async (event, styles) => {
+      await FileManager.saveTextStyles(styles);
+      BrowserWindow.getAllWindows().forEach(window => {
+        if (!window.isDestroyed()) {
+          window.webContents.send('text-styles-updated', styles);
+        }
+      });
+    });
+
+    // ─── 이미지 파일 열기 (이미지 뷰어) ───
+    ipcMain.handle('open-image-files', async () => {
+      const result = await dialog.showOpenDialog(state.mainWindow, {
+        properties: ['openFile', 'multiSelections'],
+        title: '이미지 파일 선택',
+        filters: [
+          { name: 'Images', extensions: ['jpg', 'jpeg', 'png', 'webp'] }
+        ]
+      });
+      if (result.canceled || result.filePaths.length === 0) return null;
+      return result.filePaths;
+    });
+
+    // ─── 블랙포인트 다이얼로그 ───
+    ipcMain.handle('show-black-point-dialog', async (_, blackPoint) => {
+      const result = await dialog.showMessageBox(state.mainWindow, {
+        type: 'info',
+        title: '블랙포인트 검출',
+        message: `이미지의 블랙포인트가 순수 블랙(#000000)이 아닙니다.\n검출값: ${blackPoint.hex}`,
+        detail: '처리 방법을 선택하세요:\n\n• 포토샵 색상 적용: 텍스트 삽입 시 해당 색상을 사용합니다.\n• 이미지 레벨 조정: 이미지의 색상을 보정하여 순수 블랙에 맞춥니다.',
+        buttons: ['포토샵 색상 적용', '이미지 레벨 조정', '건너뛰기'],
+        defaultId: 2,
+        cancelId: 2,
+        noLink: true
+      });
+      return result.response;
+    });
+
+    // ─── 블랙포인트 색상 설정/해제 (PluginBridge 연동) ───
+    ipcMain.on('set-black-point-color', (_, hexColor) => {
+      state._blackPointColor = hexColor;
+    });
+
+    ipcMain.on('clear-black-point-color', () => {
+      state._blackPointColor = null;
+    });
+
+    // ─── .para 메타데이터 관련 핸들러 ───
+    ipcMain.handle('get-para-metadata', () => {
+      return state._paraMetadata || null;
+    });
+
+    ipcMain.handle('update-para-metadata', async (_, metadata) => {
+      if (metadata) {
+        // 기존 메타데이터가 없으면 기본값 생성
+        if (!state._paraMetadata) {
+          const { ParaFileFormat } = require('../../store/utils/ParaFileFormat');
+          state._paraMetadata = ParaFileFormat.createDefaultMetadata();
+        }
+
+        // integral 병합
+        if (metadata.integral) {
+          state._paraMetadata.integral = { ...state._paraMetadata.integral, ...metadata.integral };
+        }
+
+        // pages 변환 및 병합
+        if (metadata.pages) {
+          if (!(state._paraMetadata.pages instanceof Map)) {
+            state._paraMetadata.pages = new Map();
+          }
+          const entries = metadata.pages instanceof Map
+            ? metadata.pages.entries()
+            : Object.entries(metadata.pages);
+          for (const [key, value] of entries) {
+            state._paraMetadata.pages.set(Number(key), value);
+          }
+        }
+
+        // paragraphs 교체 (있는 경우만)
+        if (metadata.paragraphs) {
+          state._paraMetadata.paragraphs = metadata.paragraphs;
+        }
+      }
+      return true;
+    });
+
+    ipcMain.handle('set-page-blackpoint', async (_, { pageNumber, blackpoint }) => {
+      if (!state._paraMetadata) {
+        const { ParaFileFormat } = require('../../store/utils/ParaFileFormat');
+        state._paraMetadata = ParaFileFormat.createDefaultMetadata();
+      }
+      if (!state._paraMetadata.pages) {
+        state._paraMetadata.pages = new Map();
+      }
+      if (!(state._paraMetadata.pages instanceof Map)) {
+        state._paraMetadata.pages = new Map(Object.entries(state._paraMetadata.pages).map(([k, v]) => [Number(k), v]));
+      }
+      if (!state._paraMetadata.pages.has(pageNumber)) {
+        state._paraMetadata.pages.set(pageNumber, { blackpoint: '#000000' });
+      }
+      state._paraMetadata.pages.get(pageNumber).blackpoint = blackpoint;
+      return true;
+    });
+
+    ipcMain.handle('set-paragraph-meta', async (_, { paragraphIndex, key, value }) => {
+      if (!state._paraMetadata) {
+        const { ParaFileFormat } = require('../../store/utils/ParaFileFormat');
+        state._paraMetadata = ParaFileFormat.createDefaultMetadata();
+      }
+      if (!state._paraMetadata.paragraphs[paragraphIndex]) {
+        state._paraMetadata.paragraphs[paragraphIndex] = { align: 'center', style: '1' };
+      }
+      state._paraMetadata.paragraphs[paragraphIndex][key] = value;
+      return true;
     });
 
     handlersInitialized = true;

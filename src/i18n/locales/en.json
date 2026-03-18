@@ -304,7 +304,11 @@
         "toolbar": {
             "fontSize": "Font Size",
             "save": "Save",
-            "textMacro": "Text Macro"
+            "load": "Load File",
+            "textMacro": "Text Macro",
+            "imageViewer": "Image Viewer",
+            "closeViewer": "Close Viewer",
+            "textStyle": "Text Styles"
         },
         "macro": {
             "empty": "(empty)",
@@ -312,6 +316,24 @@
             "delete": "Delete",
             "add": "Add Slot",
             "inputPlaceholder": "Enter text"
+        },
+        "align": {
+            "left": "Align Left",
+            "center": "Align Center",
+            "right": "Align Right"
+        },
+        "style": {
+            "title": "Text Styles",
+            "preset1": "Plain",
+            "preset2": "Emphasis",
+            "preset3": "Monologue",
+            "preset4": "Thought",
+            "preset5": "Announce",
+            "preset6": "Excited",
+            "preset7": "Surprise",
+            "preset8": "Angry",
+            "preset9": "Custom1",
+            "preset10": "Custom2"
         }
     },
     "console": {

@@ -303,7 +303,11 @@
             "toolbar": {
                 "fontSize": "字号",
                 "save": "保存",
-                "textMacro": "文本宏"
+                "load": "打开文件",
+                "textMacro": "文本宏",
+                "imageViewer": "图片查看器",
+                "closeViewer": "关闭查看器",
+                "textStyle": "文本样式"
             },
             "macro": {
                 "empty": "(空)",
@@ -311,6 +315,24 @@
                 "delete": "删除",
                 "add": "添加槽位",
                 "inputPlaceholder": "输入文本"
+            },
+            "align": {
+                "left": "左对齐",
+                "center": "居中对齐",
+                "right": "右对齐"
+            },
+            "style": {
+                "title": "文本样式",
+                "preset1": "平文",
+                "preset2": "强调",
+                "preset3": "独白",
+                "preset4": "思考",
+                "preset5": "播报",
+                "preset6": "兴奋",
+                "preset7": "惊讶",
+                "preset8": "愤怒",
+                "preset9": "自定义1",
+                "preset10": "自定义2"
             }
         },
         "console": {

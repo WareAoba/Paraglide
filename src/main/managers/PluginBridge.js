@@ -207,6 +207,10 @@ const PluginBridge = {
         this._sendEscToPhotoshop(ws);
         break;
 
+      case 'pasteCommit':
+        this._sendPasteCommitToPhotoshop(ws);
+        break;
+
       default:
         this._send(ws, {
           type: 'error',
@@ -221,6 +225,15 @@ const PluginBridge = {
       this._sendEscMac(ws);
     } else {
       this._sendEscWin(ws);
+    }
+  },
+
+  // Photoshop에 Ctrl+A → Ctrl+V → Ctrl+Enter 전송 (붙여넣기 후 커밋)
+  _sendPasteCommitToPhotoshop(ws) {
+    if (process.platform === 'darwin') {
+      this._sendPasteCommitMac(ws);
+    } else {
+      this._sendPasteCommitWin(ws);
     }
   },
 
@@ -254,14 +267,12 @@ const PluginBridge = {
 
   // ── macOS: osascript 경유 ──
   _sendEscMac(ws) {
-    // 1) PS 활성화 → 2) Space 키 → 3) Esc 키
+    // PS 활성화 → Ctrl+Enter (텍스트 편집 커밋)
     const script = [
       'tell application "Adobe Photoshop 2025" to activate',
       'delay 0.05',
       'tell application "System Events"',
-      '  key code 49',   // Space
-      '  delay 0.03',
-      '  key code 53',   // Escape
+      '  key code 36 using control down',   // Ctrl+Enter
       'end tell'
     ].join('\n');
 
@@ -272,6 +283,58 @@ const PluginBridge = {
       } else {
         console.log('[PluginBridge] macOS Esc 성공');
         this._send(ws, { type: 'response', action: 'sendEsc', data: { success: true } });
+      }
+    });
+  },
+
+  // ── Windows: pasteCommit — C++ 데몬 경유 ──
+  _sendPasteCommitWin(ws) {
+    this._ensureDaemon();
+
+    if (!this._daemon || !this._daemonReady) {
+      console.error('[PluginBridge] pasteCommit: 데몬 미실행');
+      this._send(ws, { type: 'response', action: 'pasteCommit', data: { success: false } });
+      return;
+    }
+
+    const timeout = setTimeout(() => {
+      this._escCallback = null;
+      console.error('[PluginBridge] pasteCommit 응답 타임아웃');
+      this._send(ws, { type: 'response', action: 'pasteCommit', data: { success: false } });
+    }, 3000);
+
+    this._escCallback = (line) => {
+      clearTimeout(timeout);
+      this._escCallback = null;
+      const success = line.trim() === 'ok';
+      console.log('[PluginBridge] pasteCommit', success ? '성공' : '실패');
+      this._send(ws, { type: 'response', action: 'pasteCommit', data: { success } });
+    };
+
+    this._daemon.stdin.write('pastecommit\n');
+  },
+
+  // ── macOS: pasteCommit — osascript 경유 ──
+  _sendPasteCommitMac(ws) {
+    const script = [
+      'tell application "Adobe Photoshop 2025" to activate',
+      'delay 0.05',
+      'tell application "System Events"',
+      '  keystroke "a" using command down',     // Cmd+A (전체 선택)
+      '  delay 0.03',
+      '  keystroke "v" using command down',     // Cmd+V (붙여넣기)
+      '  delay 0.1',
+      '  key code 36 using control down',       // Ctrl+Enter (커밋)
+      'end tell'
+    ].join('\n');
+
+    exec(`osascript -e '${script.replace(/'/g, "'\\''")}'`, { timeout: 3000 }, (err) => {
+      if (err) {
+        console.error('[PluginBridge] macOS pasteCommit 실패:', err.message);
+        this._send(ws, { type: 'response', action: 'pasteCommit', data: { success: false } });
+      } else {
+        console.log('[PluginBridge] macOS pasteCommit 성공');
+        this._send(ws, { type: 'response', action: 'pasteCommit', data: { success: true } });
       }
     });
   },
@@ -356,12 +419,35 @@ const PluginBridge = {
   // 데이터 헬퍼
   _getParagraphData() {
     const textState = state.textProcess;
-    return {
+    const data = {
       text: textState.paragraphs[textState.currentParagraph] || '',
       index: textState.currentParagraph,
       total: textState.paragraphs.length,
       isPaused: textState.isPaused
     };
+
+    // .para 메타데이터에서 페이지별 블랙포인트 읽기
+    const paraMetadata = state._paraMetadata;
+    if (paraMetadata) {
+      const currentMeta = textState.paragraphsMetadata?.[textState.currentParagraph];
+      const pageNumber = currentMeta?.pageNumber;
+      
+      if (pageNumber != null) {
+        const { ParaFileFormat } = require('../../store/utils/ParaFileFormat');
+        data.textColor = ParaFileFormat.getPageBlackPoint(paraMetadata, pageNumber);
+      }
+
+      // 단락별 정렬/스타일 메타데이터
+      const { ParaFileFormat: PFF } = require('../../store/utils/ParaFileFormat');
+      data.textAlign = PFF.getParagraphAlign(paraMetadata, textState.currentParagraph);
+      data.textStyle = PFF.getParagraphStyle(paraMetadata, textState.currentParagraph);
+    }
+
+    // state._blackPointColor 우선 (수동 설정)
+    if (state._blackPointColor) {
+      data.textColor = state._blackPointColor;
+    }
+    return data;
   },
 
   _getStatusData() {

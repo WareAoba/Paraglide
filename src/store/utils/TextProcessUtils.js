@@ -1,4 +1,6 @@
 // src/store/utils/TextProcessUtils.js
+const { ParaFileFormat } = require('./ParaFileFormat');
+
 const TextProcessUtils = {
   pagePatterns: {
     numberOnly: /^(\d+)$/,
@@ -14,6 +16,10 @@ const TextProcessUtils = {
 
   isCommentLine(line) {
     return /^\/\//.test(line.trim());
+  },
+
+  isMetaLine(line) {
+    return ParaFileFormat.isMetaLine(line);
   },
 
   getCommentText(line) {
@@ -39,6 +45,12 @@ const TextProcessUtils = {
     for (let i = 0; i < allLines.length; i++) {
       const line = allLines[i].trimStart();
       const lineStartPos = normalizedContent.indexOf(allLines[i], currentIndex);
+
+      // 메타데이터 라인 ($integral{...}, $page{...}, $paragraph{...}) — 완전 스킵
+      if (line && this.isMetaLine(line)) {
+        currentIndex = lineStartPos + line.length + 1;
+        continue;
+      }
       
       // 주석 라인 감지 (//) — 스킵하되 내용을 보존
       if (line && this.isCommentLine(line)) {

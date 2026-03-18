@@ -2,8 +2,9 @@
 //
 // 동작 모드:
 //   데몬 (기본): stdin에서 명령을 읽고, stdout으로 응답. 프로세스 1회 기동.
-//     명령: "esc\n"  → Photoshop 포커스 + Space + Esc (재시도 포함) → "ok\n"
-//           "quit\n" → 프로세스 종료
+//     명령: "esc\n"         → Photoshop 포커스 + Ctrl+Enter (텍스트 커밋) → "ok\n"
+//           "pastecommit\n" → Photoshop 포커스 + Ctrl+A → Ctrl+V → Ctrl+Enter → "ok\n"
+//           "quit\n"        → 프로세스 종료
 //
 // 빌드: cl /O2 /MT sendesc.cpp /link user32.lib /OUT:sendesc.exe
 
@@ -48,7 +49,56 @@ static HWND findPhotoshop() {
     return g_psWnd;
 }
 
-// ── Photoshop에 포커스 + Space + Esc 전송 (재시도 포함) ──
+// ── Photoshop에 포커스 + Ctrl+Enter 전송 (텍스트 편집 커밋, 재시도 포함) ──
+
+static void sendCtrlEnter() {
+    INPUT inputs[4] = {};
+    // Ctrl down
+    inputs[0].type = INPUT_KEYBOARD;
+    inputs[0].ki.wVk = VK_CONTROL;
+    // Enter down
+    inputs[1].type = INPUT_KEYBOARD;
+    inputs[1].ki.wVk = VK_RETURN;
+    // Enter up
+    inputs[2].type = INPUT_KEYBOARD;
+    inputs[2].ki.wVk = VK_RETURN;
+    inputs[2].ki.dwFlags = KEYEVENTF_KEYUP;
+    // Ctrl up
+    inputs[3].type = INPUT_KEYBOARD;
+    inputs[3].ki.wVk = VK_CONTROL;
+    inputs[3].ki.dwFlags = KEYEVENTF_KEYUP;
+    SendInput(4, inputs, sizeof(INPUT));
+}
+
+static void sendCtrlA() {
+    INPUT inputs[4] = {};
+    inputs[0].type = INPUT_KEYBOARD;
+    inputs[0].ki.wVk = VK_CONTROL;
+    inputs[1].type = INPUT_KEYBOARD;
+    inputs[1].ki.wVk = 'A';
+    inputs[2].type = INPUT_KEYBOARD;
+    inputs[2].ki.wVk = 'A';
+    inputs[2].ki.dwFlags = KEYEVENTF_KEYUP;
+    inputs[3].type = INPUT_KEYBOARD;
+    inputs[3].ki.wVk = VK_CONTROL;
+    inputs[3].ki.dwFlags = KEYEVENTF_KEYUP;
+    SendInput(4, inputs, sizeof(INPUT));
+}
+
+static void sendCtrlV() {
+    INPUT inputs[4] = {};
+    inputs[0].type = INPUT_KEYBOARD;
+    inputs[0].ki.wVk = VK_CONTROL;
+    inputs[1].type = INPUT_KEYBOARD;
+    inputs[1].ki.wVk = 'V';
+    inputs[2].type = INPUT_KEYBOARD;
+    inputs[2].ki.wVk = 'V';
+    inputs[2].ki.dwFlags = KEYEVENTF_KEYUP;
+    inputs[3].type = INPUT_KEYBOARD;
+    inputs[3].ki.wVk = VK_CONTROL;
+    inputs[3].ki.dwFlags = KEYEVENTF_KEYUP;
+    SendInput(4, inputs, sizeof(INPUT));
+}
 
 static bool sendEscToPhotoshop() {
     HWND psWnd = findPhotoshop();
@@ -56,7 +106,6 @@ static bool sendEscToPhotoshop() {
 
     for (int attempt = 0; attempt < 3; attempt++) {
         // PS가 이미 포그라운드인지 확인 — 맞으면 SetForegroundWindow 생략
-        // (불필요한 호출은 포커스 플리커를 유발하여 텍스트 입력 캐럿을 파괴)
         HWND fg = GetForegroundWindow();
         if (fg != psWnd) {
             SetForegroundWindow(psWnd);
@@ -71,15 +120,9 @@ static bool sendEscToPhotoshop() {
             }
         }
 
-        // Space (빈 레이어 커밋 유도) — 두 번 보내서 확률 높임
-        sendKey(VK_SPACE);
-        Sleep(50);
-        sendKey(VK_SPACE);
-        Sleep(100);  // PS가 Space를 처리할 시간 확보 (30ms→100ms)
-
-        // Esc (편집 종료)
-        sendKey(VK_ESCAPE);
-        Sleep(50);
+        // Ctrl+Enter (텍스트 편집 커밋)
+        sendCtrlEnter();
+        Sleep(100);
 
         // 성공 판정: Photoshop이 여전히 포그라운드이면 OK
         if (GetForegroundWindow() == psWnd) {
@@ -93,6 +136,41 @@ static bool sendEscToPhotoshop() {
     }
 
     return true; // 최선을 다함
+}
+
+// ── Photoshop에 포커스 + Ctrl+A → Ctrl+V → Ctrl+Enter (붙여넣기 후 커밋) ──
+
+static bool pasteCommitToPhotoshop() {
+    HWND psWnd = findPhotoshop();
+    if (!psWnd) return false;
+
+    // PS 포커스
+    HWND fg = GetForegroundWindow();
+    if (fg != psWnd) {
+        SetForegroundWindow(psWnd);
+        Sleep(30);
+        fg = GetForegroundWindow();
+        if (fg != psWnd) {
+            sendKey(VK_MENU);
+            Sleep(10);
+            SetForegroundWindow(psWnd);
+            Sleep(30);
+        }
+    }
+
+    // Ctrl+A (텍스트 전체 선택)
+    sendCtrlA();
+    Sleep(30);
+
+    // Ctrl+V (클립보드 붙여넣기 — Character 패널 스타일 자동 적용)
+    sendCtrlV();
+    Sleep(100);
+
+    // Ctrl+Enter (텍스트 편집 커밋)
+    sendCtrlEnter();
+    Sleep(100);
+
+    return GetForegroundWindow() == psWnd;
 }
 
 // ── 메인: 데몬 모드 ──
@@ -109,6 +187,10 @@ int main() {
 
         if (strcmp(buf, "esc") == 0) {
             bool ok = sendEscToPhotoshop();
+            printf(ok ? "ok\n" : "fail\n");
+            fflush(stdout);
+        } else if (strcmp(buf, "pastecommit") == 0) {
+            bool ok = pasteCommitToPhotoshop();
             printf(ok ? "ok\n" : "fail\n");
             fflush(stdout);
         } else if (strcmp(buf, "quit") == 0) {

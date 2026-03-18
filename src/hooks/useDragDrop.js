@@ -34,22 +34,18 @@ export default function useDragDrop() {
 
     const { programStatus } = useAppStore.getState();
     const files = Array.from(e.dataTransfer.files);
-    const txtFile = files.find((file) => file.name.endsWith('.txt'));
+    const txtFile = files.find((file) => file.name.endsWith('.txt') || file.name.endsWith('.para'));
+    const IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp'];
 
     if (txtFile) {
       try {
         const filePath = txtFile.path;
 
         if (programStatus === ProgramStatus.EDIT) {
-          const content = await ipcRenderer.invoke('read-file', filePath);
           useAppStore.setState({
             currentFilePath: filePath,
             programStatus: ProgramStatus.EDIT,
             viewMode: 'editor'
-          });
-          ipcRenderer.send('update-state', {
-            currentFilePath: filePath,
-            programStatus: ProgramStatus.EDIT
           });
         } else {
           const result = await ipcRenderer.invoke('open-file', {
@@ -64,6 +60,15 @@ export default function useDragDrop() {
         }
       } catch (error) {
         console.error('파일 로드 실패:', error);
+      }
+    } else if (programStatus === ProgramStatus.EDIT) {
+      // EDIT 모드에서 이미지 파일 드롭 → 커스텀 이벤트로 에디터에 전달
+      const path = window.require('path');
+      const imageFilePaths = files
+        .filter(f => IMAGE_EXTENSIONS.includes(path.extname(f.name).toLowerCase()))
+        .map(f => f.path);
+      if (imageFilePaths.length > 0) {
+        window.dispatchEvent(new CustomEvent('editor-load-images', { detail: imageFilePaths }));
       }
     }
   }, [ProgramStatus, setDragCounter, setDragging]);

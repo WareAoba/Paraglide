@@ -299,7 +299,11 @@
         "toolbar": {
             "fontSize": "文字サイズ",
             "save": "保存",
-            "textMacro": "テキストマクロ"
+            "load": "ファイルを開く",
+            "textMacro": "テキストマクロ",
+            "imageViewer": "イメージビューア",
+            "closeViewer": "ビューアを閉じる",
+            "textStyle": "テキストスタイル"
         },
         "macro": {
             "empty": "(空)",
@@ -307,6 +311,24 @@
             "delete": "削除",
             "add": "スロット追加",
             "inputPlaceholder": "テキスト入力"
+        },
+        "align": {
+            "left": "左揃え",
+            "center": "中央揃え",
+            "right": "右揃え"
+        },
+        "style": {
+            "title": "テキストスタイル",
+            "preset1": "平文",
+            "preset2": "強調",
+            "preset3": "独白",
+            "preset4": "思考",
+            "preset5": "アナウンス",
+            "preset6": "興奮",
+            "preset7": "驚き",
+            "preset8": "怒り",
+            "preset9": "カスタム1",
+            "preset10": "カスタム2"
         }
     },
     "console": {

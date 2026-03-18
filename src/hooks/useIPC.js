@@ -121,6 +121,10 @@ export default function useIPC(themeCalc, searchRef) {
       if (pluginConnected !== undefined) store.setState({ pluginConnected });
     };
 
+    const handleParaImageMissing = () => {
+      store.getState().setToastMessage('이미지가 모두 로드되지 않았습니다');
+    };
+
     // ─── 이벤트 리스너 등록 ───
     ipcRenderer.on('state-update', handleStateUpdate);
     ipcRenderer.on('theme-update', handleThemeUpdate);
@@ -132,6 +136,7 @@ export default function useIPC(themeCalc, searchRef) {
     ipcRenderer.on('toggle-settings', handleToggleSettings);
     ipcRenderer.on('close-esc', handleCloseEsc);
     ipcRenderer.on('plugin-settings-changed', handlePluginSettingsChanged);
+    ipcRenderer.on('para-image-missing', handleParaImageMissing);
 
     // 초기화
     initializeState();
@@ -148,6 +153,7 @@ export default function useIPC(themeCalc, searchRef) {
       ipcRenderer.removeListener('toggle-settings', handleToggleSettings);
       ipcRenderer.removeListener('close-esc', handleCloseEsc);
       ipcRenderer.removeListener('plugin-settings-changed', handlePluginSettingsChanged);
+      ipcRenderer.removeListener('para-image-missing', handleParaImageMissing);
       initialized.current = false;
     };
   }, [themeCalc, searchRef]);

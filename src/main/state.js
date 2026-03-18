@@ -29,6 +29,12 @@ class AppState extends EventEmitter {
     // ─── 포토샵 모드 (클립보드 분리) ───
     this._photoshopModeActive = false;
 
+    // ─── 블랙포인트 색상 (PluginBridge에서 사용) ───
+    this._blackPointColor = null;
+
+    // ─── .para 메타데이터 (ParaFileFormat에서 관리) ───
+    this._paraMetadata = null;
+
     // ─── Config 상태 (was: configSlice) ───
     this._config = {
       theme: {
