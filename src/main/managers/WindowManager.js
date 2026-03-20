@@ -84,7 +84,7 @@ const WindowManager = {
     const startUrl = isDev
       ? 'http://localhost:5173' // Vite 기본 포트
       : url.format({
-        pathname: path.join(__dirname, '../../../dist/index.html'),
+        pathname: path.join(process.resourcesPath, 'dist', 'index.html'),
         protocol: 'file:',
         slashes: true
     });
@@ -150,7 +150,7 @@ const WindowManager = {
     const overlayUrl = isDev
       ? 'http://localhost:5173/#/overlay'
       : url.format({
-          pathname: path.join(__dirname, '../../../dist/index.html'),
+          pathname: path.join(process.resourcesPath, 'dist', 'index.html'),
           protocol: 'file:',
           slashes: true,
           hash: '/overlay'

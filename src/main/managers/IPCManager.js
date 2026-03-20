@@ -847,7 +847,7 @@ const IPCManager = {
       const { app } = require('electron');
       const sourcePath = isDev
         ? path.join(__dirname, '../../../plugins/photoshop')
-        : path.join(process.resourcesPath, 'plugins/photoshop');
+        : path.join(process.resourcesPath, 'photoshop');
 
       // 소스 존재 확인
       try {

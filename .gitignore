@@ -13,3 +13,4 @@ certificates
 native/*.obj
 /sample
 sample/
+*.psd

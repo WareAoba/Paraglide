@@ -11,11 +11,7 @@ const gotTheLock = app.requestSingleInstanceLock();
 // async IIFE로 래핑
 (async () => {
   if (!gotTheLock) {
-    try {
-      await DialogManager.show(DialogManager.DIALOGS.ALREADY_RUNNING);
-    } finally {
-      app.quit();
-    }
+    app.quit();
     return;
   }
 
@@ -33,6 +29,9 @@ const gotTheLock = app.requestSingleInstanceLock();
   app.whenReady().then(async () => {
     await LanguageManager.initializeI18n();
     await ApplicationManager.initialize();
+  }).catch((error) => {
+    console.error('[Main] 초기화 실패:', error);
+    app.quit();
   });
 })();
 

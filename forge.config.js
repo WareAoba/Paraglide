@@ -32,61 +32,65 @@ module.exports = {
     appCategoryType: "public.app-category.productivity",
     extendInfo: path.resolve(__dirname, 'public/mac/Info.plist'),
     ignore: [
-     // 불필요한 파일 제외
-     // 기존 패턴
+     // === 프로젝트 폴더 제외 (패키징에 불필요) ===
+     /[/\\]sample([/\\]|$)/,      // 2.7GB 샘플 파일들!
+     /[/\\]tests([/\\]|$)/,       // 테스트 파일
+     /[/\\]installer([/\\]|$)/,   // 인스톨러 스크립트
+     /[/\\]scripts([/\\]|$)/,     // 빌드 스크립트
+     /[/\\]releases([/\\]|$)/,    // 릴리즈 출력
+     /[/\\]out([/\\]|$)/,         // 빌드 결과
+     /[/\\]public([/\\]|$)/,      // dist에 이미 복사됨
+     /[/\\]\.vite([/\\]|$)/,      // Vite 캐시
+
+     // === 불필요한 파일 ===
      /\.git/,
-     /node_modules[\/\\].*[/\\]test[/\\].*/,
-     /node_modules[\/\\].*[/\\]docs[/\\].*/,
-     /node_modules[\/\\].*[/\\]example[/\\].*/,
+     /\.psd$/,                    // PSD 원본 파일
      /\.map$/,
      /\.md$/,
      /\.test\.js$/,
      /\.spec\.js$/,
      /\.iss$/,
-  
-     // 추가할 패턴
-     /node_modules[\/\\].*[/\\]\.github[/\\].*/, // GitHub 관련 파일
-     /node_modules[\/\\].*[/\\]typescript[/\\].*/, // TypeScript 정의 파일
-     /\.ts$/,  // TypeScript 소스
+     /\.ts$/,
      /\.tsx$/,
      /\.d\.ts$/,
      /\.tsbuildinfo$/,
-     /\.eslintrc.*/, // lint 설정
-     /\.prettierrc.*/, // prettier 설정
-     /\.babelrc.*/, // babel 설정
-     /\.editorconfig/, // 에디터 설정
-     /thumbs\.db$/, // Windows 썸네일
-     /\.DS_Store$/, // macOS 메타데이터
-     /node_modules[\/\\].*[/\\]CHANGELOG.*/, // 변경 로그
-     /node_modules[\/\\].*[/\\]LICENSE.*/, // 라이선스 파일
-     /node_modules[\/\\].*[/\\]coverage[/\\].*/, // 테스트 커버리지 파일
-     /node_modules[\/\\].*[/\\]__tests__[/\\].*/, // Jest 테스트 파일
-     /node_modules[\/\\].*[/\\]__mocks__[/\\].*/, // Jest 목 파일
+     /\.eslintrc.*/,
+     /\.prettierrc.*/,
+     /\.babelrc.*/,
+     /\.editorconfig/,
+     /thumbs\.db$/,
+     /\.DS_Store$/,
      /\.npmignore$/,
      /\.gitignore$/,
      /\.yarn-integrity$/,
-     /yarn-debug\.log$/,
-     /yarn-error\.log$/,
-     /npm-debug\.log$/,
-     /node_modules[\/\\].*[/\\]obj[/\\].*/, // 중간 빌드 파일
-     /\.zip$/,  // 압축 파일
+     /\.lock$/,
+     /lock\.json$/,
+     /\.log$/,
+     /\.tmp$/,
+     /\.cache$/,
+     /\.zip$/,
      /\.tar$/,
      /\.gz$/,
-     /node_modules[\/\\].*[/\\]samples[/\\].*/, // 예제 파일
-     /node_modules[\/\\].*[/\\]demo[/\\].*/, // 데모 파일
-     /\.min\.(js|css)\.map$/, // 최소화된 파일의 소스맵
-     /forge.config.js$/, // Electron Forge 설정 파일
-     /releases/, // 릴리즈 파일
-     /out/, // 빌드 결과 파일
-     /\.lock$/, // 락 파일 (yarn.lock, package-lock.json 등)
-     /\lock.json$/, // 락 파일
-     /\.log$/, // 모든 로그 파일
-     /\.tmp$/, // 임시 파일
-     /\.cache$/, // 캐시 파일
-     /node_modules[\/\\].*[/\\]types[/\\].*/, // 타입 정의 파일
-     /\.(md|markdown)$/, // 모든 마크다운 파일
-     /^\.env.*/, // 환경 설정 파일
-     /^\.vscode[\/\\].*/, // VS Code 설정 파일
+     /\.env/,
+     /forge\.config\.js$/,
+     /vite\.config\.js$/,
+     /vitest\.config\.js$/,
+
+     // === node_modules 정리 ===
+     /node_modules[/\\].*[/\\]test[/\\].*/,
+     /node_modules[/\\].*[/\\]docs[/\\].*/,
+     /node_modules[/\\].*[/\\]example[/\\].*/,
+     /node_modules[/\\].*[/\\]\.github[/\\].*/,
+     /node_modules[/\\].*[/\\]CHANGELOG.*/,
+     /node_modules[/\\].*[/\\]LICENSE.*/,
+     /node_modules[/\\].*[/\\]coverage[/\\].*/,
+     /node_modules[/\\].*[/\\]__tests__[/\\].*/,
+     /node_modules[/\\].*[/\\]__mocks__[/\\].*/,
+     /node_modules[/\\].*[/\\]samples[/\\].*/,
+     /node_modules[/\\].*[/\\]demo[/\\].*/,
+     /node_modules[/\\].*[/\\]types[/\\].*/,
+     /node_modules[/\\].*[/\\]typescript[/\\].*/,
+     /node_modules[/\\].*[/\\]obj[/\\].*/,
 
     ],
     protocols: [{
@@ -148,7 +152,7 @@ module.exports = {
       [FuseV1Options.EnableCookieEncryption]: true,
       [FuseV1Options.EnableNodeOptionsEnvironmentVariable]: false,
       [FuseV1Options.EnableNodeCliInspectArguments]: false,
-      [FuseV1Options.EnableEmbeddedAsarIntegrityValidation]: true,
+      [FuseV1Options.EnableEmbeddedAsarIntegrityValidation]: false,
       [FuseV1Options.OnlyLoadAppFromAsar]: true
     })
   ]
