@@ -11,4 +11,5 @@ releases/
 package-lock.json
 certificates
 native/*.obj
+/sample
 sample/

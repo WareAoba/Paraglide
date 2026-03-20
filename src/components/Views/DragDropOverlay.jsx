@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import '../../CSS/Views/DragDropOverlay.css';
 const { ipcRenderer } = window.require('electron');
 
-function DragDropOverlay({ isVisible, theme }) {
+function DragDropOverlay({ isVisible, theme, isWorkMode }) {
   const { t } = useTranslation();
   const [fileIcon, setFileIcon] = useState(null);
 
@@ -15,6 +15,9 @@ function DragDropOverlay({ isVisible, theme }) {
     };
     loadIcon();
   }, []);
+
+  const message = isWorkMode ? t('dragDrop.messageText') : t('dragDrop.message');
+  const subMessage = isWorkMode ? t('dragDrop.subMessageText') : t('dragDrop.subMessage');
 
   return (
     <div className={`drag-drop-overlay ${isVisible ? 'visible' : ''}`} data-theme={theme?.mode}>
@@ -27,8 +30,8 @@ function DragDropOverlay({ isVisible, theme }) {
             className="drag-drop-icon"
           />
         )}
-        <div className="drag-drop-message">{t('dragDrop.message')}</div>
-        <div className="drag-drop-sub">{t('dragDrop.subMessage')}</div>
+        <div className="drag-drop-message">{message}</div>
+        <div className="drag-drop-sub">{subMessage}</div>
       </div>
     </div>
   );

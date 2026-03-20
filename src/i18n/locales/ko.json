@@ -153,8 +153,8 @@
                 "title": "Paraglide",
                 "openFile": "파일 불러오기",
                 "dragDrop": {
-                    "message": "텍스트 파일을 여기에 드롭하세요",
-                    "formats": "*.txt 파일만 지원됩니다"
+                    "message": "파일을 여기에 드롭하세요",
+                    "formats": "텍스트(*.txt, *.para) 및 이미지 파일 지원"
                 },
                 "images": {
                     "logoAlt": "Paraglide 로고",
@@ -164,8 +164,10 @@
         }
     },
     "dragDrop": {
-        "message": "텍스트 파일을 여기에 드롭하세요",
-        "subMessage": "*.txt 파일만 지원됩니다"
+        "message": "파일을 여기에 드롭하세요",
+        "subMessage": "텍스트(*.txt, *.para) 및 이미지 파일 지원",
+        "messageText": "텍스트 파일을 여기에 드롭하세요",
+        "subMessageText": "*.txt, *.para 파일만 지원됩니다"
     },
     "sidebar": {
         "common": {
@@ -307,7 +309,8 @@
             "textMacro": "텍스트 매크로",
             "imageViewer": "이미지 뷰어",
             "closeViewer": "뷰어 닫기",
-            "textStyle": "텍스트 스타일"
+            "textStyle": "텍스트 스타일",
+            "metadata": "메타데이터"
         },
         "macro": {
             "empty": "(비어있음)",
@@ -323,16 +326,32 @@
         },
         "style": {
             "title": "텍스트 스타일",
-            "preset1": "평문",
-            "preset2": "강조",
-            "preset3": "독백",
-            "preset4": "생각",
-            "preset5": "아나운스",
-            "preset6": "신남",
-            "preset7": "깜짝",
-            "preset8": "분노",
-            "preset9": "커스텀1",
-            "preset10": "커스텀2"
+            "plain": "평문",
+            "emphasis": "강조",
+            "monologue": "독백",
+            "thought": "생각",
+            "announce": "아나운스",
+            "excited": "신남",
+            "surprise": "까짝",
+            "angry": "분노",
+            "custom1": "커스텀1",
+            "custom2": "커스텀2",
+            "action": "액션",
+            "refreshActions": "액션 새로고침",
+            "noActions": "PS 액션 없음",
+            "clearAction": "액션 해제",
+            "deleteSlot": "슬롯 삭제",
+            "customPrefix": "커스텀",
+            "rightClickToAssign": "우클릭: 액션 지정",
+            "clickToAssign": "클릭: 액션 지정",
+            "actionInvalid": "등록된 액션을 찾을 수 없습니다",
+            "pluginDisabled": "포토샵 플러그인이 비활성화되어 있습니다",
+            "selectAction": "액션 선택"
+        },
+        "metadata": {
+            "title": "메타데이터",
+            "image": "열 이미지",
+            "imagePlaceholder": "image1.jpg,image2.jpg"
         }
     },
     "console": {
@@ -373,5 +392,14 @@
                 ]
             }
         }
+    },
+    "automation": {
+        "title": "자동화",
+        "auto": "Auto",
+        "runAll": "전체 실행",
+        "metadata": "이미지 정보 메타데이터에 저장",
+        "numbering": "텍스트 넘버링 자동 스탬프",
+        "spread": "합페 검출 및 넘버링에 적용",
+        "dpi": "인쇄 DPI를 72로 조정"
     }
 }

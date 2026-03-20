@@ -1,5 +1,5 @@
 // StatusManager.js — 상태 전환 유효성 검증
-const { state, updateState } = require('../state');
+const { state, updateState, ALLOWED_TRANSITIONS } = require('../state');
 const { ProgramStatus } = require('../constants');
 
 const StatusManager = {
@@ -16,15 +16,7 @@ const StatusManager = {
   },
 
   validateTransition(fromStatus, toStatus) {
-    const allowedTransitions = {
-      [ProgramStatus.READY]: [ProgramStatus.LOADING, ProgramStatus.PROCESS, ProgramStatus.EDIT],
-      [ProgramStatus.LOADING]: [ProgramStatus.PROCESS, ProgramStatus.READY],
-      [ProgramStatus.PROCESS]: [ProgramStatus.PAUSE, ProgramStatus.READY, ProgramStatus.EDIT],
-      [ProgramStatus.PAUSE]: [ProgramStatus.PROCESS, ProgramStatus.READY, ProgramStatus.EDIT],
-      [ProgramStatus.EDIT]: [ProgramStatus.READY, ProgramStatus.PROCESS]
-    };
-    return allowedTransitions[fromStatus]?.includes(toStatus);
-    
+    return ALLOWED_TRANSITIONS[fromStatus]?.includes(toStatus) ?? false;
   }
 };
 

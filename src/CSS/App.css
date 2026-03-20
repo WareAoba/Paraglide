@@ -41,6 +41,7 @@
   --logo-filter: none;
 
   /* 크기 */
+  --titlebar-height: 38px;
   --container-width: 100vw;
   --logo-width: 80vw;
   --logo-height: 50vh;
@@ -148,5 +149,7 @@ img {
 .app-container {
   background-color: var(--bg-color);
   min-height: 100vh;
+  padding-top: var(--titlebar-height);
+  box-sizing: border-box;
   transition: background-color var(--transition-default);
 }

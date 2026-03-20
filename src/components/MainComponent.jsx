@@ -11,6 +11,7 @@ import TextEditor from './Views/TextEditor';
 import Overview from './Views/Overview';
 import ListView from './Views/ListView';
 import DragDropOverlay from './Views/DragDropOverlay';
+import TitleBar from './TitleBar';
 
 import useAppStore, { ProgramStatus } from '../stores/useAppStore';
 import useIcons from '../hooks/useIcons';
@@ -47,6 +48,7 @@ function MainComponent() {
   const theme = useAppStore((s) => s.theme);
   const pluginServer = useAppStore((s) => s.pluginServer);
   const pluginConnected = useAppStore((s) => s.pluginConnected);
+  const pluginModeActive = useAppStore((s) => s.pluginModeActive);
 
   // ─── 스토어 액션 ───
   const toggleSidebar = useAppStore((s) => s.toggleSidebar);
@@ -80,6 +82,22 @@ function MainComponent() {
   const { themeCalc } = useTheme();
   const { handleDragOver, handleDragEnter, handleDragLeave, handleDrop } = useDragDrop();
   useIPC(themeCalc, searchRef);
+
+  // ─── 미저장 경고 확인 헬퍼 ───
+  const confirmIfUnsaved = useCallback(async () => {
+    const { programStatus, isEditorSaved } = useAppStore.getState();
+    if (programStatus === ProgramStatus.EDIT && !isEditorSaved) {
+      ipcRenderer.send('update-saved-state', isEditorSaved);
+      const saveChoice = await ipcRenderer.invoke('show-dialog', 'UNSAVED_CHANGES');
+      if (saveChoice === 1) return false;
+    }
+    return true;
+  }, []);
+
+  // ─── Portal 팝업용 body 테마 동기화 ───
+  useEffect(() => {
+    document.body.dataset.theme = theme.mode;
+  }, [theme.mode]);
 
   // ─── 유틸 ───
   const formatPath = (fullPath) => {
@@ -115,6 +133,8 @@ function MainComponent() {
   };
 
   const handleNewFile = async () => {
+    if (!await confirmIfUnsaved()) return;
+
     const newState = {
       programStatus: ProgramStatus.EDIT,
       paragraphs: [],
@@ -131,6 +151,8 @@ function MainComponent() {
 
   const handleLoadFile = async (options = {}) => {
     try {
+      if (!await confirmIfUnsaved()) return;
+
       const result = await ipcRenderer.invoke('open-file', {
         source: options.source || 'dialog',
         filePath: options.filePath,
@@ -140,8 +162,8 @@ function MainComponent() {
       if (result.success) {
         useAppStore.setState({
           currentFilePath: options.filePath || currentFilePath,
-          programStatus: options.viewMode === 'editor' ? ProgramStatus.EDIT : ProgramStatus.PROCESS,
-          viewMode: options.viewMode || viewMode || 'overview',
+          programStatus: options.programStatus === 'edit' ? ProgramStatus.EDIT : ProgramStatus.PROCESS,
+          viewMode: viewMode || 'overview',
           isSidebarVisible: false
         });
       }
@@ -158,6 +180,17 @@ function MainComponent() {
 
   const handleSidebarFileSelect = async (filePath, lastPosition) => {
     try {
+      if (!await confirmIfUnsaved()) return;
+
+      // EDIT 모드면 에디터에서 바로 열기
+      if (programStatus === ProgramStatus.EDIT) {
+        useAppStore.setState({
+          currentFilePath: filePath,
+          isSidebarVisible: false
+        });
+        return;
+      }
+
       const result = await ipcRenderer.invoke('open-file', { filePath });
       if (result.success) {
         useAppStore.setState({ isSidebarVisible: false });
@@ -169,11 +202,7 @@ function MainComponent() {
 
   const handleCompleteWork = async () => {
     try {
-      if (programStatus === ProgramStatus.EDIT && !isEditorSaved) {
-        ipcRenderer.send('update-saved-state', isEditorSaved);
-        const saveChoice = await ipcRenderer.invoke('show-dialog', 'UNSAVED_CHANGES');
-        if (saveChoice === 1) return;
-      }
+      if (!await confirmIfUnsaved()) return;
 
       const resetState = {
         paragraphs: [],
@@ -270,7 +299,9 @@ function MainComponent() {
         }}
       />
 
-      <DragDropOverlay isVisible={isDragging} />
+      <DragDropOverlay isVisible={isDragging} isWorkMode={programStatus === ProgramStatus.PROCESS || programStatus === ProgramStatus.PAUSE} />
+
+      <TitleBar logoPath={logoPath} titlePath={titlePath} />
 
       <div className="button-group-controls">
         <button className="btn-icon" onClick={toggleSidebar}>
@@ -305,7 +336,7 @@ function MainComponent() {
                 </button>
                 {pluginServer && (
                   <button
-                    className={`btn-icon ${pluginConnected ? 'btn-ps-active' : 'btn-ps-inactive'}`}
+                    className={`btn-icon ${pluginConnected ? (pluginModeActive ? 'btn-ps-connected' : 'btn-ps-active') : 'btn-ps-inactive'}`}
                     onClick={handleTogglePluginConnection}>
                     <img src={icons.photoshop} alt="Photoshop" className="icon" />
                   </button>
@@ -366,6 +397,14 @@ function MainComponent() {
                           folder: icons.folder,
                           delete: icons.delete,
                           locate: icons.locate,
+                          imageAdd: icons.imageAdd,
+                          fontStyle: icons.fontStyle,
+                          database: icons.database,
+                          textFile: icons.textFile,
+                          automation: icons.automation,
+                          paragraphLeft: icons.paragraphLeft,
+                          paragraphCenter: icons.paragraphCenter,
+                          paragraphRight: icons.paragraphRight,
                         }}
                       />
                     </div>

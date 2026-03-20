@@ -196,6 +196,24 @@ const IPCManager = {
     });
     ipcMain.on('toggle-resume', () => this.handleResume());
 
+    // 커스텀 타이틀바 윈도우 컨트롤 핸들러
+    ipcMain.on('window-minimize', () => {
+      state.mainWindow?.minimize();
+    });
+    ipcMain.on('window-maximize', () => {
+      if (state.mainWindow?.isMaximized()) {
+        state.mainWindow.unmaximize();
+      } else {
+        state.mainWindow?.maximize();
+      }
+    });
+    ipcMain.on('window-close', () => {
+      state.mainWindow?.close();
+    });
+    ipcMain.handle('window-is-maximized', () => {
+      return state.mainWindow?.isMaximized() ?? false;
+    });
+
     // 설정 관련 핸들러
     ipcMain.handle('load-settings', async () => {
       try {
@@ -323,17 +341,63 @@ const IPCManager = {
       });
     });
 
+    // ─── 스타일 액션 매핑 (슬롯 → PS 액션) ───
+    ipcMain.handle('load-style-actions', async () => {
+      const mapping = await FileManager.loadStyleActions();
+      PluginBridge.setStyleActions(mapping);
+      return mapping;
+    });
+
+    ipcMain.on('save-style-actions', async (event, mapping) => {
+      await FileManager.saveStyleActions(mapping);
+      PluginBridge.setStyleActions(mapping);
+      BrowserWindow.getAllWindows().forEach(window => {
+        if (!window.isDestroyed()) {
+          window.webContents.send('style-actions-updated', mapping);
+        }
+      });
+    });
+
+    // PS 액션 목록 조회 (캐시)
+    ipcMain.handle('get-ps-action-list', () => {
+      return PluginBridge.getActionList();
+    });
+
+    // PS 액션 목록 새로고침 요청
+    ipcMain.on('refresh-ps-action-list', () => {
+      PluginBridge.requestActionList();
+    });
+
+    // ─── 슬롯 순서 ───
+    ipcMain.handle('load-slot-order', async () => {
+      return await FileManager.loadSlotOrder();
+    });
+
+    ipcMain.on('save-slot-order', async (event, order) => {
+      await FileManager.saveSlotOrder(order);
+      BrowserWindow.getAllWindows().forEach(window => {
+        if (!window.isDestroyed()) {
+          window.webContents.send('slot-order-updated', order);
+        }
+      });
+    });
+
     // ─── 이미지 파일 열기 (이미지 뷰어) ───
     ipcMain.handle('open-image-files', async () => {
       const result = await dialog.showOpenDialog(state.mainWindow, {
         properties: ['openFile', 'multiSelections'],
         title: '이미지 파일 선택',
         filters: [
-          { name: 'Images', extensions: ['jpg', 'jpeg', 'png', 'webp'] }
+          { name: 'Images', extensions: ['jpg', 'jpeg', 'png', 'webp', 'psd'] }
         ]
       });
       if (result.canceled || result.filePaths.length === 0) return null;
       return result.filePaths;
+    });
+
+    // ─── 이미지 뷰어: 창 확장 요청 ───
+    ipcMain.on('expand-window-for-image', (_, neededWidth) => {
+      WindowManager.expandWindowForImage(neededWidth);
     });
 
     // ─── 블랙포인트 다이얼로그 ───
@@ -423,13 +487,18 @@ const IPCManager = {
         state._paraMetadata = ParaFileFormat.createDefaultMetadata();
       }
       if (!state._paraMetadata.paragraphs[paragraphIndex]) {
-        state._paraMetadata.paragraphs[paragraphIndex] = { align: 'center', style: '1' };
+        state._paraMetadata.paragraphs[paragraphIndex] = { align: 'center', style: 'plain' };
       }
       state._paraMetadata.paragraphs[paragraphIndex][key] = value;
       return true;
     });
 
     handlersInitialized = true;
+
+    // 저장된 스타일 액션 매핑을 PluginBridge에 로드
+    FileManager.loadStyleActions().then(mapping => {
+      PluginBridge.setStyleActions(mapping);
+    }).catch(() => {});
   },
 
   handleEditorEvent(type, data) {
@@ -505,11 +574,9 @@ const IPCManager = {
       const textProcessState = state.textProcess;
   
       // 에디터 모드일 때는 viewMode 변경 무시
-      const newViewMode = (textProcessState.programStatus === ProgramStatus.PROCESS ||
-                          textProcessState.programStatus === ProgramStatus.PAUSE) && 
-                         textProcessState.processMode === 'editor' ? 
-                         'editor' : 
-                         settings.viewMode;
+      const newViewMode = textProcessState.programStatus === ProgramStatus.EDIT
+        ? currentConfig.viewMode
+        : settings.viewMode;
   
       const newConfig = {
         ...currentConfig,

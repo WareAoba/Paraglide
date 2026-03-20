@@ -216,10 +216,29 @@ class AppState extends EventEmitter {
 // ─── 싱글톤 인스턴스 ───
 const state = new AppState();
 
+// ─── 상태 전환 규칙 (StatusManager와 동일) ───
+const ALLOWED_TRANSITIONS = {
+  [ProgramStatus.READY]: [ProgramStatus.LOADING, ProgramStatus.PROCESS, ProgramStatus.EDIT],
+  [ProgramStatus.LOADING]: [ProgramStatus.PROCESS, ProgramStatus.READY],
+  [ProgramStatus.PROCESS]: [ProgramStatus.PAUSE, ProgramStatus.READY, ProgramStatus.EDIT],
+  [ProgramStatus.PAUSE]: [ProgramStatus.PROCESS, ProgramStatus.READY, ProgramStatus.EDIT],
+  [ProgramStatus.EDIT]: [ProgramStatus.READY, ProgramStatus.PROCESS]
+};
+
 // ─── updateState 함수 (기존과 동일한 시그니처) ───
 const updateState = async (newState) => {
   // Lazy require to avoid circular dependencies
   const WindowManager = require('./managers/WindowManager');
+
+  // programStatus 변경 시 상태 전환 유효성 검증
+  if (newState.programStatus && newState.programStatus !== state._globalState.programStatus) {
+    const from = state._globalState.programStatus;
+    const to = newState.programStatus;
+    if (!ALLOWED_TRANSITIONS[from]?.includes(to)) {
+      console.warn(`[State] 잘못된 상태 전환 차단: ${from} → ${to}`);
+      return;
+    }
+  }
 
   if (newState.programStatus === ProgramStatus.READY) {
     // READY 상태일 때는 무조건 초기화
@@ -284,4 +303,4 @@ const updateState = async (newState) => {
   });
 };
 
-module.exports = { state, updateState, THEME };
+module.exports = { state, updateState, THEME, ALLOWED_TRANSITIONS };

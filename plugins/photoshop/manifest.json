@@ -77,7 +77,7 @@
         }
       ],
       "minimumSize": { "width": 220, "height": 200 },
-      "maximumSize": { "width": 240, "height": 220 },
+      "maximumSize": { "width": 240, "height": 600 },
       "preferredDockedSize": { "width": 220, "height": 200 },
       "preferredFloatingSize": { "width": 240, "height": 220 }
     }

@@ -1,8 +1,7 @@
 // Paraglide Connector — Photoshop UXP Plugin
 //
-// 전략: addNotificationListener('make') + 모달 폴링 듀얼 감지
-//       → Ctrl+Enter로 텍스트 편집 커밋
-//       → batchPlay set textLayer (공식 Adobe 포맷) 로 텍스트+스타일 교체
+// 전략: 모달 상태 폴링으로 텍스트 편집 진입 감지 → Space+커밋 전송
+//       → 공백 레이어의 스타일 디스크립터 읽기 → 텍스트 교체+스타일 보존
 //       연결 + 텍스트 데이터가 있으면 자동 활성화
 
 const { entrypoints } = require("uxp");
@@ -25,36 +24,8 @@ let stampProcessing = false;
 let modalPollTimer = null;
 let inModalState = false;
 let escSentCount = 0;
-let layerCountBeforeModal = -1;
-let layerIdsBeforeModal = new Set();
-
-// 이벤트 리스너 기반 감지
-let notificationListenerAdded = false;
-let pendingAutoFill = false;      // make 이벤트로 텍스트 레이어 생성 감지됨
-let usesPasteCommit = false;      // 클립보드+붙여넣기 방식 사용 여부
-let cachedToolStyle = null;        // Character 패널 설정 캐시
-
-// ═══════════════ 다국어 ═══════════════
-
-const i18n = {
-  en: { connected: 'Connected', disconnected: 'Disconnected' },
-  ko: { connected: '연결됨', disconnected: '연결끊김' },
-  ja: { connected: '接続中', disconnected: '未接続' },
-  zh: { connected: '已连接', disconnected: '未连接' }
-};
-
-function detectLang() {
-  try {
-    const locale = (psApp.locale || navigator.language || 'en').toLowerCase();
-    if (locale.startsWith('ko')) return 'ko';
-    if (locale.startsWith('ja')) return 'ja';
-    if (locale.startsWith('zh')) return 'zh';
-  } catch {}
-  return 'en';
-}
-
-const lang = detectLang();
-const t = i18n[lang] || i18n.en;
+let layerCountBeforeModal = -1;  // 모달 진입 전 레이어 수
+let layerIdsBeforeModal = new Set(); // 모달 진입 전 레이어 ID
 
 // 활성 여부: 연결됨 + 텍스트 있음
 function isActive() {
@@ -141,7 +112,7 @@ function updateUI() {
     }
   }
   if (statusLabel) {
-    statusLabel.textContent = connected ? t.connected : t.disconnected;
+    statusLabel.textContent = connected ? '연결됨' : '연결끊김';
   }
   if (toggleLabel && toggleInput) {
     toggleLabel.textContent = toggleInput.checked ? 'ON' : 'OFF';
@@ -220,208 +191,306 @@ function wsSend(obj) {
   if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(obj));
 }
 
+// ═══════════════ PS Action 목록 조회 ═══════════════
+
+async function fetchActionList() {
+  try {
+    const result = await photoshop.core.executeAsModal(async () => {
+      const sets = [];
+      // actionSet 개수 조회
+      const [countResult] = await psAction.batchPlay([{
+        _obj: "get",
+        _target: [{ _property: "numberOfActionSets" }, { _ref: "application", _enum: "ordinal", _value: "targetEnum" }]
+      }], {});
+      const setCount = countResult.numberOfActionSets || 0;
+
+      for (let si = 1; si <= setCount; si++) {
+        try {
+          const [setResult] = await psAction.batchPlay([{
+            _obj: "get",
+            _target: [{ _ref: "actionSet", _index: si }]
+          }], {});
+          const setName = setResult.name || ('Set ' + si);
+          const actionCount = setResult.numberOfChildren || 0;
+          const actions = [];
+          for (let ai = 1; ai <= actionCount; ai++) {
+            try {
+              const [actResult] = await psAction.batchPlay([{
+                _obj: "get",
+                _target: [
+                  { _ref: "action", _index: ai },
+                  { _ref: "actionSet", _index: si }
+                ]
+              }], {});
+              actions.push(actResult.name || ('Action ' + ai));
+            } catch { /* skip */ }
+          }
+          sets.push({ set: setName, actions });
+        } catch { /* skip */ }
+      }
+      return sets;
+    }, { commandName: "PG ListActions" });
+
+    log('액션 목록: ' + result.length + '개 세트');
+    wsSend({ type: 'event', event: 'actionList', data: result });
+  } catch (e) {
+    log('액션 목록 조회 실패: ' + e.message);
+  }
+}
+
+// ═══════════════ PS Action 실행 ═══════════════
+
+async function playAction(setName, actionName) {
+  if (!setName || !actionName) return false;
+  try {
+    await psAction.batchPlay([{
+      _obj: "play",
+      _target: [
+        { _ref: "action", _name: actionName },
+        { _ref: "actionSet", _name: setName }
+      ]
+    }], {});
+    log('액션 실행: ' + setName + ' / ' + actionName);
+    return true;
+  } catch (e) {
+    log('액션 실행 실패: ' + e.message);
+    return false;
+  }
+}
+
 // ═══════════════ 메시지 처리 ═══════════════
 
 function onMessage(msg) {
   log('수신: ' + msg.type + (msg.action ? '/' + msg.action : '') + (msg.event ? '/' + msg.event : ''));
   if (msg.type === 'response' && msg.action === 'getCurrentParagraph' && msg.data) {
     paragraph = msg.data;
-    log('단락 수신: ' + (paragraph.text || '').substring(0, 30) + ' (' + (paragraph.index+1) + '/' + paragraph.total + ')');
+    log('단락 수신: ' + (paragraph.text || '').substring(0, 30) + ' (' + (paragraph.index+1) + '/' + paragraph.total + ')' +
+      ' color=' + (paragraph.textColor || 'none') + ' align=' + (paragraph.textAlign || 'none'));
     updateUI();
   }
   if (msg.type === 'event' && msg.event === 'paragraphChanged' && msg.data) {
     paragraph = msg.data;
-    log('단락 변경: ' + (paragraph.text || '').substring(0, 30));
+    log('단락 변경: ' + (paragraph.text || '').substring(0, 30) +
+      ' color=' + (paragraph.textColor || 'none') + ' align=' + (paragraph.textAlign || 'none'));
     updateUI();
   }
   if (msg.type === 'event' && msg.event === 'connected' && msg.data) {
-    paragraph = msg.data;
+    paragraph = {
+      text: msg.data.text || '', index: msg.data.index || 0, total: msg.data.total || 0,
+      textColor: msg.data.textColor || null, textAlign: msg.data.textAlign || null
+    };
     log('서버 연결 확인, 텍스트: ' + (paragraph.text ? '있음' : '없음'));
     updateUI();
+    // 연결 직후 액션 목록 전송
+    fetchActionList();
   }
   if (msg.type === 'response' && msg.action === 'sendEsc') {
-    log('Ctrl+Enter 응답: ' + (msg.data?.success ? '성공' : '실패'));
+    log('Esc 응답: ' + (msg.data?.success ? '성공' : '실패'));
   }
-  if (msg.type === 'response' && msg.action === 'pasteCommit') {
-    log('pasteCommit 응답: ' + (msg.data?.success ? '성공' : '실패'));
+  // Paraglide에서 액션 목록 재요청
+  if (msg.type === 'request' && msg.action === 'getActionList') {
+    fetchActionList();
   }
 }
 
-// ═══════════════ 모달 감지 + 자동 처리 ═══════════════
-//
-// 듀얼 감지 플로우:
-//   1차: addNotificationListener('make') → 텍스트 레이어 생성 이벤트 수신
-//   2차: 모달 폴링 (fallback) → layers.length 비교
-//   → 감지 시 Ctrl+Enter 전송 (커밋)
-//   → 모달 해제 후 batchPlay set textLayer로 텍스트+스타일 교체
-//   → 캐시된 도구 스타일 or 레이어 디스크립터에서 원본 스타일 보존
+// ═══════════════ 모달 감지 + 자동 처리 (통합) ═══════════════
+// 핵심: executeAsModal은 실제 작업이 필요할 때만 호출
+//   평상시 → 모달 없이 레이어 수만 모니터링 (폰트 크기 등 UI 조작 방해 안 함)
+//   레이어 수 증가 → executeAsModal 시도로 모달 여부 판별
+//   모달 내 레이어 증가 → Esc 전송
+//   모달 해제 + Esc 보냈었음 → executeAsModal로 텍스트 교체
 
-let escWasSent = false;
-let escSendTime = 0;
+let escWasSent = false;  // 이 모달 세션에서 Esc를 보냈는지
+let escSendTime = 0;     // Esc 전송 시각 (중복 방지용)
 
-// ── 이벤트 기반 텍스트 레이어 생성 감지 ──
-function setupNotificationListener() {
-  if (notificationListenerAdded) return;
-  notificationListenerAdded = true;
-
-  psAction.addNotificationListener(['make'], (event, descriptor) => {
-    try {
-      const descStr = JSON.stringify(descriptor || {}).substring(0, 300);
-      log('[EVENT] make: ' + descStr);
-
-      if (!isActive() || stampProcessing) return;
-
-      // 텍스트 레이어 생성 여부 판별
-      const target = descriptor?._target;
-      const isTextMake = (Array.isArray(target) && target.some(t => t._ref === 'textLayer' || t._ref === 'contentLayer')) ||
-                         descriptor?.using?._obj === 'textLayer' ||
-                         descriptor?.layerKind === 3;
-
-      // 텍스트 도구(typeCreateOrEditTool)가 활성 상태인 경우도 감지
-      const layerCreated = descriptor?.layerID != null;
-
-      if ((isTextMake || layerCreated) && !pendingAutoFill) {
-        pendingAutoFill = true;
-
-        // ── 클립보드에 텍스트 기록 → pasteCommit 요청 ──
-        // 붙여넣기된 텍스트는 Character 패널 스타일을 자동 상속 → 12pt 문제 해결
-        const rawText = paragraph.text;
-        if (rawText && navigator.clipboard && navigator.clipboard.writeText) {
-          const textToSet = rawText.replace(/\r\n|\n/g, '\r');
-          navigator.clipboard.writeText(textToSet)
-            .then(() => {
-              usesPasteCommit = true;
-              escWasSent = true;
-              escSentCount++;
-              escSendTime = Date.now();
-              log('[EVENT] 클립보드 설정 완료 → pasteCommit 요청');
-              wsSend({ type: 'request', action: 'pasteCommit' });
-            })
-            .catch(err => {
-              log('[EVENT] 클립보드 실패: ' + err.message + ' → sendEsc fallback');
-              usesPasteCommit = false;
-              escWasSent = true;
-              escSentCount++;
-              escSendTime = Date.now();
-              wsSend({ type: 'request', action: 'sendEsc' });
-            });
-        } else {
-          // 클립보드 API 없거나 텍스트 없음 → 기존 방식
-          log('[EVENT] 텍스트 레이어 생성 감지 → sendEsc fallback');
-          usesPasteCommit = false;
-          escWasSent = true;
-          escSentCount++;
-          escSendTime = Date.now();
-          wsSend({ type: 'request', action: 'sendEsc' });
-        }
-      }
-    } catch (err) {
-      log('[EVENT] make 처리 에러: ' + err.message);
-    }
-  });
-
-  log('이벤트 리스너 등록 완료 (make)');
+// hex("#RRGGBB") → PS RGBColor descriptor
+function hexToDescriptor(hex) {
+  if (!hex || typeof hex !== 'string') return null;
+  const m = hex.match(/^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i);
+  if (!m) return null;
+  return {
+    _obj: "RGBColor",
+    red: parseInt(m[1], 16),
+    grain: parseInt(m[2], 16),   // PS uses "grain" for green
+    blue: parseInt(m[3], 16)
+  };
 }
 
-// ── 현재 도구 스타일 캐시 (Character 패널 설정) ──
-async function cacheCurrentToolStyle() {
-  try {
-    // 현재 텍스트 도구의 textStyle 속성을 읽음
-    const result = await psAction.batchPlay([{
-      _obj: "get",
-      _target: [{ _ref: "tool", _enum: "ordinal", _value: "targetEnum" }]
-    }], {});
-
-    const toolOpts = result?.[0];
-    if (toolOpts) {
-      // textToolCharacterOptions 또는 currentToolOptions에서 스타일 추출
-      const charOpts = toolOpts.currentToolOptions?.textToolCharacterOptions ||
-                       toolOpts.textToolCharacterOptions;
-      if (charOpts) {
-        cachedToolStyle = charOpts;
-        log('[CACHE] 도구 스타일 캐시 갱신: size=' + JSON.stringify(charOpts.size || 'N/A'));
-      }
-    }
-  } catch { /* 무시 */ }
+// textAlign string → PS alignmentType enum value
+function alignToAlignmentType(align) {
+  if (!align || typeof align !== 'string') return null;
+  const map = {
+    'left': 'left', 'center': 'center', 'right': 'right',
+    'justifyLeft': 'justifyLeft', 'justifyCenter': 'justifyCenter',
+    'justifyRight': 'justifyRight', 'justifyAll': 'justifyAll'
+  };
+  return map[align] || null;
 }
 
 function startModalPoll() {
   if (modalPollTimer) return;
   log('폴링 시작 (활성)');
 
-  // 이벤트 리스너 등록 (1차 감지 — 가장 빠르고 신뢰성 높음)
-  setupNotificationListener();
-
   modalPollTimer = setInterval(async () => {
     if (!isActive() || stampProcessing) return;
 
-    try {
-      await photoshop.core.executeAsModal(async (ctx) => {
-        if (inModalState && (escWasSent || pendingAutoFill)) {
-          // ── 모달 해제됨: 텍스트 교체 ──
-          const wasPasteCommit = usesPasteCommit;
-          log('[FLOW] 모달해제 진입. inModal=' + inModalState + ' escSent=' + escWasSent + ' pending=' + pendingAutoFill + ' paste=' + wasPasteCommit);
+    // ── 모달 해제 대기: Esc 전송 후 텍스트 교체 필요 ──
+    if (inModalState && escWasSent) {
+      try {
+        await photoshop.core.executeAsModal(async () => {
           inModalState = false;
           escWasSent = false;
-          pendingAutoFill = false;
-          usesPasteCommit = false;
           escSentCount = 0;
           escSendTime = 0;
 
-          try {
-            const d = psApp.activeDocument;
-            if (!d) { log('[FLOW] 문서 없음'); return; }
+          const d = psApp.activeDocument;
+          if (!d) return;
 
-            if (wasPasteCommit) {
-              // ── pasteCommit: 텍스트+스타일이 이미 적용됨 (Character 패널 스타일 상속) ──
-              log('[FLOW] pasteCommit 완료 → moveNext');
-              wsSend({ type: 'request', action: 'moveNext' });
-              log('✅ pasteCommit 완료');
-            } else {
-              // ── sendEsc fallback: batchPlay로 텍스트+스타일 설정 필요 ──
-              const active = d.activeLayers[0];
-              if (!active) { log('[FLOW] 활성 레이어 없음'); return; }
-
-              log('[FLOW] 활성레이어: id=' + active.id + ' kind=' + active.kind + ' name="' + active.name + '"');
-
-              // 텍스트 레이어인지 확인
-              let isTextLayer = false;
-              try { isTextLayer = active.textItem != null; } catch { isTextLayer = false; }
-              if (!isTextLayer) {
-                log('[FLOW] 텍스트 레이어 아님 → 건너뜀');
-                layerCountBeforeModal = d.layers.length;
-                layerIdsBeforeModal = new Set(d.layers.map(l => l.id));
-                stampProcessing = false;
-                return;
-              }
-
-              const rawText = paragraph.text;
-              if (!rawText) { log('[FLOW] paragraph.text 비어있음'); return; }
-
-              stampProcessing = true;
-              const pgText = rawText.replace(/\r\n|\n/g, '\r');
-              log('[FLOW] 텍스트 설정 시도 (fallback): "' + pgText.substring(0, 30) + '"');
-
-              await replaceTextContent(pgText, active.id);
-              log('[FLOW] replaceTextContent 성공!');
-
-              wsSend({ type: 'request', action: 'moveNext' });
-              log('✅ 완료 (fallback)');
+          // 새로 생성된 레이어 찾기 (ID 비교)
+          let newLayer = null;
+          for (const layer of d.layers) {
+            if (!layerIdsBeforeModal.has(layer.id)) {
+              newLayer = layer;
+              break;
             }
-          } catch (e) {
-            log('❌ 교체 실패: ' + e.message);
           }
 
-          const doc2 = psApp.activeDocument;
-          if (doc2) {
-            layerCountBeforeModal = doc2.layers.length;
-            layerIdsBeforeModal = new Set(doc2.layers.map(l => l.id));
+          if (!newLayer) {
+            log('[POLL] 새 레이어 없음 → 무시');
+            layerCountBeforeModal = d.layers.length;
+            layerIdsBeforeModal = new Set(d.layers.map(l => l.id));
+            return;
           }
+
+          d._activeLayers = [newLayer];
+
+          const rawText = paragraph.text;
+          if (!rawText) return;
+
+          stampProcessing = true;
+          const pgText = rawText.replace(/\r\n|\n/g, '\r');
+
+          // ── Read: 공백 레이어의 스타일 디스크립터 읽기 ──
+          let readDesc = null;
+          try {
+            const [readResult] = await psAction.batchPlay([{
+              _obj: "get",
+              _target: [
+                { _ref: "property", _property: "textKey" },
+                { _ref: "layer", _enum: "ordinal", _value: "targetEnum" }
+              ],
+            }], {});
+            readDesc = (readResult.textKey && typeof readResult.textKey === 'object')
+              ? readResult.textKey : readResult;
+            const dbg = {
+              readKeys: Object.keys(readDesc),
+              hasTextStyleRange: !!readDesc.textStyleRange,
+              tsrCount: readDesc.textStyleRange?.length,
+              hasParagraphStyleRange: !!readDesc.paragraphStyleRange,
+              psrCount: readDesc.paragraphStyleRange?.length,
+              psrFirst: readDesc.paragraphStyleRange?.[0]?.paragraphStyle || null,
+              metaAlign: paragraph.textAlign,
+              metaColor: paragraph.textColor,
+            };
+            log('[DBG] ' + JSON.stringify(dbg));
+            wsSend({ type: 'event', event: 'debug', data: dbg });
+          } catch (re) {
+            log('⚠️ 스타일 읽기 실패: ' + re.message);
+          }
+
+          // ── Modify + Write ──
+          const writeDesc = { _obj: "textLayer", textKey: pgText };
+
+          if (readDesc && readDesc.textStyleRange && readDesc.textStyleRange.length > 0) {
+            const tsr = readDesc.textStyleRange[0];
+            tsr.from = 0;
+            tsr.to = pgText.length;
+            const colorDesc = hexToDescriptor(paragraph.textColor);
+            if (colorDesc && tsr.textStyle) {
+              tsr.textStyle.color = colorDesc;
+            }
+            writeDesc.textStyleRange = [tsr];
+          }
+
+          // paragraphStyleRange 처리
+          const alignValue = alignToAlignmentType(paragraph.textAlign);
+          if (readDesc && readDesc.paragraphStyleRange && readDesc.paragraphStyleRange.length > 0) {
+            const psr = readDesc.paragraphStyleRange[0];
+            psr.from = 0;
+            psr.to = pgText.length;
+            if (alignValue) {
+              if (!psr.paragraphStyle) psr.paragraphStyle = { _obj: "paragraphStyle" };
+              psr.paragraphStyle.align = { _enum: "alignmentType", _value: alignValue };
+            }
+            writeDesc.paragraphStyleRange = [psr];
+          } else if (alignValue) {
+            writeDesc.paragraphStyleRange = [{
+              _obj: "paragraphStyleRange",
+              from: 0, to: pgText.length,
+              paragraphStyle: {
+                _obj: "paragraphStyle",
+                align: { _enum: "alignmentType", _value: alignValue }
+              }
+            }];
+          }
+
+          const writeDbg = { writeKeys: Object.keys(writeDesc), align: alignValue };
+          log('[DBG] write: ' + JSON.stringify(writeDbg));
+          wsSend({ type: 'event', event: 'debug', data: writeDbg });
+
+          await psAction.batchPlay([{
+            _obj: "set",
+            _target: [{ _ref: "textLayer", _enum: "ordinal", _value: "targetEnum" }],
+            to: writeDesc
+          }], {});
+
+          // ── 스타일 액션 실행 (텍스트 교체 후) ──
+          if (paragraph.styleAction) {
+            const sa = paragraph.styleAction;
+            if (sa.set && sa.action) {
+              try {
+                await playAction(sa.set, sa.action);
+              } catch (ae) {
+                log('⚠️ 스타일 액션 실패: ' + ae.message);
+              }
+            }
+          }
+
+          log('✅ 완료: ' + rawText.substring(0, 30));
+          wsSend({ type: 'request', action: 'moveNext' });
+
+          layerCountBeforeModal = d.layers.length;
+          layerIdsBeforeModal = new Set(d.layers.map(l => l.id));
           stampProcessing = false;
           updateUI();
+        }, { commandName: "PG Stamp" });
+      } catch {
+        // 아직 모달 중 — 대기
+      }
+      return;
+    }
 
-        } else {
-          // ── 비모달: 레이어 스냅샷 갱신 + 도구 스타일 캐시 ──
+    // ── 모달 중 (Esc 미전송) → 새 레이어 확인 후 Esc 전송 ──
+    if (inModalState) {
+      try {
+        const doc = psApp.activeDocument;
+        const currentCount = doc ? doc.layers.length : -1;
+        if (layerCountBeforeModal >= 0 && currentCount > layerCountBeforeModal) {
+          const now = Date.now();
+          if (escSentCount < 3 && (now - escSendTime) > 500) {
+            escSentCount++;
+            escWasSent = true;
+            escSendTime = now;
+            log('[POLL] 새 레이어 → Esc (' + escSentCount + ')');
+            wsSend({ type: 'request', action: 'sendEsc' });
+          }
+        }
+      } catch { /* 문서 접근 불가 */ }
+
+      // 모달 탈출 확인
+      try {
+        await photoshop.core.executeAsModal(async () => {
+          // 모달 해제되었으나 Esc 안 보냄 — 사용자가 직접 닫은 경우
           inModalState = false;
           escSentCount = 0;
           escSendTime = 0;
@@ -430,200 +499,48 @@ function startModalPoll() {
             layerCountBeforeModal = doc.layers.length;
             layerIdsBeforeModal = new Set(doc.layers.map(l => l.id));
           }
-          // 도구 스타일 캐시 (Character 패널 설정 보존용)
-          await cacheCurrentToolStyle();
-        }
-      }, { commandName: "PG Stamp" });
+        }, { commandName: "PG Check" });
+      } catch { /* 아직 모달 */ }
+      return;
+    }
 
-    } catch (e) {
-      if (e.message && e.message.includes('modal')) {
-        // ── 모달 중: 2차 감지 (이벤트 리스너가 놓친 경우 fallback) ──
-        if (!stampProcessing && !pendingAutoFill && layerCountBeforeModal >= 0) {
-          try {
-            const cnt = psApp.activeDocument?.layers?.length ?? -1;
-            if (cnt > layerCountBeforeModal) {
-              const now = Date.now();
-              if (escSentCount < 3 && (now - escSendTime) > 500) {
-                escSentCount++;
-                escWasSent = true;
-                escSendTime = now;
-                log('[POLL] 레이어 증가 (' + layerCountBeforeModal + '→' + cnt + ') → Ctrl+Enter (' + escSentCount + ')');
-                wsSend({ type: 'request', action: 'sendEsc' });
-              }
+    // ── 평상시: executeAsModal 호출 없이 레이어 수만 모니터링 ──
+    try {
+      const doc = psApp.activeDocument;
+      if (!doc) return;
+      const currentCount = doc.layers.length;
+
+      if (layerCountBeforeModal >= 0 && currentCount > layerCountBeforeModal) {
+        // 레이어 수 증가 감지 → 모달 여부 판별
+        try {
+          await photoshop.core.executeAsModal(async () => {
+            // 모달 아님 — 다른 이유로 레이어 추가됨 (복사, 그리기 등)
+            layerCountBeforeModal = currentCount;
+            layerIdsBeforeModal = new Set(doc.layers.map(l => l.id));
+          }, { commandName: "PG Check" });
+        } catch (e) {
+          if (e.message && e.message.includes('modal')) {
+            // 모달 진입 확인 → Esc 전송
+            inModalState = true;
+            const now = Date.now();
+            if (escSentCount < 3 && (now - escSendTime) > 500) {
+              escSentCount++;
+              escWasSent = true;
+              escSendTime = now;
+              log('[POLL] 새 레이어 → Esc (' + escSentCount + ')');
+              wsSend({ type: 'request', action: 'sendEsc' });
             }
-          } catch { /* 문서 접근 불가 */ }
+          }
         }
-        inModalState = true;
       } else {
-        log('[ERR] 비모달 에러: ' + e.message);
+        // 변화 없음 — baseline 갱신 (executeAsModal 호출 안 함!)
+        layerCountBeforeModal = currentCount;
+        layerIdsBeforeModal = new Set(doc.layers.map(l => l.id));
       }
+    } catch {
+      // 문서 접근 실패 — 무시
     }
   }, 200);
-}
-
-// ── 텍스트 교체 핵심 함수 ──
-// 공식 Adobe 샘플 기반 포맷 (green ≠ grain, 클린 디스크립터)
-// get으로 원본 스타일을 읽되, set에는 필요한 속성만 수동 구성한다.
-// 캐시된 도구 스타일을 fallback으로 사용하여 12pt 기본값 문제를 해결.
-async function replaceTextContent(newText, layerId) {
-  log('[REPLACE] 시작: layerId=' + layerId + ' newText길이=' + newText.length);
-
-  // 1. 해당 레이어의 텍스트 디스크립터 읽기
-  let fullDesc = null;
-  try {
-    const getResult = await psAction.batchPlay([{
-      _obj: "get",
-      _target: [
-        { _ref: "property", _property: "textKey" },
-        { _ref: "layer", _id: layerId }
-      ]
-    }], {});
-    fullDesc = getResult?.[0]?.textKey;
-  } catch (e) {
-    log('[REPLACE] 디스크립터 읽기 에러: ' + e.message);
-  }
-
-  // 원본 스타일 추출
-  const origTSR = fullDesc?.textStyleRange?.[0];
-  const origTS = origTSR?.textStyle;
-  log('[DESC] 전체 textStyle: ' + JSON.stringify(origTS || 'null').substring(0, 500));
-
-  // 캐시된 도구 스타일 (Character 패널 설정)
-  const toolTS = cachedToolStyle;
-  log('[DESC] cachedToolStyle: ' + JSON.stringify(toolTS || 'null').substring(0, 300));
-
-  // 2. 클린 textStyle 구성 (공식 샘플 포맷)
-  //    우선순위: origTS (레이어) → toolTS (Character 패널 캐시)
-  const cleanTextStyle = { _obj: "textStyle" };
-
-  // 폰트: 레이어 스타일 우선, 없으면 캐시된 도구 스타일
-  cleanTextStyle.fontPostScriptName = origTS?.fontPostScriptName || toolTS?.fontPostScriptName;
-  cleanTextStyle.fontName = origTS?.fontName || toolTS?.fontName;
-  cleanTextStyle.fontStyleName = origTS?.fontStyleName || toolTS?.fontStyleName;
-
-  // 크기: 레이어 스타일 우선. 12pt(기본값)이고 캐시에 다른 값이 있으면 캐시 사용
-  const origSize = origTS?.size;
-  const toolSize = toolTS?.size;
-  if (origSize) {
-    // 원본 크기가 12pt(기본값)이고, 캐시에 다른 크기가 있으면 캐시 우선
-    const origPt = origSize?._value ?? origSize;
-    const toolPt = toolSize?._value ?? toolSize;
-    if (origPt === 12 && toolPt && toolPt !== 12) {
-      cleanTextStyle.size = toolSize;
-      log('[STYLE] 12pt 기본값 → 캐시 크기 사용: ' + JSON.stringify(toolSize));
-    } else {
-      cleanTextStyle.size = origSize;
-      log('[STYLE] 원본 크기 사용: ' + JSON.stringify(origSize));
-    }
-  } else if (toolSize) {
-    cleanTextStyle.size = toolSize;
-    log('[STYLE] 레이어 크기 없음 → 캐시 크기 사용: ' + JSON.stringify(toolSize));
-  }
-
-  // 자간/행간
-  if (origTS?.tracking !== undefined) cleanTextStyle.tracking = origTS.tracking;
-  else if (toolTS?.tracking !== undefined) cleanTextStyle.tracking = toolTS.tracking;
-
-  if (origTS?.leading) cleanTextStyle.leading = origTS.leading;
-  else if (toolTS?.leading) cleanTextStyle.leading = toolTS.leading;
-
-  if (origTS?.autoLeading !== undefined) cleanTextStyle.autoLeading = origTS.autoLeading;
-  else if (toolTS?.autoLeading !== undefined) cleanTextStyle.autoLeading = toolTS.autoLeading;
-
-  if (origTS?.baselineShift) cleanTextStyle.baselineShift = origTS.baselineShift;
-  if (origTS?.horizontalScale !== undefined) cleanTextStyle.horizontalScale = origTS.horizontalScale;
-  if (origTS?.verticalScale !== undefined) cleanTextStyle.verticalScale = origTS.verticalScale;
-
-  // 안티앨리어싱
-  if (origTS?.antiAlias) cleanTextStyle.antiAlias = origTS.antiAlias;
-  else if (toolTS?.antiAlias) cleanTextStyle.antiAlias = toolTS.antiAlias;
-
-  // undefined 속성 제거 (batchPlay 호환)
-  for (const key of Object.keys(cleanTextStyle)) {
-    if (cleanTextStyle[key] === undefined || cleanTextStyle[key] === null) {
-      delete cleanTextStyle[key];
-    }
-  }
-
-  // 색상: .para 메타데이터 우선, 없으면 원본 (green 키 사용 — 공식 샘플 포맷)
-  if (paragraph.textColor) {
-    const hex = paragraph.textColor.replace('#', '');
-    const r = parseInt(hex.substring(0, 2), 16);
-    const g = parseInt(hex.substring(2, 4), 16);
-    const b = parseInt(hex.substring(4, 6), 16);
-    cleanTextStyle.color = {
-      _obj: "RGBColor",
-      red: r,
-      green: g,
-      blue: b
-    };
-    log('[COLOR] .para 색상: #' + hex + ' → R' + r + ' G' + g + ' B' + b);
-  } else if (origTS?.color) {
-    // get은 grain을 반환하지만 set은 green을 사용
-    cleanTextStyle.color = {
-      _obj: "RGBColor",
-      red: origTS.color.red ?? 0,
-      green: origTS.color.grain ?? origTS.color.green ?? 0,
-      blue: origTS.color.blue ?? 0
-    };
-    log('[COLOR] 원본 색상: R' + cleanTextStyle.color.red + ' G' + cleanTextStyle.color.green + ' B' + cleanTextStyle.color.blue);
-  } else if (toolTS?.color) {
-    cleanTextStyle.color = {
-      _obj: "RGBColor",
-      red: toolTS.color.red ?? 0,
-      green: toolTS.color.grain ?? toolTS.color.green ?? 0,
-      blue: toolTS.color.blue ?? 0
-    };
-    log('[COLOR] 캐시 색상 사용');
-  }
-
-  // 3. 클린 paragraphStyle 구성
-  const origPSR = fullDesc?.paragraphStyleRange?.[0];
-  const origPS = origPSR?.paragraphStyle;
-  const cleanParaStyle = { _obj: "paragraphStyle" };
-
-  if (paragraph.textAlign) {
-    cleanParaStyle.align = {
-      _enum: "alignmentType",
-      _value: paragraph.textAlign === 'left' ? 'left' :
-              paragraph.textAlign === 'right' ? 'right' : 'center'
-    };
-  } else if (origPS?.align) {
-    cleanParaStyle.align = origPS.align;
-  }
-
-  // 4. set textLayer — 현재 활성 레이어 타겟 (가장 안정적)
-  const setDesc = {
-    _obj: "set",
-    _target: [{ _ref: "textLayer", _enum: "ordinal", _value: "targetEnum" }],
-    to: {
-      _obj: "textLayer",
-      textKey: newText,
-      textStyleRange: [{
-        _obj: "textStyleRange",
-        from: 0,
-        to: newText.length,
-        textStyle: cleanTextStyle
-      }],
-      paragraphStyleRange: [{
-        _obj: "paragraphStyleRange",
-        from: 0,
-        to: newText.length,
-        paragraphStyle: cleanParaStyle
-      }]
-    }
-  };
-
-  log('[SET] send: size=' + JSON.stringify(cleanTextStyle.size) + ' font=' + (cleanTextStyle.fontPostScriptName || cleanTextStyle.fontName));
-
-  const setResult = await psAction.batchPlay([setDesc], {});
-
-  const resultStr = JSON.stringify(setResult?.[0] ?? 'null');
-  log('[SET] result: ' + resultStr.substring(0, 300));
-
-  if (setResult?.[0]?.message) {
-    log('[SET] ⚠ 경고: ' + setResult[0].message);
-  }
 }
 
 function stopModalPoll() {
@@ -632,8 +549,6 @@ function stopModalPoll() {
     modalPollTimer = null;
     inModalState = false;
     escWasSent = false;
-    pendingAutoFill = false;
-    usesPasteCommit = false;
     log('폴링 중지 (비활성)');
   }
 }

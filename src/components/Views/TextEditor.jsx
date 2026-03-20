@@ -1,8 +1,10 @@
 import React, { useEffect, useCallback, useRef, useState, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import TextMacro from './TextMacro';
 import TextStyleSlots from './TextStyleSlots';
 import ImageViewer from './ImageViewer';
+import AutomationPanel from './AutomationPanel';
 import useAppStore from '../../stores/useAppStore';
 import '../../CSS/Views/Editor.css';
 
@@ -18,13 +20,18 @@ const { BlackPointAnalyzer } = window.require(
 const { SpreadDetector } = window.require(
   path.join(process.cwd(), 'src', 'store', 'utils', 'SpreadDetector')
 );
-const { ParaFileFormat } = window.require(
+const { ParaFileFormat, STYLE_NAMES } = window.require(
   path.join(process.cwd(), 'src', 'store', 'utils', 'ParaFileFormat')
 );
+const { DpiAdjuster } = window.require(
+  path.join(process.cwd(), 'src', 'store', 'utils', 'DpiAdjuster')
+);
+
+import { readPsd } from 'ag-psd';
 
 const FONT_SCALE_OPTIONS = [10, 15, 20, 25, 35, 50, 65, 80, 90, 100, 110, 125, 150, 175, 200, 250, 300];
-const IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp'];
-const MIME_TYPES = { '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.webp': 'image/webp' };
+const IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp', '.psd'];
+const MIME_TYPES = { '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.webp': 'image/webp', '.psd': 'image/vnd.adobe.photoshop' };
 
 function escapeHtml(text) {
   return text
@@ -43,6 +50,10 @@ function TextEditor({ theme, currentFilePath, onSavedStateChange, icons }) {
   const isLoadingRef = useRef(false);
   const initialContentRef = useRef('');
   const isSavedRef = useRef(true);
+
+  // ─── 뷰어/에디터 리사이즈 ───
+  const [viewerRatio, setViewerRatio] = useState(null);
+  const resizingRef = useRef(false);
   const rafRef = useRef(null);
   const [fontScale, setFontScale] = useState(100);
   const [macroOpen, setMacroOpen] = useState(false);
@@ -52,6 +63,12 @@ function TextEditor({ theme, currentFilePath, onSavedStateChange, icons }) {
   // ─── 텍스트 스타일 슬롯 상태 ───
   const [styleOpen, setStyleOpen] = useState(false);
   const styleButtonRef = useRef(null);
+  const pluginServer = useAppStore(s => s.pluginServer);
+
+  // ─── 메타데이터 패널 상태 ───
+  const [metaPanelOpen, setMetaPanelOpen] = useState(false);
+  const metaButtonRef = useRef(null);
+  const [metaImage, setMetaImage] = useState('');
 
   // ─── 이미지 뷰어 상태 ───
   const [viewerImages, setViewerImages] = useState([]);
@@ -59,6 +76,9 @@ function TextEditor({ theme, currentFilePath, onSavedStateChange, icons }) {
   const [viewerPage, setViewerPage] = useState(0);
   const lastSyncedPageRef = useRef(0);
   const [cursorSync, setCursorSync] = useState(true);
+  const [spreadPairs, setSpreadPairs] = useState([]);
+  const spreadPairsRef = useRef([]);
+  useEffect(() => { spreadPairsRef.current = spreadPairs; }, [spreadPairs]);
 
   // ─── .para 메타데이터 로컬 관리 ───
   const paraMetadataRef = useRef(null);
@@ -70,9 +90,17 @@ function TextEditor({ theme, currentFilePath, onSavedStateChange, icons }) {
   const [blackPointInfo, setBlackPointInfo] = useState(null);
   const [blackPointAction, setBlackPointAction] = useState(null);
 
+  // ─── 자동화 패널 상태 ───
+  const automationAutoRef = useRef(AutomationPanel.loadAutoSettings());
+  const handleAutomationAutoChange = useCallback((settings) => {
+    automationAutoRef.current = settings;
+  }, []);
+
   // ─── 정렬 인디케이터 상태 ───
   const [alignIndicators, setAlignIndicators] = useState([]);
   const alignOverlayRef = useRef(null);
+  const [alignExpandHover, setAlignExpandHover] = useState(null); // { paragraphIdx, rect, align }
+  const alignExpandTimerRef = useRef(null);
 
   // ─── 에디터 DOM에서 plain text 추출 ───
   const getPlainText = useCallback(() => {
@@ -264,7 +292,7 @@ function TextEditor({ theme, currentFilePath, onSavedStateChange, icons }) {
             const style = ParaFileFormat.getParagraphStyle(paraMetadataRef.current, paragraphIdx);
             indicators.push({
               paragraphIdx: paragraphIdx,
-              top: rect.bottom - editorRect.top,
+              top: rect.top - editorRect.top,
               align,
               style
             });
@@ -283,7 +311,7 @@ function TextEditor({ theme, currentFilePath, onSavedStateChange, icons }) {
           const style = ParaFileFormat.getParagraphStyle(paraMetadataRef.current, paragraphIdx);
           indicators.push({
             paragraphIdx: paragraphIdx,
-            top: rect.bottom - editorRect.top,
+            top: rect.top - editorRect.top,
             align,
             style
           });
@@ -301,7 +329,7 @@ function TextEditor({ theme, currentFilePath, onSavedStateChange, icons }) {
       const style = ParaFileFormat.getParagraphStyle(paraMetadataRef.current, paragraphIdx);
       indicators.push({
         paragraphIdx: paragraphIdx,
-        top: rect.bottom - editorRect.top,
+        top: rect.top - editorRect.top,
         align,
         style
       });
@@ -378,6 +406,22 @@ function TextEditor({ theme, currentFilePath, onSavedStateChange, icons }) {
 
     el.classList.toggle('is-empty', !el.textContent.trim());
 
+    // ── 에디터 텍스트에서 합페 쌍 자동 도출 ──
+    const derivedSpreads = [];
+    for (let i = 0; i < divs.length; i++) {
+      if (!divs[i].classList.contains('line-page-number')) continue;
+      const info = TextProcessUtils.extractPageNumber(divs[i].textContent.trim());
+      if (info && info.start !== info.end) {
+        derivedSpreads.push({ pageA: info.start, pageB: info.end, confidence: 1 });
+      }
+    }
+    // 변경 시에만 업데이트 (무한 루프 방지)
+    const prevKey = spreadPairsRef.current.map(s => `${s.pageA}-${s.pageB}`).join(',');
+    const newKey = derivedSpreads.map(s => `${s.pageA}-${s.pageB}`).join(',');
+    if (prevKey !== newKey) {
+      setSpreadPairs(derivedSpreads);
+    }
+
     // 정렬 인디케이터 위치 업데이트
     updateAlignIndicators();
   }, [normalizeNodes, updateAlignIndicators]);
@@ -429,16 +473,16 @@ function TextEditor({ theme, currentFilePath, onSavedStateChange, icons }) {
   }, [applyDecorations, currentFilePath, onSavedStateChange]);
 
   // ─── 단락 스타일 변경 ───
-  const setParagraphStyle = useCallback((paragraphIndex, styleNum) => {
+  const setParagraphStyle = useCallback((paragraphIndex, styleName) => {
     if (paragraphIndex < 0) return;
     if (!paraMetadataRef.current) {
       paraMetadataRef.current = ParaFileFormat.createDefaultMetadata();
     }
     if (!paraMetadataRef.current.paragraphs[paragraphIndex]) {
-      paraMetadataRef.current.paragraphs[paragraphIndex] = { align: 'center', style: '1' };
+      paraMetadataRef.current.paragraphs[paragraphIndex] = { align: 'center', style: 'plain' };
     }
-    paraMetadataRef.current.paragraphs[paragraphIndex].style = String(styleNum);
-    ipcRenderer.invoke('set-paragraph-meta', { paragraphIndex, key: 'style', value: String(styleNum) });
+    paraMetadataRef.current.paragraphs[paragraphIndex].style = styleName;
+    ipcRenderer.invoke('set-paragraph-meta', { paragraphIndex, key: 'style', value: styleName });
     applyDecorations();
     if (isSavedRef.current) {
       isSavedRef.current = false;
@@ -458,10 +502,10 @@ function TextEditor({ theme, currentFilePath, onSavedStateChange, icons }) {
   }, [setParagraphAlign]);
 
   // ─── 텍스트 스타일 선택 핸들러 (현재 커서 단락에 적용) ───
-  const handleStyleSelect = useCallback((styleNum) => {
+  const handleStyleSelect = useCallback((styleName) => {
     const paraIdx = getParagraphAtCursor();
     if (paraIdx >= 0) {
-      setParagraphStyle(paraIdx, styleNum);
+      setParagraphStyle(paraIdx, styleName);
     }
     setStyleOpen(false);
     editorRef.current?.focus();
@@ -574,74 +618,344 @@ function TextEditor({ theme, currentFilePath, onSavedStateChange, icons }) {
 
       sel.removeAllRanges();
       sel.addRange(range);
+
+      // 커서가 놓인 요소를 뷰포트에 보이도록 스크롤
+      const cursorNode = range.startContainer;
+      const cursorEl = cursorNode.nodeType === Node.TEXT_NODE ? cursorNode.parentElement : cursorNode;
+      if (cursorEl && cursorEl.scrollIntoView) {
+        cursorEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
       return;
     }
   }, []);
 
-  // ─── Tab 키: 다음 페이지로 이동 + 에디터에 페이지 번호 자동 삽입 ───
+  // ─── 에디터 페이지 블록 수집 유틸리티 ───
+  const collectPageBlocks = useCallback(() => {
+    const el = editorRef.current;
+    if (!el) return { preamble: [], blocks: [] };
+
+    const blocks = [];
+    let currentBlock = null;
+    const preamble = [];
+
+    for (let i = 0; i < el.children.length; i++) {
+      const div = el.children[i];
+      const trimmed = div.textContent.trim();
+      const isComment = trimmed ? TextProcessUtils.isCommentLine(trimmed) : false;
+      const info = trimmed && !isComment ? TextProcessUtils.extractPageNumber(trimmed) : null;
+
+      if (info) {
+        if (currentBlock) blocks.push(currentBlock);
+        currentBlock = { pageNum: info.start, nodes: [div] };
+      } else if (currentBlock) {
+        currentBlock.nodes.push(div);
+      } else {
+        preamble.push(div);
+      }
+    }
+    if (currentBlock) blocks.push(currentBlock);
+
+    return { preamble, blocks };
+  }, []);
+
+  // ─── 페이지 순서가 꼬여있으면 정렬 ───
+  const sortEditorPagesIfNeeded = useCallback(() => {
+    const el = editorRef.current;
+    if (!el) return false;
+
+    const { preamble, blocks } = collectPageBlocks();
+    if (blocks.length <= 1) return false;
+
+    let needsSort = false;
+    for (let i = 1; i < blocks.length; i++) {
+      if (blocks[i].pageNum < blocks[i - 1].pageNum) {
+        needsSort = true;
+        break;
+      }
+    }
+    if (!needsSort) return false;
+
+    blocks.sort((a, b) => a.pageNum - b.pageNum);
+
+    const fragment = document.createDocumentFragment();
+    for (const node of preamble) fragment.appendChild(node);
+    for (const block of blocks) {
+      for (const node of block.nodes) fragment.appendChild(node);
+    }
+    el.innerHTML = '';
+    el.appendChild(fragment);
+
+    return true;
+  }, [collectPageBlocks]);
+
+  // ─── 페이지 번호를 올바른 위치에 삽입 ───
+  const insertPageNumberSorted = useCallback((pageNum) => {
+    const el = editorRef.current;
+    if (!el) return;
+
+    const { blocks } = collectPageBlocks();
+
+    let insertBeforeNode = null;
+    for (const block of blocks) {
+      if (block.pageNum > pageNum) {
+        insertBeforeNode = block.nodes[0];
+        break;
+      }
+    }
+
+    const pageDiv = document.createElement('div');
+    pageDiv.textContent = String(pageNum);
+
+    if (insertBeforeNode) {
+      el.insertBefore(pageDiv, insertBeforeNode);
+    } else {
+      el.appendChild(pageDiv);
+    }
+  }, [collectPageBlocks]);
+
+  // ─── Tab 키: 다음/이전 페이지로 이동 + 에디터에 페이지 번호 자동 삽입 ───
   const handleTabNavigation = useCallback((forward) => {
     if (viewerImages.length === 0) return false;
 
+    const el = editorRef.current;
+    if (!el) return false;
+
+    // 합페 pageB (소비된 페이지) 집합 구성
+    const consumed = new Set(spreadPairs.map(s => s.pageB));
+
     const sortedPages = viewerImages.map(img => img.page).sort((a, b) => a - b);
     const curPage = lastSyncedPageRef.current || viewerPage;
+
+    // 1. 에디터에 페이지 번호가 하나도 없으면 현재 페이지를 먼저 기록
+    const { blocks: existingBlocks } = collectPageBlocks();
+    if (existingBlocks.length === 0) {
+      el.focus();
+      const text = getPlainText().trim();
+      if (!text) {
+        el.innerHTML = '';
+      }
+      const pageDiv = document.createElement('div');
+      pageDiv.textContent = String(curPage);
+      el.appendChild(pageDiv);
+      normalizeBlankLines();
+      expandEmptyPages();
+      scheduleDecorations();
+      setTimeout(() => scrollEditorToPage(curPage), 50);
+      return true;
+    }
+
+    // 타겟 페이지 계산
     const curIdx = sortedPages.indexOf(curPage);
     let targetPage;
 
     if (forward) {
-      // 다음 페이지
-      if (curIdx < sortedPages.length - 1) {
-        targetPage = sortedPages[curIdx + 1];
-      } else if (curIdx === -1 && sortedPages.length > 0) {
-        targetPage = sortedPages[0];
-      } else {
-        return false;
+      // 다음 페이지 (consumed 건너뛰기)
+      for (let i = curIdx + 1; i < sortedPages.length; i++) {
+        if (!consumed.has(sortedPages[i])) {
+          targetPage = sortedPages[i];
+          break;
+        }
+      }
+      if (targetPage == null) {
+        if (curIdx === -1 && sortedPages.length > 0) {
+          targetPage = sortedPages[0];
+        } else {
+          return false;
+        }
       }
     } else {
-      // 이전 페이지
-      if (curIdx > 0) {
-        targetPage = sortedPages[curIdx - 1];
-      } else {
-        return false;
+      // 이전 페이지 (consumed 건너뛰기)
+      for (let i = curIdx - 1; i >= 0; i--) {
+        if (!consumed.has(sortedPages[i])) {
+          targetPage = sortedPages[i];
+          break;
+        }
       }
+      if (targetPage == null) return false;
     }
 
     // 이미지 뷰어 페이지 전환
     setViewerPage(targetPage);
     lastSyncedPageRef.current = targetPage;
 
-    if (forward) {
-      // 에디터에 해당 페이지 번호 라인이 이미 있는지 확인
-      const el = editorRef.current;
-      if (el) {
-        const divs = el.children;
-        let exists = false;
-        for (let i = 0; i < divs.length; i++) {
-          if (divs[i].classList.contains('line-page-number')) {
-            const info = TextProcessUtils.extractPageNumber(divs[i].textContent.trim());
-            if (info && info.start === targetPage) {
-              exists = true;
-              // 이미 존재하면 그 위치로만 스크롤
-              scrollEditorToPage(targetPage);
-              break;
-            }
-          }
-        }
-        if (!exists) {
-          // 페이지 번호 자동 삽입
-          el.focus();
-          document.execCommand('insertText', false, '\n' + String(targetPage) + '\n');
-          normalizeBlankLines();
-          expandEmptyPages();
-          scheduleDecorations();
-          setTimeout(() => scrollEditorToPage(targetPage), 50);
-        }
+    // 에디터에 해당 페이지 번호가 이미 있는지 확인
+    const targetExists = existingBlocks.some(b => b.pageNum === targetPage);
+
+    if (targetExists) {
+      // 2. 페이지가 이미 존재 → 순서 정렬 후 스크롤
+      const sorted = sortEditorPagesIfNeeded();
+      if (sorted) {
+        normalizeBlankLines();
+        expandEmptyPages();
+        scheduleDecorations();
       }
-    } else {
       scrollEditorToPage(targetPage);
+    } else {
+      // 3. 페이지 없음 → 순서 정렬 후 올바른 위치에 삽입
+      sortEditorPagesIfNeeded();
+      insertPageNumberSorted(targetPage);
+      normalizeBlankLines();
+      expandEmptyPages();
+      scheduleDecorations();
+      setTimeout(() => scrollEditorToPage(targetPage), 50);
     }
 
     return true;
-  }, [viewerImages, viewerPage, scrollEditorToPage, scheduleDecorations, normalizeBlankLines, expandEmptyPages]);
+  }, [viewerImages, viewerPage, scrollEditorToPage, scheduleDecorations, normalizeBlankLines, expandEmptyPages, spreadPairs, collectPageBlocks, sortEditorPagesIfNeeded, insertPageNumberSorted, getPlainText]);
+
+  // ─── Tab 길게 눌러 합페 묶기/해체 토글 ───
+  const mergeSpreadManual = useCallback(() => {
+    if (viewerImages.length < 2) return;
+
+    const sortedPages = viewerImages.map(img => img.page).sort((a, b) => a - b);
+    const curPage = lastSyncedPageRef.current || viewerPage;
+
+    // 현재 페이지가 이미 합페 pageA라면 → 해체 (에디터 텍스트 기반 판별)
+    const el = editorRef.current;
+    let existingSpread = null;
+    if (el) {
+      for (const div of el.children) {
+        if (!div.classList.contains('line-page-number')) continue;
+        const info = TextProcessUtils.extractPageNumber(div.textContent.trim());
+        if (info && info.start === curPage && info.start !== info.end) {
+          existingSpread = { pageA: info.start, pageB: info.end };
+          break;
+        }
+      }
+    }
+    if (existingSpread) {
+      const { pageA, pageB } = existingSpread;
+      const el = editorRef.current;
+      if (el) {
+        // 합페 범위 div 찾기
+        let spreadDiv = null;
+        let spreadDivIdx = -1;
+        const divs = el.children;
+        for (let i = 0; i < divs.length; i++) {
+          if (!divs[i].classList.contains('line-page-number')) continue;
+          const info = TextProcessUtils.extractPageNumber(divs[i].textContent.trim());
+          if (info && info.start === pageA && info.end === pageB) {
+            spreadDiv = divs[i];
+            spreadDivIdx = i;
+            break;
+          }
+        }
+
+        if (spreadDiv) {
+          // "pageA-pageB" → "pageA" 로 변경
+          spreadDiv.textContent = String(pageA);
+
+          // pageA 아래 다음 페이지 번호 직전까지가 내용 영역 (모두 pageA에 남김)
+          // 그 위치에 pageB 페이지 번호 + 공백 3줄 삽입
+          let insertBeforeNode = null;
+          for (let j = spreadDivIdx + 1; j < divs.length; j++) {
+            if (divs[j].classList.contains('line-page-number')) {
+              insertBeforeNode = divs[j];
+              break;
+            }
+          }
+
+          // pageB 번호 div 생성
+          const pageBDiv = document.createElement('div');
+          pageBDiv.textContent = String(pageB);
+
+          // 공백 3줄
+          const blanks = [];
+          for (let b = 0; b < 3; b++) {
+            const blank = document.createElement('div');
+            blank.innerHTML = '<br>';
+            blanks.push(blank);
+          }
+
+          if (insertBeforeNode) {
+            el.insertBefore(pageBDiv, insertBeforeNode);
+            for (const blank of blanks) {
+              el.insertBefore(blank, insertBeforeNode);
+            }
+          } else {
+            el.appendChild(pageBDiv);
+            for (const blank of blanks) {
+              el.appendChild(blank);
+            }
+          }
+
+          applyDecorations();
+        }
+      }
+
+      console.log(`합페 해체: ${pageA}-${pageB}`);
+      return;
+    }
+
+    // 합페가 아니면 → 묶기
+    const curIdx = sortedPages.indexOf(curPage);
+    if (curIdx < 0 || curIdx >= sortedPages.length - 1) return;
+
+    const pageA = sortedPages[curIdx];
+    const pageB = sortedPages[curIdx + 1];
+
+    // 이미 다른 합페에 포함된 페이지면 무시 (에디터 텍스트 기반)
+    if (el) {
+      for (const div of el.children) {
+        if (!div.classList.contains('line-page-number')) continue;
+        const info = TextProcessUtils.extractPageNumber(div.textContent.trim());
+        if (!info || info.start === info.end) continue;
+        if (info.start === pageA || info.end === pageA || info.start === pageB || info.end === pageB) return;
+      }
+    }
+
+    if (el) {
+      let divA = null, divAIdx = -1, divB = null, divBIdx = -1;
+      const divs = el.children;
+      for (let i = 0; i < divs.length; i++) {
+        if (!divs[i].classList.contains('line-page-number')) continue;
+        const info = TextProcessUtils.extractPageNumber(divs[i].textContent.trim());
+        if (!info) continue;
+        if (info.start === pageA && info.start === info.end) { divA = divs[i]; divAIdx = i; }
+        if (info.start === pageB && info.start === info.end) { divB = divs[i]; divBIdx = i; }
+      }
+
+      // "pageA" → "pageA-pageB" 범위 형식으로 변경
+      if (divA) {
+        divA.textContent = `${pageA}-${pageB}`;
+      }
+
+      // pageB 블록 처리: pageB 번호 div 제거, 내용은 pageA 영역으로 병합
+      if (divB && divBIdx > 0) {
+        // pageB 아래 내용(다음 페이지 번호 직전까지)을 수집
+        const contentNodes = [];
+        for (let j = divBIdx + 1; j < divs.length; j++) {
+          if (divs[j].classList.contains('line-page-number')) break;
+          contentNodes.push(divs[j]);
+        }
+
+        // pageA 영역 끝 위치 찾기 (= divB 바로 앞)
+        // divB 직전의 후행 공백 제거 (pageA 영역 끝의 빈 줄들)
+        while (divB.previousSibling && divB.previousSibling !== divA &&
+               !divB.previousSibling.classList?.contains('line-page-number') &&
+               !divB.previousSibling.textContent.trim()) {
+          divB.previousSibling.remove();
+        }
+
+        // pageB 내용 노드들을 divB 앞에 이동 (pageA 영역 끝에 붙이기)
+        const hasPageBContent = contentNodes.some(n => n.textContent.trim());
+        if (hasPageBContent) {
+          for (const node of contentNodes) {
+            el.insertBefore(node, divB);
+          }
+        }
+
+        // pageB 번호 div 제거
+        divB.remove();
+      }
+
+      // 합페 페이지에 내용이 없으면 공백 3줄 보장
+      expandEmptyPages();
+      applyDecorations();
+    }
+
+    console.log(`수동 합페 묶기: ${pageA}-${pageB}`);
+  }, [viewerImages, viewerPage, applyDecorations, expandEmptyPages]);
 
   // ─── 입력 핸들러 ───
   const handleInput = useCallback(() => {
@@ -778,6 +1092,11 @@ function TextEditor({ theme, currentFilePath, onSavedStateChange, icons }) {
   }, []);
 
   // ─── Ctrl+S, Ctrl+숫자, Tab/Shift+Tab 단축키 ───
+  const tabDownTimeRef = useRef(0);
+  const tabLongPressTimerRef = useRef(null);
+  const tabFiredRef = useRef(false);
+  const TAB_LONG_PRESS_MS = 700;
+
   useEffect(() => {
     const handleKeyDown = (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
@@ -787,14 +1106,26 @@ function TextEditor({ theme, currentFilePath, onSavedStateChange, icons }) {
         return;
       }
 
-      // Tab / Shift+Tab → 이미지 뷰어가 열려 있으면 페이지 이동
+      // Tab / Shift+Tab → 이미지 뷰어가 열려 있으면 처리
       if (e.key === 'Tab' && viewerImages.length > 0) {
-        const handled = handleTabNavigation(!e.shiftKey);
-        if (handled) {
-          e.stopPropagation();
-          e.preventDefault();
+        e.stopPropagation();
+        e.preventDefault();
+        // Shift+Tab(역방향)은 즉시 처리
+        if (e.shiftKey && !e.repeat) {
+          handleTabNavigation(false);
           return;
         }
+        // 순방향: 첫 keydown에서 타이머 시작
+        if (!e.repeat && !e.shiftKey) {
+          tabFiredRef.current = false;
+          tabDownTimeRef.current = Date.now();
+          tabLongPressTimerRef.current = setTimeout(() => {
+            tabFiredRef.current = true;
+            tabDownTimeRef.current = 0;
+            mergeSpreadManual();
+          }, TAB_LONG_PRESS_MS);
+        }
+        return;
       }
 
       // Ctrl+숫자(1~9, 0) → 매크로 삽입
@@ -832,38 +1163,85 @@ function TextEditor({ theme, currentFilePath, onSavedStateChange, icons }) {
 
         // Alt+1~9, Alt+0 → 스타일 1~10
         const key = e.key;
-        let styleNum = -1;
+        let styleIdx = -1;
         if (key >= '1' && key <= '9') {
-          styleNum = parseInt(key, 10);
+          styleIdx = parseInt(key, 10) - 1;
         } else if (key === '0') {
-          styleNum = 10;
+          styleIdx = 9;
         }
-        if (styleNum > 0) {
+        const currentSlotOrder = useAppStore.getState().slotOrder;
+        const effectiveSlots = Array.isArray(currentSlotOrder) && currentSlotOrder.length === 10 ? currentSlotOrder : STYLE_NAMES;
+        if (styleIdx >= 0 && styleIdx < effectiveSlots.length) {
           e.stopPropagation();
           e.preventDefault();
           const paraIdx = getParagraphAtCursor();
           if (paraIdx >= 0) {
-            setParagraphStyle(paraIdx, styleNum);
+            setParagraphStyle(paraIdx, effectiveSlots[styleIdx]);
           }
           return;
         }
       }
     };
-    window.addEventListener('keydown', handleKeyDown, true);
-    return () => window.removeEventListener('keydown', handleKeyDown, true);
-  }, [handleSave, handleMacroInsert, viewerImages, handleTabNavigation, getParagraphAtCursor, setParagraphAlign, setParagraphStyle]);
 
-  // ─── 커서 이동 (클릭, 방향키) 시 뷰어 동기화 ───
+    const handleKeyUp = (e) => {
+      if (e.key === 'Tab' && !e.shiftKey && viewerImages.length > 0) {
+        // 타이머 취소
+        if (tabLongPressTimerRef.current) {
+          clearTimeout(tabLongPressTimerRef.current);
+          tabLongPressTimerRef.current = null;
+        }
+        // 합페 토글이 이미 발동했으면 페이지 이동 안 함
+        if (!tabFiredRef.current && tabDownTimeRef.current > 0) {
+          handleTabNavigation(true);
+        }
+        tabDownTimeRef.current = 0;
+        tabFiredRef.current = false;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown, true);
+    window.addEventListener('keyup', handleKeyUp, true);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown, true);
+      window.removeEventListener('keyup', handleKeyUp, true);
+      if (tabLongPressTimerRef.current) clearTimeout(tabLongPressTimerRef.current);
+    };
+  }, [handleSave, handleMacroInsert, viewerImages, handleTabNavigation, mergeSpreadManual, getParagraphAtCursor, setParagraphAlign, setParagraphStyle]);
+
+  // ─── 에디터 정보 전송 헬퍼 ───
+  const sendEditorInfo = useCallback(() => {
+    const text = getPlainText();
+    const lines = text.split('\n');
+    const pageNumbers = lines
+      .map(l => TextProcessUtils.extractPageNumber(l.trim()))
+      .filter(Boolean)
+      .map(p => p.start);
+
+    ipcRenderer.send('get-editor-info', {
+      type: 'response',
+      data: {
+        fileName: currentFilePath ? path.basename(currentFilePath) : '',
+        filePath: currentFilePath || '',
+        currentPage: getPageAtCursor() || 0,
+        totalPages: pageNumbers.length > 0 ? Math.max(...pageNumbers) : 0,
+        paragraphCount: lines.filter(l => l.trim()).length,
+        isValid: pageNumbers.length > 0,
+      }
+    });
+  }, [currentFilePath, getPlainText, getPageAtCursor]);
+
+  // ─── 커서 이동 (클릭, 방향키) 시 뷰어 동기화 + 사이드바 페이지 정보 갱신 ───
   useEffect(() => {
     const el = editorRef.current;
     if (!el) return;
 
     const handleSelChange = () => {
       syncViewerFromCursor();
+      sendEditorInfo();
     };
     document.addEventListener('selectionchange', handleSelChange);
     return () => document.removeEventListener('selectionchange', handleSelChange);
-  }, [syncViewerFromCursor]);
+  }, [syncViewerFromCursor, sendEditorInfo]);
 
   // ─── 스크롤 시 정렬 인디케이터 + 커스텀 스크롤바 ───
   useEffect(() => {
@@ -1032,13 +1410,14 @@ function TextEditor({ theme, currentFilePath, onSavedStateChange, icons }) {
       const el = editorRef.current;
       if (el) {
         for (const { pageA, pageB } of spreads) {
-          let divA = null, divB = null;
-          for (const div of el.children) {
-            if (!div.classList.contains('line-page-number')) continue;
-            const info = TextProcessUtils.extractPageNumber(div.textContent.trim());
+          const divs = el.children;
+          let divA = null, divAIdx = -1, divB = null, divBIdx = -1;
+          for (let i = 0; i < divs.length; i++) {
+            if (!divs[i].classList.contains('line-page-number')) continue;
+            const info = TextProcessUtils.extractPageNumber(divs[i].textContent.trim());
             if (!info) continue;
-            if (info.start === pageA && !info.end) divA = div;
-            if (info.start === pageB && !info.end) divB = div;
+            if (info.start === pageA && info.start === info.end) { divA = divs[i]; divAIdx = i; }
+            if (info.start === pageB && info.start === info.end) { divB = divs[i]; divBIdx = i; }
           }
 
           // "pageA" → "pageA-pageB" 범위 형식으로 변경
@@ -1046,35 +1425,141 @@ function TextEditor({ theme, currentFilePath, onSavedStateChange, icons }) {
             divA.textContent = `${pageA}-${pageB}`;
           }
 
-          // "pageB" 블록 제거 (페이지 번호 div + 후속 빈 줄)
-          if (divB) {
-            const nextSibling = divB.nextSibling;
-            divB.remove();
-            if (nextSibling && !nextSibling.classList?.contains('line-page-number') &&
-                nextSibling.textContent.trim() === '') {
-              nextSibling.remove();
+          // "pageB" 블록 처리: 내용은 pageA 영역으로 병합
+          if (divB && divBIdx > 0) {
+            const contentNodes = [];
+            for (let j = divBIdx + 1; j < divs.length; j++) {
+              if (divs[j].classList.contains('line-page-number')) break;
+              contentNodes.push(divs[j]);
             }
+
+            // pageA 영역 끝 후행 공백 제거
+            while (divB.previousSibling && divB.previousSibling !== divA &&
+                   !divB.previousSibling.classList?.contains('line-page-number') &&
+                   !divB.previousSibling.textContent.trim()) {
+              divB.previousSibling.remove();
+            }
+
+            // pageB 내용을 divB 앞으로 이동 (= pageA 영역 끝)
+            const hasContent = contentNodes.some(n => n.textContent.trim());
+            if (hasContent) {
+              for (const node of contentNodes) {
+                el.insertBefore(node, divB);
+              }
+            }
+
+            divB.remove();
           }
         }
+        expandEmptyPages();
         applyDecorations();
-      }
-
-      // ── 합페 정보를 .para 메타데이터에 기록 ──
-      if (paraMetadataRef.current) {
-        if (!paraMetadataRef.current.integral) {
-          paraMetadataRef.current.integral = {};
-        }
-        paraMetadataRef.current.integral.spreads = spreads.map(s => `${s.pageA}-${s.pageB}`).join(',');
-        ipcRenderer.invoke('update-para-metadata', {
-          integral: { spreads: paraMetadataRef.current.integral.spreads }
-        });
       }
 
       console.log(`합페 감지 완료: ${spreads.map(s => `${s.pageA}-${s.pageB}`).join(', ')}`);
     } catch (error) {
       console.error('합페 감지 실패:', error);
     }
-  }, [applyDecorations]);
+  }, [applyDecorations, expandEmptyPages]);
+
+  // ─── 에디터에 페이지 번호 삽입 (자동화 기능 2) ───
+  const insertPageNumbers = useCallback((imageFiles) => {
+    const el = editorRef.current;
+    if (!el || imageFiles.length <= 1) return;
+
+    const loadedPages = imageFiles.map(img => img.page);
+    const existingEditorPages = new Set();
+    for (const div of el.children) {
+      if (div.classList.contains('line-page-number')) {
+        const info = TextProcessUtils.extractPageNumber(div.textContent.trim());
+        if (info) existingEditorPages.add(info.start);
+      }
+    }
+
+    const pagesToInsert = loadedPages.filter(p => !existingEditorPages.has(p));
+    if (pagesToInsert.length === 0) return;
+
+    for (const page of pagesToInsert) {
+      const makePageBlock = () => {
+        const frag = document.createDocumentFragment();
+        const pageDiv = document.createElement('div');
+        pageDiv.textContent = String(page);
+        frag.appendChild(pageDiv);
+        const blank = document.createElement('div');
+        blank.innerHTML = '<br>';
+        frag.appendChild(blank);
+        return frag;
+      };
+
+      let inserted = false;
+      const divs = el.children;
+      for (let i = 0; i < divs.length; i++) {
+        if (!divs[i].classList.contains('line-page-number')) continue;
+        const info = TextProcessUtils.extractPageNumber(divs[i].textContent.trim());
+        if (info && info.start > page) {
+          el.insertBefore(makePageBlock(), divs[i]);
+          inserted = true;
+          break;
+        }
+      }
+      if (!inserted) el.appendChild(makePageBlock());
+    }
+
+    normalizeBlankLines();
+    expandEmptyPages();
+    const currentText = getPlainText();
+    const changed = currentText !== initialContentRef.current;
+    if (isSavedRef.current === changed) {
+      isSavedRef.current = !changed;
+      onSavedStateChange(!changed);
+      ipcRenderer.send('update-editor-state', {
+        saved: !changed,
+        filePath: currentFilePath,
+        isEditing: true
+      });
+    }
+    applyDecorations();
+  }, [normalizeBlankLines, expandEmptyPages, getPlainText, onSavedStateChange, currentFilePath, applyDecorations]);
+
+  // ─── 이미지 메타데이터 저장 (자동화 기능 1) ───
+  const saveImageMetadata = useCallback((imageFiles) => {
+    if (imageFiles.length === 0) return Promise.resolve();
+    const imageNames = imageFiles.map(img => path.basename(img.filePath)).join(',');
+    if (!paraMetadataRef.current) {
+      paraMetadataRef.current = ParaFileFormat.createDefaultMetadata();
+    }
+    paraMetadataRef.current.integral.image = imageNames;
+    setMetaImage(imageNames);
+    ipcRenderer.invoke('update-para-metadata', { integral: { image: imageNames } });
+    return analyzeBlackPoint(imageFiles);
+  }, [analyzeBlackPoint]);
+
+  // ─── 인쇄 DPI 72로 조정 (자동화 기능 4) ───
+  const adjustDpiTo72 = useCallback(async (imageFiles) => {
+    if (!imageFiles || imageFiles.length === 0) return;
+    let count = 0;
+    for (const img of imageFiles) {
+      try {
+        const buffer = await fs.promises.readFile(img.filePath);
+        const adjusted = DpiAdjuster.setDpi(buffer, 72);
+        if (adjusted !== buffer) {
+          await fs.promises.writeFile(img.filePath, adjusted);
+          count++;
+        }
+      } catch (err) {
+        console.error(`DPI 조정 실패: ${img.filePath}`, err);
+      }
+    }
+    console.log(`DPI 72로 조정 완료: ${count}/${imageFiles.length}장`);
+  }, []);
+
+  // ─── 자동화 패널: 수동 실행 콜백 ───
+  const automationActions = useMemo(() => ({
+    metadata: () => saveImageMetadata(viewerImagesRef.current),
+    numbering: () => { insertPageNumbers(viewerImagesRef.current); return Promise.resolve(); },
+    spread: () => detectSpreads(viewerImagesRef.current),
+    dpi: () => adjustDpiTo72(viewerImagesRef.current),
+    onAutoSettingsChange: handleAutomationAutoChange
+  }), [saveImageMetadata, insertPageNumbers, detectSpreads, adjustDpiTo72, handleAutomationAutoChange]);
 
   // ─── 선택된 이미지 파일 로드 ───
   const loadImageFiles = useCallback((filePaths) => {
@@ -1106,6 +1591,54 @@ function TextEditor({ theme, currentFilePath, onSavedStateChange, icons }) {
     merged.sort((a, b) => a.page - b.page);
 
     const imageFiles = merged;
+
+    // 이미지 뷰어 최초 마운트 시 → 첫 이미지 크기 기반으로 창 확장
+    const isFirstLoad = (viewerImagesRef.current || []).length === 0;
+    if (isFirstLoad && imageFiles.length > 0) {
+      const firstFile = imageFiles[0].filePath;
+      const MIME = { '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.webp': 'image/webp' };
+      try {
+        const buf = fs.readFileSync(firstFile);
+        const ext = path.extname(firstFile).toLowerCase();
+
+        let imgWidth, imgHeight;
+        if (ext === '.psd') {
+          const psd = readPsd(new Uint8Array(buf));
+          imgWidth = psd.width;
+          imgHeight = psd.height;
+        } else {
+          const mime = MIME[ext] || 'image/jpeg';
+          const dataUrl = `data:${mime};base64,${buf.toString('base64')}`;
+          // 비동기로 이미지 크기 측정
+          const img = new window.Image();
+          img.onload = () => {
+            const textEditorEl = document.querySelector('.text-editor');
+            if (!textEditorEl || img.naturalWidth <= 0 || img.naturalHeight <= 0) return;
+            const viewerCanvasHeight = textEditorEl.clientHeight - 80;
+            const fitImageWidth = (img.naturalWidth / img.naturalHeight) * viewerCanvasHeight;
+            const neededViewerWidth = fitImageWidth + 32;
+            const nonEditorWidth = document.documentElement.clientWidth - textEditorEl.clientWidth;
+            const totalNeeded = nonEditorWidth + 360 + 8 + neededViewerWidth;
+            ipcRenderer.send('expand-window-for-image', Math.ceil(totalNeeded));
+          };
+          img.src = dataUrl;
+          imgWidth = null; // 비동기 처리됨
+        }
+
+        if (imgWidth && imgHeight) {
+          const textEditorEl = document.querySelector('.text-editor');
+          if (textEditorEl && imgWidth > 0 && imgHeight > 0) {
+            const viewerCanvasHeight = textEditorEl.clientHeight - 80;
+            const fitImageWidth = (imgWidth / imgHeight) * viewerCanvasHeight;
+            const neededViewerWidth = fitImageWidth + 32;
+            const nonEditorWidth = document.documentElement.clientWidth - textEditorEl.clientWidth;
+            const totalNeeded = nonEditorWidth + 360 + 8 + neededViewerWidth;
+            ipcRenderer.send('expand-window-for-image', Math.ceil(totalNeeded));
+          }
+        }
+      } catch { /* 이미지 로드 실패 시 확장 생략 */ }
+    }
+
     setViewerImages(imageFiles);
     if (imageFiles.length === 0) return;
 
@@ -1121,70 +1654,15 @@ function TextEditor({ theme, currentFilePath, onSavedStateChange, icons }) {
     const el = editorRef.current;
     if (!el) return;
 
-    // 에디터에 이미 존재하는 페이지 번호 수집
-    const existingEditorPages = new Set();
-    for (const div of el.children) {
-      if (div.classList.contains('line-page-number')) {
-        const info = TextProcessUtils.extractPageNumber(div.textContent.trim());
-        if (info) existingEditorPages.add(info.start);
-      }
+    // ─── 자동화 설정에 따른 조건부 실행 ───
+    const autoSettings = automationAutoRef.current;
+
+    // 기능 2: 텍스트 넘버링 자동 스탬프
+    if (autoSettings.numbering) {
+      insertPageNumbers(imageFiles);
     }
 
-    // 단일 이미지만 있으면 에디터에 페이지 번호를 삽입하지 않음
-    // 여러 장일 때만 에디터에 없는 페이지 번호를 삽입
-    const pagesToInsert = imageFiles.length > 1
-      ? loadedPages.filter(p => !existingEditorPages.has(p))
-      : [];
-
-    if (pagesToInsert.length > 0) {
-      // 각 페이지를 번호 순서에 맞는 위치에 삽입
-      for (const page of pagesToInsert) {
-        const makePageBlock = () => {
-          const frag = document.createDocumentFragment();
-          const pageDiv = document.createElement('div');
-          pageDiv.textContent = String(page);
-          frag.appendChild(pageDiv);
-          const blank = document.createElement('div');
-          blank.innerHTML = '<br>';
-          frag.appendChild(blank);
-          return frag;
-        };
-
-        // 이 페이지보다 큰 번호의 첫 번째 기존 페이지 앞에 삽입
-        let inserted = false;
-        const divs = el.children;
-        for (let i = 0; i < divs.length; i++) {
-          if (!divs[i].classList.contains('line-page-number')) continue;
-          const info = TextProcessUtils.extractPageNumber(divs[i].textContent.trim());
-          if (info && info.start > page) {
-            el.insertBefore(makePageBlock(), divs[i]);
-            inserted = true;
-            break;
-          }
-        }
-        if (!inserted) {
-          el.appendChild(makePageBlock());
-        }
-      }
-
-      // DOM 직접 조작했으므로 공백줄 정규화 + 빈 페이지 확장 + 변경 감지
-      normalizeBlankLines();
-      expandEmptyPages();
-      const currentText = getPlainText();
-      const changed = currentText !== initialContentRef.current;
-      if (isSavedRef.current === changed) {
-        isSavedRef.current = !changed;
-        onSavedStateChange(!changed);
-        ipcRenderer.send('update-editor-state', {
-          saved: !changed,
-          filePath: currentFilePath,
-          isEditing: true
-        });
-      }
-      applyDecorations();
-    }
-
-    // 커서 배치: 로드한 이미지 페이지 중 "첫 번째 빈 페이지"를 찾는다
+    // 커서 배치: 페이지 번호가 있으면 첫 번째 빈 페이지로 이동
     const findFirstEmptyPage = () => {
       applyDecorations();
       const divs = el.children;
@@ -1219,23 +1697,24 @@ function TextEditor({ theme, currentFilePath, onSavedStateChange, icons }) {
       scrollEditorToPage(jumpPage);
     }, 50);
 
+    // 블랙포인트 분석은 항상 실행 (상태 바 표시용)
     analyzeBlackPoint(uniqueNew.length > 0 ? uniqueNew : imageFiles);
-    detectSpreads(imageFiles);
 
-    // 이미지 파일명들을 메타데이터에 저장 (같은 디렉토리 전제, 저장 시 포맷 판별)
-    if (imageFiles.length > 0) {
-      const imageNames = imageFiles.map(img => path.basename(img.filePath)).join(',');
-
-      if (!paraMetadataRef.current) {
-        paraMetadataRef.current = ParaFileFormat.createDefaultMetadata();
-      }
-      paraMetadataRef.current.integral.image = imageNames;
-
-      ipcRenderer.invoke('update-para-metadata', {
-        integral: { image: imageNames }
-      });
+    // 기능 1: 이미지 정보 메타데이터에 저장
+    if (autoSettings.metadata) {
+      saveImageMetadata(uniqueNew.length > 0 ? uniqueNew : imageFiles);
     }
-  }, [scheduleDecorations, scrollEditorToPage, applyDecorations, getPlainText, onSavedStateChange, currentFilePath, normalizeBlankLines, expandEmptyPages, analyzeBlackPoint, detectSpreads]);
+
+    // 기능 3: 합페 검출 및 넘버링에 적용
+    if (autoSettings.spread) {
+      detectSpreads(imageFiles);
+    }
+
+    // 기능 4: 인쇄 DPI를 72로 조정
+    if (autoSettings.dpi) {
+      adjustDpiTo72(imageFiles);
+    }
+  }, [scheduleDecorations, scrollEditorToPage, applyDecorations, getPlainText, onSavedStateChange, currentFilePath, normalizeBlankLines, expandEmptyPages, analyzeBlackPoint, detectSpreads, insertPageNumbers, saveImageMetadata, adjustDpiTo72]);
 
   // ─── IPC/이벤트: 이미지 파일 열기 ───
   useEffect(() => {
@@ -1250,6 +1729,13 @@ function TextEditor({ theme, currentFilePath, onSavedStateChange, icons }) {
         loadImageFiles(e.detail);
       }
     };
+
+    // 에디터 마운트 시 pendingImagePaths 소비
+    const pending = useAppStore.getState().pendingImagePaths;
+    if (Array.isArray(pending) && pending.length > 0) {
+      useAppStore.setState({ pendingImagePaths: null });
+      loadImageFiles(pending);
+    }
 
     ipcRenderer.on('open-image-files', handleOpenImageFiles);
     window.addEventListener('editor-load-images', handleEditorLoadImages);
@@ -1269,6 +1755,22 @@ function TextEditor({ theme, currentFilePath, onSavedStateChange, icons }) {
     ipcRenderer.send('clear-black-point-color');
   }, []);
 
+  // ─── 현재 이미지 한 장 제거 ───
+  const removeCurrentImage = useCallback(() => {
+    const curPage = viewerPage;
+    setViewerImages(prev => {
+      const remaining = prev.filter(img => img.page !== curPage);
+      if (remaining.length === 0) {
+        closeImageViewer();
+        return [];
+      }
+      const sorted = [...remaining].sort((a, b) => a.page - b.page);
+      const next = sorted.find(img => img.page > curPage) || sorted[sorted.length - 1];
+      setViewerPage(next.page);
+      return remaining;
+    });
+  }, [viewerPage, closeImageViewer]);
+
   // ─── 이미지 레벨 조정 메모 ───
   const levelAdjustment = useMemo(() => {
     if (blackPointAction !== 'adjust-levels' || !blackPointInfo) return null;
@@ -1283,7 +1785,6 @@ function TextEditor({ theme, currentFilePath, onSavedStateChange, icons }) {
       useAppStore.setState({
         currentFilePath: filePath,
         programStatus: ProgramStatus.EDIT,
-        viewMode: 'editor'
       });
     }
   }, []);
@@ -1310,7 +1811,6 @@ function TextEditor({ theme, currentFilePath, onSavedStateChange, icons }) {
       useAppStore.setState({
         currentFilePath: filePath,
         programStatus: ProgramStatus.EDIT,
-        viewMode: 'editor'
       });
       return;
     }
@@ -1352,6 +1852,7 @@ function TextEditor({ theme, currentFilePath, onSavedStateChange, icons }) {
       initialContentRef.current = '';
       isSavedRef.current = true;
       paraMetadataRef.current = ParaFileFormat.createDefaultMetadata();
+      setMetaImage('');
       onSavedStateChange(true);
       setTimeout(() => el.focus(), 50);
       return;
@@ -1371,6 +1872,10 @@ function TextEditor({ theme, currentFilePath, onSavedStateChange, icons }) {
 
           // 메타데이터를 로컬 ref에 저장
           paraMetadataRef.current = parsed.metadata;
+
+          // 메타데이터 패널 상태 동기화
+          const imgMeta = parsed.metadata.integral.image;
+          setMetaImage(imgMeta && imgMeta !== 'null' ? imgMeta : '');
 
           // 메타데이터를 메인 프로세스에도 동기화
           const metaForIPC = {
@@ -1452,30 +1957,12 @@ function TextEditor({ theme, currentFilePath, onSavedStateChange, icons }) {
   useEffect(() => {
     const handleRequest = (_, { type }) => {
       if (type !== 'request') return;
-
-      const text = getPlainText();
-      const lines = text.split('\n');
-      const pageNumbers = lines
-        .map(l => TextProcessUtils.extractPageNumber(l.trim()))
-        .filter(Boolean)
-        .map(p => p.start);
-
-      ipcRenderer.send('get-editor-info', {
-        type: 'response',
-        data: {
-          fileName: currentFilePath ? path.basename(currentFilePath) : '',
-          filePath: currentFilePath || '',
-          currentPage: 0,
-          totalPages: pageNumbers.length > 0 ? Math.max(...pageNumbers) : 0,
-          paragraphCount: lines.filter(l => l.trim()).length,
-          isValid: pageNumbers.length > 0,
-        }
-      });
+      sendEditorInfo();
     };
 
     ipcRenderer.on('get-editor-info', handleRequest);
     return () => ipcRenderer.removeListener('get-editor-info', handleRequest);
-  }, [currentFilePath, getPlainText]);
+  }, [sendEditorInfo]);
 
   // ─── IPC: 저장 상태 체크 ───
   useEffect(() => {
@@ -1486,12 +1973,68 @@ function TextEditor({ theme, currentFilePath, onSavedStateChange, icons }) {
     return () => ipcRenderer.removeListener('editor-is-saved-check', handle);
   }, [getPlainText]);
 
+  // ─── 뷰어/에디터 리사이즈 핸들러 ───
+  const handlePanelResizeStart = useCallback((e) => {
+    e.preventDefault();
+    resizingRef.current = true;
+    const handle = e.currentTarget;
+    handle.classList.add('is-dragging');
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+
+    const container = handle.closest('.text-editor');
+    if (!container) return;
+    const rect = container.getBoundingClientRect();
+    const padding = parseFloat(getComputedStyle(container).paddingLeft) || 0;
+
+    const onMouseMove = (ev) => {
+      if (!resizingRef.current) return;
+      const x = ev.clientX - rect.left - padding;
+      const usable = rect.width - padding * 2;
+      const percent = (x / usable) * 100;
+      setViewerRatio(Math.min(65, Math.max(20, percent)));
+    };
+
+    const onMouseUp = () => {
+      resizingRef.current = false;
+      handle.classList.remove('is-dragging');
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+    };
+
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+  }, []);
+
+  // ─── 메타데이터 패널: integral.image 변경 핸들러 ───
+  const handleMetaImageChange = useCallback((e) => {
+    const value = e.target.value;
+    setMetaImage(value);
+    if (!paraMetadataRef.current) {
+      paraMetadataRef.current = ParaFileFormat.createDefaultMetadata();
+    }
+    paraMetadataRef.current.integral.image = value || null;
+    ipcRenderer.invoke('update-para-metadata', { integral: { image: value || null } });
+    if (isSavedRef.current) {
+      isSavedRef.current = false;
+      onSavedStateChange(false);
+      ipcRenderer.send('update-editor-state', {
+        saved: false,
+        filePath: currentFilePath,
+        isEditing: true
+      });
+    }
+  }, [currentFilePath, onSavedStateChange]);
+
   // ─── 렌더링 ───
   const hasImages = viewerImages.length > 0;
+  const isParaFileLoaded = currentFilePath && path.extname(currentFilePath).toLowerCase() === '.para';
   const currentParaStyle = useMemo(() => {
     const paraIdx = getParagraphAtCursor();
-    if (paraIdx < 0) return 1;
-    return parseInt(ParaFileFormat.getParagraphStyle(paraMetadataRef.current, paraIdx), 10) || 1;
+    if (paraIdx < 0) return 'plain';
+    return ParaFileFormat.getParagraphStyle(paraMetadataRef.current, paraIdx) || 'plain';
   }, [getParagraphAtCursor, alignIndicators]); // alignIndicators dependency ensures re-render on decoration updates
 
   return (
@@ -1502,12 +2045,22 @@ function TextEditor({ theme, currentFilePath, onSavedStateChange, icons }) {
           images={viewerImages}
           currentPage={viewerPage}
           onPageChange={handleViewerPageChange}
+          onRemoveCurrentImage={removeCurrentImage}
           cursorSync={cursorSync}
           onCursorSyncToggle={() => setCursorSync(prev => !prev)}
           blackPointInfo={blackPointInfo}
           levelAdjustment={levelAdjustment}
           icons={icons}
+          automationActions={automationActions}
+          spreadPairs={spreadPairs}
+          style={viewerRatio != null ? { width: `${viewerRatio}%` } : undefined}
         />
+      )}
+      {/* ── 뷰어↔에디터 리사이즈 핸들 ── */}
+      {hasImages && (
+        <div className="panel-resize-handle" onMouseDown={handlePanelResizeStart}>
+          <div className="panel-resize-handle__bar" />
+        </div>
       )}
       {/* ── [독립 컨테이너 1] 에디터 본체 ── 이미지 뷰어·툴바와 절대 합치지 말 것 */}
       <div className="editor-body-wrapper">
@@ -1532,35 +2085,37 @@ function TextEditor({ theme, currentFilePath, onSavedStateChange, icons }) {
               { key: 'right', icon: <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="1" y="2" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="6" y="5.75" width="9" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="9.5" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="6" y="13.25" width="9" height="1.5" rx="0.75" fill="currentColor"/></svg>, shortcut: '→' },
             ];
             const activeBtn = alignBtns.find(b => b.key === align) || alignBtns[1];
+            const editorSlotOrder = useAppStore.getState().slotOrder;
+            const editorSlots = Array.isArray(editorSlotOrder) && editorSlotOrder.length === 10 ? editorSlotOrder : STYLE_NAMES;
+            const styleIdx = editorSlots.indexOf(style);
+            const circledNums = ['①','②','③','④','⑤','⑥','⑦','⑧','⑨','⑩'];
             return (
               <div
                 key={paragraphIdx}
-                className="align-indicator"
+                className={`para-indicator${!pluginServer ? ' disabled' : ''}`}
                 style={{ top: `${top}px` }}
               >
-                {/* 기본: 활성 아이콘만 표시 */}
+                {/* 단락 번호 */}
+                <span className="para-indicator-num">{paragraphIdx + 1}</span>
+                {/* 정렬 아이콘 (기본: 활성만, 호버: 포탈로 전체 표시) */}
                 <span
-                  className="align-indicator-btn active"
+                  className={`para-indicator-align${alignExpandHover?.paragraphIdx === paragraphIdx ? ' expand-open' : ''}`}
                   title={`${t(`editor.align.${align}`)} (Alt+${activeBtn.shortcut})`}
+                  onMouseEnter={(e) => {
+                    clearTimeout(alignExpandTimerRef.current);
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    setAlignExpandHover({ paragraphIdx, rect, align });
+                  }}
+                  onMouseLeave={() => {
+                    alignExpandTimerRef.current = setTimeout(() => setAlignExpandHover(null), 80);
+                  }}
                 >
-                  {activeBtn.icon}
+                  <span className="para-indicator-align-active">{activeBtn.icon}</span>
                 </span>
-                {/* 호버 시 펼침 패널 */}
-                <div className="align-indicator-expand">
-                  {alignBtns.map(({ key, icon, shortcut }) => (
-                    <span
-                      key={key}
-                      className={`align-indicator-btn${align === key ? ' active' : ''}`}
-                      title={`${t(`editor.align.${key}`)} (Alt+${shortcut})`}
-                      onMouseDown={(e) => { e.preventDefault(); handleAlignClick(paragraphIdx, key); }}
-                    >
-                      {icon}
-                    </span>
-                  ))}
-                  <span className="align-indicator-style" title={`${t(`editor.style.preset${style}`)} (Alt+${style === '10' ? '0' : style})`}>
-                    {t(`editor.style.preset${style}`)}
-                  </span>
-                </div>
+                {/* 스타일 번호 */}
+                <span className="para-indicator-style" title={`${t(`editor.style.${style}`)} (Alt+${styleIdx === 9 ? '0' : styleIdx + 1})`}>
+                  {circledNums[styleIdx] || styleIdx + 1}
+                </span>
               </div>
             );
           })}
@@ -1569,6 +2124,41 @@ function TextEditor({ theme, currentFilePath, onSavedStateChange, icons }) {
           <div className="editor-scrollbar-thumb" ref={scrollThumbRef} />
         </div>
       </div>
+      {/* ── 정렬 확장 팝업 (포탈) ── overflow:hidden 탈출을 위해 body에 렌더링 */}
+      {alignExpandHover && (() => {
+        const { paragraphIdx, rect, align } = alignExpandHover;
+        const portalAlignBtns = [
+          { key: 'left', icon: <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="1" y="2" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="5.75" width="9" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="9.5" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="13.25" width="9" height="1.5" rx="0.75" fill="currentColor"/></svg>, shortcut: '←' },
+          { key: 'center', icon: <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="1" y="2" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="3.5" y="5.75" width="9" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="9.5" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="3.5" y="13.25" width="9" height="1.5" rx="0.75" fill="currentColor"/></svg>, shortcut: '↑' },
+          { key: 'right', icon: <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="1" y="2" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="6" y="5.75" width="9" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="9.5" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="6" y="13.25" width="9" height="1.5" rx="0.75" fill="currentColor"/></svg>, shortcut: '→' },
+        ];
+        return createPortal(
+          <div
+            className="para-indicator-align-expand portal"
+            data-theme={theme.mode}
+            style={{
+              position: 'fixed',
+              left: `${rect.left + rect.width / 2}px`,
+              top: `${rect.top + rect.height / 2}px`,
+              transform: 'translate(-50%, -50%)',
+            }}
+            onMouseEnter={() => clearTimeout(alignExpandTimerRef.current)}
+            onMouseLeave={() => setAlignExpandHover(null)}
+          >
+            {portalAlignBtns.map(({ key, icon, shortcut }) => (
+              <span
+                key={key}
+                className={`para-indicator-align-btn${align === key ? ' active' : ''}`}
+                title={`${t(`editor.align.${key}`)} (Alt+${shortcut})`}
+                onMouseDown={(e) => { e.preventDefault(); handleAlignClick(paragraphIdx, key); setAlignExpandHover(null); }}
+              >
+                {icon}
+              </span>
+            ))}
+          </div>,
+          document.body
+        );
+      })()}
       {/* ── [독립 컨테이너 3] 툴바 ── 에디터 본체·이미지 뷰어와 절대 합치지 말 것 */}
       <div className="editor-toolbar">
         <button
@@ -1614,7 +2204,7 @@ function TextEditor({ theme, currentFilePath, onSavedStateChange, icons }) {
           onClick={openImageFiles}
           title={t('editor.toolbar.imageViewer', '이미지 뷰어')}
         >
-          <img src={icons?.fileOpen} alt="Image Folder" className="icon" />
+          <img src={icons?.imageAdd} alt="Image Folder" className="icon" />
         </button>
         {hasImages && (
           <button
@@ -1643,9 +2233,44 @@ function TextEditor({ theme, currentFilePath, onSavedStateChange, icons }) {
           onClick={() => setStyleOpen(prev => !prev)}
           title={t('editor.toolbar.textStyle')}
         >
-          <span className="editor-toolbar-style-label">S</span>
+          <img src={icons?.fontStyle} alt="Text Style" className="icon" />
         </button>
+        {isParaFileLoaded && (
+          <>
+            <div className="editor-toolbar-divider" />
+            <button
+              ref={metaButtonRef}
+              type="button"
+              className={`editor-toolbar-icon${metaPanelOpen ? ' active' : ''}`}
+              onClick={() => setMetaPanelOpen(prev => !prev)}
+              title={t('editor.toolbar.metadata', '메타데이터')}
+            >
+              <img src={icons?.database} alt="Metadata" className="icon" />
+            </button>
+          </>
+        )}
       </div>
+      {/* ── 메타데이터 패널 ── */}
+      {isParaFileLoaded && metaPanelOpen && (
+        <div className={`meta-panel${metaPanelOpen ? ' visible' : ''}`}>
+          <div className="meta-panel-header">
+            <span className="meta-panel-title">{t('editor.metadata.title', '메타데이터')}</span>
+          </div>
+          <div className="meta-panel-body">
+            <label className="meta-panel-field">
+              <span className="meta-panel-label">{t('editor.metadata.image', '열 이미지')}</span>
+              <input
+                type="text"
+                className="meta-panel-input"
+                value={metaImage}
+                onChange={handleMetaImageChange}
+                placeholder={t('editor.metadata.imagePlaceholder', 'image1.jpg,image2.jpg')}
+                spellCheck={false}
+              />
+            </label>
+          </div>
+        </div>
+      )}
       <TextMacro
         isOpen={macroOpen}
         onClose={() => setMacroOpen(false)}
@@ -1657,7 +2282,7 @@ function TextEditor({ theme, currentFilePath, onSavedStateChange, icons }) {
         onClose={() => setStyleOpen(false)}
         onSelect={handleStyleSelect}
         anchorRef={styleButtonRef}
-        activeStyleIndex={currentParaStyle}
+        activeStyleName={currentParaStyle}
       />
     </div>
   );

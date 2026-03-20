@@ -34,7 +34,11 @@ const ICON_NAMES = [
   'paragraph-left.svg',
   'paragraph-center.svg',
   'paragraph-right.svg',
-  'locate.svg'
+  'locate.svg',
+  'automation.svg',
+  'image-add.svg',
+  'font-style.svg',
+  'database.svg'
 ];
 
 const ICON_KEYS = [
@@ -43,7 +47,8 @@ const ICON_KEYS = [
   'textFile', 'delete', 'themeAuto', 'themeLight', 'themeDark',
   'fileOpen', 'edit', 'back', 'folder', 'finder', 'newFile', 'fileWork',
   'photoshop', 'save', 'zoomIn', 'zoomOut', 'textAdd',
-  'paragraphLeft', 'paragraphCenter', 'paragraphRight', 'locate'
+  'paragraphLeft', 'paragraphCenter', 'paragraphRight', 'locate', 'automation',
+  'imageAdd', 'fontStyle', 'database'
 ];
 
 export default function useIcons() {

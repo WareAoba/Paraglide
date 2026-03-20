@@ -1,4 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
+import { readPsd } from 'ag-psd';
+import AutomationPanel from './AutomationPanel';
 import '../../CSS/Views/ImageViewer.css';
 
 const path = window.require('path');
@@ -8,8 +10,40 @@ const MIME_TYPES = {
   '.jpg': 'image/jpeg',
   '.jpeg': 'image/jpeg',
   '.png': 'image/png',
-  '.webp': 'image/webp'
+  '.webp': 'image/webp',
+  '.psd': 'image/vnd.adobe.photoshop'
 };
+
+/**
+ * PSD 버퍼를 파싱하여 합성 이미지 data URL을 반환한다.
+ * @param {Buffer} buffer
+ * @param {boolean} backgroundOnly - true이면 배경 레이어만 렌더링
+ * @returns {string} data URL (image/png)
+ */
+function renderPsdToDataUrl(buffer, backgroundOnly = false) {
+  const psd = readPsd(new Uint8Array(buffer));
+
+  if (!backgroundOnly) {
+    return psd.canvas.toDataURL('image/png');
+  }
+
+  // 배경 레이어 탐색: 이름이 Background/배경인 레이어 또는 맨 아래 레이어
+  const children = psd.children || [];
+  const bgLayer = children.find(l =>
+    /^(Background|배경)$/i.test(l.name)
+  ) || children[children.length - 1];
+
+  if (!bgLayer?.canvas) {
+    return psd.canvas.toDataURL('image/png');
+  }
+
+  const canvas = document.createElement('canvas');
+  canvas.width = psd.width;
+  canvas.height = psd.height;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(bgLayer.canvas, bgLayer.left || 0, bgLayer.top || 0);
+  return canvas.toDataURL('image/png');
+}
 
 /**
  * 파일명에서 페이지 번호를 추출한다.
@@ -57,13 +91,48 @@ function applyLevelAdjustment(dataUrl, blackPoint) {
   });
 }
 
-function ImageViewer({ images, currentPage, onPageChange, cursorSync, onCursorSyncToggle, blackPointInfo, levelAdjustment, icons }) {
+function ImageViewer({ images, currentPage, onPageChange, onRemoveCurrentImage, cursorSync, onCursorSyncToggle, blackPointInfo, levelAdjustment, icons, automationActions, spreadPairs, style }) {
   const containerRef = useRef(null);
   const imgRef = useRef(null);
+  const automationBtnRef = useRef(null);
   const [zoom, setZoom] = useState(null);             // null = 비율 유지 최대 채움 (fit)
   const [dragState, setDragState] = useState(null);   // { startX, startY, scrollLeft, scrollTop }
   const [pageInput, setPageInput] = useState('');
   const [isPageInputVisible, setIsPageInputVisible] = useState(false);
+  const [automationOpen, setAutomationOpen] = useState(false);
+  const [spreadDataUrl, setSpreadDataUrl] = useState(null);
+  const [psdBackgroundOnly, setPsdBackgroundOnly] = useState(false);
+
+  // ─── 합페 맵 ───
+  const spreadMap = useMemo(() => {
+    const map = new Map();
+    if (spreadPairs) {
+      for (const { pageA, pageB } of spreadPairs) {
+        map.set(pageA, pageB);
+      }
+    }
+    return map;
+  }, [spreadPairs]);
+
+  const reverseSpreadMap = useMemo(() => {
+    const map = new Map();
+    if (spreadPairs) {
+      for (const { pageA, pageB } of spreadPairs) {
+        map.set(pageB, pageA);
+      }
+    }
+    return map;
+  }, [spreadPairs]);
+
+  const consumedPages = useMemo(() => {
+    const set = new Set();
+    if (spreadPairs) {
+      for (const { pageB } of spreadPairs) {
+        set.add(pageB);
+      }
+    }
+    return set;
+  }, [spreadPairs]);
 
   // 정렬된 이미지 목록 (페이지 번호순)
   const sortedImages = useMemo(() => {
@@ -79,6 +148,9 @@ function ImageViewer({ images, currentPage, onPageChange, cursorSync, onCursorSy
 
   const currentImage = currentIndex >= 0 ? sortedImages[currentIndex] : null;
 
+  // ─── 현재 이미지가 PSD인지 여부 ───
+  const isPsdFile = currentImage && path.extname(currentImage.filePath).toLowerCase() === '.psd';
+
   // ─── 이미지 data URL 캐시 ───
   const [imageDataUrl, setImageDataUrl] = useState(null);
 
@@ -91,9 +163,15 @@ function ImageViewer({ images, currentPage, onPageChange, cursorSync, onCursorSy
         const buffer = await fs.promises.readFile(currentImage.filePath);
         if (canceled) return;
         const ext = path.extname(currentImage.filePath).toLowerCase();
-        const mime = MIME_TYPES[ext] || 'image/jpeg';
-        const base64 = buffer.toString('base64');
-        let dataUrl = `data:${mime};base64,${base64}`;
+        let dataUrl;
+
+        if (ext === '.psd') {
+          dataUrl = renderPsdToDataUrl(buffer, psdBackgroundOnly);
+        } else {
+          const mime = MIME_TYPES[ext] || 'image/jpeg';
+          const base64 = buffer.toString('base64');
+          dataUrl = `data:${mime};base64,${base64}`;
+        }
 
         if (levelAdjustment?.enabled && levelAdjustment.blackPoint) {
           dataUrl = await applyLevelAdjustment(dataUrl, levelAdjustment.blackPoint);
@@ -107,35 +185,104 @@ function ImageViewer({ images, currentPage, onPageChange, cursorSync, onCursorSy
     })();
 
     return () => { canceled = true; };
-  }, [currentImage, levelAdjustment]);
+  }, [currentImage, levelAdjustment, psdBackgroundOnly]);
 
-  // ─── 페이지 이동 ───
+  // ─── 합페: pageB → pageA 리다이렉트 ───
+  useEffect(() => {
+    const redirectTo = reverseSpreadMap.get(currentPage);
+    if (redirectTo != null && onPageChange) {
+      onPageChange(redirectTo);
+    }
+  }, [currentPage, reverseSpreadMap, onPageChange]);
+
+  // ─── 합페: 파트너 이미지 로드 ───
+  const spreadPartnerPage = spreadMap.get(currentPage);
+  const isSpreadView = spreadPartnerPage != null;
+  const partnerImage = isSpreadView
+    ? sortedImages.find(img => img.page === spreadPartnerPage)
+    : null;
+
+  useEffect(() => {
+    if (!partnerImage) { setSpreadDataUrl(null); return; }
+    let canceled = false;
+
+    (async () => {
+      try {
+        const buffer = await fs.promises.readFile(partnerImage.filePath);
+        if (canceled) return;
+        const ext = path.extname(partnerImage.filePath).toLowerCase();
+        let dataUrl;
+
+        if (ext === '.psd') {
+          dataUrl = renderPsdToDataUrl(buffer, psdBackgroundOnly);
+        } else {
+          const mime = MIME_TYPES[ext] || 'image/jpeg';
+          const base64 = buffer.toString('base64');
+          dataUrl = `data:${mime};base64,${base64}`;
+        }
+
+        if (levelAdjustment?.enabled && levelAdjustment.blackPoint) {
+          dataUrl = await applyLevelAdjustment(dataUrl, levelAdjustment.blackPoint);
+          if (canceled) return;
+        }
+
+        setSpreadDataUrl(dataUrl);
+      } catch {
+        if (!canceled) setSpreadDataUrl(null);
+      }
+    })();
+
+    return () => { canceled = true; };
+  }, [partnerImage, levelAdjustment, psdBackgroundOnly]);
+
+  // ─── 페이지 이동 (합페 pageB 건너뛰기) ───
   const goToPage = useCallback((page) => {
     if (onPageChange) onPageChange(page);
   }, [onPageChange]);
 
-  const goNext = useCallback(() => {
-    if (currentIndex < sortedImages.length - 1) {
-      goToPage(sortedImages[currentIndex + 1].page);
+  const hasNext = useMemo(() => {
+    for (let i = currentIndex + 1; i < sortedImages.length; i++) {
+      if (!consumedPages.has(sortedImages[i].page)) return true;
     }
-  }, [currentIndex, sortedImages, goToPage]);
+    return false;
+  }, [currentIndex, sortedImages, consumedPages]);
+
+  const hasPrev = useMemo(() => {
+    for (let i = currentIndex - 1; i >= 0; i--) {
+      if (!consumedPages.has(sortedImages[i].page)) return true;
+    }
+    return false;
+  }, [currentIndex, sortedImages, consumedPages]);
+
+  const goNext = useCallback(() => {
+    for (let i = currentIndex + 1; i < sortedImages.length; i++) {
+      if (!consumedPages.has(sortedImages[i].page)) {
+        goToPage(sortedImages[i].page);
+        return;
+      }
+    }
+  }, [currentIndex, sortedImages, goToPage, consumedPages]);
 
   const goPrev = useCallback(() => {
-    if (currentIndex > 0) {
-      goToPage(sortedImages[currentIndex - 1].page);
+    for (let i = currentIndex - 1; i >= 0; i--) {
+      if (!consumedPages.has(sortedImages[i].page)) {
+        goToPage(sortedImages[i].page);
+        return;
+      }
     }
-  }, [currentIndex, sortedImages, goToPage]);
+  }, [currentIndex, sortedImages, goToPage, consumedPages]);
 
-  // ─── 페이지 점프 ───
+  // ─── 페이지 점프 (합페 리다이렉트) ───
   const handlePageInputSubmit = useCallback(() => {
     const num = parseInt(pageInput, 10);
     if (!isNaN(num)) {
-      const target = sortedImages.find(img => img.page === num);
+      const redirected = reverseSpreadMap.get(num) ?? num;
+      const target = sortedImages.find(img => img.page === redirected);
       if (target) goToPage(target.page);
     }
     setPageInput('');
     setIsPageInputVisible(false);
-  }, [pageInput, sortedImages, goToPage]);
+  }, [pageInput, sortedImages, goToPage, reverseSpreadMap]);
 
   const handlePageInputKeyDown = useCallback((e) => {
     if (e.key === 'Enter') {
@@ -147,26 +294,60 @@ function ImageViewer({ images, currentPage, onPageChange, cursorSync, onCursorSy
     }
   }, [handlePageInputSubmit]);
 
-  // ─── Ctrl+휠 줌 ───
+  // ─── fit 배율 계산 (이미지 자연 크기 vs 컨테이너) ───
+  const getFitZoom = useCallback(() => {
+    const container = containerRef.current;
+    const img = imgRef.current;
+    if (!container || !img || !img.naturalWidth) return 100;
+    const cW = container.clientWidth;
+    const cH = container.clientHeight;
+    const fitByWidth = cW / img.naturalWidth * 100;
+    const fitByHeight = cH / img.naturalHeight * 100;
+    return Math.round(Math.min(fitByWidth, fitByHeight));
+  }, []);
+
+  // ─── 휠 동작: Ctrl=줌(마우스 기준), Shift=좌우 스크롤, 기본=상하 스크롤 ───
   const handleWheel = useCallback((e) => {
     if (e.ctrlKey) {
       e.preventDefault();
       e.stopPropagation();
+      const container = containerRef.current;
+      if (!container) return;
+
+      const rect = container.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+      const contentX = container.scrollLeft + mouseX;
+      const contentY = container.scrollTop + mouseY;
+
       setZoom(prev => {
-        const base = prev ?? 100;
+        const base = prev ?? getFitZoom();
         const delta = e.deltaY > 0 ? -10 : 10;
-        return Math.max(20, Math.min(500, base + delta));
+        const newZoom = Math.max(20, Math.min(500, base + delta));
+        const scale = newZoom / base;
+
+        container.scrollLeft = contentX * scale - mouseX;
+        container.scrollTop = contentY * scale - mouseY;
+
+        return newZoom;
       });
+    } else if (e.shiftKey) {
+      e.preventDefault();
+      const container = containerRef.current;
+      if (container) {
+        container.scrollLeft += e.deltaY;
+      }
     }
-  }, []);
+    // else: 기본 동작 (상하 스크롤)
+  }, [getFitZoom]);
 
   const handleZoomIn = useCallback(() => {
-    setZoom(prev => Math.min(500, (prev ?? 100) + 10));
-  }, []);
+    setZoom(prev => Math.min(500, (prev ?? getFitZoom()) + 10));
+  }, [getFitZoom]);
 
   const handleZoomOut = useCallback(() => {
-    setZoom(prev => Math.max(20, (prev ?? 100) - 10));
-  }, []);
+    setZoom(prev => Math.max(20, (prev ?? getFitZoom()) - 10));
+  }, [getFitZoom]);
 
   // ─── 블랙포인트 색상값 클립보드 복사 ───
   const handleCopyBlackPoint = useCallback(() => {
@@ -175,8 +356,13 @@ function ImageViewer({ images, currentPage, onPageChange, cursorSync, onCursorSy
     clipboard.writeText(blackPointInfo.blackPoint.hex);
   }, [blackPointInfo]);
 
-  // ─── 드래그로 스크롤 (줌 상태에서) ───
+  // ─── 드래그로 스크롤 (줌 상태에서) / 휠 클릭으로 fit ───
   const handleMouseDown = useCallback((e) => {
+    if (e.button === 1) {
+      e.preventDefault();
+      setZoom(null);
+      return;
+    }
     if (e.button !== 0) return;
     const container = containerRef.current;
     if (!container) return;
@@ -221,15 +407,20 @@ function ImageViewer({ images, currentPage, onPageChange, cursorSync, onCursorSy
     setZoom(null);
   }, [currentPage]);
 
-  // ─── 현재 페이지의 블랙포인트 정보 ───
+  // ─── 현재 페이지의 블랙포인트 정보 (레벨 조정 시 보정) ───
   const currentPageBPInfo = useMemo(() => {
     if (!blackPointInfo?.perPage || !currentImage) return null;
-    return blackPointInfo.perPage.get(currentImage.page) ?? null;
-  }, [blackPointInfo, currentImage]);
+    const raw = blackPointInfo.perPage.get(currentImage.page) ?? null;
+    if (!raw) return null;
+    if (levelAdjustment?.enabled) {
+      return { ...raw, blackPoint: { r: 0, g: 0, b: 0, hex: '#000000' } };
+    }
+    return raw;
+  }, [blackPointInfo, currentImage, levelAdjustment]);
 
   if (!sortedImages || sortedImages.length === 0) {
     return (
-      <div className="image-viewer image-viewer--empty">
+      <div className="image-viewer image-viewer--empty" style={style}>
         <div className="image-viewer__placeholder">
           <span>이미지 없음</span>
         </div>
@@ -241,7 +432,7 @@ function ImageViewer({ images, currentPage, onPageChange, cursorSync, onCursorSy
   const displayZoom = zoom ?? 100;
 
   return (
-    <div className="image-viewer">
+    <div className="image-viewer" style={style}>
       {/* 네비게이션 바 */}
       <div className="image-viewer__nav">
         {sortedImages.length > 1 && (
@@ -249,7 +440,7 @@ function ImageViewer({ images, currentPage, onPageChange, cursorSync, onCursorSy
             <button
               className="image-viewer__nav-btn"
               onClick={goPrev}
-              disabled={currentIndex <= 0}
+              disabled={!hasPrev}
               title="이전 페이지"
             >
               ◀
@@ -271,7 +462,7 @@ function ImageViewer({ images, currentPage, onPageChange, cursorSync, onCursorSy
                 onClick={() => setIsPageInputVisible(true)}
                 title="클릭하여 페이지 번호 입력"
               >
-                {currentImage ? currentImage.page : '-'} / {sortedImages[sortedImages.length - 1].page}
+                {currentImage ? (isSpreadView ? `${currentImage.page}-${spreadPartnerPage}` : currentImage.page) : '-'} / {sortedImages[sortedImages.length - 1].page}
                 <span className="image-viewer__page-sub">
                   ({currentIndex + 1}/{sortedImages.length})
                 </span>
@@ -280,7 +471,7 @@ function ImageViewer({ images, currentPage, onPageChange, cursorSync, onCursorSy
             <button
               className="image-viewer__nav-btn"
               onClick={goNext}
-              disabled={currentIndex >= sortedImages.length - 1}
+              disabled={!hasNext}
               title="다음 페이지"
             >
               ▶
@@ -308,6 +499,17 @@ function ImageViewer({ images, currentPage, onPageChange, cursorSync, onCursorSy
           </span>
         )}
 
+        {/* PSD 배경 레이어만 보기 토글 */}
+        {isPsdFile && (
+          <button
+            className={`image-viewer__nav-btn image-viewer__psd-bg-btn${psdBackgroundOnly ? ' is-active' : ''}`}
+            onClick={() => setPsdBackgroundOnly(prev => !prev)}
+            title={psdBackgroundOnly ? '모든 레이어 표시' : '배경 레이어만 표시'}
+          >
+            BG
+          </button>
+        )}
+
         {/* 줌 컨트롤 */}
         <div className="image-viewer__zoom-controls">
           <button className="image-viewer__zoom-btn" onClick={handleZoomOut} title="축소">
@@ -331,14 +533,43 @@ function ImageViewer({ images, currentPage, onPageChange, cursorSync, onCursorSy
       </div>
 
       {/* 이미지 영역 */}
-      <div
-        ref={containerRef}
-        className="image-viewer__canvas"
-        onWheel={handleWheel}
-        onMouseDown={handleMouseDown}
-        style={{ cursor: dragState ? 'grabbing' : (!isFitMode && displayZoom > 100 ? 'grab' : 'default') }}
-      >
-        {currentImage && imageDataUrl && (
+      <div className="image-viewer__canvas-wrapper">
+        {onRemoveCurrentImage && currentImage && (
+          <button
+            className="image-viewer__remove-btn"
+            onClick={onRemoveCurrentImage}
+            title="현재 이미지 제거"
+          >
+            {icons?.delete
+              ? <img src={icons.delete} alt="Remove" className="image-viewer__remove-icon" />
+              : '✕'}
+          </button>
+        )}
+        <div
+          ref={containerRef}
+          className="image-viewer__canvas"
+          onWheel={handleWheel}
+          onMouseDown={handleMouseDown}
+          style={{ cursor: dragState ? 'grabbing' : (!isFitMode && displayZoom > 100 ? 'grab' : 'default') }}
+        >
+        {isSpreadView && currentImage && imageDataUrl && spreadDataUrl ? (
+          <div className={`image-viewer__spread${isFitMode ? ' image-viewer__spread--fit' : ''}`}
+               style={isFitMode ? undefined : { width: `${displayZoom}%` }}>
+            <img
+              className={`image-viewer__img${isFitMode ? ' image-viewer__img--fit' : ''}`}
+              src={spreadDataUrl}
+              alt={`Page ${spreadPartnerPage}`}
+              draggable={false}
+            />
+            <img
+              ref={imgRef}
+              className={`image-viewer__img${isFitMode ? ' image-viewer__img--fit' : ''}`}
+              src={imageDataUrl}
+              alt={`Page ${currentImage.page}`}
+              draggable={false}
+            />
+          </div>
+        ) : currentImage && imageDataUrl ? (
           <img
             ref={imgRef}
             className={`image-viewer__img${isFitMode ? ' image-viewer__img--fit' : ''}`}
@@ -347,7 +578,8 @@ function ImageViewer({ images, currentPage, onPageChange, cursorSync, onCursorSy
             style={isFitMode ? undefined : { width: `${displayZoom}%` }}
             draggable={false}
           />
-        )}
+        ) : null}
+        </div>
       </div>
 
       {/* 하단 상태 바 */}
@@ -380,9 +612,9 @@ function ImageViewer({ images, currentPage, onPageChange, cursorSync, onCursorSy
             <div className="image-viewer__black-point">
               <span
                 className="image-viewer__bp-swatch"
-                style={{ backgroundColor: blackPointInfo.blackPoint.hex }}
+                style={{ backgroundColor: levelAdjustment?.enabled ? '#000000' : blackPointInfo.blackPoint.hex }}
               />
-              <span className="image-viewer__bp-hex">BP {blackPointInfo.blackPoint.hex}</span>
+              <span className="image-viewer__bp-hex">BP {levelAdjustment?.enabled ? '#000000' : blackPointInfo.blackPoint.hex}</span>
               <button
                 className="image-viewer__bp-copy"
                 onClick={handleCopyBlackPoint}
@@ -393,7 +625,28 @@ function ImageViewer({ images, currentPage, onPageChange, cursorSync, onCursorSy
             </div>
           </>
         ) : null}
+
+        {/* 자동화 버튼 (상태 바 오른쪽 끝) */}
+        <button
+          ref={automationBtnRef}
+          className={`image-viewer__automation-btn${automationOpen ? ' is-active' : ''}`}
+          onClick={() => setAutomationOpen(prev => !prev)}
+          title="Automation"
+        >
+          {icons?.automation
+            ? <img src={icons.automation} alt="Automation" className="image-viewer__automation-icon" />
+            : '⚙'}
+        </button>
       </div>
+
+      {/* 자동화 패널 */}
+      <AutomationPanel
+        isOpen={automationOpen}
+        onClose={() => setAutomationOpen(false)}
+        actions={automationActions}
+        icons={icons}
+        anchorRef={automationBtnRef}
+      />
     </div>
   );
 }

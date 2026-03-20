@@ -77,6 +77,7 @@ class SystemListener {
 	/** Process/Pause 진입 시 클립보드 변경 감시 시작 */
 	_startClipboardMonitor() {
 		if (this._clipboardInterval) return; // 이미 실행 중
+		if (state._photoshopModeActive) return; // 포토샵 모드에서는 클립보드 감시 불필요
 		this.lastClipboardText = clipboard.readText();
 
 		this._clipboardInterval = setInterval(() => {

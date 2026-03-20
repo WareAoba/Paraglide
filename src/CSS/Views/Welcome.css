@@ -3,7 +3,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    min-height: 96vh;
+    min-height: calc(100vh - var(--titlebar-height));
     gap: var(--spacing-xl);
     background-color: var(--bg-color);
     color: var(--text-color);

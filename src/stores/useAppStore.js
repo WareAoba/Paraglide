@@ -1,6 +1,8 @@
 // src/stores/useAppStore.js — 앱 핵심 상태 (Zustand)
 import { create } from 'zustand';
 
+// ProgramStatus: src/main/constants.js와 동일한 값 유지
+// (메인=CJS, 렌더러=ESM 경계로 인해 런타임 공유 불가)
 const ProgramStatus = {
   READY: 'Ready',
   PROCESS: 'Process',
@@ -36,6 +38,11 @@ const useAppStore = create((set, get) => ({
   // ─── 플러그인 상태 ───
   pluginServer: false,
   pluginConnected: false,
+  pluginModeActive: false,
+  psActionList: [],    // PS 액션 세트/액션 목록
+  styleActions: {},    // 스타일명→PS액션 매핑 { "plain": { set, action }, ... }
+  slotOrder: null,     // 슬롯 순서 (null이면 기본 STYLE_NAMES 사용)
+  pendingImagePaths: null, // 에디터 마운트 시 로드할 이미지 경로
 
   // ─── 알림 상태 ───
   toastMessage: null,
@@ -106,16 +113,8 @@ const useAppStore = create((set, get) => ({
 
     const newSearchState = visible;
 
-    if (newSearchState === s.isSearchVisible) {
-      // 이미 원하는 상태면 닫기
-      if (s.isSearchVisible) {
-        return {
-          isSearchVisible: false,
-          isSidebarVisible: s.wasInitiallySidebarOpen ? s.isSidebarVisible : false
-        };
-      }
-      return s;
-    }
+    // 이미 원하는 상태면 변경 없음
+    if (newSearchState === s.isSearchVisible) return s;
 
     if (newSearchState) {
       return {
@@ -166,6 +165,10 @@ const useAppStore = create((set, get) => ({
   setOverlayVisible: (visible) => set({ isOverlayVisible: visible }),
   setPluginServer: (enabled) => set({ pluginServer: enabled }),
   setPluginConnected: (connected) => set({ pluginConnected: connected }),
+  setPsActionList: (list) => set({ psActionList: list }),
+  setStyleActions: (mapping) => set({ styleActions: mapping }),
+  setSlotOrder: (order) => set({ slotOrder: order }),
+  setPendingImagePaths: (paths) => set({ pendingImagePaths: paths }),
   setToastMessage: (msg) => set({ toastMessage: msg }),
 
   // 복합 상태 업데이트

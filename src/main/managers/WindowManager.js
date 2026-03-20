@@ -15,6 +15,7 @@ const WindowManager = {
       minWidth: 400,
       minHeight: 660,
       show: false,
+      frame: false,
       title: 'Paraglide',
       icon: FILE_PATHS.icon,
       webPreferences: {
@@ -25,6 +26,13 @@ const WindowManager = {
     });
 
     state.mainWindow.setMenu(null);
+
+    // Windows에서 minWidth/minHeight가 적용되지 않는 Electron 버그 대응
+    state.mainWindow.on('will-resize', (event, newBounds) => {
+      if (newBounds.width < 400 || newBounds.height < 660) {
+        event.preventDefault();
+      }
+    });
 
     // beforeunload 이벤트 핸들러 추가
     state.mainWindow.webContents.on('before-input-event', (event, input) => {
@@ -44,24 +52,20 @@ const WindowManager = {
       
       try {
         if (currentState.programStatus === ProgramStatus.PROCESS || 
-            currentState.programStatus === ProgramStatus.PAUSE ||
-            currentState.programStatus === ProgramStatus.EDIT) {
-    
-          // 공통 작업 중 경고
+            currentState.programStatus === ProgramStatus.PAUSE) {
+          // 프로세스/일시정지 중 종료 경고
           const workingChoice = await DialogManager.show(DialogManager.DIALOGS.EXIT_CONFIRM, state.mainWindow);
           if (workingChoice === 1) return;
-    
-          // 에디터 모드에서는 저장 여부도 추가 확인
-          if (currentState.programStatus === ProgramStatus.EDIT) {
-            state.mainWindow.webContents.send('editor-is-saved-check');
-            const isEditorSaved = await new Promise(resolve => {
-              ipcMain.once('editor-is-saved-result', (_, isSaved) => resolve(isSaved));
-            });
-    
-            if (!isEditorSaved) {
-              const saveChoice = await DialogManager.show(DialogManager.DIALOGS.UNSAVED_CHANGES, state.mainWindow);
-              if (saveChoice === 1) return;
-            }
+        } else if (currentState.programStatus === ProgramStatus.EDIT) {
+          // 에디터 모드: 미저장 시 경고 한 번만 표시
+          state.mainWindow.webContents.send('editor-is-saved-check');
+          const isEditorSaved = await new Promise(resolve => {
+            ipcMain.once('editor-is-saved-result', (_, isSaved) => resolve(isSaved));
+          });
+
+          if (!isEditorSaved) {
+            const saveChoice = await DialogManager.show(DialogManager.DIALOGS.UNSAVED_CHANGES, state.mainWindow);
+            if (saveChoice === 1) return;
           }
         }
         
@@ -160,6 +164,14 @@ const WindowManager = {
     state.mainWindow.once('ready-to-show', () => {
       state.mainWindow.showInactive();
     });
+
+    // 최대화/복원 상태 변경 시 렌더러에 알림
+    state.mainWindow.on('maximize', () => {
+      state.mainWindow.webContents.send('window-maximized', true);
+    });
+    state.mainWindow.on('unmaximize', () => {
+      state.mainWindow.webContents.send('window-maximized', false);
+    });
   
     state.mainWindow.on('closed', () => {
       // Lazy require to avoid circular dependency
@@ -192,6 +204,21 @@ const WindowManager = {
     // Lazy require to avoid circular dependency
     const FileManager = require('./FileManager');
     await FileManager.saveConfig(config);
+  },
+
+  expandWindowForImage(targetWidth) {
+    if (!state.mainWindow || state.mainWindow.isDestroyed()) return;
+
+    const bounds = state.mainWindow.getBounds();
+    if (targetWidth <= bounds.width) return;
+
+    const display = screen.getDisplayMatching(bounds);
+    const workArea = display.workArea;
+    const maxWidth = workArea.x + workArea.width - bounds.x;
+    const finalWidth = Math.min(targetWidth, maxWidth);
+    if (finalWidth <= bounds.width) return;
+
+    state.mainWindow.setBounds({ ...bounds, width: finalWidth });
   },
 
   async updateWindowContent(window, eventName) {

@@ -154,8 +154,8 @@
                 "title": "Paraglide",
                 "openFile": "Open File",
                 "dragDrop": {
-                    "message": "Drag and drop text files here",
-                    "formats": "Only *.txt files are supported"
+                    "message": "Drop files here",
+                    "formats": "Text (*.txt, *.para) and image files supported"
                 },
                 "images": {
                     "logoAlt": "Paraglide Logo",
@@ -165,8 +165,10 @@
         }
     },
     "dragDrop": {
-        "message": "Drag and drop text files here",
-        "subMessage": "Only *.txt files are supported"
+        "message": "Drop files here",
+        "subMessage": "Text (*.txt, *.para) and image files supported",
+        "messageText": "Drop text files here",
+        "subMessageText": "Only *.txt and *.para files are supported"
     },
     "sidebar": {
         "common": {
@@ -308,7 +310,8 @@
             "textMacro": "Text Macro",
             "imageViewer": "Image Viewer",
             "closeViewer": "Close Viewer",
-            "textStyle": "Text Styles"
+            "textStyle": "Text Styles",
+            "metadata": "Metadata"
         },
         "macro": {
             "empty": "(empty)",
@@ -324,16 +327,32 @@
         },
         "style": {
             "title": "Text Styles",
-            "preset1": "Plain",
-            "preset2": "Emphasis",
-            "preset3": "Monologue",
-            "preset4": "Thought",
-            "preset5": "Announce",
-            "preset6": "Excited",
-            "preset7": "Surprise",
-            "preset8": "Angry",
-            "preset9": "Custom1",
-            "preset10": "Custom2"
+            "plain": "Plain",
+            "emphasis": "Emphasis",
+            "monologue": "Monologue",
+            "thought": "Thought",
+            "announce": "Announce",
+            "excited": "Excited",
+            "surprise": "Surprise",
+            "angry": "Angry",
+            "custom1": "Custom1",
+            "custom2": "Custom2",
+            "action": "Action",
+            "refreshActions": "Refresh Actions",
+            "noActions": "No PS Actions",
+            "clearAction": "Clear Action",
+            "deleteSlot": "Delete Slot",
+            "customPrefix": "Custom",
+            "rightClickToAssign": "Right-click to assign action",
+            "clickToAssign": "Click to assign action",
+            "actionInvalid": "Assigned action not found",
+            "pluginDisabled": "Photoshop plugin is disabled",
+            "selectAction": "Select Action"
+        },
+        "metadata": {
+            "title": "Metadata",
+            "image": "Images",
+            "imagePlaceholder": "image1.jpg,image2.jpg"
         }
     },
     "console": {
@@ -374,5 +393,14 @@
                 ]
             }
         }
+    },
+    "automation": {
+        "title": "Automation",
+        "auto": "Auto",
+        "runAll": "Run All",
+        "metadata": "Save image info to metadata",
+        "numbering": "Auto-stamp text numbering",
+        "spread": "Detect spreads & apply numbering",
+        "dpi": "Adjust print DPI to 72"
     }
 }

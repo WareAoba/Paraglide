@@ -1,10 +1,10 @@
 /* DragDropOverlay.css */
 .drag-drop-overlay {
   position: fixed;
-  top: 0;
+  top: var(--titlebar-height);
   left: 0;
   width: 100%;
-  height: 100%;
+  height: calc(100vh - var(--titlebar-height));
   display: flex;
   align-items: center;
   justify-content: center;

@@ -160,8 +160,10 @@
         }
     },
     "dragDrop": {
-        "message": "テキストファイルをここにドロップしてください。",
-        "subMessage": "*.txtファイルのみ対応"
+        "message": "ファイルをここにドロップしてください",
+        "subMessage": "テキスト(*.txt, *.para)および画像ファイルに対応",
+        "messageText": "テキストファイルをここにドロップしてください",
+        "subMessageText": "*.txt, *.paraファイルのみ対応"
     },
     "sidebar": {
         "common": {
@@ -303,7 +305,8 @@
             "textMacro": "テキストマクロ",
             "imageViewer": "イメージビューア",
             "closeViewer": "ビューアを閉じる",
-            "textStyle": "テキストスタイル"
+            "textStyle": "テキストスタイル",
+            "metadata": "メタデータ"
         },
         "macro": {
             "empty": "(空)",
@@ -319,16 +322,32 @@
         },
         "style": {
             "title": "テキストスタイル",
-            "preset1": "平文",
-            "preset2": "強調",
-            "preset3": "独白",
-            "preset4": "思考",
-            "preset5": "アナウンス",
-            "preset6": "興奮",
-            "preset7": "驚き",
-            "preset8": "怒り",
-            "preset9": "カスタム1",
-            "preset10": "カスタム2"
+            "plain": "平文",
+            "emphasis": "強調",
+            "monologue": "独白",
+            "thought": "思考",
+            "announce": "アナウンス",
+            "excited": "興奮",
+            "surprise": "驚き",
+            "angry": "怒り",
+            "custom1": "カスタム1",
+            "custom2": "カスタム2",
+            "action": "アクション",
+            "refreshActions": "アクション更新",
+            "noActions": "PSアクションなし",
+            "clearAction": "アクション解除",
+            "deleteSlot": "スロット削除",
+            "customPrefix": "カスタム",
+            "rightClickToAssign": "右クリック：アクション割り当て",
+            "clickToAssign": "クリック：アクション割り当て",
+            "actionInvalid": "登録されたアクションが見つかりません",
+            "pluginDisabled": "Photoshopプラグインが無効です",
+            "selectAction": "アクション選択"
+        },
+        "metadata": {
+            "title": "メタデータ",
+            "image": "画像",
+            "imagePlaceholder": "image1.jpg,image2.jpg"
         }
     },
     "console": {
@@ -368,5 +387,14 @@
                 ]
             }
         }
+    },
+    "automation": {
+        "title": "自動化",
+        "auto": "Auto",
+        "runAll": "全て実行",
+        "metadata": "画像情報をメタデータに保存",
+        "numbering": "テキストナンバリング自動スタンプ",
+        "spread": "見開き検出とナンバリングに適用",
+        "dpi": "印刷DPIを72に調整"
     }
 }

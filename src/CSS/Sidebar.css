@@ -6,11 +6,12 @@
 .sidebar {
   position: fixed;
   left: 0;
-  top: 0;
+  top: var(--titlebar-height);
   width: 40vw;
   min-width: 300px;
   max-width: 500px;
-  height: 100vh;
+  height: calc(100vh - var(--titlebar-height));
+  border-radius: 0 16px 16px 0;
   background-color: var(--bg-color);
   border-right: none;
   border-radius: 0 16px 16px 0;  /* 우측 상/하단만 둥글게 */
@@ -62,7 +63,7 @@
 /* 오버레이 */
 .sidebar-overlay {
   position: fixed;
-  top: 0;
+  top: var(--titlebar-height);
   left: 0;
   right: 0;
   bottom: 0;

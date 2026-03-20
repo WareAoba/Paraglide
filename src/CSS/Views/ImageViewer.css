@@ -4,16 +4,20 @@
  * 자체 높이는 부모 stretch에 의해 다른 컨테이너와 동일하게 유지된다.
  */
 .image-viewer {
+  position: relative;
   display: flex;
   flex-direction: column;
   width: 50%;
   min-width: 300px;
   max-width: 65%;
-  border: 1px solid var(--border-color);
+  border: none;
   border-radius: 8px;
-  background: color-mix(in srgb, var(--bg-color) 95%, #000 5%);
+  background: var(--container-bg);
   user-select: none;
   overflow: hidden;
+  box-shadow:
+    6px 6px 12px var(--container-shadow-up),
+    -6px -6px 12px var(--container-shadow-down);
 }
 
 .image-viewer--empty {
@@ -40,9 +44,11 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.35rem 0.75rem;
-  background: color-mix(in srgb, var(--bg-color) 85%, var(--text-color) 15%);
-  border-bottom: 1px solid var(--border-color);
+  background: color-mix(in srgb, var(--container-bg) 80%, var(--text-color) 8%);
+  border-bottom: none;
   flex-shrink: 0;
+  box-shadow:
+    inset 0 -2px 4px var(--container-shadow-up);
 }
 
 .image-viewer__nav-btn {
@@ -61,6 +67,9 @@
   background: color-mix(in srgb, var(--primary-color) 15%, transparent);
   color: var(--primary-color);
   opacity: 1;
+  box-shadow:
+    inset 2px 2px 4px var(--container-shadow-up),
+    inset -2px -2px 4px var(--container-shadow-down);
 }
 
 .image-viewer__nav-btn:disabled {
@@ -146,6 +155,25 @@
   flex-shrink: 1;
 }
 
+/* ─── PSD 배경 레이어만 보기 ─── */
+.image-viewer__psd-bg-btn {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  opacity: 0.35;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.image-viewer__psd-bg-btn.is-active {
+  opacity: 0.85;
+  color: var(--primary-color, #5b9bd5);
+}
+
+.image-viewer__psd-bg-btn.is-active:hover {
+  opacity: 1;
+}
+
 /* ─── 줌 컨트롤 ─── */
 .image-viewer__zoom-controls {
   display: flex;
@@ -175,6 +203,9 @@
 .image-viewer__zoom-btn:hover {
   background: color-mix(in srgb, var(--primary-color) 15%, transparent);
   opacity: 1;
+  box-shadow:
+    inset 2px 2px 4px var(--container-shadow-up),
+    inset -2px -2px 4px var(--container-shadow-down);
 }
 
 .image-viewer__zoom-icon {
@@ -207,13 +238,57 @@
   opacity: 0.8;
 }
 
+/* ─── 캔버스 래퍼 (닫기 버튼 포지셔닝 컨텍스트) ─── */
+.image-viewer__canvas-wrapper {
+  position: relative;
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.image-viewer__remove-btn {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  z-index: 10;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--container-bg) 70%, var(--text-color) 15%);
+  color: var(--text-color);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s, background 0.15s;
+  padding: 0;
+}
+
+.image-viewer__canvas-wrapper:hover .image-viewer__remove-btn {
+  opacity: 0.7;
+}
+
+.image-viewer__remove-btn:hover {
+  opacity: 1 !important;
+  background: color-mix(in srgb, var(--container-bg) 60%, var(--text-color) 25%);
+}
+
+.image-viewer__remove-icon {
+  width: 14px;
+  height: 14px;
+  filter: var(--icon-filter, none);
+}
+
 /* ─── 이미지 캔버스 (스크롤 영역) ─── */
 .image-viewer__canvas {
   flex: 1;
   overflow: auto;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  align-items: flex-start;
+  justify-content: flex-start;
   padding: 0.5rem;
 }
 
@@ -243,8 +318,9 @@
   object-fit: contain;
   display: block;
   border-radius: 2px;
-  transition: width 0.1s ease;
   pointer-events: none;
+  flex-shrink: 0;
+  margin: auto;
 }
 
 /* fit 모드: 원본 비율 유지하며 컨테이너에 최대한 채움 */
@@ -256,9 +332,79 @@
   object-fit: contain;
 }
 
+/* ─── 합페(스프레드) 표시 ─── */
+.image-viewer__spread {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  flex-shrink: 0;
+  margin: auto;
+}
+
+.image-viewer__spread--fit {
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.image-viewer__spread--fit .image-viewer__img--fit {
+  max-width: 50%;
+  max-height: 100%;
+}
+
+.image-viewer__spread .image-viewer__img {
+  flex: 0 0 auto;
+}
+
+/* 줌 모드에서 합페: 각 이미지가 컨테이너의 절반 비율 */
+.image-viewer__spread:not(.image-viewer__spread--fit) .image-viewer__img {
+  width: 50%;
+  height: auto;
+}
+
 /* ─── 이미지 뷰어가 열려 있을 때 에디터 레이아웃 ─── */
 .text-editor.with-image-viewer .editor-body-wrapper {
-  margin-left: 0.5rem;
+  margin-left: 0;
+}
+
+/* ─── 뷰어↔에디터 리사이즈 핸들 ─── */
+.panel-resize-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  margin: 0 -0.25rem;
+  cursor: col-resize;
+  flex-shrink: 0;
+  z-index: 5;
+}
+
+.panel-resize-handle__bar {
+  width: 6px;
+  height: 56px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--container-bg) 85%, var(--text-color) 15%);
+  border: none;
+  box-shadow:
+    2px 2px 5px var(--container-shadow-up),
+    -2px -2px 5px var(--container-shadow-down);
+  transition: box-shadow 0.15s, height 0.15s, background 0.15s;
+}
+
+.panel-resize-handle:hover .panel-resize-handle__bar {
+  height: 72px;
+  background: color-mix(in srgb, var(--container-bg) 75%, var(--text-color) 25%);
+  box-shadow:
+    3px 3px 6px var(--container-shadow-up),
+    -3px -3px 6px var(--container-shadow-down);
+}
+
+.panel-resize-handle.is-dragging .panel-resize-handle__bar {
+  height: 72px;
+  background: color-mix(in srgb, var(--container-bg) 75%, var(--text-color) 25%);
+  box-shadow:
+    inset 2px 2px 4px var(--container-shadow-up),
+    inset -2px -2px 4px var(--container-shadow-down);
 }
 
 /* ─── 하단 상태 바 ─── */
@@ -267,10 +413,12 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.3rem 0.75rem;
-  background: color-mix(in srgb, var(--bg-color) 85%, var(--text-color) 15%);
-  border-top: 1px solid var(--border-color);
+  background: color-mix(in srgb, var(--container-bg) 80%, var(--text-color) 8%);
+  border-top: none;
   flex-shrink: 0;
   min-height: 26px;
+  box-shadow:
+    inset 0 2px 4px var(--container-shadow-up);
 }
 
 /* ─── 흑백/컬러 뱃지 ─── */
@@ -284,14 +432,20 @@
 }
 
 .image-viewer__color-badge.is-grayscale {
-  background: color-mix(in srgb, var(--text-color) 15%, transparent);
+  background: var(--container-bg);
   color: var(--text-color);
   opacity: 0.7;
+  box-shadow:
+    2px 2px 4px var(--container-shadow-up),
+    -2px -2px 4px var(--container-shadow-down);
 }
 
 .image-viewer__color-badge.is-color {
-  background: color-mix(in srgb, var(--primary-color) 20%, transparent);
+  background: color-mix(in srgb, var(--primary-color) 20%, var(--container-bg));
   color: var(--primary-color);
+  box-shadow:
+    2px 2px 4px var(--container-shadow-up),
+    -2px -2px 4px var(--container-shadow-down);
 }
 
 /* ─── 블랙포인트 인디케이터 ─── */
@@ -300,10 +454,13 @@
   align-items: center;
   gap: 0.3rem;
   padding: 0.15rem 0.4rem;
-  background: color-mix(in srgb, var(--bg-color) 60%, var(--text-color) 40%);
+  background: var(--container-bg);
   border-radius: 4px;
   font-size: 0.65rem;
   flex-shrink: 0;
+  box-shadow:
+    inset 2px 2px 4px var(--container-shadow-up),
+    inset -2px -2px 4px var(--container-shadow-down);
 }
 
 .image-viewer__bp-swatch {
@@ -335,4 +492,49 @@
 
 .image-viewer__bp-copy:hover {
   opacity: 1;
+}
+
+/* ─── 자동화 버튼 (상태 바 오른쪽 끝) ─── */
+.image-viewer__automation-btn {
+  margin-left: auto;
+  border: none;
+  background: none;
+  cursor: pointer;
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  opacity: 0.65;
+  transition: all 0.18s ease;
+  flex-shrink: 0;
+  color: var(--text-color);
+}
+
+.image-viewer__automation-btn:hover {
+  opacity: 1;
+  background: color-mix(in srgb, var(--primary-color) 15%, transparent);
+  box-shadow:
+    inset 2px 2px 4px var(--container-shadow-up),
+    inset -2px -2px 4px var(--container-shadow-down);
+}
+
+.image-viewer__automation-btn.is-active {
+  opacity: 1;
+  background: color-mix(in srgb, var(--primary-color) 20%, transparent);
+  box-shadow:
+    inset 2px 2px 4px var(--container-shadow-up),
+    inset -2px -2px 4px var(--container-shadow-down);
+}
+
+.image-viewer__automation-icon {
+  width: 18px;
+  height: 18px;
+  filter: var(--icon-filter);
+}
+
+.image-viewer__automation-btn:hover .image-viewer__automation-icon,
+.image-viewer__automation-btn.is-active .image-viewer__automation-icon {
+  filter: var(--primary-color-filter);
 }

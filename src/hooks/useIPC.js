@@ -22,28 +22,59 @@ export default function useIPC(themeCalc, searchRef) {
 
     // ─── 초기 상태 로드 ───
     const initializeState = async () => {
+      // 각 IPC 호출을 개별 처리하여 하나의 실패가 전체를 차단하지 않도록 함
+      let initialState = null;
+      let savedSettings = null;
+      let initialTheme = null;
+
       try {
-        const [initialState, savedSettings, initialTheme] = await Promise.all([
+        [initialState, savedSettings, initialTheme] = await Promise.all([
           ipcRenderer.invoke('get-state'),
           ipcRenderer.invoke('load-settings'),
           ipcRenderer.invoke('get-current-theme')
         ]);
+      } catch (error) {
+        console.error('초기 상태 로드 실패, 개별 로드 시도:', error);
+        // 개별적으로 재시도
+        const safeInvoke = (channel) => ipcRenderer.invoke(channel).catch(() => null);
+        [initialState, savedSettings, initialTheme] = await Promise.all([
+          initialState ?? safeInvoke('get-state'),
+          savedSettings ?? safeInvoke('load-settings'),
+          initialTheme ?? safeInvoke('get-current-theme')
+        ]);
+      }
 
-        store.setState({
+      // 기본 상태 설정 (부분 실패해도 가능한 만큼 적용)
+      store.setState({
+        ...(initialState && {
           programStatus: initialState.programStatus,
           isOverlayVisible: initialState.isOverlayVisible,
-          viewMode: savedSettings?.viewMode || 'overview',
-          theme: initialTheme,
-          pluginServer: savedSettings?.pluginServer ?? false,
-          pluginConnected: (savedSettings?.pluginServer && savedSettings?.pluginConnected) ?? false
-        });
+        }),
+        viewMode: savedSettings?.viewMode || 'overview',
+        ...(initialTheme && { theme: initialTheme }),
+        pluginServer: savedSettings?.pluginServer ?? false,
+        pluginConnected: (savedSettings?.pluginServer && savedSettings?.pluginConnected) ?? false
+      });
 
-        // 테마 계산 및 로고 로드
+      // 테마 계산 및 로고 로드
+      if (initialTheme) {
         themeCalc(initialTheme.accentColor);
-        loadLogo();
-      } catch (error) {
-        console.error('초기 상태 로드 실패:', error);
       }
+      loadLogo();
+
+      // 스타일 액션 매핑 로드
+      try {
+        const [styleActions, psActionList, slotOrder] = await Promise.all([
+          ipcRenderer.invoke('load-style-actions'),
+          ipcRenderer.invoke('get-ps-action-list'),
+          ipcRenderer.invoke('load-slot-order')
+        ]);
+        store.setState({
+          styleActions: styleActions || {},
+          psActionList: Array.isArray(psActionList) ? psActionList : [],
+          slotOrder: Array.isArray(slotOrder) ? slotOrder : null
+        });
+      } catch { /* ignore */ }
     };
 
     const loadLogo = async () => {
@@ -71,16 +102,7 @@ export default function useIPC(themeCalc, searchRef) {
     };
 
     const handleViewModeUpdate = (_, newViewMode) => {
-      const { viewMode: currentViewMode } = store.getState();
-
-      if (newViewMode === 'editor') {
-        store.setState({ viewMode: newViewMode });
-        ipcRenderer.send('toggle-overlay', false);
-      } else if (currentViewMode === 'editor') {
-        store.setState({ viewMode: newViewMode });
-      } else {
-        store.setState({ viewMode: newViewMode });
-      }
+      store.setState({ viewMode: newViewMode });
     };
 
     const handleClearSearch = () => {
@@ -121,6 +143,22 @@ export default function useIPC(themeCalc, searchRef) {
       if (pluginConnected !== undefined) store.setState({ pluginConnected });
     };
 
+    const handlePhotoshopModeChanged = (_, active) => {
+      store.setState({ pluginModeActive: active });
+    };
+
+    const handlePsActionList = (_, list) => {
+      store.setState({ psActionList: Array.isArray(list) ? list : [] });
+    };
+
+    const handleStyleActionsUpdated = (_, mapping) => {
+      store.setState({ styleActions: mapping || {} });
+    };
+
+    const handleSlotOrderUpdated = (_, order) => {
+      store.setState({ slotOrder: Array.isArray(order) ? order : null });
+    };
+
     const handleParaImageMissing = () => {
       store.getState().setToastMessage('이미지가 모두 로드되지 않았습니다');
     };
@@ -136,6 +174,10 @@ export default function useIPC(themeCalc, searchRef) {
     ipcRenderer.on('toggle-settings', handleToggleSettings);
     ipcRenderer.on('close-esc', handleCloseEsc);
     ipcRenderer.on('plugin-settings-changed', handlePluginSettingsChanged);
+    ipcRenderer.on('photoshop-mode-changed', handlePhotoshopModeChanged);
+    ipcRenderer.on('ps-action-list', handlePsActionList);
+    ipcRenderer.on('style-actions-updated', handleStyleActionsUpdated);
+    ipcRenderer.on('slot-order-updated', handleSlotOrderUpdated);
     ipcRenderer.on('para-image-missing', handleParaImageMissing);
 
     // 초기화
@@ -153,6 +195,10 @@ export default function useIPC(themeCalc, searchRef) {
       ipcRenderer.removeListener('toggle-settings', handleToggleSettings);
       ipcRenderer.removeListener('close-esc', handleCloseEsc);
       ipcRenderer.removeListener('plugin-settings-changed', handlePluginSettingsChanged);
+      ipcRenderer.removeListener('photoshop-mode-changed', handlePhotoshopModeChanged);
+      ipcRenderer.removeListener('ps-action-list', handlePsActionList);
+      ipcRenderer.removeListener('style-actions-updated', handleStyleActionsUpdated);
+      ipcRenderer.removeListener('slot-order-updated', handleSlotOrderUpdated);
       ipcRenderer.removeListener('para-image-missing', handleParaImageMissing);
       initialized.current = false;
     };

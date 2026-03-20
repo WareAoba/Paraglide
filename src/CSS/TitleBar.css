@@ -1,0 +1,112 @@
+/* 커스텀 타이틀바 */
+.titlebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--titlebar-height);
+  display: flex;
+  align-items: center;
+  z-index: 900;
+  background: var(--bg-color);
+  transition: background-color var(--transition-default);
+  user-select: none;
+}
+
+/* 좌측: 로고 + 타이틀 */
+.titlebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-left: var(--spacing-sm);
+  height: 100%;
+  -webkit-app-region: no-drag;
+  flex-shrink: 0;
+}
+
+.titlebar-logo {
+  height: 18px;
+  width: auto;
+  object-fit: contain;
+  filter: var(--primary-color-filter);
+  -webkit-user-drag: none;
+}
+
+.titlebar-title {
+  height: 14px;
+  width: auto;
+  object-fit: contain;
+  filter: var(--icon-filter);
+  opacity: 0.6;
+  -webkit-user-drag: none;
+}
+
+/* 드래그 가능 영역 */
+.titlebar-drag {
+  flex: 1;
+  height: 100%;
+  -webkit-app-region: drag;
+}
+
+/* 우측: 윈도우 컨트롤 버튼들 */
+.titlebar-buttons {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-right: var(--spacing-sm);
+  height: 100%;
+  -webkit-app-region: no-drag;
+}
+
+.titlebar-btn {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: var(--bg-gradient);
+  color: var(--text-color);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  padding: 0;
+  outline: none;
+  opacity: 0.7;
+  transition: all 0.2s ease;
+  box-shadow:
+    2px 2px 5px var(--container-shadow-up),
+    -2px -2px 5px var(--container-shadow-down);
+}
+
+.titlebar-btn svg {
+  width: 10px;
+  height: 10px;
+}
+
+.titlebar-btn:hover {
+  opacity: 1;
+  scale: 1.08;
+  box-shadow:
+    3px 3px 6px var(--container-shadow-up),
+    -3px -3px 6px var(--container-shadow-down);
+}
+
+.titlebar-btn:active {
+  scale: 0.95;
+  box-shadow:
+    inset 2px 2px 4px var(--container-shadow-up),
+    inset -2px -2px 4px var(--container-shadow-down);
+}
+
+.titlebar-btn-minimize:hover,
+.titlebar-btn-maximize:hover {
+  color: var(--primary-color);
+}
+
+.titlebar-btn-close:hover {
+  color: var(--danger-color);
+}
+
+.titlebar-btn-close:active {
+  color: var(--danger-color);
+}

@@ -299,15 +299,28 @@ const BlackPointAnalyzer = {
    * 알고리즘:
    *   1. 전체 픽셀의 휘도 히스토그램(0~255)을 구축
    *   2. 어두운 영역(0~80)을 가우시안 가중 커널로 스무딩
-   *   3. 보더/JPEG 아티팩트 영역(0~4)을 분리하고,
-   *      잉크 영역(5~80)에서 가장 dominant한 로컬 피크를 채택
-   *   4. 잉크 영역에 피크가 없으면 보더 영역으로 폴백 (순수 블랙 잉크)
-   *   5. 피크 휘도 bin의 평균 RGB를 산출 (인접 bin을 합치지 않아
-   *      JPEG 아티팩트 희석을 방지)
+   *   3. 보더(패널 테두리) 유무 판정: smoothed[0] >= threshold
+   *   4. PATH A (보더 있음) → 이봉(bimodal) 검사:
+   *      - 보더 피크(lum 0) 뒤에 골짜기 + 첨예한 두 번째 피크
+   *        → 비순수블랙 잉크 (두 번째 피크 = 실제 잉크 색상)
+   *      - 이봉 미검출 → 순수 블랙 잉크 (#000000)
+   *   5. PATH B (보더 없음) → 0~INK_LIMIT 글로벌 최대 피크:
+   *      - peakLum < 20 → JPEG 아티팩트 의심 → lum 20+에서 재탐색
+   *      - peakLum ≥ 20 → 잉크 피크로 채택
+   *   6. 피크 bin의 평균 RGB를 산출
    *
-   * 이 방식은 패널 보더(lum 0~4)의 순수 블랙 픽셀과 JPEG 압축
-   * 아티팩트를 잉크 색상과 분리하여, 실제 텍스트/잉크의 블랙포인트를
-   * 안정적으로 검출한다.
+   * 왜 보더 유무로 분기하는가:
+   *   - 보더 O → lum 0이 주요 피크이므로 "이봉 검사"가 적합.
+   *     잉크가 순수블랙이면 보더와 합쳐져 단봉, 비순수블랙이면 이봉.
+   *   - 보더 X → lum 0이 미미하므로 "글로벌 최대"가 적합.
+   *     잉크 bin이 0~40에서 가장 높은 빈도를 가진다.
+   *
+   * [히스토리] 전략 변천사:
+   *   v1 "첫 피크": lum 0→80 순방향 첫 유의미 피크 → S4(보더 없음)에서
+   *       JPEG 아티팩트(lum 7)에 걸림.
+   *   v2 "글로벌 최대": 0~40 최대 → S1/00088에서 스크린톤(lum 18)이
+   *       보더(lum 0)보다 높아 오검.
+   *   v3 "하이브리드"(현재): 보더O→이봉, 보더X→글로벌최대+아티팩트방어.
    */
   _detectBlackPoint(pixels, totalPixels) {
     const histogram = new Uint32Array(256);
@@ -333,7 +346,6 @@ const BlackPointAnalyzer = {
     }
 
     const DARK_LIMIT = 80;
-    const BORDER_CEIL = 4; // lum 0-4: 보더/JPEG 아티팩트 영역
 
     // 가우시안 가중 스무딩 (σ≈1.4, 5-tap)
     const KERNEL = [0.06, 0.24, 0.40, 0.24, 0.06];
@@ -355,41 +367,144 @@ const BlackPointAnalyzer = {
       return { blackPoint: { r: 0, g: 0, b: 0, hex: '#000000' }, isPureBlack: true, confidence: 0.3 };
     }
 
-    // ── 잉크 영역(5~80)에서 dominant 피크 탐색 ──
-    let inkTotal = 0;
-    for (let i = BORDER_CEIL + 1; i <= DARK_LIMIT; i++) inkTotal += histogram[i];
-    const threshold = Math.max(inkTotal * 0.005, 1);
+    // ── INK_LIMIT: 비순수블랙 잉크는 항상 lum 40 이하 ──
+    // S1 테스트에서 스크린톤(lum 42+)이 잉크로 오검되어 도입함.
+    // 실제 만화 잉크 색상 예시: #231816(lum27), #221816(lum27), #0f0f0f(lum15).
+    // lum 40 이상은 스크린톤/회색 톤 영역이므로 검색 대상에서 제외.
+    const INK_LIMIT = 40;
+    const threshold = Math.max(darkTotal * 0.005, 1);
 
-    let peakLum = -1;
-    let peakVal = 0;
+    // ── 보더(패널 테두리) 유무 판정 ──
+    // 만화 패널 테두리/검정 필은 RGB(0,0,0)으로 그려져 smoothed[0]에 집중된다.
+    //
+    // [히스토리] 처음에는 "lum 0부터 올라가며 첫 피크"만 찾는 단일 전략이었는데,
+    // 보더가 거의 없는 이미지(S4)에서 JPEG 아티팩트(lum 5-7)가 첫 피크가 되어
+    // 실제 잉크(lum 27)를 놓쳤음. 그래서 보더 유무에 따라 완전히 다른 전략을 사용.
+    //
+    // 이어서 "0~40 글로벌 최대"로 바꿨는데, 이번엔 S1/00088에서 스크린톤(lum 18)이
+    // 보더(lum 0)보다 높아서 #282828으로 오검. 결국 보더 여부를 먼저 확인하고
+    // 보더O → 이봉검사, 보더X → 글로벌최대+아티팩트방어 의 하이브리드로 정착.
+    const hasBorder = smoothed[0] >= threshold;
 
-    for (let i = BORDER_CEIL + 1; i <= DARK_LIMIT; i++) {
-      if (smoothed[i] >= threshold && smoothed[i] > peakVal) {
+    let peakLum;
+
+    if (hasBorder) {
+      // ── PATH A: 보더 있음 → 이봉(bimodal) 검사 ──
+      // 보더(lum 0) 뒤의 골짜기를 추적하며, 골짜기 대비 3배 이상 + 첨예한
+      // 두 번째 피크가 있으면 그것이 실제 잉크 색상.
+      // 순수블랙 잉크: lum 0에서 JPEG tail로 단조감소 → 이봉 미검출 → #000000
+      // 비순수블랙 잉크: lum 0(보더) → 골짜기 → 잉크 피크 → 이봉 검출
+      //
+      // VALLEY_RATIO=3: S1 182장 전수통과 + S2 잉크피크 검출 확인 완료.
+      //   너무 낮으면 JPEG tail의 습기 타는 스크린톤을 잉크로 오검.
+      //
+      // SHARP_RATIO=2, SHARP_OFFSET=5: 잉크는 좁고 뾰족하고 스크린톤은 넓고 완만.
+      //   S1/00183에서 스크린톤 피크(ratio 1.99x)가 통과하지 않도록 2.0으로 설정.
+      //   S1/00088에서도 lum 18 스크린톤(ratio 1.24x)을 정확히 거부함.
+      const VALLEY_RATIO = 3;
+      const SHARP_OFFSET = 5;
+      const SHARP_RATIO = 2;
+      peakLum = 0;
+      let valleyMin = smoothed[0];
+      let inkPeakLum = -1;
+
+      for (let i = 1; i <= INK_LIMIT; i++) {
+        if (smoothed[i] < valleyMin) {
+          valleyMin = smoothed[i];
+        }
+        if (smoothed[i] < threshold) continue;
         const left = smoothed[i - 1];
         const right = i < DARK_LIMIT ? smoothed[i + 1] : 0;
         if (smoothed[i] >= left && smoothed[i] >= right) {
-          peakVal = smoothed[i];
-          peakLum = i;
-        }
-      }
-    }
-
-    // ── 잉크 영역에 피크 없음 → 보더 영역 폴백 (순수 블랙 잉크) ──
-    if (peakLum < 0) {
-      for (let i = 0; i <= BORDER_CEIL; i++) {
-        if (smoothed[i] > peakVal) {
-          const left = i > 0 ? smoothed[i - 1] : 0;
-          const right = smoothed[i + 1] || 0;
-          if (smoothed[i] >= left && smoothed[i] >= right) {
-            peakVal = smoothed[i];
-            peakLum = i;
+          // 1. 골짜기 대비 충분히 돌출된 피크인가?
+          if (smoothed[i] < valleyMin * VALLEY_RATIO) continue;
+          // 2. 첨예도 검사: 잉크는 뾰족, 스크린톤은 완만
+          const leftShoulder = smoothed[Math.max(0, i - SHARP_OFFSET)];
+          const rightShoulder = smoothed[Math.min(DARK_LIMIT, i + SHARP_OFFSET)];
+          if (smoothed[i] >= Math.max(leftShoulder, rightShoulder) * SHARP_RATIO) {
+            inkPeakLum = i;
+            break;
           }
         }
       }
-    }
 
-    if (peakLum < 0) {
-      return { blackPoint: { r: 0, g: 0, b: 0, hex: '#000000' }, isPureBlack: true, confidence: 0.5 };
+      if (inkPeakLum >= 0) {
+        peakLum = inkPeakLum;
+      } else {
+        // 이봉 미검출 → 순수 블랙 잉크
+        const mass = histogram[0] + histogram[1] + histogram[2];
+        const confidence = Math.min(1, mass / (totalOpaque * 0.01));
+        return { blackPoint: { r: 0, g: 0, b: 0, hex: '#000000' }, isPureBlack: true, confidence };
+      }
+
+    } else {
+      // ── PATH B: 보더 없음 → 0~INK_LIMIT 글로벌 최대 + 아티팩트 방어 ──
+      // 보더가 없으면 lum 0에 유의미한 피크가 없으므로, 이봉검사는 불필요.
+      // 0~40에서 가장 높은 bin을 잉크로 채택한다.
+      //
+      // [히스토리] S4 테스트에서 "첫 피크" 접근법이 JPEG 아티팩트(lum 7)에 멈춤.
+      // S4/05_004: smoothed[7]=295 vs 잉크 smoothed[27]=2230.
+      // 글로벌 최대를 취하면 사소한 아티팩트를 건너뚸.
+      peakLum = 0;
+      for (let i = 1; i <= INK_LIMIT; i++) {
+        if (smoothed[i] > smoothed[peakLum]) peakLum = i;
+      }
+
+      if (smoothed[peakLum] < threshold) {
+        return { blackPoint: { r: 0, g: 0, b: 0, hex: '#000000' }, isPureBlack: true, confidence: 0.5 };
+      }
+
+      // ── JPEG 아티팩트 방어: peakLum < 20이면 재검증 ──
+      // lum 3~19 범위는 잉크→백지 경계의 JPEG 디더링이 만드는
+      // 아티팩트 피크가 생기는 영역이다. 실제 비순수블랙 잉크는
+      // 대부분 lum 20+ 영역에 있다 (예: #231816=lum27, #221816=lum27).
+      //
+      // [히스토리] S5/027에서 lum 17의 JPEG 아티팩트 피크(625)가
+      // lum 27의 실제 잉크 피크(609)보다 약간 높아서 오검.
+      // 둘의 높이 비가 0.975로 거의 같았는데, JPEG 아티팩트는
+      // 잉크→백지 경계 디더링에서 발생하므로 항상 잉크 피크보다 낮은 lum에 존재.
+      //
+      // ARTIFACT_ZONE=20: 가장 어두운 실제 잉크 색도 lum ~15
+      //   (예: R=20,G=10,B=8 → lum≈13). lum 20 미만이면
+      //   JPEG 아티팩트일 가능성이 있으므로 lum 20+ 영역에서 재탐색.
+      //
+      // ARTIFACT_RECOVERY_RATIO=0.7: secondary 피크가 primary의 70% 이상이면 재검증.
+      //   S5/027: 609/625=0.975 → 통과. S5/327: 136/175=0.777 → 통과.
+      //   실제 잉크가 lum 15인 책에서 스크린톤(lum 30)=40%라면 → 미통과, 안전.
+      //
+      // RECOVERY_SHARP_RATIO=1.3: secondary가 첨예한 잉크인지 검증.
+      //   S5/027 lum 27: 609/max(327,358)=1.70 → 통과.
+      //   S5/327 lum 28: 136/max(83,91)=1.49 → 통과.
+      //   반면 스크린톤은 넓은 고원이라 ratio ≈ 1.0~1.2로 통과 불가.
+      //   bimodal 경로의 SHARP_RATIO=2.0보다 느슨한 이유:
+      //   보더가 없는 이미지는 잉크 콘텐츠가 적어 피크가 덧 첨예하므로
+      //   기준을 낮춰야 검출 가능 (S5/327은 dark 1.9%만 차지).
+      const ARTIFACT_ZONE = 20;
+      const ARTIFACT_RECOVERY_RATIO = 0.7;
+      const RECOVERY_SHARP_RATIO = 1.3;
+      const SHARP_OFFSET = 5;
+
+      if (peakLum < ARTIFACT_ZONE) {
+        let secondPeak = ARTIFACT_ZONE;
+        for (let i = ARTIFACT_ZONE + 1; i <= INK_LIMIT; i++) {
+          if (smoothed[i] > smoothed[secondPeak]) secondPeak = i;
+        }
+        if (smoothed[secondPeak] >= smoothed[peakLum] * ARTIFACT_RECOVERY_RATIO) {
+          const ls = smoothed[Math.max(0, secondPeak - SHARP_OFFSET)];
+          const rs = smoothed[Math.min(DARK_LIMIT, secondPeak + SHARP_OFFSET)];
+          if (smoothed[secondPeak] >= Math.max(ls, rs) * RECOVERY_SHARP_RATIO) {
+            peakLum = secondPeak;
+          }
+        }
+      }
+
+      // peakLum ≤ 2로 잘혀진 경우 = 보더도 없고 lum 0이 글로벌 최대
+      // → 잉크 자체가 순수 블랙이지만 보더가 없는 페이지
+      if (peakLum <= 2) {
+        const mass = histogram[0] + histogram[1] + histogram[2];
+        const confidence = Math.min(1, mass / (totalOpaque * 0.01));
+        return { blackPoint: { r: 0, g: 0, b: 0, hex: '#000000' }, isPureBlack: true, confidence };
+      }
     }
 
     // 피크 휘도 bin의 평균 RGB (인접 bin 미포함 — JPEG 아티팩트 희석 방지)

@@ -143,8 +143,8 @@ describe('ParaFileFormat', () => {
         integral: { image: 'img.jpg', timestamp: 1710000000, encrypted: false },
         pages: new Map([[1, { blackpoint: '#1a1a1a' }]]),
         paragraphs: [
-          { align: 'left', style: '2' },
-          { align: 'right', style: '1' }
+          { align: 'left', style: 'emphasis' },
+          { align: 'right', style: 'plain' }
         ]
       };
 
@@ -161,7 +161,7 @@ describe('ParaFileFormat', () => {
 
       // paragraph 메타데이터 포함
       expect(result).toContain('$paragraph{ align : left }');
-      expect(result).toContain('$paragraph{ style : 2 }');
+      expect(result).toContain('$paragraph{ style : emphasis }');
     });
 
     it('빈 메타데이터로 직렬화', () => {
@@ -310,8 +310,8 @@ describe('ParaFileFormat', () => {
         [2, { blackpoint: '#000000' }]
       ]),
       paragraphs: [
-        { align: 'left', style: '3' },
-        { align: 'right', style: '1' }
+        { align: 'left', style: 'monologue' },
+        { align: 'right', style: 'plain' }
       ]
     };
 
@@ -333,8 +333,8 @@ describe('ParaFileFormat', () => {
     });
 
     it('getParagraphStyle — 값 검증', () => {
-      expect(ParaFileFormat.getParagraphStyle(metadata, 0)).toBe('3');
-      expect(ParaFileFormat.getParagraphStyle(metadata, 99)).toBe('1');
+      expect(ParaFileFormat.getParagraphStyle(metadata, 0)).toBe('monologue');
+      expect(ParaFileFormat.getParagraphStyle(metadata, 99)).toBe('plain');
     });
 
     it('createDefaultMetadata — 기본 구조', () => {
@@ -374,8 +374,8 @@ describe('ParaFileFormat', () => {
     it('style 범위 검증', () => {
       const result = ParaFileFormat.parse('$integral{ timestamp : 0 }\n\n대사\n$paragraph{ style : 99 }');
       const paraMeta = result.metadata.paragraphs;
-      // 범위 밖은 기본값 1로 치환
-      expect(paraMeta[0]?.style || '1').toBe('1');
+      // 범위 밖은 기본값 plain으로 치환
+      expect(paraMeta[0]?.style || 'plain').toBe('plain');
     });
   });
 });

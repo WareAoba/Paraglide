@@ -153,8 +153,8 @@
                 "title": "Paraglide",
                 "openFile": "打开文件",
                 "dragDrop": {
-                    "message": "将文本文件拖放到此处",
-                    "formats": "仅支持*.txt文件"
+                    "message": "将文件拖放到此处",
+                    "formats": "支持文本(*.txt, *.para)和图片文件"
                 },
                 "images": {
                     "logoAlt": "Paraglide 徽标",
@@ -164,8 +164,10 @@
         }
     },
     "dragDrop": {
-        "message": "将文本文件拖放到此处",
-        "subMessage": "仅支持*.txt文件"
+        "message": "将文件拖放到此处",
+        "subMessage": "支持文本(*.txt, *.para)和图片文件",
+        "messageText": "将文本文件拖放到此处",
+        "subMessageText": "仅支持*.txt和*.para文件"
     },
     "sidebar": {
         "common": {
@@ -307,7 +309,8 @@
                 "textMacro": "文本宏",
                 "imageViewer": "图片查看器",
                 "closeViewer": "关闭查看器",
-                "textStyle": "文本样式"
+                "textStyle": "文本样式",
+                "metadata": "元数据"
             },
             "macro": {
                 "empty": "(空)",
@@ -323,16 +326,32 @@
             },
             "style": {
                 "title": "文本样式",
-                "preset1": "平文",
-                "preset2": "强调",
-                "preset3": "独白",
-                "preset4": "思考",
-                "preset5": "播报",
-                "preset6": "兴奋",
-                "preset7": "惊讶",
-                "preset8": "愤怒",
-                "preset9": "自定义1",
-                "preset10": "自定义2"
+                "plain": "平文",
+                "emphasis": "强调",
+                "monologue": "独白",
+                "thought": "思考",
+                "announce": "播报",
+                "excited": "兴奔",
+                "surprise": "惊讶",
+                "angry": "愤怒",
+                "custom1": "自定义1",
+                "custom2": "自定义2",
+                "action": "动作",
+                "refreshActions": "刷新动作",
+                "noActions": "无PS动作",
+                "clearAction": "清除动作",
+                "deleteSlot": "删除插槽",
+                "customPrefix": "自定义",
+                "rightClickToAssign": "右键点击：分配动作",
+                "clickToAssign": "点击：分配动作",
+                "actionInvalid": "注册的动作未找到",
+                "pluginDisabled": "Photoshop插件已禁用",
+                "selectAction": "选择动作"
+            },
+            "metadata": {
+                "title": "元数据",
+                "image": "图像",
+                "imagePlaceholder": "image1.jpg,image2.jpg"
             }
         },
         "console": {
@@ -373,5 +392,14 @@
                     ]
                 }
             }
+        },
+        "automation": {
+            "title": "自动化",
+            "auto": "Auto",
+            "runAll": "全部执行",
+            "metadata": "将图片信息保存到元数据",
+            "numbering": "文本编号自动盖章",
+            "spread": "检测跨页并应用到编号",
+            "dpi": "将印刷DPI调整为72"
         }
     }

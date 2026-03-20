@@ -98,10 +98,6 @@ function Settings({ isVisible, onClose, theme, programStatus, currentViewMode, i
         pluginConnected: newSettings.pluginConnected
       });
 
-      if (newSettings.viewMode && newSettings.viewMode !== settings.viewMode) {
-        ipcRenderer.send('update-view-mode', newSettings.viewMode);
-      }
-
       if (!result) {
         console.error('[Settings] 설정 적용 실패');
       }
@@ -110,14 +106,11 @@ function Settings({ isVisible, onClose, theme, programStatus, currentViewMode, i
     }
   };
 
-  // 텍스트 처리 방식 토글 핸들러
-  const handleProcessModeChange = async () => {
+  // 텍스트 처리 방식 핸들러
+  const handleProcessModeChange = async (targetMode) => {
     try {
-      const currentMode = settings.processMode;
-      const newMode = currentMode === 'paragraph' ? 'line' : 'paragraph';
-
-      // 디버깅용
-      console.log('모드 전환:', currentMode, '->', newMode);
+      if (!targetMode || targetMode === settings.processMode) return;
+      const newMode = targetMode;
 
       const newSettings = {
         ...settings,
@@ -230,7 +223,7 @@ useEffect(() => {
   const handleViewModeChange = async () => {
     try {
       // 에디터 모드일 때는 토글 비활성화
-      if ((programStatus === 'Process' || programStatus === 'Pause') && currentViewMode === 'editor') {
+      if (programStatus === 'Edit') {
         return;
       }
   
@@ -242,7 +235,6 @@ useEffect(() => {
       };
   
       setSettings(newSettings);
-      await ipcRenderer.invoke('apply-settings', newSettings);
       ipcRenderer.send('update-view-mode', newMode);
   
       setOriginalSettings(newSettings);

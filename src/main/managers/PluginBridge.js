@@ -33,6 +33,8 @@ const PluginBridge = {
   _daemon: null,        // sendesc.exe 데몬 프로세스
   _daemonReady: false,
   _escCallback: null,   // 대기 중인 Esc 응답 콜백
+  _actionList: [],      // PS 액션 세트/액션 목록 캐시
+  _styleActions: {},    // 슬롯→액션 매핑 { "1": { set, action }, ... }
 
   initialize() {
     // WebSocket 서버 시작은 lazy — 실제 사용 시에만 로드
@@ -267,11 +269,13 @@ const PluginBridge = {
 
   // ── macOS: osascript 경유 ──
   _sendEscMac(ws) {
-    // PS 활성화 → Ctrl+Enter (텍스트 편집 커밋)
+    // PS 활성화 → Space (빈 레이어 삭제 방지) → Ctrl+Enter (텍스트 편집 커밋)
     const script = [
       'tell application "Adobe Photoshop 2025" to activate',
       'delay 0.05',
       'tell application "System Events"',
+      '  keystroke " "',                     // Space (공백 입력)
+      '  delay 0.05',
       '  key code 36 using control down',   // Ctrl+Enter
       'end tell'
     ].join('\n');
@@ -409,10 +413,21 @@ const PluginBridge = {
 
   // 플러그인 이벤트 처리
   _handlePluginEvent(ws, msg, IPCManager) {
-    console.log('[PluginBridge] 플러그인 이벤트 수신:', msg.event);
     switch (msg.event) {
+      case 'debug':
+        console.log('[PluginBridge][DBG]', JSON.stringify(msg.data, null, 2));
+        break;
+      case 'actionList':
+        // PS에서 보내온 액션 세트/액션 목록
+        this._actionList = Array.isArray(msg.data) ? msg.data : [];
+        console.log('[PluginBridge] 액션 목록 수신:', this._actionList.length, '개 세트');
+        // 렌더러에 전달
+        if (state.mainWindow && !state.mainWindow.isDestroyed()) {
+          state.mainWindow.webContents.send('ps-action-list', this._actionList);
+        }
+        break;
       default:
-        console.log('[PluginBridge] 알 수 없는 플러그인 이벤트:', msg.event);
+        console.log('[PluginBridge] 플러그인 이벤트:', msg.event);
     }
   },
 
@@ -447,6 +462,13 @@ const PluginBridge = {
     if (state._blackPointColor) {
       data.textColor = state._blackPointColor;
     }
+
+    // 현재 스타일에 매핑된 PS 액션 정보
+    const styleKey = data.textStyle || 'plain';
+    if (this._styleActions[styleKey]) {
+      data.styleAction = this._styleActions[styleKey];
+    }
+
     return data;
   },
 
@@ -533,9 +555,12 @@ const PluginBridge = {
       state.mainWindow.webContents.send('plugin-connection-changed', plugins);
     }
     this._checkPhotoshopModeTransition();
-    // 오버레이에도 포토샵 모드 상태 전달
+    // 포토샵 모드 상태 전달 (오버레이 + 메인 윈도우)
     if (state.overlayWindow && !state.overlayWindow.isDestroyed()) {
       state.overlayWindow.webContents.send('photoshop-mode-changed', state._photoshopModeActive);
+    }
+    if (state.mainWindow && !state.mainWindow.isDestroyed()) {
+      state.mainWindow.webContents.send('photoshop-mode-changed', state._photoshopModeActive);
     }
   },
 
@@ -558,6 +583,32 @@ const PluginBridge = {
 
   hasConnections() {
     return this._clients.size > 0;
+  },
+
+  // PS 액션 목록 캐시 반환
+  getActionList() {
+    return this._actionList;
+  },
+
+  // 스타일→액션 매핑 설정 (렌더러에서 호출)
+  setStyleActions(mapping) {
+    this._styleActions = mapping || {};
+    console.log('[PluginBridge] 스타일 액션 매핑 업데이트:', Object.keys(this._styleActions).length, '개');
+  },
+
+  // 스타일→액션 매핑 반환
+  getStyleActions() {
+    return this._styleActions;
+  },
+
+  // 플러그인에 액션 목록 재요청
+  requestActionList() {
+    this._broadcastEvent('request', { action: 'getActionList' });
+    // 또는 직접 request 메시지 전송
+    const message = JSON.stringify({ type: 'request', action: 'getActionList' });
+    this._clients.forEach((_, ws) => {
+      if (ws.readyState === 1) ws.send(message);
+    });
   }
 };
 

@@ -17,25 +17,35 @@ export default function useDragDrop() {
   const handleDragEnter = useCallback((e) => {
     e.preventDefault();
     e.stopPropagation();
+    if (!e.dataTransfer.types.includes('Files')) return;
     setDragCounter((prev) => prev + 1);
   }, [setDragCounter]);
 
   const handleDragLeave = useCallback((e) => {
     e.preventDefault();
     e.stopPropagation();
+    if (!e.dataTransfer.types.includes('Files')) return;
     setDragCounter((prev) => prev - 1);
   }, [setDragCounter]);
 
   const handleDrop = useCallback(async (e) => {
     e.preventDefault();
     e.stopPropagation();
+    if (!e.dataTransfer.types.includes('Files')) return;
     setDragCounter(0);
     setDragging(false);
 
-    const { programStatus } = useAppStore.getState();
+    const { programStatus, isEditorSaved } = useAppStore.getState();
     const files = Array.from(e.dataTransfer.files);
     const txtFile = files.find((file) => file.name.endsWith('.txt') || file.name.endsWith('.para'));
-    const IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp'];
+    const IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp', '.psd'];
+    const pathModule = window.require('path');
+
+    // EDIT 모드에서 미저장 경고
+    if (programStatus === ProgramStatus.EDIT && !isEditorSaved) {
+      const saveChoice = await ipcRenderer.invoke('show-dialog', 'UNSAVED_CHANGES');
+      if (saveChoice === 1) return;
+    }
 
     if (txtFile) {
       try {
@@ -45,7 +55,6 @@ export default function useDragDrop() {
           useAppStore.setState({
             currentFilePath: filePath,
             programStatus: ProgramStatus.EDIT,
-            viewMode: 'editor'
           });
         } else {
           const result = await ipcRenderer.invoke('open-file', {
@@ -61,14 +70,21 @@ export default function useDragDrop() {
       } catch (error) {
         console.error('파일 로드 실패:', error);
       }
-    } else if (programStatus === ProgramStatus.EDIT) {
-      // EDIT 모드에서 이미지 파일 드롭 → 커스텀 이벤트로 에디터에 전달
-      const path = window.require('path');
+    } else {
       const imageFilePaths = files
-        .filter(f => IMAGE_EXTENSIONS.includes(path.extname(f.name).toLowerCase()))
+        .filter(f => IMAGE_EXTENSIONS.includes(pathModule.extname(f.name).toLowerCase()))
         .map(f => f.path);
       if (imageFilePaths.length > 0) {
-        window.dispatchEvent(new CustomEvent('editor-load-images', { detail: imageFilePaths }));
+        if (programStatus === ProgramStatus.EDIT) {
+          // EDIT 모드 → 커스텀 이벤트로 에디터에 전달
+          window.dispatchEvent(new CustomEvent('editor-load-images', { detail: imageFilePaths }));
+        } else {
+          // 메인 화면 → 스토어에 저장 후 에디터 전환 (에디터가 마운트되면 소비)
+          useAppStore.setState({
+            pendingImagePaths: imageFilePaths,
+            programStatus: ProgramStatus.EDIT,
+          });
+        }
       }
     }
   }, [ProgramStatus, setDragCounter, setDragging]);

@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 
 const { ipcRenderer } = window.require('electron');
@@ -19,6 +20,7 @@ function TextMacro({ isOpen, onClose, onInsert, anchorRef }) {
   const popupRef = useRef(null);
   const editInputRef = useRef(null);
   const closeTimerRef = useRef(null);
+  const [popupPos, setPopupPos] = useState(null);
 
   // ─── config에서 로드 ───
   useEffect(() => {
@@ -42,6 +44,11 @@ function TextMacro({ isOpen, onClose, onInsert, anchorRef }) {
   useEffect(() => {
     if (isOpen) {
       clearTimeout(closeTimerRef.current);
+      // anchorRef 기준 위치 계산
+      if (anchorRef?.current) {
+        const rect = anchorRef.current.getBoundingClientRect();
+        setPopupPos({ top: rect.top, right: window.innerWidth - rect.left + 8 });
+      }
       setMounted(true);
       requestAnimationFrame(() => requestAnimationFrame(() => setVisible(true)));
     } else if (mounted) {
@@ -50,6 +57,25 @@ function TextMacro({ isOpen, onClose, onInsert, anchorRef }) {
     }
     return () => clearTimeout(closeTimerRef.current);
   }, [isOpen]);
+
+  // ─── 뷰포트 경계 보정 (그림자 여유 포함) ───
+  useEffect(() => {
+    if (!visible || !popupRef.current || !popupPos) return;
+    const MARGIN = 20; // 그림자 최대 확장(~18px) + 여유
+    requestAnimationFrame(() => {
+      const el = popupRef.current;
+      if (!el) return;
+      const w = el.offsetWidth;
+      const h = el.offsetHeight;
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      const top = Math.max(MARGIN, Math.min(popupPos.top, vh - h - MARGIN));
+      const right = Math.max(MARGIN, Math.min(popupPos.right, vw - w - MARGIN));
+      if (top !== popupPos.top || right !== popupPos.right) {
+        setPopupPos({ top, right });
+      }
+    });
+  }, [visible]);
 
   // ─── 닫힐 때: 빈 슬롯 정리 + 편집 종료 ───
   const handleClose = useCallback(() => {
@@ -222,10 +248,11 @@ function TextMacro({ isOpen, onClose, onInsert, anchorRef }) {
 
   if (!mounted) return null;
 
-  return (
+  return createPortal(
     <div
       className={`text-macro-popup${visible ? ' visible' : ''}`}
       ref={popupRef}
+      style={popupPos ? { top: `${popupPos.top}px`, right: `${popupPos.right}px` } : undefined}
       onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
       onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); }}
       onDragLeave={(e) => { e.stopPropagation(); }}
@@ -290,7 +317,8 @@ function TextMacro({ isOpen, onClose, onInsert, anchorRef }) {
           + {t('editor.macro.add')}
         </button>
       )}
-    </div>
+    </div>,
+    document.body
   );
 }
 

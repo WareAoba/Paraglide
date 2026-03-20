@@ -12,8 +12,25 @@ const DialogManager = require('./DialogManager');
 const jschardet = require('jschardet');
 const iconv = require('iconv-lite');
 
+// config 파일 동시 쓰기 방지용 mutex
+let _configLock = Promise.resolve();
+function withConfigLock(fn) {
+  const next = _configLock.then(fn, fn);
+  _configLock = next.catch(() => {});
+  return next;
+}
+
 const FileManager = {
+  // 진행 중인 config 쓰기가 완료될 때까지 대기
+  flushConfigWrites() {
+    return _configLock;
+  },
+
   async saveConfig(config) {
+    return withConfigLock(() => this._saveConfigImpl(config));
+  },
+
+  async _saveConfigImpl(config) {
     try {
       const currentState = state.config;
       let newConfig = { ...currentState };
@@ -42,6 +59,18 @@ const FileManager = {
       if (config.overlayBounds) {
         newConfig.overlay.bounds = config.overlayBounds;
       }
+
+      // 기존 파일에서 styleActions, slotOrder 보존
+      try {
+        const data = await fs.readFile(FILE_PATHS.config, 'utf8');
+        const existing = JSON.parse(data);
+        if (existing.styleActions && typeof existing.styleActions === 'object') {
+          newConfig.styleActions = existing.styleActions;
+        }
+        if (Array.isArray(existing.slotOrder)) {
+          newConfig.slotOrder = existing.slotOrder;
+        }
+      } catch (_) { /* 파일 없음 또는 파싱 실패 — 무시 */ }
   
       // AppState 업데이트
       state.loadConfig(newConfig);
@@ -569,8 +598,7 @@ if (content) {
         currentFilePath: filePath,
         currentParagraph: 0,
         programStatus: ProgramStatus.EDIT,
-        processMode: 'editor',
-        viewMode: 'editor'
+        processMode: DEFAULT_PROCESS_MODE
       };
   
       // 상태 업데이트
@@ -851,6 +879,70 @@ async restoreBackup() {
       await fs.writeFile(configPath, JSON.stringify(config, null, 2));
     } catch (error) {
       console.error('[Main] 텍스트 스타일 저장 실패:', error);
+    }
+  },
+
+  // ─── 스타일 액션 매핑 저장/로드 ───
+  async loadStyleActions() {
+    try {
+      const configPath = FILE_PATHS.config;
+      const data = await fs.readFile(configPath, 'utf8');
+      const config = JSON.parse(data);
+      if (config.styleActions && typeof config.styleActions === 'object') {
+        return config.styleActions;
+      }
+    } catch (_) { /* 파일 없음 또는 파싱 실패 */ }
+    return {};
+  },
+
+  async saveStyleActions(mapping) {
+    return withConfigLock(() => this._saveStyleActionsImpl(mapping));
+  },
+
+  async _saveStyleActionsImpl(mapping) {
+    try {
+      const configPath = FILE_PATHS.config;
+      let config = {};
+      try {
+        const data = await fs.readFile(configPath, 'utf8');
+        config = JSON.parse(data);
+      } catch (_) { /* 새 config */ }
+      config.styleActions = (mapping && typeof mapping === 'object') ? mapping : {};
+      await fs.writeFile(configPath, JSON.stringify(config, null, 2));
+    } catch (error) {
+      console.error('[Main] 스타일 액션 저장 실패:', error);
+    }
+  },
+
+  // ─── 슬롯 순서 저장/로드 ───
+  async loadSlotOrder() {
+    try {
+      const configPath = FILE_PATHS.config;
+      const data = await fs.readFile(configPath, 'utf8');
+      const config = JSON.parse(data);
+      if (Array.isArray(config.slotOrder) && config.slotOrder.length > 0) {
+        return config.slotOrder;
+      }
+    } catch (_) { /* 파일 없음 또는 파싱 실패 */ }
+    return null;
+  },
+
+  async saveSlotOrder(order) {
+    return withConfigLock(() => this._saveSlotOrderImpl(order));
+  },
+
+  async _saveSlotOrderImpl(order) {
+    try {
+      const configPath = FILE_PATHS.config;
+      let config = {};
+      try {
+        const data = await fs.readFile(configPath, 'utf8');
+        config = JSON.parse(data);
+      } catch (_) { /* 새 config */ }
+      config.slotOrder = Array.isArray(order) ? order : null;
+      await fs.writeFile(configPath, JSON.stringify(config, null, 2));
+    } catch (error) {
+      console.error('[Main] 슬롯 순서 저장 실패:', error);
     }
   },
 };

@@ -11,12 +11,18 @@
 //   
 //   대사 텍스트
 //   $paragraph{ align: center }
-//   $paragraph{ style: 1 }
+//   $paragraph{ style: plain }
 //
 // 메타데이터 문법: $<scope>{ <key> : <value> }
 //   scope: integral | page | paragraph
 
 const crypto = require('crypto');
+
+// ─── 스타일 이름 상수 (순서 고정, 협업 호환) ───
+const STYLE_NAMES = [
+  'plain', 'emphasis', 'monologue', 'thought', 'announce',
+  'excited', 'surprise', 'angry', 'custom1', 'custom2'
+];
 
 // ─── 메타데이터 기본값 ───
 const METADATA_DEFAULTS = {
@@ -30,7 +36,7 @@ const METADATA_DEFAULTS = {
   },
   paragraph: {
     align: 'center',
-    style: '1'
+    style: 'plain'
   }
 };
 
@@ -582,10 +588,13 @@ const ParaFileFormat = {
       return isNaN(num) ? valueStr : num;
     }
 
-    // style은 숫자 문자열
+    // style은 이름 문자열 (하위 호환: 숫자 → 이름 변환)
     if (scope === 'paragraph' && key === 'style') {
+      const lower = valueStr.toLowerCase();
+      if (STYLE_NAMES.includes(lower)) return lower;
       const num = parseInt(valueStr);
-      return (num >= 1 && num <= 10) ? String(num) : '1';
+      if (num >= 1 && num <= STYLE_NAMES.length) return STYLE_NAMES[num - 1];
+      return 'plain';
     }
 
     // align은 enum
@@ -643,4 +652,4 @@ const ParaFileFormat = {
   }
 };
 
-module.exports = { ParaFileFormat, METADATA_DEFAULTS };
+module.exports = { ParaFileFormat, METADATA_DEFAULTS, STYLE_NAMES };

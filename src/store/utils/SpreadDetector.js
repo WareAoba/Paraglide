@@ -36,6 +36,12 @@ const SpreadDetector = {
   MARGIN_UNIFORM_RATIO: 0.92, // 여백 판정 시 단색 비율 임계값 (92%)
   MARGIN_REJECT_BOTH: 10,    // 양쪽 모두 이 이상 여백이면 합페 제외 (진짜 합페 접합면엔 여백 없음)
   SEAM_CORR_MIN: 0.35,        // Path 1 접합면 최소 상관계수 (우연 일치 차단)
+  MIN_CONFIDENCE: 0.44,        // Path 1 최소 신뢰도 (평균 match 하한)
+  AUTO_PASS_CONFIDENCE: 0.56,  // Path 1 이 이상이면 추가 검증 불요
+  BORDERLINE_CORR_MIN: 0.58,   // Path 1 borderline: 최소 d0 상관계수
+  DEEP_VERIFY_DEPTH: 8,        // Path 1 borderline: 심층 검증 깊이 (px)
+  DEEP_VERIFY_MIN_MATCH: 0.15, // Path 1 borderline: 심층 검증 최소 match
+  PATH2_D2_CORR_MIN: 0.15,     // Path 2: d2 최소 상관계수 (패턴 일관성 확인)
 
   /**
    * 이미지 파일 목록에서 합페 쌍을 감지한다.
@@ -122,7 +128,10 @@ const SpreadDetector = {
    *
    * 판정 경로:
    *   Path 1 (다중 깊이): 모든 깊이에서 픽셀 일치율이 임계값 이상
+   *     → 신뢰도 하한(MIN_CONFIDENCE) 검증
+   *     → borderline(신뢰도 < AUTO_PASS_CONFIDENCE) 시 d0 상관계수 + 심층 깊이 검증
    *   Path 2 (이중 신호): 접합면(d=0)에서 픽셀 일치율 + 상관계수 모두 충족
+   *     → d2 상관계수 양수 확인 (패턴 일관성)
    *     → 두 독립 신호가 동시에 높으면 한 깊이만으로도 충분한 증거
    *
    * @param {{ctx: CanvasRenderingContext2D, width: number, height: number}} scaledA
@@ -165,10 +174,41 @@ const SpreadDetector = {
     if (passingDepths >= this.MIN_DEPTHS_PASS) {
       const seamCorr = depthResults[0].correlation;
       if (seamCorr >= this.SEAM_CORR_MIN) {
-        return {
-          isSpread: true,
-          confidence: totalConfidence / passingDepths
-        };
+        const confidence = totalConfidence / passingDepths;
+
+        // 신뢰도 하한: 평균 match가 너무 낮으면 우연 일치 가능성
+        if (confidence < this.MIN_CONFIDENCE) {
+          return { isSpread: false, confidence: 0, reason: 'low_confidence' };
+        }
+
+        // 높은 신뢰도: 추가 검증 불요
+        if (confidence >= this.AUTO_PASS_CONFIDENCE) {
+          return { isSpread: true, confidence };
+        }
+
+        // Borderline (MIN_CONFIDENCE ≤ conf < AUTO_PASS_CONFIDENCE):
+        // 우연 일치 가능성이 있으므로 추가 검증 수행
+
+        // 1) 접합면 상관계수 강화: 패턴 연속성이 충분히 강해야 함
+        if (seamCorr < this.BORDERLINE_CORR_MIN) {
+          return { isSpread: false, confidence: 0, reason: 'borderline_low_corr' };
+        }
+
+        // 2) 심층 깊이 검증: 콘텐츠 경계에서 깊은 곳도 유사해야 함
+        //    진짜 합페는 연속 그림이므로 깊은 깊이에서도 match 유지
+        //    우연 일치는 깊은 곳에서 급락
+        const deepMaxDepth = this.DEEP_VERIFY_DEPTH + this.STRIP_WIDTH;
+        if (contentStartA + deepMaxDepth <= scaledA.width &&
+            contentStartB + deepMaxDepth <= scaledB.width) {
+          const deepStripA = this._getStrip(scaledA, 'left', contentStartA + this.DEEP_VERIFY_DEPTH);
+          const deepStripB = this._getStrip(scaledB, 'right', contentStartB + this.DEEP_VERIFY_DEPTH);
+          const deepResult = this._analyzeColumnPair(deepStripA, deepStripB);
+          if (deepResult.matchRatio < this.DEEP_VERIFY_MIN_MATCH) {
+            return { isSpread: false, confidence: 0, reason: 'deep_verify_fail' };
+          }
+        }
+
+        return { isSpread: true, confidence };
       }
     }
 
@@ -179,6 +219,12 @@ const SpreadDetector = {
     if (seam.pass &&
         seam.matchRatio >= this.MATCH_THRESHOLD &&
         seam.correlation >= this.CORRELATION_THRESHOLD) {
+      // d2 상관계수 검증: 접합면만 우연 일치이고 깊은 곳에서 패턴이
+      // 무관하거나 역전되면 진짜 합페가 아님
+      const d2Corr = depthResults.length > 1 ? depthResults[1].correlation : 1;
+      if (d2Corr < this.PATH2_D2_CORR_MIN) {
+        return { isSpread: false, confidence: 0, reason: 'path2_d2_corr_low' };
+      }
       return { isSpread: true, confidence: seam.matchRatio };
     }
 

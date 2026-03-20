@@ -13,7 +13,7 @@
 .content-area {
   position: relative;
   width: 100%;
-  height: calc(100vh - var(--button-group-height));
+  height: calc(100vh - var(--titlebar-height));
   padding-top: var(--button-group-height);
   display: flex;
   justify-content: center; /* 가로 중앙 정렬 */
@@ -53,17 +53,22 @@
   overflow: hidden;
 }
 
-.button-group-controls{
-  position: fixed; /* 고정 위치 */
-  top: var(--spacing-md); /* 상단 여백 */
-  left: var(--spacing-md); /* 좌측 여백 */
-  z-index: 100; /* 다른 요소들보다 위에 표시 */
-  width: 100%;
+.button-group-controls,
+.titlebar-controls {
   display: flex;
   gap: var(--spacing-xs);
 }
 
-.button-group-controls .btn-icon {
+.button-group-controls {
+  position: fixed;
+  top: calc(var(--titlebar-height) + var(--spacing-md));
+  left: var(--spacing-md);
+  z-index: 100;
+  width: 100%;
+}
+
+.button-group-controls .btn-icon,
+.titlebar-controls .btn-icon {
     border: none;
     background: none;
     padding: 0;
@@ -79,43 +84,56 @@
     margin: 0;
 }
 
-.button-group-controls .btn-icon img {
+.button-group-controls .btn-icon img,
+.titlebar-controls .btn-icon img {
   filter: var(--icon-filter); /* 아이콘에만 필터 적용 */
 }
 
-.button-group-controls .btn-icon:hover{
+.button-group-controls .btn-icon:hover,
+.titlebar-controls .btn-icon:hover {
   scale: 1.1;
   box-shadow:
   2px 2px 6px var(--container-shadow-up),
   -2px -2px 6px var(--container-shadow-down);
   background: var(--bg-gradient);
 }
-.button-group-controls .btn-icon:hover img{
+.button-group-controls .btn-icon:hover img,
+.titlebar-controls .btn-icon:hover img {
   filter: var(--primary-color-filter);
   opacity: 0.9;
 }
 
-.button-group-controls .btn-icon:active{
+.button-group-controls .btn-icon:active,
+.titlebar-controls .btn-icon:active {
   box-shadow:
   -2px -2px 5px var(--container-shadow-up),
   2px 2px 5px var(--container-shadow-down);
 }
 
 /* 포토샵 연결 버튼 */
-.button-group-controls .btn-ps-active img {
+.button-group-controls .btn-ps-active img,
+.titlebar-controls .btn-ps-active img {
   filter: var(--icon-filter) !important;
   opacity: 1;
 }
-.button-group-controls .btn-ps-inactive img {
+.button-group-controls .btn-ps-connected img,
+.titlebar-controls .btn-ps-connected img {
+  filter: var(--primary-color-filter) !important;
+  opacity: 1;
+}
+.button-group-controls .btn-ps-inactive img,
+.titlebar-controls .btn-ps-inactive img {
   filter: var(--icon-filter) !important;
   opacity: 0.3;
 }
 
-.button-group-controls .btn-icon img[alt="Settings Icon"] {
+.button-group-controls .btn-icon img[alt="Settings Icon"],
+.titlebar-controls .btn-icon img[alt="Settings Icon"] {
   transition: transform 0.2s ease;
 }
 
-.button-group-controls .btn-icon:hover img[alt="Settings Icon"] {
+.button-group-controls .btn-icon:hover img[alt="Settings Icon"],
+.titlebar-controls .btn-icon:hover img[alt="Settings Icon"] {
   transform: rotate(30deg);
 }
 

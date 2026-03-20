@@ -74,8 +74,11 @@ const ApplicationManager = {
 
   async exit() {
     try {
-      // 종료 전 설정 저장
+      // 진행 중인 config 쓰기 완료 대기
       const FileManager = require('./FileManager');
+      await FileManager.flushConfigWrites();
+
+      // 종료 전 설정 저장
       await FileManager.saveConfig(state.config);
 
       PluginBridge.stop();
