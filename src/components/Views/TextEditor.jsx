@@ -11,20 +11,23 @@ import '../../CSS/Views/Editor.css';
 const { ipcRenderer } = window.require('electron');
 const path = window.require('path');
 const fs = window.require('fs');
+const _appBase = process.env.NODE_ENV === 'development'
+  ? process.cwd()
+  : path.join(process.resourcesPath, 'app.asar');
 const { TextProcessUtils } = window.require(
-  path.join(process.cwd(), 'src', 'store', 'utils', 'TextProcessUtils')
+  path.join(_appBase, 'src', 'store', 'utils', 'TextProcessUtils')
 );
 const { BlackPointAnalyzer } = window.require(
-  path.join(process.cwd(), 'src', 'store', 'utils', 'BlackPointAnalyzer')
+  path.join(_appBase, 'src', 'store', 'utils', 'BlackPointAnalyzer')
 );
 const { SpreadDetector } = window.require(
-  path.join(process.cwd(), 'src', 'store', 'utils', 'SpreadDetector')
+  path.join(_appBase, 'src', 'store', 'utils', 'SpreadDetector')
 );
 const { ParaFileFormat, STYLE_NAMES } = window.require(
-  path.join(process.cwd(), 'src', 'store', 'utils', 'ParaFileFormat')
+  path.join(_appBase, 'src', 'store', 'utils', 'ParaFileFormat')
 );
 const { DpiAdjuster } = window.require(
-  path.join(process.cwd(), 'src', 'store', 'utils', 'DpiAdjuster')
+  path.join(_appBase, 'src', 'store', 'utils', 'DpiAdjuster')
 );
 
 import { readPsd } from 'ag-psd';

@@ -5,8 +5,11 @@ import useAppStore from '../../stores/useAppStore';
 
 const { ipcRenderer } = window.require('electron');
 const path = window.require('path');
+const _appBase = process.env.NODE_ENV === 'development'
+  ? process.cwd()
+  : path.join(process.resourcesPath, 'app.asar');
 const { STYLE_NAMES } = window.require(
-  path.join(process.cwd(), 'src', 'store', 'utils', 'ParaFileFormat')
+  path.join(_appBase, 'src', 'store', 'utils', 'ParaFileFormat')
 );
 
 const TRANSITION_MS = 200;

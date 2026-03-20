@@ -350,9 +350,12 @@ const PluginBridge = {
 
     const path = require('path');
     const fs = require('fs');
-    let exePath = path.join(__dirname, '..', '..', '..', 'native', 'sendesc.exe');
-    if (!fs.existsSync(exePath)) {
-      exePath = path.join(process.resourcesPath || '', 'sendesc.exe');
+    const { isDev } = require('../constants');
+    let exePath;
+    if (isDev) {
+      exePath = path.join(__dirname, '..', '..', '..', 'native', 'sendesc.exe');
+    } else {
+      exePath = path.join(process.resourcesPath, 'sendesc.exe');
     }
     if (!fs.existsSync(exePath)) {
       console.error('[PluginBridge] sendesc.exe 없음:', exePath);
