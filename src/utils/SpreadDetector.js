@@ -1,4 +1,4 @@
-// src/store/utils/SpreadDetector.js
+// src/utils/SpreadDetector.js
 // 합페(스프레드 페이지) 자동 감지 유틸리티 — 렌더러 프로세스 Canvas API 기반
 //
 // 역할:

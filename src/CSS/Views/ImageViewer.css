@@ -485,6 +485,7 @@
   cursor: pointer;
   padding: 0 0.15rem;
   font-size: 0.7rem;
+  color: var(--text-color);
   opacity: 0.6;
   transition: opacity 0.15s ease;
   line-height: 1;

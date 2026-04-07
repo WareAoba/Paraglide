@@ -1,8 +1,37 @@
 // SystemListener.js — 클립보드 모니터링 + 글로벌/앱 내 단축키
-const { app, dialog, clipboard, ipcMain, globalShortcut } = require('electron');
+//
+// 네이티브 애드온 (paraglide-native) 사용 시:
+//   - 클립보드: OS 이벤트 기반 감지 (폴링 제거)
+//   - 키 주입: SendInput/CGEvent/XTest 직접 호출 (서브프로세스 제거)
+//   - 내부/외부 구분: 원자적 카운터 기반 (타이밍 기반 오판 제거)
+//
+// 네이티브 모듈 없을 시 기존 폴링/서브프로세스 방식으로 자동 폴백
+
+const { app, dialog, clipboard, globalShortcut } = require('electron');
 const { register, unregisterAll } = require('electron-localshortcut');
-const { spawn } = require('child_process');
 const { state } = require('./main/state');
+
+// ─── 네이티브 애드온 로드 (실패 시 null → 폴백) ───
+const path = require('path');
+
+function loadNativeAddon() {
+	const isDev = process.env.NODE_ENV === 'development';
+	// 개발: native/paraglide_native.node, 패키징: resources/paraglide_native.node
+	const nativePath = isDev
+		? path.join(__dirname, '..', 'native', 'paraglide_native.node')
+		: path.join(process.resourcesPath, 'paraglide_native.node');
+	try {
+		const addon = require(nativePath);
+		addon.initialize();
+		console.log('[SystemListener] 네이티브 모듈 로드 성공:', nativePath);
+		return addon;
+	} catch (e) {
+		console.warn('[SystemListener] 네이티브 모듈 없음, 폴링 폴백 사용:', e.message);
+		return null;
+	}
+}
+
+let nativeAddon = loadNativeAddon();
 
 // IPCManager를 lazy require로 가져옴 (초기화 순서 보장)
 let _ipcManager = null;
@@ -16,17 +45,52 @@ function getIPCManager() {
 class SystemListener {
 	constructor(mainWindow) {
 		this.mainWindow = mainWindow;
-		this.isInternalClipboardChange = false;
-		this.lastInternalChangeTime = 0;
-		this.lastClipboardText = '';
 		this.programStatus = { isPaused: false };
 		this.currentParagraphText = null;
 		this._initialized = false;
-		this._clipboardInterval = null;
-		this._psProcess = null;
-		this._psReady = false;
-		this._hasXdotool = false;
+		this._clipboardActive = false;
 		this._pasteHandlerRegistered = false;
+		this._clipboardInterval = null;
+
+		// ─── 폴백 전용 상태 (네이티브 모듈 없을 때만 사용) ───
+		if (!nativeAddon) {
+			this.isInternalClipboardChange = false;
+			this.lastInternalChangeTime = 0;
+			this.lastClipboardText = '';
+			this._psProcess = null;
+			this._psReady = false;
+			this._hasXdotool = false;
+		}
+	}
+
+	// ═══════════════ 프로그램 상태 변경 콜백 (state.js에서 직접 호출) ═══════════════
+	onProgramStatusUpdate(status) {
+		this._handleStatusUpdate(status);
+	}
+
+	// 상태 업데이트 내부 로직 (직접 호출/IPC 양쪽에서 공유)
+	_handleStatusUpdate(status) {
+		const prevStatus = this.programStatus?.programStatus;
+		this.programStatus = status;
+
+		// Process 상태 진입 시 클립보드 기준값 갱신 (폴백 모드에서만 필요)
+		if (!nativeAddon && prevStatus !== 'Process' && status?.programStatus === 'Process') {
+			this.lastClipboardText = clipboard.readText();
+		}
+
+		// Process/Pause → 네비게이션 단축키 + 클립보드 기능 등록, 그 외(Ready/Edit) → 해제
+		const isActive = status?.programStatus === 'Process' || status?.programStatus === 'Pause';
+		const wasActive = prevStatus === 'Process' || prevStatus === 'Pause';
+		if (isActive && !wasActive) {
+			this._registerNavigationShortcuts();
+			this._startClipboardMonitor();
+			this._registerPasteHandler();
+		} else if (!isActive && wasActive) {
+			this._unregisterNavigationShortcuts();
+			this._stopClipboardMonitor();
+			this._unregisterPasteHandler();
+			this.currentParagraphText = null;
+		}
 	}
 
 	// 초기화 (중복 호출 시 guard로 보호)
@@ -37,34 +101,10 @@ class SystemListener {
 		}
 
 		try {
-			ipcMain.on('program-status-update', (event, status) => {
-				const prevStatus = this.programStatus?.programStatus;
-				this.programStatus = status;
-
-				// Process 상태 진입 시 클립보드 기준값 갱신 (Ready 동안 변경된 내용을 오감지하지 않도록)
-				if (prevStatus !== 'Process' && status?.programStatus === 'Process') {
-					this.lastClipboardText = clipboard.readText();
-				}
-
-				// Process/Pause → 네비게이션 단축키 + 클립보드 기능 등록, 그 외(Ready/Edit) → 해제
-				const isActive = status?.programStatus === 'Process' || status?.programStatus === 'Pause';
-				const wasActive = prevStatus === 'Process' || prevStatus === 'Pause';
-				if (isActive && !wasActive) {
-					this._registerNavigationShortcuts();
-					this._startClipboardMonitor();
-					this._registerPasteHandler();
-				} else if (!isActive && wasActive) {
-					this._unregisterNavigationShortcuts();
-					this._stopClipboardMonitor();
-					this._unregisterPasteHandler();
-					this.currentParagraphText = null;
-				}
-			});
-
 			this.setupKeyboardListener();
 			this.setupAppShortcuts();
 			this._initialized = true;
-			console.log('[SystemListener] 초기화 완료');
+			console.log('[SystemListener] 초기화 완료' + (nativeAddon ? ' (네이티브)' : ' (폴백)'));
 			return true;
 		} catch (error) {
 			console.error('[SystemListener] 초기화 실패:', error);
@@ -76,32 +116,61 @@ class SystemListener {
 
 	/** Process/Pause 진입 시 클립보드 변경 감시 시작 */
 	_startClipboardMonitor() {
-		if (this._clipboardInterval) return; // 이미 실행 중
-		if (state._photoshopModeActive) return; // 포토샵 모드에서는 클립보드 감시 불필요
-		this.lastClipboardText = clipboard.readText();
+		if (this._clipboardActive) return;
+		if (state._photoshopModeActive) return;
 
-		this._clipboardInterval = setInterval(() => {
-			if (this.programStatus?.programStatus !== 'Process') return;
+		this._clipboardActive = true;
 
-			const currentText = clipboard.readText();
-			if (currentText !== this.lastClipboardText) {
-				console.log('[SystemListener] 클립보드 변경 감지');
-				this.onClipboardChange(currentText);
-				this.lastClipboardText = currentText;
-			}
-		}, 500);
+		if (nativeAddon) {
+			// ── 네이티브: OS 이벤트 기반 (폴링 없음) ──
+			nativeAddon.startClipboardMonitor(() => {
+				this._onNativeClipboardChange();
+			});
+		} else {
+			// ── 폴백: setInterval 폴링 ──
+			this.lastClipboardText = clipboard.readText();
+			this._clipboardInterval = setInterval(() => {
+				if (this.programStatus?.programStatus !== 'Process') return;
+
+				const currentText = clipboard.readText();
+				if (currentText !== this.lastClipboardText) {
+					console.log('[SystemListener] 클립보드 변경 감지');
+					this.onClipboardChange(currentText);
+					this.lastClipboardText = currentText;
+				}
+			}, 500);
+		}
 	}
 
 	/** Ready/Edit 전환 시 클립보드 변경 감시 중지 */
 	_stopClipboardMonitor() {
-		if (this._clipboardInterval) {
+		if (!this._clipboardActive) return;
+		this._clipboardActive = false;
+
+		if (nativeAddon) {
+			nativeAddon.stopClipboardMonitor();
+		} else if (this._clipboardInterval) {
 			clearInterval(this._clipboardInterval);
 			this._clipboardInterval = null;
 		}
 	}
 
 	/**
-	 * 클립보드 변경 처리
+	 * 네이티브 클립보드 변경 콜백
+	 * 네이티브 모듈이 내부/외부를 원자적 카운터로 구분하므로,
+	 * 여기서는 외부 변경만 수신됨 → 상태 확인 후 즉시 일시정지
+	 */
+	_onNativeClipboardChange() {
+		if (this.programStatus?.programStatus !== 'Process') return;
+		if (this.programStatus?.isPaused) return;
+		if (this.mainWindow?.isDestroyed()) return;
+
+		getIPCManager().handlePause();
+		console.log('[클립보드] 외부 복사 감지 → 자동 일시정지 (네이티브)');
+	}
+
+	/**
+	 * 클립보드 변경 처리 (폴백 모드 전용)
 	 * 
 	 * 동작 의도:
 	 *   사용자가 앱 외부에서 텍스트를 복사하면, 현재 진행 중인 단락 복사 흐름이
@@ -132,8 +201,14 @@ class SystemListener {
 
 	// 내부 클립보드 변경 알림
 	notifyInternalClipboardChange() {
-		this.isInternalClipboardChange = true;
-		this.lastInternalChangeTime = Date.now();
+		if (nativeAddon) {
+			// 네이티브: 원자적 카운터 증가 → 다음 OS 이벤트를 내부로 판정
+			nativeAddon.markInternalChange();
+		} else {
+			// 폴백: 타이밍 기반 플래그
+			this.isInternalClipboardChange = true;
+			this.lastInternalChangeTime = Date.now();
+		}
 	}
 
 	// ═══════════════ 글로벌 키보드 단축키 (electron globalShortcut) ═══════════════
@@ -141,10 +216,10 @@ class SystemListener {
 
 	setupKeyboardListener() {
 		try {
-			// ── Ctrl+V 붙여넣기 헬퍼 준비 (PowerShell/osascript/xdotool) ──
-			this._setupPasteHelper();
-
-			// Ctrl+V 핸들러와 네비게이션 단축키는 Process/Pause 진입 시에만 등록됨
+			if (!nativeAddon) {
+				// 네이티브 모듈 없을 때만 서브프로세스 기반 헬퍼 준비
+				this._setupPasteHelper();
+			}
 			console.log('[SystemListener] 글로벌 키보드 리스너 설정 완료 (단축키는 Process/Pause 시 등록)');
 		} catch (error) {
 			console.error('[SystemListener] 글로벌 키보드 리스너 설정 실패:', error);
@@ -155,14 +230,17 @@ class SystemListener {
 		try {
 			this._pasteHandlerRegistered = false;
 			globalShortcut.unregisterAll();
-			// PowerShell 프로세스 종료
-			if (this._psProcess) {
-				try {
-					this._psProcess.stdin.end();
-					this._psProcess.kill();
-				} catch {}
-				this._psProcess = null;
-				this._psReady = false;
+
+			if (!nativeAddon) {
+				// 폴백: PowerShell 프로세스 종료
+				if (this._psProcess) {
+					try {
+						this._psProcess.stdin.end();
+						this._psProcess.kill();
+					} catch {}
+					this._psProcess = null;
+					this._psReady = false;
+				}
 			}
 			console.log('[SystemListener] 글로벌 단축키 해제됨');
 		} catch (error) {
@@ -203,16 +281,14 @@ class SystemListener {
 	}
 
 	// ═══════════════ Ctrl+V 붙여넣기 감지 ═══════════════
-	// globalShortcut으로 Ctrl+V를 가로챈 뒤, 플랫폼 네이티브로 키를 재주입
+	// globalShortcut으로 Ctrl+V를 가로챈 뒤, 네이티브로 키를 재주입
 
 	/**
-	 * 플랫폼별 붙여넣기 시뮬레이션 헬퍼 준비
-	 * Windows: PowerShell 백그라운드 프로세스 + keybd_event
-	 *   → V키만 송신하므로 물리적 Ctrl 상태를 유지
-	 *   → 연속 Ctrl+V가 정상 동작
-	 * macOS: osascript 사용
+	 * 플랫폼별 붙여넣기 시뮬레이션 헬퍼 준비 (폴백 모드 전용)
+	 * 네이티브 모듈 사용 시에는 호출되지 않음
 	 */
 	_setupPasteHelper() {
+		const { spawn } = require('child_process');
 		if (process.platform === 'win32') {
 			try {
 				this._psProcess = spawn('powershell.exe', [
@@ -222,7 +298,6 @@ class SystemListener {
 					windowsHide: true
 				});
 
-				// Add-Type으로 keybd_event 로드 (한 번만)
 				this._psProcess.stdin.write(
 					`Add-Type -TypeDefinition 'using System.Runtime.InteropServices; ` +
 					`public class PGKey { ` +
@@ -242,28 +317,25 @@ class SystemListener {
 					this._psReady = false;
 				});
 
-				// Add-Type 완료 대기 (stdout으로 확인)
 				this._psProcess.stdin.write('Write-Host "READY"\n');
 				this._psProcess.stdout.once('data', () => {
 					this._psReady = true;
-					console.log('[SystemListener] PowerShell 붙여넣기 헬퍼 준비 완료');
+					console.log('[SystemListener] PowerShell 붙여넣기 헬퍼 준비 완료 (폴백)');
 				});
 			} catch (error) {
 				console.error('[SystemListener] PowerShell 헬퍼 생성 실패:', error);
 			}
 		} else if (process.platform === 'linux') {
-			// Linux: xdotool 존재 여부 확인
 			const { execFileSync } = require('child_process');
 			try {
 				execFileSync('which', ['xdotool'], { stdio: 'ignore' });
 				this._hasXdotool = true;
-				console.log('[SystemListener] xdotool 감지됨 — Linux 붙여넣기 헬퍼 준비 완료');
+				console.log('[SystemListener] xdotool 감지됨 — Linux 붙여넣기 폴백 준비 완료');
 			} catch {
 				this._hasXdotool = false;
 				console.warn('[SystemListener] xdotool 미설치 — Linux 붙여넣기 시뮬레이션 불가. sudo apt install xdotool');
 			}
 		}
-		// macOS: osascript 기본 내장이므로 별도 준비 불필요
 	}
 
 	/**
@@ -296,12 +368,13 @@ class SystemListener {
 				globalShortcut.unregister('CommandOrControl+V');
 				this._simulatePaste(() => {
 					// 재주입 완료 후 재등록 — 여전히 활성 모드일 때만
+					const reregisterDelay = nativeAddon ? 10 : 50;
 					setTimeout(() => {
 						const status = this.programStatus?.programStatus;
 						if (status === 'Process' || status === 'Pause') {
 							this._registerPasteHandler();
 						}
-					}, 50);
+					}, reregisterDelay);
 				});
 			});
 			this._pasteHandlerRegistered = true;
@@ -322,17 +395,23 @@ class SystemListener {
 
 	/**
 	 * V키만 송신 (물리적 Ctrl/Cmd 상태 유지)
-	 * Windows: keybd_event(V down/up) — 물리 Ctrl과 합쳐져 Ctrl+V로 인식
-	 * macOS:   CGEvent로 V키만 송신 — 물리 Cmd 상태 유지, 접근성 권한 불필요
-	 * Linux:   xdotool key --clearmodifiers v — 물리 Ctrl 상태 유지
+	 * 
+	 * 네이티브 모듈: SendInput/CGEvent/XTest 직접 호출 (<1ms)
+	 * 폴백: PowerShell/osascript/xdotool 서브프로세스
 	 */
 	_simulatePaste(callback) {
+		if (nativeAddon) {
+			// ── 네이티브: 직접 키 주입 (서브프로세스 없음) ──
+			nativeAddon.simulatePasteKey();
+			setTimeout(() => callback?.(), 10);
+			return;
+		}
+
+		// ── 폴백: 서브프로세스 기반 ──
 		if (process.platform === 'win32' && this._psProcess && this._psReady) {
-			// Windows: 상주 PowerShell에 V키 down/up 명령 전송
 			this._psProcess.stdin.write('[PGKey]::SendV()\n');
 			setTimeout(() => callback?.(), 30);
 		} else if (process.platform === 'darwin') {
-			// macOS: CGEvent를 사용해 V키만 전송 (물리 Cmd 유지, 접근성 권한 불필요)
 			const { execFile } = require('child_process');
 			const script = `
 				use framework "CoreGraphics"
@@ -346,14 +425,12 @@ class SystemListener {
 				callback?.();
 			});
 		} else if (process.platform === 'linux' && this._hasXdotool) {
-			// Linux: xdotool로 V키만 전송 (물리 Ctrl 상태는 OS가 유지)
 			const { execFile } = require('child_process');
 			execFile('xdotool', ['key', '--clearmodifiers', 'v'], (err) => {
 				if (err) console.error('[SystemListener] 붙여넣기 시뮬레이션 실패:', err);
 				callback?.();
 			});
 		} else {
-			// 지원되지 않는 플랫폼 — 붙여넣기 재주입 불가
 			console.warn('[SystemListener] 현재 플랫폼에서 붙여넣기 시뮬레이션 미지원');
 			callback?.();
 		}
@@ -445,7 +522,9 @@ class SystemListener {
 	}
 
 	resumeClipboardOps() {
-		this.lastClipboardText = clipboard.readText();
+		if (!nativeAddon) {
+			this.lastClipboardText = clipboard.readText();
+		}
 		this._startClipboardMonitor();
 		this._registerPasteHandler();
 		console.log('[SystemListener] 클립보드 관련 기능 복구');
@@ -458,6 +537,11 @@ class SystemListener {
 		this.clearAppShortcuts();
 		this._stopClipboardMonitor();
 		this.currentParagraphText = null;
+
+		// 네이티브 모듈 정리
+		if (nativeAddon) {
+			try { nativeAddon.shutdown(); } catch {}
+		}
 	}
 
 	showErrorDialog(message) {

@@ -1,4 +1,4 @@
-// src/store/utils/DpiAdjuster.js
+// src/utils/DpiAdjuster.js
 // 이미지 파일의 DPI(해상도) 메타데이터를 수정한다.
 // JPEG (JFIF APP0), PNG (pHYs 청크) 지원.
 

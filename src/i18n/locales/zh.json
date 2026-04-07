@@ -199,7 +199,8 @@
             "contextMenu": {
                 "showInFinder": "在访达中显示",
                 "showInExplorer": "在文件资源管理器中显示",
-                "deleteHistory": "从历史记录中删除"
+                "deleteHistory": "从历史记录中删除",
+                "lockFile": "锁定文件"
             }
         },
         "search": {
@@ -235,6 +236,14 @@
         },
         "settings": {
             "title": "设置",
+            "tabs": {
+                "general": "常规",
+                "appearance": "外观",
+                "overlay": "覆盖层",
+                "textProcessing": "文本处理",
+                "editor": "编辑器",
+                "plugin": "插件"
+            },
             "processMode": {
                 "title": "文本处理方式",
                 "paragraph": "按段落",
@@ -274,10 +283,7 @@
                 "title": "Photoshop 模式",
                 "enable": "通过 Photoshop API 自动粘贴",
                 "port": "端口",
-                "connected": "已连接的插件",
-                "installing": "正在安装插件...",
-                "installed": "插件已安装，请重启 Photoshop。",
-                "installFailed": "插件自动安装失败。"
+                "connected": "已连接的插件"
             },
             "dataManagement": {
                 "title": "数据管理",
@@ -350,9 +356,32 @@
             },
             "metadata": {
                 "title": "元数据",
+                "close": "关闭",
                 "image": "图像",
-                "imagePlaceholder": "image1.jpg,image2.jpg"
+                "imagePlaceholder": "image1.jpg,image2.jpg",
+                "edit": "编辑",
+                "delete": "删除",
+                "noImage": "无图片",
+                "newImageName": "图片名",
+                "add": "添加"
             }
+        },
+        "imageViewer": {
+            "empty": "无图片",
+            "prevPage": "上一页",
+            "nextPage": "下一页",
+            "pageInputHint": "点击输入页码",
+            "cursorSyncOn": "光标同步开启",
+            "cursorSyncOff": "光标同步关闭",
+            "showAllLayers": "显示所有图层",
+            "showBgOnly": "仅显示背景图层",
+            "zoomOut": "缩小",
+            "zoomIn": "放大",
+            "resetZoom": "重置为适合大小",
+            "removeImage": "移除当前图片",
+            "grayscale": "黑白",
+            "color": "彩色",
+            "copyColor": "复制颜色值"
         },
         "console": {
             "header": {

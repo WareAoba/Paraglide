@@ -73,10 +73,15 @@ const ThemeManager = {
 
   broadcastTheme() {
     const theme = this.getCurrentTheme();
+    const bgColor = theme.mode === THEME.DARK ? '#181818' : '#F2F3F7';
     
     BrowserWindow.getAllWindows().forEach(window => {
       if (!window.isDestroyed()) {
         try {
+          // 투명 윈도우(오버레이)에는 배경색 설정 금지
+          if (!window.isAlwaysOnTop()) {
+            window.setBackgroundColor(bgColor);
+          }
           window.webContents.send('theme-update', theme);
           window.webContents.send('update-logos');
         } catch (error) {

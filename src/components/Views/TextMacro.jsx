@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
+import useEditorStore from '../../stores/useEditorStore';
 
 const { ipcRenderer } = window.require('electron');
 
@@ -8,8 +9,12 @@ const MAX_SLOTS = 10;
 const DEFAULT_MACROS = ['…', '―', '♡', '♥'];
 const TRANSITION_MS = 200;
 
-function TextMacro({ isOpen, onClose, onInsert, anchorRef }) {
+function TextMacro({ onInsert, anchorRef }) {
   const { t } = useTranslation();
+
+  // ─── Zustand 스토어에서 상태 구독 ───
+  const isOpen = useEditorStore((s) => s.macroOpen);
+  const setMacroOpen = useEditorStore((s) => s.setMacroOpen);
   const [slots, setSlots] = useState(DEFAULT_MACROS);
   const [editingIdx, setEditingIdx] = useState(-1);
   const [editValue, setEditValue] = useState('');
@@ -94,8 +99,8 @@ function TextMacro({ isOpen, onClose, onInsert, anchorRef }) {
         saveMacros(cleaned);
       }
     }
-    onClose();
-  }, [editingIdx, editValue, slots, saveMacros, onClose]);
+    setMacroOpen(false);
+  }, [editingIdx, editValue, slots, saveMacros, setMacroOpen]);
 
   // ─── 외부 클릭 닫기 ───
   useEffect(() => {
@@ -260,7 +265,7 @@ function TextMacro({ isOpen, onClose, onInsert, anchorRef }) {
     >
       <div className="text-macro-header">
         <span>{t('editor.toolbar.textMacro')}</span>
-        <span style={{ fontSize: '0.6rem', opacity: 0.5 }}>Ctrl+#</span>
+        <span style={{ fontSize: '0.6rem', opacity: 0.5 }}>{navigator.platform?.includes('Mac') ? '⌘' : 'Ctrl'}+#</span>
       </div>
       <div className="text-macro-list">
         {slots.map((value, idx) => (
@@ -282,7 +287,7 @@ function TextMacro({ isOpen, onClose, onInsert, anchorRef }) {
               key={idx}
               className={`text-macro-slot${dragIdx === idx ? ' dragging' : ''}${dragOverIdx === idx ? ' drag-over' : ''}`}
               onClick={() => handleSlotClick(idx)}
-              title={value ? `Ctrl+${idx + 1 === 10 ? 0 : idx + 1}: ${value}` : ''}
+              title={value ? `${navigator.platform?.includes('Mac') ? '⌘' : 'Ctrl'}+${idx + 1 === 10 ? 0 : idx + 1}: ${value}` : ''}
               draggable
               onDragStart={(e) => handleDragStart(idx, e)}
               onDragOver={(e) => handleDragOver(idx, e)}

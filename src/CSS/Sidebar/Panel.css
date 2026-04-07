@@ -128,7 +128,7 @@
     margin: 0px;
     display: flex;
     align-items: center;
-    justify-content: center; /* 추가: 가로축 중앙 정렬 */
+    justify-content: center;
     width: 100%;
     padding: 12px;
     border: none;
@@ -140,15 +140,22 @@
     color: var(--text-color);
     cursor: pointer;
     border-radius: 8px;
-    transition: all 0.2s ease;
+    transition: box-shadow var(--duration-normal) var(--ease-smooth),
+                transform var(--duration-normal) var(--ease-out-back);
     font-family: inherit;
   }
   
   .control-button:hover {
+    transform: translateY(-1px);
     box-shadow:
     0 0 0 transparent, 0 0 0 transparent,
     inset 3px 3px 8px var(--container-shadow-up),
     inset -3px -3px 4px var(--container-shadow-down);
+  }
+
+  .control-button:active {
+    transform: translateY(0) scale(0.98);
+    transition: transform var(--duration-instant) var(--ease-snappy);
   }
   
   .control-button:disabled {
@@ -210,31 +217,31 @@
       5px 5px 10px var(--container-shadow-up),
       -5px -5px 10px var(--container-shadow-down),
       inset 0 0 0 transparent, inset 0 0 0 transparent;
-    margin: 0; /* 마진 초기화 */
+    margin: 0;
     border: none;
     cursor: pointer;
     transition:
-      transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-      opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-      box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      transform var(--duration-moderate) var(--ease-out-expo),
+      opacity var(--duration-moderate) var(--ease-out-expo),
+      box-shadow var(--duration-normal) var(--ease-smooth);
     position: relative;
-    flex-shrink: 0; /* 높이 고정만 필요 */
+    flex-shrink: 0;
     will-change: transform, opacity, height;
   }
   
   .recent-file-item.removing {
-    animation: slideOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
+    animation: slideOut 0.35s var(--ease-smooth) forwards !important;
     pointer-events: none;
   }
   
   @keyframes slideOut {
     0% {
       opacity: 1;
-      transform: translateX(0);
+      transform: translateX(0) scale(1);
     }
     100% {
       opacity: 0;
-      transform: translateX(-100%);
+      transform: translateX(-60%) scale(0.95);
     }
   }
   
@@ -278,6 +285,39 @@
     color: var(--primary-color);
     margin-left: auto;  /* 우측 정렬 */
     font-weight: 500;   /* 가독성을 위해 약간 두껍게 */
+    transition: opacity var(--duration-normal) var(--ease-smooth),
+                max-width var(--duration-normal) var(--ease-smooth);
+    overflow: hidden;
+  }
+
+  .recent-file-page.page-locked {
+    opacity: 0;
+    max-width: 0;
+    margin-left: 0;
+    white-space: nowrap;
+  }
+
+  /* 암호화 잠금 아이콘 */
+  .recent-file-lock {
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+    opacity: 0.5;
+    transition: opacity var(--duration-fast) var(--ease-smooth),
+                color var(--duration-normal) var(--ease-smooth);
+  }
+
+  .recent-file-lock.locked {
+    color: var(--primary-color);
+  }
+
+  .recent-file-lock.unlocked {
+    color: var(--text-color);
+    opacity: 0.6;
+  }
+
+  .recent-file-item:hover .recent-file-lock {
+    opacity: 0.8;
   }
   
   /* 삭제 버튼 */

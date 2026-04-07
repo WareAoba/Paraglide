@@ -2,9 +2,12 @@
 import React, { useState, useEffect, useCallback, useRef, forwardRef, useImperativeHandle } from 'react';
 import Hangul from 'hangul-js';
 import { useTranslation } from 'react-i18next';
+import useAppStore from '../../stores/useAppStore';
+import useIconStore from '../../stores/useIconStore';
+import useSearchStore from '../../stores/useSearchStore';
 import '../../CSS/Sidebar/Search.css';
 import { debounce } from 'lodash';
-import { SearchUtils } from '../../store/utils/SearchUtils';
+import { SearchUtils } from '../../utils/SearchUtils';
 
 // 검색 함수는 SearchUtils 모듈의 메서드 참조
 const searchChosung = (text, term) => SearchUtils.searchChosung(text, term);
@@ -155,13 +158,29 @@ const highlightPartialMatch = (text, term) => {
 };
 
 const Search = forwardRef((props, ref) => {
-  const { paragraphs, metadata, onSelect, isVisible, onClose, icons, theme } = props;
+  const { onSelect } = props;
 
   const { t } = useTranslation();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [results, setResults] = useState([]);
-  const [pointer, setPointer] = useState(-1);
+  const paragraphs = useAppStore((s) => s.paragraphs);
+  const metadata = useAppStore((s) => s.paragraphsMetadata);
+  const isVisible = useAppStore((s) => s.isSearchVisible);
+  const theme = useAppStore((s) => s.theme);
+  const closeSidebar = useAppStore((s) => s.closeSidebar);
+  const toggleSearch = useAppStore((s) => s.toggleSearch);
+  const icons = useIconStore((s) => s.icons);
+  const searchTerm = useSearchStore((s) => s.searchTerm);
+  const setSearchTerm = useSearchStore((s) => s.setSearchTerm);
+  const results = useSearchStore((s) => s.results);
+  const setResults = useSearchStore((s) => s.setResults);
+  const pointer = useSearchStore((s) => s.pointer);
+  const setPointer = useSearchStore((s) => s.setPointer);
+  const resetSearch = useSearchStore((s) => s.resetSearch);
   const searchInputRef = useRef(null);
+
+  const onClose = useCallback(() => {
+    toggleSearch(false);
+    closeSidebar();
+  }, [toggleSearch, closeSidebar]);
 
   const handleSearchChange = (e) => {
     const newTerm = e.target.value;
@@ -326,9 +345,8 @@ const Search = forwardRef((props, ref) => {
   }, [isVisible, results, pointer, onSelect, onClose]);
 
   const clearSearch = useCallback(() => {
-    setSearchTerm('');
-    setResults([]);
-  }, []);
+    resetSearch();
+  }, [resetSearch]);
 
   useImperativeHandle(ref, () => ({
     clearSearch
@@ -364,7 +382,7 @@ const Search = forwardRef((props, ref) => {
 
       <div className="search-content">
         <div className="search-input-container">
-          <img src={icons?.searchIcon} alt="" className="search-icon" />
+          <img src={icons?.search} alt="" className="search-icon" />
           <input
             ref={searchInputRef}
             type="text"
@@ -380,7 +398,7 @@ const Search = forwardRef((props, ref) => {
               aria-label={t('sidebar.search.input.clear')}
             >
               <img 
-                src={icons?.deleteIcon} 
+                src={icons?.delete} 
                 alt={t('sidebar.search.input.clear')}
                 className="clear-icon"
               />

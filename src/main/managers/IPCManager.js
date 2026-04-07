@@ -3,7 +3,7 @@ const { ipcMain, dialog, clipboard, shell, BrowserWindow } = require('electron')
 const path = require('path');
 const url = require('url');
 const fs = require('fs').promises;
-const { TextProcessUtils } = require('../../store/utils/TextProcessUtils');
+const { TextProcessUtils } = require('../../utils/TextProcessUtils');
 const { ProgramStatus, isDev, FILE_PATHS } = require('../constants');
 const { state, updateState } = require('../state');
 const FileManager = require('./FileManager');
@@ -40,6 +40,15 @@ const IPCManager = {
     // 상태 관련 핸들러
     ipcMain.handle('get-state', () => state.globalState);
     ipcMain.on('update-state', (event, newState) => updateState(newState));
+
+    // 렌더러 준비 완료 시 — 대기 중인 파일이 있으면 열기
+    ipcMain.handle('renderer-ready', async () => {
+      if (state._pendingFilePath) {
+        const filePath = state._pendingFilePath;
+        state._pendingFilePath = null;
+        await FileManager.openFile(filePath);
+      }
+    });
 
     // 언어 변경 핸들러
     ipcMain.handle('change-language', async (_, lang) => {
@@ -111,6 +120,49 @@ const IPCManager = {
 
     ipcMain.handle('read-file', async (event, filePath) => fs.readFile(filePath, 'utf8'));
 
+    // 에디터용 암호화 대응 파일 읽기
+    ipcMain.handle('read-file-decrypted', async (event, filePath) => {
+      const content = await fs.readFile(filePath, 'utf8');
+      const ext = path.extname(filePath).toLowerCase();
+      if (ext === '.para') {
+        const { ParaFileFormat } = require('../../utils/ParaFileFormat');
+        if (ParaFileFormat.isEncrypted(content)) {
+          // 캐시된 비밀번호가 같은 파일에 대해 있으면 먼저 시도
+          const cached = state._cachedDecrypt;
+          if (cached && cached.filePath === filePath && cached.password) {
+            const tryResult = ParaFileFormat.decrypt(content, cached.password);
+            if (tryResult.success) {
+              return { success: true, content: tryResult.content, wasEncrypted: true, password: cached.password };
+            }
+          }
+          // 로그의 저장된 비밀번호로 시도
+          try {
+            const log = await FileManager.loadLog();
+            const logEntry = log[filePath];
+            if (logEntry?.savedPassword) {
+              const tryResult = ParaFileFormat.decrypt(content, logEntry.savedPassword);
+              if (tryResult.success) {
+                state._cachedDecrypt = { filePath, password: logEntry.savedPassword, rememberPassword: true };
+                return { success: true, content: tryResult.content, wasEncrypted: true, password: logEntry.savedPassword };
+              }
+            }
+          } catch (_) { /* 로그 로드 실패 무시 */ }
+          // 모달로 요청
+          const result = await FileManager._requestDecryptPassword(state.mainWindow);
+          if (!result) {
+            return { success: false, reason: 'decrypt-canceled' };
+          }
+          const decResult = ParaFileFormat.decrypt(content, result.password);
+          if (!decResult.success) {
+            return { success: false, reason: 'decrypt-failed' };
+          }
+          state._cachedDecrypt = { filePath, password: result.password, rememberPassword: result.rememberPassword };
+          return { success: true, content: decResult.content, wasEncrypted: true, password: result.password };
+        }
+      }
+      return { success: true, content, wasEncrypted: false };
+    });
+
     // 에디터용 파일 열기 다이얼로그 (파일 경로만 반환, 프로세스 상태 변경 없음)
     ipcMain.handle('show-open-file-dialog', async () => {
       const result = await dialog.showOpenDialog(state.mainWindow, {
@@ -148,32 +200,48 @@ const IPCManager = {
     ipcMain.on('move-to-prev-page', () => IPCManager.handleMove('prev', 'page'));
     ipcMain.on('move-to-position', (event, position) => this.handleMoveToPosition(position));
 
+    // 오버레이 리사이즈 임시 제어 (transparent frameless 창 드래그 시 리사이즈 오작동 방지)
+    // sendSync으로 호출되므로 즉시 처리 후 응답
+    ipcMain.on('overlay-set-resizable', (event, resizable) => {
+      if (!state.overlayWindow || state.overlayWindow.isDestroyed()) {
+        event.returnValue = false;
+        return;
+      }
+      state.overlayWindow.setResizable(resizable);
+      event.returnValue = true;
+    });
+
     // 오버레이 수동 드래그 핸들러
     let dragStart = null;
     ipcMain.on('overlay-drag-start', (_, pos) => {
       if (!state.overlayWindow) return;
       const bounds = state.overlayWindow.getBounds();
-      dragStart = { mouseX: pos.x, mouseY: pos.y, winX: bounds.x, winY: bounds.y };
+      dragStart = { mouseX: pos.x, mouseY: pos.y, winX: bounds.x, winY: bounds.y, winW: bounds.width, winH: bounds.height };
     });
     ipcMain.on('overlay-drag-move', (_, pos) => {
       if (!state.overlayWindow || !dragStart) return;
-      state.overlayWindow.setPosition(
-        dragStart.winX + (pos.x - dragStart.mouseX),
-        dragStart.winY + (pos.y - dragStart.mouseY)
-      );
+      // setBounds로 크기를 명시적으로 유지하여 OS 리사이즈 간섭 방지
+      state.overlayWindow.setBounds({
+        x: dragStart.winX + (pos.x - dragStart.mouseX),
+        y: dragStart.winY + (pos.y - dragStart.mouseY),
+        width: dragStart.winW,
+        height: dragStart.winH
+      });
+    });
+    ipcMain.on('overlay-drag-end', () => {
+      dragStart = null;
     });
 
     // 모드 전환 핸들러
     ipcMain.on('switch-mode', async (event, newMode) => {
       await FileManager.switchMode(newMode);
-      event.reply('mode-switched', newMode);
     });
 
     // 뷰모드 전환 핸들러
     ipcMain.on('update-view-mode', async (event, newViewMode) => {
       state.updateViewMode(newViewMode);
       // viewMode 변경을 즉시 설정 파일에 저장
-      await FileManager.saveConfig({ viewMode: newViewMode });
+      await FileManager.saveConfig();
       BrowserWindow.getAllWindows().forEach(window => {
         if (!window.isDestroyed()) {
           window.webContents.send('view-mode-update', newViewMode);
@@ -233,7 +301,8 @@ const IPCManager = {
           processMode: config.processMode,
           viewMode: config.viewMode,
           pluginServer: config.pluginServer ?? false,
-          pluginConnected: config.pluginConnected ?? false
+          pluginConnected: config.pluginConnected ?? false,
+          pluginModeActive: state._photoshopModeActive
         };
       } catch (error) {
         console.error('[Main] 설정 로드 실패:', error);
@@ -243,6 +312,7 @@ const IPCManager = {
     
     ipcMain.handle('apply-settings', (_, settings) => this.handleApplySettings(settings));
     ipcMain.handle('clear-log-files', (_, filePath = null) => FileManager.clearLogs(filePath));
+    ipcMain.handle('lock-file', (_, filePath) => FileManager.lockFile(filePath));
 
     // 테마 관련 핸들러
     ipcMain.handle('get-current-theme', () => {
@@ -283,33 +353,11 @@ const IPCManager = {
       };
     });
 
-    // 포토샵 플러그인 자동 설치 핸들러
-    ipcMain.handle('ensure-photoshop-plugin', async () => {
-      return this._ensurePhotoshopPlugin();
-    });
-
-    // 플러그인 설정 변경 알림 (Settings → MainComponent)
-    ipcMain.on('notify-plugin-settings', (event, data) => {
-      const { BrowserWindow } = require('electron');
-      BrowserWindow.getAllWindows().forEach(window => {
-        if (!window.isDestroyed()) {
-          window.webContents.send('plugin-settings-changed', data);
-        }
-      });
-    });
-
     // 오버레이에서 플러그인 연결 토글
     ipcMain.on('toggle-plugin-connection', async () => {
       const current = state.config.pluginConnected;
       const newVal = !current;
       await this.handleApplySettings({ pluginConnected: newVal });
-      // 모든 윈도우에 변경 알림
-      const { BrowserWindow } = require('electron');
-      BrowserWindow.getAllWindows().forEach(window => {
-        if (!window.isDestroyed()) {
-          window.webContents.send('plugin-settings-changed', { pluginConnected: newVal });
-        }
-      });
     });
 
     // ─── 텍스트 매크로 저장/로드 ───
@@ -433,7 +481,7 @@ const IPCManager = {
       if (metadata) {
         // 기존 메타데이터가 없으면 기본값 생성
         if (!state._paraMetadata) {
-          const { ParaFileFormat } = require('../../store/utils/ParaFileFormat');
+          const { ParaFileFormat } = require('../../utils/ParaFileFormat');
           state._paraMetadata = ParaFileFormat.createDefaultMetadata();
         }
 
@@ -465,7 +513,7 @@ const IPCManager = {
 
     ipcMain.handle('set-page-blackpoint', async (_, { pageNumber, blackpoint }) => {
       if (!state._paraMetadata) {
-        const { ParaFileFormat } = require('../../store/utils/ParaFileFormat');
+        const { ParaFileFormat } = require('../../utils/ParaFileFormat');
         state._paraMetadata = ParaFileFormat.createDefaultMetadata();
       }
       if (!state._paraMetadata.pages) {
@@ -483,7 +531,7 @@ const IPCManager = {
 
     ipcMain.handle('set-paragraph-meta', async (_, { paragraphIndex, key, value }) => {
       if (!state._paraMetadata) {
-        const { ParaFileFormat } = require('../../store/utils/ParaFileFormat');
+        const { ParaFileFormat } = require('../../utils/ParaFileFormat');
         state._paraMetadata = ParaFileFormat.createDefaultMetadata();
       }
       if (!state._paraMetadata.paragraphs[paragraphIndex]) {
@@ -608,7 +656,20 @@ const IPCManager = {
       } else if (!shouldRun && PluginBridge.isRunning()) {
         PluginBridge.stop();
       }
-      
+
+      // 플러그인 관련 설정이 변경되었으면 모든 윈도우에 알림
+      if (settings.pluginServer !== undefined || settings.pluginConnected !== undefined) {
+        const { BrowserWindow } = require('electron');
+        BrowserWindow.getAllWindows().forEach(window => {
+          if (!window.isDestroyed()) {
+            window.webContents.send('plugin-settings-changed', {
+              pluginServer: newConfig.pluginServer,
+              pluginConnected: newConfig.pluginConnected
+            });
+          }
+        });
+      }
+
       // 오버레이 창 설정 적용
       if (state.overlayWindow) {
         state.overlayWindow.setOpacity(newConfig.overlay.windowOpacity);
@@ -619,7 +680,7 @@ const IPCManager = {
       // ThemeManager를 통해 테마 업데이트 브로드캐스트 
       ThemeManager.broadcastTheme();
       
-      await FileManager.saveConfig(newConfig);
+      await FileManager.saveConfig();
       return true;
     } catch (error) {
       console.error('[Main] 설정 적용 중 오류:', error);
@@ -636,38 +697,50 @@ const IPCManager = {
     if (moveType === 'page') {
       const currentPage = textState.paragraphsMetadata[textState.currentParagraph]?.pageNumber;
       
-      if (currentPage !== null) {
+      if (currentPage != null) {
         const targetPage = isNext ? currentPage + 1 : currentPage - 1;
         
         let searchPage = targetPage;
         let found = false;
         
-        while (!found) {
-          newPosition = textState.paragraphsMetadata.findIndex(meta => {
-            return meta?.pageNumber === searchPage && 
-                   textState.paragraphs[textState.paragraphsMetadata.indexOf(meta)]?.trim().length > 0;
-          });
-          
-          if (newPosition !== -1) {
-            found = true;
-          } else {
-            searchPage = isNext ? searchPage + 1 : searchPage - 1;
+        const pageNumbers = textState.paragraphsMetadata
+          .filter(meta => meta?.pageNumber != null)
+          .map(meta => meta.pageNumber);
+
+        if (pageNumbers.length === 0) {
+          // 페이지 정보가 전혀 없으면 단락 단위로 fallback
+          newPosition = isNext ?
+            textState.currentParagraph + 1 :
+            textState.currentParagraph - 1;
+        } else {
+          const lastPage = Math.max(...pageNumbers);
+          const firstPage = Math.min(...pageNumbers);
+
+          while (!found) {
+            newPosition = textState.paragraphsMetadata.findIndex((meta, idx) => {
+              return meta?.pageNumber === searchPage && 
+                     textState.paragraphs[idx]?.trim().length > 0;
+            });
             
-            const lastPage = Math.max(...textState.paragraphsMetadata
-              .filter(meta => meta?.pageNumber !== null)
-              .map(meta => meta.pageNumber));
-            const firstPage = Math.min(...textState.paragraphsMetadata
-              .filter(meta => meta?.pageNumber !== null)
-              .map(meta => meta.pageNumber));
-              
-            if (searchPage > lastPage || searchPage < firstPage) {
-              newPosition = isNext ? 
-                textState.paragraphs.length - 1 :
-                0;
-              break;
+            if (newPosition !== -1) {
+              found = true;
+            } else {
+              searchPage = isNext ? searchPage + 1 : searchPage - 1;
+                
+              if (searchPage > lastPage || searchPage < firstPage) {
+                newPosition = isNext ? 
+                  textState.paragraphs.length - 1 :
+                  0;
+                break;
+              }
             }
           }
         }
+      } else {
+        // 현재 단락에 페이지 정보가 없으면 단락 단위로 fallback
+        newPosition = isNext ?
+          textState.currentParagraph + 1 :
+          textState.currentParagraph - 1;
       }
     } else {
       newPosition = isNext ? 
@@ -678,7 +751,6 @@ const IPCManager = {
     const canMove = newPosition >= 0 && newPosition < textState.paragraphs.length;
     
     if (canMove) {
-      this.handleResume();
       state.updateCurrentParagraph(newPosition);
 
       state.mainWindow.webContents.send('clear-search');
@@ -691,8 +763,9 @@ const IPCManager = {
       updateState({
         ...state.textProcess,
         isPaused: false,
+        programStatus: ProgramStatus.PROCESS,
         timestamp: Date.now()
-      }, 'move');
+      });
     }
   },
 
@@ -701,10 +774,7 @@ const IPCManager = {
       // 1. 현재 단락으로 이동
       state.updateCurrentParagraph(position);
       
-      // 2. 일시정지 해제 + 프로세스 상태 복원
-      state.globalState.isPaused = false;
-      
-      // 3. 상태 업데이트 (isPaused + programStatus 포함)
+      // 2. 상태 업데이트 (isPaused + programStatus 포함)
       updateState({
         ...state.textProcess,
         isPaused: false,
@@ -712,7 +782,7 @@ const IPCManager = {
         timestamp: Date.now()
       });
   
-      // 4. 현재 단락 복사 및 로깅
+      // 3. 현재 단락 복사 및 로깅
       const textState = state.textProcess;
       const currentContent = textState.paragraphs[position];
       if (currentContent) {
@@ -730,8 +800,7 @@ const IPCManager = {
     state.updateOverlayVisibility(newVisibility);
 
     // 1. 사용자의 직접 토글 동작에서만 설정 저장
-    const config = state.config;
-    await FileManager.saveConfig(config);
+    await FileManager.saveConfig();
     
     // 2. 상태 업데이트
     await updateState({ 
@@ -742,12 +811,15 @@ const IPCManager = {
 
   handlePause() {
     if (!state.globalState.isPaused) {
-      state.globalState.isPaused = true;
       updateState({ isPaused: true, programStatus: ProgramStatus.PAUSE });
     }
   },
   
   handleResume() {
+      if (state.globalState.programStatus !== ProgramStatus.PROCESS &&
+          state.globalState.programStatus !== ProgramStatus.PAUSE) return;
+      if (!state.globalState.isPaused && state.globalState.programStatus === ProgramStatus.PROCESS) return;
+
       updateState({ isPaused: false, programStatus: ProgramStatus.PROCESS });
       const textState = state.textProcess;
       const currentContent = textState.paragraphs[textState.currentParagraph];
@@ -810,90 +882,6 @@ const IPCManager = {
     });
   },
 
-  // ═══════════════ 포토샵 플러그인 자동 설치 ═══════════════
-
-  /**
-   * 포토샵 UXP 플러그인이 설치되어 있는지 확인하고, 없으면 자동 복사
-   * 
-   * UXP 플러그인 경로:
-   *   Windows: %APPDATA%/Adobe/UXP/PluginsStorage/PHSP/<version>/Internal/com.paraglide.connector/
-   *   macOS:   ~/Library/Application Support/Adobe/UXP/PluginsStorage/PHSP/<version>/Internal/com.paraglide.connector/
-   * 
-   * 공용 개발 플러그인 경로 (버전 무관, 더 안정적):
-   *   Windows: %APPDATA%/Adobe/UXP/Develop/com.paraglide.connector/
-   *   macOS:   ~/Library/Application Support/Adobe/UXP/Develop/com.paraglide.connector/
-   */
-  async _ensurePhotoshopPlugin() {
-    try {
-      const pluginId = 'd6a4ab9b';
-      const targetDir = this._getUXPDevelopPath(pluginId);
-
-      if (!targetDir) {
-        console.warn('[PluginInstall] 지원되지 않는 플랫폼');
-        return { error: 'unsupported_platform' };
-      }
-
-      // 이미 설치되어 있는지 확인
-      const manifestPath = path.join(targetDir, 'manifest.json');
-      try {
-        await fs.access(manifestPath);
-        console.log('[PluginInstall] 플러그인이 이미 설치됨:', targetDir);
-        return { alreadyInstalled: true };
-      } catch {
-        // 설치되지 않은 상태 — 계속 진행
-      }
-
-      // 소스 플러그인 경로 (앱 내 plugins/photoshop/)
-      const { app } = require('electron');
-      const sourcePath = isDev
-        ? path.join(__dirname, '../../../plugins/photoshop')
-        : path.join(process.resourcesPath, 'photoshop');
-
-      // 소스 존재 확인
-      try {
-        await fs.access(sourcePath);
-      } catch {
-        console.error('[PluginInstall] 소스 플러그인 경로 없음:', sourcePath);
-        return { error: 'source_not_found' };
-      }
-
-      // 대상 디렉토리 생성
-      await fs.mkdir(targetDir, { recursive: true });
-
-      // 파일 복사 (재귀)
-      await this._copyDir(sourcePath, targetDir);
-
-      console.log('[PluginInstall] 플러그인 설치 완료:', targetDir);
-      return { installed: true, path: targetDir };
-    } catch (error) {
-      console.error('[PluginInstall] 자동 설치 실패:', error);
-      return { error: error.message };
-    }
-  },
-
-  _getUXPDevelopPath(pluginId) {
-    const { app } = require('electron');
-    if (process.platform === 'win32') {
-      return path.join(app.getPath('appData'), 'Adobe/UXP/Develop', pluginId);
-    } else if (process.platform === 'darwin') {
-      return path.join(app.getPath('home'), 'Library/Application Support/Adobe/UXP/Develop', pluginId);
-    }
-    return null;
-  },
-
-  async _copyDir(src, dest) {
-    const entries = await fs.readdir(src, { withFileTypes: true });
-    for (const entry of entries) {
-      const srcPath = path.join(src, entry.name);
-      const destPath = path.join(dest, entry.name);
-      if (entry.isDirectory()) {
-        await fs.mkdir(destPath, { recursive: true });
-        await this._copyDir(srcPath, destPath);
-      } else {
-        await fs.copyFile(srcPath, destPath);
-      }
-    }
-  }
 };
 
 module.exports = IPCManager;

@@ -1,74 +1,64 @@
 // src/components/Settings.js
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { HexColorPicker } from 'react-colorful';
+import {
+  DEFAULT_ACCENT_COLOR,
+  DEFAULT_PROCESS_MODE,
+  DEFAULT_VIEW_MODE,
+  DEFAULT_LANGUAGE,
+  OVERLAY_DEFAULTS,
+  PLUGIN_PORT,
+  THEME,
+  COLOR_PRESETS,
+} from '../constants';
+import useAppStore from '../stores/useAppStore';
+import useIconStore from '../stores/useIconStore';
+import useSettingsStore from '../stores/useSettingsStore';
 import '../CSS/Settings.css';
 import '../CSS/Controllers/Checkbox.css';
+import '../CSS/Controllers/Toggle.css';
 import '../CSS/Controllers/RangeSlider.css';
 import '../CSS/Controllers/Dropdown.css';
 const { ipcRenderer } = window.require('electron');
 
-function Settings({ isVisible, onClose, theme, programStatus, currentViewMode, icons }) {
+function Settings({ onClose }) {
   const { t } = useTranslation();
-  const [settings, setSettings] = useState({
-    windowOpacity: 1.0, // 창 전체 투명도
-    contentOpacity: 0.8, // 배경 투명도
-    overlayFixed: false,
-    loadLastOverlayBounds: true,
-    theme: {
-      mode: 'auto', // 테마 모드 추가
-      accentColor: '#007bff'
-    },
-    processMode: 'paragraph', // 기본 텍스트 처리 방식
-    viewMode: 'overview',
-    language: 'auto',  // 기본값 추가
-    pluginServer: false,
-    pluginConnected: false
-  });
-  const [pluginStatus, setPluginStatus] = useState({ running: false, plugins: [] });
-  const [pluginInstalling, setPluginInstalling] = useState(false);
-  const [pluginInstallMsg, setPluginInstallMsg] = useState(null);
-  const [originalSettings, setOriginalSettings] = useState(null);
-  const [showThemeDropdown, setShowThemeDropdown] = useState(false);
-  const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
-  const themeDropdownRef = useRef(null);  // 이름 변경
-  const languageDropdownRef = useRef(null);  // 추가
-  const [showColorPicker, setShowColorPicker] = useState(false);
+
+  // ─── Zustand 스토어에서 상태 구독 ───
+  const isVisible = useAppStore((s) => s.isSettingsVisible);
+  const theme = useAppStore((s) => s.theme);
+  const programStatus = useAppStore((s) => s.programStatus);
+  const icons = useIconStore((s) => s.icons);
+
+  const settings = useSettingsStore((s) => s.settings);
+  const setSettings = useSettingsStore((s) => s.setSettings);
+  const pluginStatus = useSettingsStore((s) => s.pluginStatus);
+  const setPluginStatus = useSettingsStore((s) => s.setPluginStatus);
+
+  const originalSettings = useSettingsStore((s) => s.originalSettings);
+  const setOriginalSettings = useSettingsStore((s) => s.setOriginalSettings);
+  const loadSettings = useSettingsStore((s) => s.loadSettings);
+  const applySettings = useSettingsStore((s) => s.applySettings);
+  const cancelSettings = useSettingsStore((s) => s.cancelSettings);
+
+  const [showThemeDropdown, setShowThemeDropdown] = React.useState(false);
+  const [showLanguageDropdown, setShowLanguageDropdown] = React.useState(false);
+  const [showColorPicker, setShowColorPicker] = React.useState(false);
+  const themeDropdownRef = useRef(null);
+  const languageDropdownRef = useRef(null);
   const colorPickerRef = useRef(null);
+
+  const [activeTab, setActiveTab] = React.useState('general');
+  const [isWideMode, setIsWideMode] = React.useState(() => window.innerWidth >= 768);
 
   // 초기 설정 로드
   useEffect(() => {
-    const loadSettings = async () => {
-      try {
-        const savedSettings = await ipcRenderer.invoke('load-settings');
-        if (savedSettings) {
-          // 기존 processMode를 우선적으로 사용
-          const processMode = savedSettings.processMode || 'paragraph';
-
-          const newSettings = {
-            ...settings,
-            ...savedSettings,
-            processMode, // 명시적으로 processMode 설정
-            language: savedSettings.language || 'auto'
-          };
-
-          setSettings(newSettings);
-          setOriginalSettings(newSettings); // originalSettings도 동일하게 설정
-
-          // 디버깅용
-          console.log('로드된 설정:', newSettings);
-        }
-      } catch (error) {
-        console.error('설정 로드 중 오류:', error);
-      }
-    };
-
     if (isVisible) {
       loadSettings();
-      // 플러그인 상태 조회
       ipcRenderer.invoke('get-plugin-status').then(setPluginStatus).catch(() => {});
     }
-  }, [isVisible]);
+  }, [isVisible, loadSettings, setPluginStatus]);
 
   // 로그 파일 정리 핸들러
   const handleClearLogs = async () => {
@@ -78,111 +68,52 @@ function Settings({ isVisible, onClose, theme, programStatus, currentViewMode, i
   };
 
   const handleSettingChange = async (newSettings) => {
-    try {
-      // 설정 상태 업데이트
-      setSettings(newSettings);
-
-      // 설정 적용 요청
-      const result = await ipcRenderer.invoke('apply-settings', {
-        windowOpacity: newSettings.windowOpacity,
-        contentOpacity: newSettings.contentOpacity,
-        overlayFixed: newSettings.overlayFixed,
-        loadLastOverlayBounds: newSettings.loadLastOverlayBounds,
-        processMode: newSettings.processMode,
-        viewMode: newSettings.viewMode,
-        theme: {
-          mode: newSettings.theme.mode,
-          accentColor: newSettings.theme.accentColor
-        },
-        pluginServer: newSettings.pluginServer,
-        pluginConnected: newSettings.pluginConnected
-      });
-
-      if (!result) {
-        console.error('[Settings] 설정 적용 실패');
-      }
-    } catch (error) {
-      console.error('[Settings] 설정 변경 중 오류:', error);
-    }
+    await applySettings(newSettings);
   };
 
-  // 텍스트 처리 방식 핸들러
   const handleProcessModeChange = async (targetMode) => {
     try {
       if (!targetMode || targetMode === settings.processMode) return;
-      const newMode = targetMode;
 
       const newSettings = {
         ...settings,
-        processMode: newMode
+        processMode: targetMode
       };
 
-      // 먼저 UI 상태 업데이트
       setSettings(newSettings);
-
-      // 설정 저장 및 모드 전환 요청
       await ipcRenderer.invoke('apply-settings', newSettings);
-      ipcRenderer.send('switch-mode', newMode);
-
-      // 성공 시 originalSettings 업데이트
+      ipcRenderer.send('switch-mode', targetMode);
       setOriginalSettings(newSettings);
     } catch (error) {
       console.error('모드 전환 중 오류:', error);
-      // 오류 시 이전 상태로 복구
-      setSettings(originalSettings);
+      if (originalSettings) setSettings(originalSettings);
     }
   };
 
+  // 드롭다운/컬러피커 바깥 클릭 감지 (통합)
   useEffect(() => {
-    // 설정이 로드되면 슬라이더 값 초기화
-    const windowOpacitySlider = document.querySelector('input[type="range"][value="' + (settings.windowOpacity * 100) + '"]');
-    const contentOpacitySlider = document.querySelector('input[type="range"][value="' + (settings.contentOpacity * 100) + '"]');
-
-    if (windowOpacitySlider) {
-      windowOpacitySlider.style.setProperty('--slider-value', `${settings.windowOpacity * 100}%`);
-    }
-    if (contentOpacitySlider) {
-      contentOpacitySlider.style.setProperty('--slider-value', `${settings.contentOpacity * 100}%`);
-    }
-  }, [settings.windowOpacity, settings.contentOpacity]);
-
-  // 테마 드롭다운 바깥 클릭 감지
-useEffect(() => {
-  function handleThemeDropdownOutside(event) {
-    if (themeDropdownRef.current && !themeDropdownRef.current.contains(event.target)) {
-      setShowThemeDropdown(false);
-    }
-  }
-
-  document.addEventListener('mousedown', handleThemeDropdownOutside);
-  return () => {
-    document.removeEventListener('mousedown', handleThemeDropdownOutside);
-  };
-}, []);
-
-// 언어 드롭다운 바깥 클릭 감지
-useEffect(() => {
-  function handleLanguageDropdownOutside(event) {
-    if (languageDropdownRef.current && !languageDropdownRef.current.contains(event.target)) {
-      setShowLanguageDropdown(false);
-    }
-  }
-
-  document.addEventListener('mousedown', handleLanguageDropdownOutside);
-  return () => {
-    document.removeEventListener('mousedown', handleLanguageDropdownOutside);
-  };
-}, []);
-
-  useEffect(() => {
-    function handleColorpickerOutside(event) {
+    function handleOutsideClick(event) {
+      if (themeDropdownRef.current && !themeDropdownRef.current.contains(event.target)) {
+        setShowThemeDropdown(false);
+      }
+      if (languageDropdownRef.current && !languageDropdownRef.current.contains(event.target)) {
+        setShowLanguageDropdown(false);
+      }
       if (colorPickerRef.current && !colorPickerRef.current.contains(event.target)) {
         setShowColorPicker(false);
       }
     }
 
-    document.addEventListener('mousedown', handleColorpickerOutside);
-    return () => document.removeEventListener('mousedown', handleColorpickerOutside);
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, []);
+
+  // 와이드 모드 감지 (반응형 탭 UI)
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 768px)');
+    const handler = (e) => setIsWideMode(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
   }, []);
 
   const handleLanguageItemClick = async (lang) => {
@@ -227,7 +158,7 @@ useEffect(() => {
         return;
       }
   
-      const newMode = settings.viewMode === 'overview' ? 'listview' : 'overview';
+      const newMode = settings.viewMode === DEFAULT_VIEW_MODE ? 'listview' : DEFAULT_VIEW_MODE;
   
       const newSettings = {
         ...settings,
@@ -244,14 +175,12 @@ useEffect(() => {
     }
   };
 
-  // 취소 시 원래 값으로 복원
   const handleCancel = () => {
-    if (originalSettings) {
-      setSettings(originalSettings);
-      handleSettingChange(originalSettings);
-    }
+    cancelSettings();
     onClose();
   };
+
+  const SETTINGS_TABS = ['general', 'appearance', 'overlay', 'textProcessing', 'editor', 'plugin'];
 
   return (
     <div
@@ -266,10 +195,25 @@ useEffect(() => {
         }
       }}
     >
-      <div className="settings-content">
+      <div className={`settings-content${isWideMode ? ' settings-content--wide' : ''}`}>
         <h2>{t('settings.title')}</h2>
 
+        {isWideMode && (
+          <nav className="settings-tab-nav">
+            {SETTINGS_TABS.map((key) => (
+              <button
+                key={key}
+                className={`settings-tab-item${activeTab === key ? ' active' : ''}`}
+                onClick={() => setActiveTab(key)}
+              >
+                {t(`settings.tabs.${key}`)}
+              </button>
+            ))}
+          </nav>
+        )}
+
         <div className="settings-scroll-area">
+          {(!isWideMode || activeTab === 'textProcessing') && (
           <div className="settings-group">
             {/* 텍스트 처리 방식 그룹 */}
             <h3>{t('settings.processMode.title')}</h3>
@@ -288,7 +232,9 @@ useEffect(() => {
               </button>
             </div>
           </div>
+          )}
 
+          {(!isWideMode || activeTab === 'editor') && (
           <div className="settings-group">
             <h3>{t('settings.viewMode.title')}</h3>
             <div
@@ -304,8 +250,10 @@ useEffect(() => {
               </button>
             </div>
           </div>
+          )}
 
           {/* 오버레이 그룹 */}
+          {(!isWideMode || activeTab === 'overlay') && (
           <div className="settings-group">
             <h3>{t('settings.overlay.title')}</h3>
             <div className="slider-wrapper">
@@ -316,9 +264,9 @@ useEffect(() => {
                 max="100"
                 step="1"
                 value={settings.windowOpacity * 100}
+                style={{ '--slider-value': `${settings.windowOpacity * 100}%` }}
                 onChange={(e) => {
                   const value = parseFloat(e.target.value);
-                  e.target.style.setProperty('--slider-value', `${value}%`);
                   handleSettingChange({
                     ...settings,
                     windowOpacity: value / 100
@@ -334,11 +282,9 @@ useEffect(() => {
                 max="100"
                 step="1"
                 value={settings.contentOpacity * 100}
+                style={{ '--slider-value': `${settings.contentOpacity * 100}%` }}
                 onChange={(e) => {
                   const value = e.target.value;
-                  // CSS 변수 업데이트
-                  e.target.style.setProperty('--slider-value', `${value}%`);
-                  // 기존 설정 업데이트
                   handleSettingChange({
                     ...settings,
                     contentOpacity: parseFloat(value) / 100
@@ -389,8 +335,10 @@ useEffect(() => {
               </label>
             </div>
           </div>
+          )}
 
           {/* 앱 설정 그룹 */}
+          {(!isWideMode || activeTab === 'appearance') && (
           <div className="settings-group">
             <h3>{t('settings.appearance.title')}</h3>
             <label className="settings-label">
@@ -450,7 +398,7 @@ useEffect(() => {
                     }}
                   />
                   <div className="color-presets">
-                    {['#007bff', '#dc3545', '#28a745', '#ffc107', '#17a2b8', '#6f42c1'].map((color) => (
+                    {COLOR_PRESETS.map((color) => (
                       <div
                         key={color}
                         className="color-preset"
@@ -523,17 +471,16 @@ useEffect(() => {
               </div>
             </label>
           </div>
+          )}
 
           {/* 포토샵 모드 그룹 */}
+          {(!isWideMode || activeTab === 'plugin') && (
           <div className="settings-group">
             <h3>{t('settings.plugin.title')}</h3>
-            <div className="checkbox-wrapper">
-              <input
-                type="checkbox"
-                id="pluginServer"
-                checked={settings.pluginServer}
-                onChange={async (e) => {
-                  const enabled = e.target.checked;
+            <div className="settings-toggle-row">
+              <span className="settings-toggle-label">{t('settings.plugin.enable')}</span>
+              <div className="toggle-switch" onClick={async () => {
+                  const enabled = !settings.pluginServer;
                   const newConnected = enabled ? settings.pluginConnected : false;
                   const newSettings = {
                     ...settings,
@@ -543,51 +490,17 @@ useEffect(() => {
                   setSettings(newSettings);
                   await handleSettingChange(newSettings);
 
-                  // 렌더러에 변경 알림 (툴바 아이콘 표시/숨김 반영)
-                  ipcRenderer.send('notify-plugin-settings', {
-                    pluginServer: enabled,
-                    pluginConnected: newConnected
-                  });
-
-                  if (enabled) {
-                    // 플러그인 설치 여부 확인 → 미설치 시 자동 설치
-                    const installResult = await ipcRenderer.invoke('ensure-photoshop-plugin');
-                    if (installResult?.installed) {
-                      setPluginInstallMsg(t('settings.plugin.installed'));
-                    } else if (installResult?.alreadyInstalled) {
-                      setPluginInstallMsg(null);
-                    } else if (installResult?.error) {
-                      setPluginInstallMsg(t('settings.plugin.installFailed'));
-                    }
-                  } else {
-                    setPluginInstallMsg(null);
-                  }
-
                   // 상태 갱신
                   const status = await ipcRenderer.invoke('get-plugin-status');
                   setPluginStatus(status);
-                }}
-              />
-              <label className="checkbox" htmlFor="pluginServer">
-                <span>
-                  <svg width="12" height="10" viewBox="0 0 12 10">
-                    <polyline points="1.5 6 4.5 9 10.5 1"></polyline>
-                  </svg>
-                </span>
-                <span>{t('settings.plugin.enable')}</span>
-              </label>
-            </div>
-            {pluginInstallMsg && (
-              <div className="plugin-status">
-                <div className="info-item">
-                  <p>{pluginInstallMsg}</p>
-                </div>
+                }}>
+                <span className={`toggle-slider${settings.pluginServer ? ' active' : ''}`}></span>
               </div>
-            )}
+            </div>
             {settings.pluginServer && (
               <div className="plugin-status">
                 <div className="info-item">
-                  <p>{t('settings.plugin.port')}: 27182</p>
+                  <p>{t('settings.plugin.port')}: {PLUGIN_PORT}</p>
                   <p>{t('settings.plugin.connected')}: {pluginStatus.plugins?.length || 0}</p>
                   {pluginStatus.plugins?.map((p, i) => (
                     <p key={i} className="plugin-item">└ {p.app} v{p.version}</p>
@@ -596,7 +509,10 @@ useEffect(() => {
               </div>
             )}
           </div>
+          )}
 
+          {(!isWideMode || activeTab === 'general') && (
+          <>
           {/* 데이터 관리 그룹 */}
           <div className="settings-group danger-zone">
             <h3>{t('settings.dataManagement.title')}</h3>
@@ -612,6 +528,8 @@ useEffect(() => {
               <p>{t('settings.info.credits.contribute')}</p>
             </div>
           </div>
+          </>
+          )}
         </div>
 
         <div className="settings-button-group">

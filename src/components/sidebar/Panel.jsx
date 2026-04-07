@@ -1,8 +1,12 @@
 // src/components/Views/Panel.js
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useContextMenu, Menu, Item } from 'react-contexify';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
+import useAppStore from '../../stores/useAppStore';
+import useIconStore from '../../stores/useIconStore';
+import useEditorStore from '../../stores/useEditorStore';
+import { ProgramStatus } from '../../constants';
 import '../../CSS/Sidebar/Panel.css';
 const { ipcRenderer } = window.require('electron');
 const path = window.require('path');
@@ -10,21 +14,20 @@ const os = window.require('os');
 
 function Panel({
   currentFile,
-  currentFilePath,
-  status,
-  icons,
-  onToggleSearch,
   onShowDebugConsole,
   onClose,
-  files,
-  theme,
   loadFileHistory,
-  isEditorSaved,
-  ProgramStatus
 }) {
 
   const { t } = useTranslation();
-  const [editorDocInfo, setEditorDocInfo] = useState(null); // 에디터에서 받아올 문서 정보
+  const icons = useIconStore((s) => s.icons);
+  const theme = useAppStore((s) => s.theme);
+  const programStatus = useAppStore((s) => s.programStatus);
+  const currentFilePath = useAppStore((s) => s.currentFilePath);
+  const isEditorSaved = useAppStore((s) => s.isEditorSaved);
+  const recentFiles = useAppStore((s) => s.recentFiles);
+  const toggleSearch = useAppStore((s) => s.toggleSearch);
+  const editorDocInfo = useEditorStore((s) => s.editorDocInfo);
   const isMac = os.platform() === 'darwin';
 
   // 1. 포맷팅 유틸리티
@@ -93,6 +96,14 @@ function Panel({
 
   const handleFileSelect = async (filePath) => {
     try {
+      if (programStatus === ProgramStatus.EDIT) {
+        const readResult = await ipcRenderer.invoke('read-file-decrypted', filePath);
+        if (!readResult.success) return;
+        await ipcRenderer.invoke('process-file-content', readResult.content, filePath);
+        onClose();
+        return;
+      }
+
       const result = await ipcRenderer.invoke('open-file', {
         filePath,
         source: 'history',
@@ -117,13 +128,11 @@ function Panel({
   useEffect(() => {
     const handleEditorInfo = (_, { type, data }) => {
       if (type === 'response') {
-        setEditorDocInfo(data);
+        useEditorStore.getState().setEditorDocInfo(data);
       }
     };
   
     ipcRenderer.on('get-editor-info', handleEditorInfo);
-    
-    // 문서 정보 요청
     ipcRenderer.send('get-editor-info', { type: 'request' });
   
     return () => {
@@ -134,14 +143,14 @@ function Panel({
   // 파일 정보 렌더링 함수 수정
   const renderCurrentFileInfo = () => {
     console.log('파일 정보 렌더링:', {
-      status,
+      status: programStatus,
       ProgramStatus: ProgramStatus.EDIT,
-      isEditMode: status === ProgramStatus.EDIT,
+      isEditMode: programStatus === ProgramStatus.EDIT,
       editorDocInfo,
       currentFile
     });
 
-    const fileInfo = status === ProgramStatus.EDIT ? editorDocInfo : currentFile;
+    const fileInfo = programStatus === ProgramStatus.EDIT ? editorDocInfo : currentFile;
     if (!fileInfo && !currentFilePath) return null;
 
     const hasPageInfo = fileInfo?.totalPages > 0;
@@ -160,7 +169,7 @@ function Panel({
           onContextMenu={handleCurrentContextMenu}
           style={{ cursor: 'context-menu' }}
         >
-          <img src={icons?.textFileIcon} alt="파일" className="current-file-icon" />
+          <img src={icons?.textFile} alt="파일" className="current-file-icon" />
           <div className="current-file-content">
             <div className="current-file-info-header">
               <div className="current-file-name-container">
@@ -220,6 +229,14 @@ const handleCurrentContextMenu = (event) => {
   });
 };
 
+  const handleLockFile = async (filePath) => {
+    try {
+      await ipcRenderer.invoke('lock-file', filePath);
+    } catch (error) {
+      console.error('파일 잠금 실패:', error);
+    }
+  };
+
   // ControlButton 컴포넌트
   const ControlButton = ({ icon, label, action, isDisabled, actionType = false }) => (
     <button
@@ -246,7 +263,23 @@ const handleCurrentContextMenu = (event) => {
     >
       <div className="recent-file-main-info">
         <span className="recent-file-name">{file.fileName}</span>
-        <span className="recent-file-page">
+        {file.encrypted && (
+          <span className={`recent-file-lock ${file.hasSavedPassword ? 'unlocked' : 'locked'}`}
+                title={file.hasSavedPassword ? t('sidebar.panel.encryption.saved') : t('sidebar.panel.encryption.locked')}>
+            {file.hasSavedPassword ? (
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                <path d="M7 11V7a5 5 0 0 1 9.9-1"/>
+              </svg>
+            ) : (
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+            )}
+          </span>
+        )}
+        <span className={`recent-file-page${file.encrypted && !file.hasSavedPassword ? ' page-locked' : ''}`}>
           {file.currentPageNumber != null && 
             t('common.pageInfo.pageNumber', { page: file.currentPageNumber })}
         </span>
@@ -264,6 +297,25 @@ const handleCurrentContextMenu = (event) => {
   };
 
   const handleWorkModeSwitch = async () => {
+    if (!currentFilePath) {
+      // 새 파일: 먼저 저장 인터페이스를 띄운 후 저장된 경로로 뷰모드 전환
+      const saveResult = await new Promise((resolve) => {
+        const handler = (e) => {
+          window.removeEventListener('editor-save-complete', handler);
+          resolve(e.detail);
+        };
+        window.addEventListener('editor-save-complete', handler);
+        window.dispatchEvent(new CustomEvent('trigger-editor-save'));
+      });
+      if (!saveResult?.success || !saveResult?.filePath) return false;
+      await ipcRenderer.invoke('open-file', {
+        filePath: saveResult.filePath,
+        programStatus: ProgramStatus.PROCESS,
+        viewMode: 'overview'
+      });
+      return true;
+    }
+
     if (!isEditorSaved) {
       const saveChoice = await ipcRenderer.invoke('show-dialog', 'UNSAVED_CHANGES');
       if (saveChoice === 1) return false; // 취소 선택
@@ -277,14 +329,14 @@ const handleCurrentContextMenu = (event) => {
   };
 
   const handleModeSwitch = async () => {
-    if (!currentFilePath) return;
+    if (!currentFilePath && programStatus !== ProgramStatus.EDIT) return;
     
     try {
       let success = false;
-      if (status === ProgramStatus.PROCESS || status === ProgramStatus.PAUSE) {
+      if (programStatus === ProgramStatus.PROCESS || programStatus === ProgramStatus.PAUSE) {
         await handleEditModeSwitch();
         success = true;
-      } else if (status === ProgramStatus.EDIT) {
+      } else if (programStatus === ProgramStatus.EDIT) {
         success = await handleWorkModeSwitch();
       }
       
@@ -321,29 +373,29 @@ const handleCurrentContextMenu = (event) => {
       <section className="sidebar-section controls">
         <div className="control-grid">
           <ControlButton
-            icon={icons?.openIcon}
+            icon={icons?.fileOpen}
             label={t('sidebar.panel.controls.open')}
             actionType="open"
             action={() => ipcRenderer.invoke('open-file')}
           />
           <ControlButton
-            icon={status === ProgramStatus.EDIT ? icons?.fileWorkIcon : icons?.editIcon}
-            label={status === ProgramStatus.EDIT ? 
+            icon={programStatus === ProgramStatus.EDIT ? icons?.fileWork : icons?.edit}
+            label={programStatus === ProgramStatus.EDIT ? 
               t('sidebar.panel.controls.work') : 
               t('sidebar.panel.controls.edit')
             }
-            actionType={status === ProgramStatus.EDIT ? "process" : "edit"}
+            actionType={programStatus === ProgramStatus.EDIT ? "process" : "edit"}
             action={handleModeSwitch}
-            isDisabled={status === ProgramStatus.READY}
+            isDisabled={programStatus === ProgramStatus.READY}
           />
           <ControlButton
-            icon={icons?.searchIcon}
+            icon={icons?.search}
             label={t('sidebar.panel.controls.search')}
-            action={() => onToggleSearch(true, true)}
-            isDisabled={status === 'ready'}
+            action={() => toggleSearch(true, true)}
+            isDisabled={programStatus === 'ready'}
           />
           <ControlButton
-            icon={icons?.terminalIcon}
+            icon={icons?.terminal}
             label={t('sidebar.panel.controls.console')}
             action={() => {
               onShowDebugConsole();
@@ -357,8 +409,8 @@ const handleCurrentContextMenu = (event) => {
       <section className="sidebar-section recent-files">
         <h3>{t('sidebar.panel.sections.recentFiles.title')}</h3>
         <div className="recent-file-list">
-          {files.length > 0 ? (
-            files.map((file) => (
+          {recentFiles.length > 0 ? (
+            recentFiles.map((file) => (
               <RecentFileItem
                 key={file.filePath}
                 file={file}
@@ -382,7 +434,7 @@ const handleCurrentContextMenu = (event) => {
         <Menu id={RECENT_FILE} data-theme={theme.mode}>
           <Item onClick={({ props }) => handleShowInFolder(props.file.filePath)}>
             <img 
-              src={isMac ? icons?.finderIcon : icons?.folderIcon} 
+              src={isMac ? icons?.finder : icons?.folder} 
               alt={isMac ? "Finder" : "탐색기"} 
             />
             <span>
@@ -391,9 +443,16 @@ const handleCurrentContextMenu = (event) => {
                 'sidebar.panel.contextMenu.showInExplorer')}
             </span>
           </Item>
+          <Item
+            hidden={({ props }) => !props?.file?.hasSavedPassword}
+            onClick={({ props }) => handleLockFile(props.file.filePath)}
+          >
+            <img src={icons?.locked} alt="" />
+            <span>{t('sidebar.panel.contextMenu.lockFile')}</span>
+          </Item>
           <Item onClick={({ props }) => handleRemoveFile(props.file.filePath)}
             data-action="delete">
-            <img src={icons?.deleteIcon} alt={t('common.buttons.delete')} />
+            <img src={icons?.delete} alt={t('common.buttons.delete')} />
             <span>{t('sidebar.panel.contextMenu.deleteHistory')}</span>
           </Item>
         </Menu>
@@ -401,7 +460,7 @@ const handleCurrentContextMenu = (event) => {
         <Menu id={CURRENT_FILE} data-theme={theme.mode}>
           <Item onClick={({ props }) => handleShowInFolder(props.file.filePath)}>
             <img 
-              src={isMac ? icons?.finderIcon : icons?.folderIcon} 
+              src={isMac ? icons?.finder : icons?.folder} 
               alt={isMac ? "Finder" : "탐색기"} 
             />
             <span>

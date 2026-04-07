@@ -1,7 +1,6 @@
 // state.js — AppState: 메인 프로세스 상태 관리 (Redux 대체)
 const { EventEmitter } = require('events');
-const { ipcMain } = require('electron');
-const { ProgramStatus, THEME, DEFAULT_PROCESS_MODE } = require('./constants');
+const { ProgramStatus, THEME, DEFAULT_PROCESS_MODE, DEFAULT_VIEW_MODE, DEFAULT_LANGUAGE, DEFAULT_ACCENT_COLOR, OVERLAY_DEFAULTS } = require('./constants');
 
 /**
  * AppState — 메인 프로세스의 모든 상태를 관리하는 싱글톤 EventEmitter
@@ -39,20 +38,20 @@ class AppState extends EventEmitter {
     this._config = {
       theme: {
         mode: THEME.AUTO,
-        accentColor: '#007bff'
+        accentColor: DEFAULT_ACCENT_COLOR
       },
-      language: 'auto',
+      language: DEFAULT_LANGUAGE,
       overlay: {
-        bounds: { width: 320, height: 240, x: null, y: null },
-        windowOpacity: 1.0,
-        contentOpacity: 0.8,
+        bounds: { width: OVERLAY_DEFAULTS.WIDTH, height: OVERLAY_DEFAULTS.HEIGHT, x: null, y: null },
+        windowOpacity: OVERLAY_DEFAULTS.WINDOW_OPACITY,
+        contentOpacity: OVERLAY_DEFAULTS.CONTENT_OPACITY,
         overlayFixed: false,
         loadLastOverlayBounds: true,
         visibleRanges: { before: 5, after: 5 },
         isVisible: true
       },
-      processMode: 'paragraph',
-      viewMode: 'overview',
+      processMode: DEFAULT_PROCESS_MODE,
+      viewMode: DEFAULT_VIEW_MODE,
       pluginServer: false,
       pluginConnected: false
     };
@@ -66,7 +65,7 @@ class AppState extends EventEmitter {
       currentNumber: null,
       currentFilePath: null,
       processMode: DEFAULT_PROCESS_MODE,
-      isPaused: true,
+      isPaused: false,
       isOverlayVisible: false,
       timestamp: Date.now()
     };
@@ -257,6 +256,10 @@ const updateState = async (newState) => {
     if (state.mainWindow && !state.mainWindow.isDestroyed()) {
       state.mainWindow.setTitle('Paraglide');
     }
+    // 파일별 상태도 초기화 (이전 파일의 메타데이터 누출 방지)
+    state._paraMetadata = null;
+    state._blackPointColor = null;
+    state._cachedDecrypt = null;
   } else if (newState.programStatus === ProgramStatus.PROCESS && state._globalState.programStatus !== ProgramStatus.PROCESS) {
     // PROCESS 상태로 처음 전환될 때 (파일 열기)
     state._globalState = {
@@ -287,20 +290,28 @@ const updateState = async (newState) => {
                       state._globalState.isOverlayVisible;
     
     if (shouldShow) {
-      state.overlayWindow.showInactive();
-      await WindowManager.updateWindowContent(state.overlayWindow, 'content-update');
+      // 전체화면 감지 시작 (이미 실행 중이면 무시됨)
+      WindowManager.startFullscreenDetection();
+      // 전체화면 앱 실행 중이면 오버레이 표시하지 않음
+      if (!WindowManager._fsIsFullscreen) {
+        state.overlayWindow.showInactive();
+        await WindowManager.updateWindowContent(state.overlayWindow, 'content-update');
+      }
     } else {
       state.overlayWindow.hide();
+      WindowManager.stopFullscreenDetection();
     }
   }
 
   console.log('[Main] 현재 프로그램 상태:', state._globalState.programStatus);
 
-  // 상태 변경 통보
-  ipcMain.emit('program-status-update', 'event', {
-    isPaused: state._globalState.isPaused,
-    programStatus: state._globalState.programStatus
-  });
+  // 상태 변경 통보 (직접 함수 호출 — ipcMain.emit 안티패턴 제거)
+  if (state.systemListener) {
+    state.systemListener.onProgramStatusUpdate({
+      isPaused: state._globalState.isPaused,
+      programStatus: state._globalState.programStatus
+    });
+  }
 };
 
 module.exports = { state, updateState, THEME, ALLOWED_TRANSITIONS };

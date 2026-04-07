@@ -1,9 +1,15 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import useAppStore from '../../stores/useAppStore';
+import useIconStore from '../../stores/useIconStore';
 import '../../CSS/Views/Welcome.css';
 
-function Welcome({ onLoadFile, onNewFile, logoPath, titlePath, theme, fileOpenIcon, newFileIcon }) {
+function Welcome({ onLoadFile, onNewFile }) {
   const { t } = useTranslation();
+  const logoPath = useAppStore((s) => s.logoPath);
+  const titlePath = useAppStore((s) => s.titlePath);
+  const theme = useAppStore((s) => s.theme);
+  const icons = useIconStore((s) => s.icons);
 
   return (
     <div className="welcome-screen" data-theme={theme.mode}>
@@ -36,7 +42,7 @@ function Welcome({ onLoadFile, onNewFile, logoPath, titlePath, theme, fileOpenIc
       <div className="button-container">
         <button className="btn-primary" onClick={onNewFile}>
           <img 
-            src={newFileIcon} 
+            src={icons.newFile} 
             alt={t('mainComponent.welcome.newFileAlt')} 
             className="icon-primary" 
           />
@@ -44,7 +50,7 @@ function Welcome({ onLoadFile, onNewFile, logoPath, titlePath, theme, fileOpenIc
         </button>
         <button className="btn-primary" onClick={onLoadFile}>
           <img 
-            src={fileOpenIcon} 
+            src={icons.fileOpen} 
             alt={t('mainComponent.welcome.openFileAlt')} 
             className="icon-primary" 
           />

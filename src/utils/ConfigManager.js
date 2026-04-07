@@ -1,6 +1,6 @@
-// src/store/utils/ConfigManager.js
-const { state } = require('../../main/state');
-const { THEME } = require('../../main/constants');
+// src/utils/ConfigManager.js
+const { state } = require('../main/state');
+const { THEME } = require('../main/constants');
 
 const ConfigManager = {
     validateConfig(savedConfig = {}) {

@@ -200,7 +200,12 @@
             "contextMenu": {
                 "showInFinder": "Show in Finder",
                 "showInExplorer": "Show in File Explorer",
-                "deleteHistory": "Delete from History"
+                "deleteHistory": "Delete from History",
+                "lockFile": "Lock File"
+            },
+            "encryption": {
+                "saved": "Password saved",
+                "locked": "Encrypted file"
             }
         },
     "search": {
@@ -236,6 +241,14 @@
     },
     "settings": {
         "title": "Settings",
+        "tabs": {
+            "general": "General",
+            "appearance": "Appearance",
+            "overlay": "Overlay",
+            "textProcessing": "Text Processing",
+            "editor": "Editor",
+            "plugin": "Plugins"
+        },
         "processMode": {
             "title": "Text Processing Mode",
             "paragraph": "By Paragraph",
@@ -275,10 +288,7 @@
             "title": "Photoshop Mode",
             "enable": "Auto-paste via Photoshop API",
             "port": "Port",
-            "connected": "Connected Plugins",
-            "installing": "Installing plugin...",
-            "installed": "Plugin installed. Please restart Photoshop.",
-            "installFailed": "Plugin auto-install failed."
+            "connected": "Connected Plugins"
         },
         "dataManagement": {
             "title": "Data Management",
@@ -311,7 +321,8 @@
             "imageViewer": "Image Viewer",
             "closeViewer": "Close Viewer",
             "textStyle": "Text Styles",
-            "metadata": "Metadata"
+            "metadata": "Metadata",
+            "encryption": "Encryption"
         },
         "macro": {
             "empty": "(empty)",
@@ -351,9 +362,43 @@
         },
         "metadata": {
             "title": "Metadata",
+            "close": "Close",
             "image": "Images",
-            "imagePlaceholder": "image1.jpg,image2.jpg"
+            "imagePlaceholder": "image1.jpg,image2.jpg",
+            "edit": "Edit",
+            "delete": "Delete",
+            "noImage": "No images",
+            "newImageName": "Image name",
+            "add": "Add"
+        },
+        "encryption": {
+            "title": "Encryption",
+            "enable": "Enable Encryption",
+            "passwordPlaceholder": "4-32 characters",
+            "passwordHint": "Password must be 4-32 characters",
+            "showPassword": "Show password",
+            "hidePassword": "Hide password",
+            "decryptTitle": "Encrypted File",
+            "decryptDesc": "This file is encrypted. Please enter the password.",
+            "rememberPassword": "Remember password"
         }
+    },
+    "imageViewer": {
+        "empty": "No images",
+        "prevPage": "Previous page",
+        "nextPage": "Next page",
+        "pageInputHint": "Click to enter page number",
+        "cursorSyncOn": "Cursor sync on",
+        "cursorSyncOff": "Cursor sync off",
+        "showAllLayers": "Show all layers",
+        "showBgOnly": "Show background only",
+        "zoomOut": "Zoom out",
+        "zoomIn": "Zoom in",
+        "resetZoom": "Reset to fit",
+        "removeImage": "Remove current image",
+        "grayscale": "B&W",
+        "color": "Color",
+        "copyColor": "Copy color value"
     },
     "console": {
         "header": {

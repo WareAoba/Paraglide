@@ -78,7 +78,9 @@
     align-items: center;
     justify-content: center;
     border-radius: 15%;
-    transition: all 0.3s ease;
+    transition: transform var(--duration-normal) var(--ease-out-back),
+                box-shadow var(--duration-normal) var(--ease-smooth),
+                background var(--duration-normal) var(--ease-smooth);
     width: var(--btn-size); 
     height: var(--btn-size);
     margin: 0;
@@ -91,7 +93,7 @@
 
 .button-group-controls .btn-icon:hover,
 .titlebar-controls .btn-icon:hover {
-  scale: 1.1;
+  transform: scale(1.12);
   box-shadow:
   2px 2px 6px var(--container-shadow-up),
   -2px -2px 6px var(--container-shadow-down);
@@ -105,6 +107,8 @@
 
 .button-group-controls .btn-icon:active,
 .titlebar-controls .btn-icon:active {
+  transform: scale(0.93);
+  transition: transform var(--duration-instant) var(--ease-snappy);
   box-shadow:
   -2px -2px 5px var(--container-shadow-up),
   2px 2px 5px var(--container-shadow-down);
@@ -129,12 +133,12 @@
 
 .button-group-controls .btn-icon img[alt="Settings Icon"],
 .titlebar-controls .btn-icon img[alt="Settings Icon"] {
-  transition: transform 0.2s ease;
+  transition: transform var(--duration-moderate) var(--ease-spring);
 }
 
 .button-group-controls .btn-icon:hover img[alt="Settings Icon"],
 .titlebar-controls .btn-icon:hover img[alt="Settings Icon"] {
-  transform: rotate(30deg);
+  transform: rotate(45deg);
 }
 
 .icon{
@@ -155,12 +159,12 @@
 
 .sidebar.visible {
   transform: translateX(301px);
-  transition: all 0.3s ease;
+  transition: transform var(--duration-enter) var(--ease-out-expo);
 }
 
 .sidebar.invisible {
   transform: translateX(301px);
-  transition: all 0.3s ease;
+  transition: transform var(--duration-exit) var(--ease-snappy);
 }
 
 .file-info-container {
@@ -246,4 +250,184 @@
 .para-toast.visible {
   opacity: 1;
   transform: translateX(-50%) translateY(0);
+}
+
+/* ═══════════════ 암호화 모달 (복호화 요청) ═══════════════ */
+
+.encryption-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0);
+  backdrop-filter: blur(0px);
+  transition: background 0.3s ease, backdrop-filter 0.3s ease;
+}
+
+.encryption-modal-backdrop.visible {
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(6px);
+}
+
+.encryption-modal {
+  width: 340px;
+  background: var(--container-bg);
+  border-radius: 14px;
+  box-shadow:
+    8px 8px 16px var(--container-shadow-up),
+    -8px -8px 16px var(--container-shadow-down);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  opacity: 0;
+  transform: scale(0.9) translateY(10px);
+  transition: opacity 0.25s ease, transform 0.3s var(--ease-out-back);
+}
+
+.encryption-modal.visible {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+}
+
+.encryption-modal-header {
+  padding: 0.85rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-color);
+  box-shadow: inset 0 -2px 4px var(--container-shadow-up);
+  user-select: none;
+}
+
+.encryption-modal-body {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.encryption-modal-desc {
+  font-size: 0.8rem;
+  color: var(--text-color);
+  opacity: 0.75;
+  margin: 0;
+  line-height: 1.45;
+}
+
+.encryption-modal-error {
+  font-size: 0.75rem;
+  color: #e74c3c;
+  margin: 0;
+}
+
+.encryption-modal-input-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.encryption-modal-input {
+  flex: 1;
+  padding: 8px 10px;
+  font-size: 0.85rem;
+  font-family: inherit;
+  border: none;
+  border-radius: 8px;
+  background: var(--container-bg);
+  color: var(--text-color);
+  outline: none;
+  box-shadow:
+    inset 2px 2px 4px var(--container-shadow-up),
+    inset -2px -2px 4px var(--container-shadow-down);
+  transition: box-shadow var(--duration-normal) var(--ease-smooth);
+}
+
+.encryption-modal-input:focus {
+  box-shadow:
+    inset 2px 2px 4px var(--container-shadow-up),
+    inset -2px -2px 4px var(--container-shadow-down),
+    0 0 0 1.5px var(--primary-color);
+}
+
+.encryption-modal-toggle-pw {
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: var(--text-color);
+  opacity: 0.5;
+  padding: 4px;
+  border-radius: 4px;
+  transition: opacity var(--duration-fast) var(--ease-smooth);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.encryption-modal-toggle-pw .encryption-pw-icon {
+  width: 16px;
+  height: 16px;
+  filter: var(--icon-filter);
+}
+
+.encryption-modal-toggle-pw:hover {
+  opacity: 0.9;
+}
+
+.encryption-modal-remember {
+  margin-top: 0.2rem;
+}
+
+.encryption-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 0.65rem 1rem;
+  box-shadow: inset 0 2px 4px var(--container-shadow-up);
+}
+
+.encryption-modal-btn {
+  border: none;
+  padding: 6px 16px;
+  font-size: 0.8rem;
+  font-family: inherit;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background var(--duration-fast) var(--ease-smooth),
+              transform var(--duration-fast) var(--ease-smooth);
+}
+
+.encryption-modal-btn.cancel {
+  background: var(--container-bg);
+  color: var(--text-color);
+  box-shadow:
+    2px 2px 4px var(--container-shadow-up),
+    -2px -2px 4px var(--container-shadow-down);
+}
+
+.encryption-modal-btn.cancel:hover {
+  background: color-mix(in srgb, var(--text-color) 10%, var(--container-bg));
+}
+
+.encryption-modal-btn.confirm {
+  background: var(--primary-color);
+  color: var(--bg-color);
+  box-shadow:
+    2px 2px 4px var(--container-shadow-up),
+    -2px -2px 4px var(--container-shadow-down);
+}
+
+.encryption-modal-btn.confirm:hover {
+  filter: brightness(1.1);
+}
+
+.encryption-modal-btn.confirm:disabled {
+  opacity: 0.4;
+  cursor: default;
+  filter: none;
+}
+
+.encryption-modal-btn:active {
+  transform: scale(0.95);
 }

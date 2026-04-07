@@ -111,8 +111,8 @@ module.exports = {
     },
     extraResource: [
       "./dist",          // Vite 빌드 출력을 리소스로 포함
-      "./native/sendesc.exe",  // Windows Esc 키 전송 데몬
-      "./plugins/photoshop"    // Photoshop UXP 플러그인
+      "./native/paraglide_native.node",  // 네이티브 클립보드/키 주입 모듈
+      ...(process.platform === 'win32' ? ["./native/sendesc.exe"] : []),  // Windows Esc 키 전송 데몬
     ]
   },
 

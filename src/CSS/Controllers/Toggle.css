@@ -1,0 +1,109 @@
+/* src/CSS/Controllers/Toggle.css — 앱 표준 토글 스위치 (뉴모피즘) */
+
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+/* ─── 트랙 (움푹 파인 홈) ─── */
+.toggle-switch .toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background: var(--container-bg);
+  border-radius: 24px;
+  box-shadow:
+    inset 2px 2px 5px var(--container-shadow-up),
+    inset -2px -2px 4px var(--container-shadow-down);
+  transition: background var(--duration-normal) var(--ease-smooth),
+              box-shadow var(--duration-moderate) var(--ease-smooth);
+}
+
+/* ─── 노브 (볼록한 원형 손잡이) ─── */
+.toggle-switch .toggle-slider::before {
+  content: "";
+  position: absolute;
+  left: 3px;
+  top: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, rgba(255,255,255,0.12), rgba(255,255,255,0.03));
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow:
+    2px 2px 4px rgba(0,0,0,0.4),
+    -1px -1px 3px rgba(255,255,255,0.04),
+    inset 1px 1px 2px rgba(255,255,255,0.1),
+    inset -1px -1px 2px rgba(0,0,0,0.2);
+  transition: transform var(--duration-moderate) var(--ease-spring),
+              background var(--duration-normal) var(--ease-smooth),
+              border-color var(--duration-normal) var(--ease-smooth),
+              box-shadow var(--duration-moderate) var(--ease-smooth);
+}
+
+/* ─── 호버: 노브 하이라이트 ─── */
+.toggle-switch:hover .toggle-slider::before {
+  border-color: rgba(255,255,255,0.14);
+  box-shadow:
+    2px 2px 5px rgba(0,0,0,0.4),
+    -1px -1px 3px rgba(255,255,255,0.05),
+    inset 1px 1px 3px rgba(255,255,255,0.14),
+    inset -1px -1px 2px rgba(0,0,0,0.2);
+}
+
+/* ─── 활성 상태: 트랙 ─── */
+.toggle-switch .toggle-slider.active {
+  background: var(--primary-color);
+  box-shadow:
+    inset 2px 2px 6px rgba(0,0,0,0.3),
+    inset -1px -1px 3px rgba(255,255,255,0.1),
+    0 0 12px color-mix(in srgb, var(--primary-color) 45%, transparent);
+}
+
+/* ─── 활성 상태: 노브 ─── */
+.toggle-switch .toggle-slider.active::before {
+  transform: translateX(20px);
+  background: linear-gradient(145deg, #ffffff, #e8e8e8);
+  border-color: rgba(255,255,255,0.3);
+  box-shadow:
+    1px 1px 5px rgba(0,0,0,0.35),
+    -1px -1px 2px rgba(255,255,255,0.2),
+    0 0 10px color-mix(in srgb, var(--primary-color) 35%, transparent),
+    inset 1px 1px 2px rgba(255,255,255,0.9),
+    inset -1px -1px 1px rgba(0,0,0,0.08);
+}
+
+/* ═══ 라이트모드 오버라이드 ═══ */
+[data-theme="light"] .toggle-switch .toggle-slider::before {
+  background: linear-gradient(145deg, #fff, #e6e6e6);
+  border: 1px solid rgba(0,0,0,0.06);
+  box-shadow:
+    2px 2px 4px var(--container-shadow-up),
+    -1px -1px 3px var(--container-shadow-down),
+    inset 1px 1px 2px rgba(255,255,255,0.8),
+    inset -1px -1px 2px rgba(0,0,0,0.05);
+}
+
+[data-theme="light"] .toggle-switch:hover .toggle-slider::before {
+  border-color: rgba(0,0,0,0.1);
+  box-shadow:
+    2px 2px 5px var(--container-shadow-up),
+    -1px -1px 3px var(--container-shadow-down),
+    inset 1px 1px 3px rgba(255,255,255,0.9),
+    inset -1px -1px 2px rgba(0,0,0,0.06);
+}
+
+[data-theme="light"] .toggle-switch .toggle-slider.active::before {
+  background: linear-gradient(145deg, #ffffff, #f0f0f0);
+  border-color: rgba(0,0,0,0.04);
+  box-shadow:
+    1px 1px 4px rgba(0,0,0,0.15),
+    -1px -1px 2px rgba(255,255,255,0.6),
+    0 0 8px color-mix(in srgb, var(--primary-color) 25%, transparent),
+    inset 1px 1px 2px rgba(255,255,255,0.9),
+    inset -1px -1px 1px rgba(0,0,0,0.04);
+}

@@ -225,8 +225,11 @@ const PluginBridge = {
   _sendEscToPhotoshop(ws) {
     if (process.platform === 'darwin') {
       this._sendEscMac(ws);
-    } else {
+    } else if (process.platform === 'win32') {
       this._sendEscWin(ws);
+    } else {
+      console.warn('[PluginBridge] sendEsc: 현재 플랫폼 미지원 —', process.platform);
+      this._send(ws, { type: 'response', action: 'sendEsc', data: { success: false } });
     }
   },
 
@@ -234,8 +237,11 @@ const PluginBridge = {
   _sendPasteCommitToPhotoshop(ws) {
     if (process.platform === 'darwin') {
       this._sendPasteCommitMac(ws);
-    } else {
+    } else if (process.platform === 'win32') {
       this._sendPasteCommitWin(ws);
+    } else {
+      console.warn('[PluginBridge] pasteCommit: 현재 플랫폼 미지원 —', process.platform);
+      this._send(ws, { type: 'response', action: 'pasteCommit', data: { success: false } });
     }
   },
 
@@ -451,12 +457,12 @@ const PluginBridge = {
       const pageNumber = currentMeta?.pageNumber;
       
       if (pageNumber != null) {
-        const { ParaFileFormat } = require('../../store/utils/ParaFileFormat');
+        const { ParaFileFormat } = require('../../utils/ParaFileFormat');
         data.textColor = ParaFileFormat.getPageBlackPoint(paraMetadata, pageNumber);
       }
 
       // 단락별 정렬/스타일 메타데이터
-      const { ParaFileFormat: PFF } = require('../../store/utils/ParaFileFormat');
+      const { ParaFileFormat: PFF } = require('../../utils/ParaFileFormat');
       data.textAlign = PFF.getParagraphAlign(paraMetadata, textState.currentParagraph);
       data.textStyle = PFF.getParagraphStyle(paraMetadata, textState.currentParagraph);
     }
@@ -553,10 +559,6 @@ const PluginBridge = {
 
   // 연결 상태 변경 알림 (렌더러에 전달)
   _notifyConnectionChange() {
-    const plugins = this.getConnectedPlugins();
-    if (state.mainWindow && !state.mainWindow.isDestroyed()) {
-      state.mainWindow.webContents.send('plugin-connection-changed', plugins);
-    }
     this._checkPhotoshopModeTransition();
     // 포토샵 모드 상태 전달 (오버레이 + 메인 윈도우)
     if (state.overlayWindow && !state.overlayWindow.isDestroyed()) {

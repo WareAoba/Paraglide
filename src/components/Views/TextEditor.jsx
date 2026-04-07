@@ -458,7 +458,7 @@ function TextEditor({ theme, currentFilePath, onSavedStateChange, icons }) {
       paraMetadataRef.current = ParaFileFormat.createDefaultMetadata();
     }
     if (!paraMetadataRef.current.paragraphs[paragraphIndex]) {
-      paraMetadataRef.current.paragraphs[paragraphIndex] = { align: 'center', style: '1' };
+      paraMetadataRef.current.paragraphs[paragraphIndex] = { align: 'center' };
     }
     paraMetadataRef.current.paragraphs[paragraphIndex].align = align;
     ipcRenderer.invoke('set-paragraph-meta', { paragraphIndex, key: 'align', value: align });
@@ -482,7 +482,7 @@ function TextEditor({ theme, currentFilePath, onSavedStateChange, icons }) {
       paraMetadataRef.current = ParaFileFormat.createDefaultMetadata();
     }
     if (!paraMetadataRef.current.paragraphs[paragraphIndex]) {
-      paraMetadataRef.current.paragraphs[paragraphIndex] = { align: 'center', style: 'plain' };
+      paraMetadataRef.current.paragraphs[paragraphIndex] = { align: 'center' };
     }
     paraMetadataRef.current.paragraphs[paragraphIndex].style = styleName;
     ipcRenderer.invoke('set-paragraph-meta', { paragraphIndex, key: 'style', value: styleName });

@@ -195,7 +195,8 @@
             "contextMenu": {
                 "showInFinder": "Finderで表示",
                 "showInExplorer": "エクスプローラーで表示",
-                "deleteHistory": "履歴を削除"
+                "deleteHistory": "履歴を削除",
+                "lockFile": "ファイルをロック"
             }
         },
         "search": {
@@ -231,6 +232,14 @@
     },
     "settings": {
         "title": "設定",
+        "tabs": {
+            "general": "一般",
+            "appearance": "外観",
+            "overlay": "オーバーレイ",
+            "textProcessing": "テキスト処理",
+            "editor": "エディタ",
+            "plugin": "プラグイン"
+        },
         "processMode": {
             "title": "テキスト処理方式",
             "paragraph": "段落単位",
@@ -270,10 +279,7 @@
             "title": "Photoshopモード",
             "enable": "Photoshop APIで自動ペースト",
             "port": "ポート",
-            "connected": "接続中のプラグイン",
-            "installing": "プラグインをインストール中...",
-            "installed": "プラグインがインストールされました。Photoshopを再起動してください。",
-            "installFailed": "プラグインの自動インストールに失敗しました。"
+            "connected": "接続中のプラグイン"
         },
         "dataManagement": {
             "title": "データ管理",
@@ -346,9 +352,32 @@
         },
         "metadata": {
             "title": "メタデータ",
+            "close": "閉じる",
             "image": "画像",
-            "imagePlaceholder": "image1.jpg,image2.jpg"
+            "imagePlaceholder": "image1.jpg,image2.jpg",
+            "edit": "編集",
+            "delete": "削除",
+            "noImage": "画像なし",
+            "newImageName": "画像名",
+            "add": "追加"
         }
+    },
+    "imageViewer": {
+        "empty": "画像なし",
+        "prevPage": "前のページ",
+        "nextPage": "次のページ",
+        "pageInputHint": "クリックしてページ番号入力",
+        "cursorSyncOn": "カーソル同期オン",
+        "cursorSyncOff": "カーソル同期オフ",
+        "showAllLayers": "全レイヤー表示",
+        "showBgOnly": "背景レイヤーのみ表示",
+        "zoomOut": "縮小",
+        "zoomIn": "拡大",
+        "resetZoom": "フィットサイズにリセット",
+        "removeImage": "現在の画像を削除",
+        "grayscale": "白黒",
+        "color": "カラー",
+        "copyColor": "色値をコピー"
     },
     "console": {
         "header": {

@@ -1,4 +1,4 @@
-// src/store/utils/TextProcessUtils.js
+// src/utils/TextProcessUtils.js
 const { ParaFileFormat } = require('./ParaFileFormat');
 
 const TextProcessUtils = {

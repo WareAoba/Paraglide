@@ -1,4 +1,4 @@
-// src/store/utils/BlackPointAnalyzer.js
+// src/utils/BlackPointAnalyzer.js
 // 블랙포인트 분석 유틸리티 — 렌더러 프로세스 Canvas API 기반
 //
 // 역할:

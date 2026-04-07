@@ -1,7 +1,7 @@
 // tests/unit/SpreadDetector.test.js
 import { describe, it, expect } from 'vitest';
 
-const { SpreadDetector } = require('../../src/store/utils/SpreadDetector');
+const { SpreadDetector } = require('../../src/utils/SpreadDetector');
 
 // ── 테스트 유틸: 세로 픽셀 열(RGBA) 생성 ──
 function makeColumn(height, pixelFn) {

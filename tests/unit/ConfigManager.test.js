@@ -1,7 +1,7 @@
 // tests/unit/ConfigManager.test.js
 import { describe, it, expect } from 'vitest';
 
-const { ConfigManager } = require('../../src/store/utils/ConfigManager');
+const { ConfigManager } = require('../../src/utils/ConfigManager');
 const { THEME } = require('../../src/main/constants');
 
 // ═══════════════ validateBoolean ═══════════════

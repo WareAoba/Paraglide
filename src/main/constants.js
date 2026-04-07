@@ -20,9 +20,20 @@ const THEME = {
 // 상수 정의
 const DEBOUNCE_TIME = 250;
 const DEFAULT_PROCESS_MODE = 'paragraph';
+const DEFAULT_VIEW_MODE = 'overview';
+const DEFAULT_LANGUAGE = 'auto';
+const DEFAULT_ACCENT_COLOR = '#007bff';
 const PLUGIN_PORT = 27182;
 const TEMP_DIR = path.join(os.tmpdir(), 'paraglide-backup');
 const TEMP_FILE = 'backup.json';
+
+// 오버레이 기본값
+const OVERLAY_DEFAULTS = {
+  WIDTH: 320,
+  HEIGHT: 240,
+  WINDOW_OPACITY: 1.0,
+  CONTENT_OPACITY: 0.8,
+};
 
 const isDev = process.env.NODE_ENV === 'development';
 const appPath = isDev ? path.resolve(__dirname, '../..') : app.getAppPath();
@@ -68,6 +79,10 @@ module.exports = {
   THEME,
   DEBOUNCE_TIME,
   DEFAULT_PROCESS_MODE,
+  DEFAULT_VIEW_MODE,
+  DEFAULT_LANGUAGE,
+  DEFAULT_ACCENT_COLOR,
+  OVERLAY_DEFAULTS,
   PLUGIN_PORT,
   TEMP_DIR,
   TEMP_FILE,

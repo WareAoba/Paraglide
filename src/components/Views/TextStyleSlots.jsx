@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import useAppStore from '../../stores/useAppStore';
+import useEditorStore from '../../stores/useEditorStore';
 
 const { ipcRenderer } = window.require('electron');
 const path = window.require('path');
@@ -9,7 +10,7 @@ const _appBase = process.env.NODE_ENV === 'development'
   ? process.cwd()
   : path.join(process.resourcesPath, 'app.asar');
 const { STYLE_NAMES } = window.require(
-  path.join(_appBase, 'src', 'store', 'utils', 'ParaFileFormat')
+  path.join(_appBase, 'src', 'utils', 'ParaFileFormat')
 );
 
 const TRANSITION_MS = 200;
@@ -24,8 +25,12 @@ function nextCustomName(allSlots) {
   return `custom${max + 1}`;
 }
 
-function TextStyleSlots({ isOpen, onClose, onSelect, anchorRef, activeStyleName }) {
+function TextStyleSlots({ onSelect, anchorRef, activeStyleName }) {
   const { t } = useTranslation();
+
+  // ─── Zustand 스토어에서 상태 구독 ───
+  const isOpen = useEditorStore((s) => s.styleOpen);
+  const setStyleOpen = useEditorStore((s) => s.setStyleOpen);
   const [mounted, setMounted] = useState(false);
   const [visible, setVisible] = useState(false);
   const [editingSlot, setEditingSlot] = useState(null); // 액션 편집 중인 슬롯 (1-based)
@@ -55,7 +60,7 @@ function TextStyleSlots({ isOpen, onClose, onSelect, anchorRef, activeStyleName 
     const result = t(`editor.style.${name}`, '');
     if (result) return result;
     const m = name.match(/^custom(\d+)$/);
-    if (m) return `${t('editor.style.customPrefix', '커스텀')}${m[1]}`;
+    if (m) return `${t('editor.style.customPrefix')}${m[1]}`;
     return name;
   }, [t]);
 
@@ -125,12 +130,12 @@ function TextStyleSlots({ isOpen, onClose, onSelect, anchorRef, activeStyleName 
         popupRef.current && !popupRef.current.contains(e.target) &&
         anchorRef?.current && !anchorRef.current.contains(e.target)
       ) {
-        onClose();
+        setStyleOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isOpen, onClose, anchorRef]);
+  }, [isOpen, setStyleOpen, anchorRef]);
 
   // ─── 피커 팝업 외부 클릭으로 닫기 ───
   useEffect(() => {
@@ -276,7 +281,7 @@ function TextStyleSlots({ isOpen, onClose, onSelect, anchorRef, activeStyleName 
             <button
               className="text-style-refresh-btn"
               onClick={handleRefreshActions}
-              title={t('editor.style.refreshActions', '액션 새로고침')}
+              title={t('editor.style.refreshActions')}
             >
               ↻
             </button>
@@ -284,7 +289,7 @@ function TextStyleSlots({ isOpen, onClose, onSelect, anchorRef, activeStyleName 
         </div>
         {isDisabled && (
           <div className="text-style-disabled-msg">
-            {t('editor.style.pluginDisabled', 'PS 플러그인이 비활성화되어 있습니다')}
+            {t('editor.style.pluginDisabled')}
           </div>
         )}
         {hasInvalidActions && (
@@ -314,7 +319,7 @@ function TextStyleSlots({ isOpen, onClose, onSelect, anchorRef, activeStyleName 
                 <div
                   className={`text-style-slot${assigned ? ' has-action' : ' no-action'}${isInvalid ? ' invalid' : ''}`}
                   onClick={(e) => handleSlotClick(e, idx)}
-                  title={`${name} (Alt+${idx === 9 ? '0' : idx + 1})${assigned ? `\n${t('editor.style.action', '액션')}: ${assigned.set} / ${assigned.action}` : ''}${isInvalid ? `\n⚠ ${t('editor.style.actionInvalid')}` : ''}\n${t('editor.style.clickToAssign', '클릭: 액션 지정')}`}
+                  title={`${name} (Alt+${idx === 9 ? '0' : idx + 1})${assigned ? `\n${t('editor.style.action')}: ${assigned.set} / ${assigned.action}` : ''}${isInvalid ? `\n\u26a0 ${t('editor.style.actionInvalid')}` : ''}\n${t('editor.style.clickToAssign')}`}
                 >
                   <span className="text-style-slot-key">{idx === 9 ? '0' : idx + 1}</span>
                   <div className="text-style-slot-info">
@@ -355,7 +360,7 @@ function TextStyleSlots({ isOpen, onClose, onSelect, anchorRef, activeStyleName 
                 className="text-style-action-item clear"
                 onClick={() => handleActionSelect(editingSlot, null, null)}
               >
-                {t('editor.style.clearAction', '액션 해제')}
+                {t('editor.style.clearAction')}
               </div>
             )}
             {/* 슬롯 삭제 (평문 제외) */}
@@ -364,13 +369,13 @@ function TextStyleSlots({ isOpen, onClose, onSelect, anchorRef, activeStyleName 
                 className="text-style-action-item delete"
                 onClick={() => handleDeleteSlot(editingSlot)}
               >
-                {t('editor.style.deleteSlot', '슬롯 삭제')}
+                {t('editor.style.deleteSlot')}
               </div>
             )}
             {/* 액션 목록 */}
             {!hasActions ? (
               <div className="text-style-action-empty">
-                {t('editor.style.noActions', 'PS 액션 없음')}
+                {t('editor.style.noActions')}
               </div>
             ) : (
               psActionList.map((actionSet, si) => (

@@ -1,6 +1,6 @@
 // tests/unit/SearchUtils.test.js
 import { describe, it, expect } from 'vitest';
-import { SearchUtils } from '../../src/store/utils/SearchUtils';
+import { SearchUtils } from '../../src/utils/SearchUtils';
 
 // ═══════════════ removeSpaces ═══════════════
 describe('removeSpaces', () => {

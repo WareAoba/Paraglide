@@ -59,18 +59,23 @@
 .overlay-header-ps-icon {
   width: 24px;
   height: 24px;
-  opacity: 0.35;
+  opacity: 0.25;
   fill: var(--text-color);
   cursor: pointer;
   transition: opacity 0.2s, fill 0.2s;
 }
 
 .overlay-header-ps-icon:hover {
-  opacity: 0.6;
+  opacity: 0.4;
 }
 
 .overlay-header-ps-icon.active {
-  opacity: 0.85;
+  opacity: 0.55;
+  fill: var(--text-color);
+}
+
+.overlay-header-ps-icon.connected {
+  opacity: 0.6;
   fill: var(--primary-color);
 }
 
@@ -78,18 +83,18 @@
 .overlay-header-pause-btn {
   width: 20px;
   height: 20px;
-  opacity: 0.4;
+  opacity: 0.3;
   cursor: pointer;
   filter: var(--icon-filter, none);
   transition: opacity 0.2s;
 }
 
 .overlay-header-pause-btn:hover {
-  opacity: 0.7;
+  opacity: 0.5;
 }
 
 .overlay-header-pause-btn.paused {
-  opacity: 0.85;
+  opacity: 0.55;
 }
 
 /* 일시정지/재생 오버레이 백드롭 */
@@ -119,7 +124,7 @@
   width: 96px;
   height: 96px;
   filter: var(--icon-filter, none);
-  opacity: 0.85;
+  opacity: 0.5;
   cursor: pointer;
 }
 
@@ -281,17 +286,17 @@
 
 /* 전체 단락 스크롤 애니메이션 */
 @keyframes text-slide-up {
-  from { transform: translateY(42px); }
-  to { transform: translateY(0); }
+  from { transform: translateY(42px); opacity: 0.6; }
+  to { transform: translateY(0); opacity: 1; }
 }
 
 @keyframes text-slide-down {
-  from { transform: translateY(-42px); }
-  to { transform: translateY(0); }
+  from { transform: translateY(-42px); opacity: 0.6; }
+  to { transform: translateY(0); opacity: 1; }
 }
 
 .paragraphs-view.text-slide-up {
-  animation: text-slide-up 0.25s ease-out;
+  animation: text-slide-up 0.3s var(--ease-out-expo);
 }
 
 .paragraphs-view.text-slide-down {
@@ -321,6 +326,7 @@
   width: 14px;
   height: 14px;
   color: var(--primary-color);
+  opacity: 0.6;
   flex-shrink: 0;
   pointer-events: none;
 }

@@ -3,7 +3,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { createRequire } from 'module';
 
 const _require = createRequire(import.meta.url);
-const { ParaFileFormat, METADATA_DEFAULTS } = _require('../../src/store/utils/ParaFileFormat');
+const { ParaFileFormat, METADATA_DEFAULTS } = _require('../../src/utils/ParaFileFormat');
 
 describe('ParaFileFormat', () => {
 

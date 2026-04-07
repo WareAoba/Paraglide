@@ -2,16 +2,23 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
+import useAppStore from '../../stores/useAppStore';
 import '../../CSS/Views/ListView.css';
 import SimpleBar from 'simplebar-react';
 import '../../CSS/Controllers/Simplebar.css';
 
-function ListView({ paragraphs, metadata, currentParagraph, onParagraphSelect, theme, onCompleteWork }) {
+function ListView({ onParagraphSelect, onCompleteWork }) {
   const { t } = useTranslation();
   const listRef = useRef(null);
   const [commentPopup, setCommentPopup] = useState(false);
   const [popupPos, setPopupPos] = useState(null);
   const commentCircleRef = useRef(null);
+
+  // ─── Zustand 스토어에서 상태 구독 ───
+  const paragraphs = useAppStore((s) => s.paragraphs);
+  const metadata = useAppStore((s) => s.paragraphsMetadata);
+  const currentParagraph = useAppStore((s) => s.currentParagraph);
+  const theme = useAppStore((s) => s.theme);
 
   const currentComments = metadata[currentParagraph]?.comments;
 
@@ -90,12 +97,9 @@ function ListView({ paragraphs, metadata, currentParagraph, onParagraphSelect, t
   
     // SimpleBar의 실제 스크롤 컨테이너 접근
     const scrollContainer = listRef.current.getScrollElement();
-    const containerRect = scrollContainer.getBoundingClientRect();
-    const rect = currentElement.getBoundingClientRect();
-    const scrollTop = scrollContainer.scrollTop;
   
-    // 정확한 상대 위치 계산
-    const actualTop = rect.top - containerRect.top + scrollTop - 16;
+    // offsetTop은 스크롤 위치에 영향받지 않는 절대 오프셋
+    const actualTop = currentElement.offsetTop - 16;
     
     // CSS 변수 설정
     scrollContainer.style.setProperty('--current-element-top', `${actualTop}px`);

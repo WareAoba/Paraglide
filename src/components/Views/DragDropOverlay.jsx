@@ -1,31 +1,29 @@
 // DragDropOverlay.js
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
+import useAppStore from '../../stores/useAppStore';
+import useIconStore from '../../stores/useIconStore';
+import { ProgramStatus } from '../../constants';
 import '../../CSS/Views/DragDropOverlay.css';
-const { ipcRenderer } = window.require('electron');
 
-function DragDropOverlay({ isVisible, theme, isWorkMode }) {
+function DragDropOverlay() {
   const { t } = useTranslation();
-  const [fileIcon, setFileIcon] = useState(null);
-
-  useEffect(() => {
-    const loadIcon = async () => {
-      const iconPath = await ipcRenderer.invoke('get-icon-path', 'text-file.svg');
-      setFileIcon(iconPath);
-    };
-    loadIcon();
-  }, []);
+  const isDragging = useAppStore((s) => s.isDragging);
+  const programStatus = useAppStore((s) => s.programStatus);
+  const theme = useAppStore((s) => s.theme);
+  const icons = useIconStore((s) => s.icons);
+  const isWorkMode = programStatus === ProgramStatus.PROCESS || programStatus === ProgramStatus.PAUSE;
 
   const message = isWorkMode ? t('dragDrop.messageText') : t('dragDrop.message');
   const subMessage = isWorkMode ? t('dragDrop.subMessageText') : t('dragDrop.subMessage');
 
   return (
-    <div className={`drag-drop-overlay ${isVisible ? 'visible' : ''}`} data-theme={theme?.mode}>
+    <div className={`drag-drop-overlay ${isDragging ? 'visible' : ''}`} data-theme={theme?.mode}>
       <div className="drag-drop-backdrop" />
       <div className="drag-drop-content">
-        {fileIcon && (
+        {icons.textFile && (
           <img 
-            src={fileIcon} 
+            src={icons.textFile} 
             alt={t('dragDrop.fileIconAlt')} 
             className="drag-drop-icon"
           />

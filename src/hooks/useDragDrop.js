@@ -1,11 +1,11 @@
 // src/hooks/useDragDrop.js — 드래그&드롭 로직 커스텀 훅
 import { useCallback } from 'react';
 import useAppStore from '../stores/useAppStore';
+import { ProgramStatus } from '../constants';
 
 const { ipcRenderer } = window.require('electron');
 
 export default function useDragDrop() {
-  const { ProgramStatus } = useAppStore.getState();
   const setDragging = useAppStore((s) => s.setDragging);
   const setDragCounter = useAppStore((s) => s.setDragCounter);
 
@@ -52,10 +52,10 @@ export default function useDragDrop() {
         const filePath = txtFile.path;
 
         if (programStatus === ProgramStatus.EDIT) {
-          useAppStore.setState({
-            currentFilePath: filePath,
-            programStatus: ProgramStatus.EDIT,
-          });
+          // EDIT 모드: 파일 내용을 실제로 로드하여 에디터에 반영
+          const readResult = await ipcRenderer.invoke('read-file-decrypted', filePath);
+          if (!readResult.success) return;
+          await ipcRenderer.invoke('process-file-content', readResult.content, filePath);
         } else {
           const result = await ipcRenderer.invoke('open-file', {
             filePath,
@@ -87,7 +87,7 @@ export default function useDragDrop() {
         }
       }
     }
-  }, [ProgramStatus, setDragCounter, setDragging]);
+  }, [setDragCounter, setDragging]);
 
   return { handleDragOver, handleDragEnter, handleDragLeave, handleDrop };
 }

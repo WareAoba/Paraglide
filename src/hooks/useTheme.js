@@ -1,5 +1,6 @@
 // src/hooks/useTheme.js — 테마 계산 로직 커스텀 훅
 import { useCallback } from 'react';
+import { DEFAULT_ACCENT_COLOR } from '../constants';
 const { ipcRenderer } = window.require('electron');
 
 function hexToRgb(hex) {
@@ -42,7 +43,7 @@ function hexToHSL(hex) {
 }
 
 export default function useTheme() {
-  const themeCalc = useCallback((accentColor, defaultColor = '#007bff') => {
+  const themeCalc = useCallback((accentColor, defaultColor = DEFAULT_ACCENT_COLOR) => {
     try {
       const root = document.documentElement;
 

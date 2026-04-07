@@ -2,7 +2,7 @@
 import { describe, it, expect } from 'vitest';
 
 // TextProcessUtils는 CommonJS 모듈이므로 동적으로 로드
-const { TextProcessUtils } = require('../../src/store/utils/TextProcessUtils');
+const { TextProcessUtils } = require('../../src/utils/TextProcessUtils');
 
 // ═══════════════ extractPageNumber ═══════════════
 describe('extractPageNumber', () => {

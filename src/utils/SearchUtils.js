@@ -1,4 +1,4 @@
-// src/store/utils/SearchUtils.js — 검색 유틸리티 함수 (Search.jsx에서 추출)
+// src/utils/SearchUtils.js — 검색 유틸리티 함수 (Search.jsx에서 추출)
 import Hangul from 'hangul-js';
 
 export const SearchUtils = {

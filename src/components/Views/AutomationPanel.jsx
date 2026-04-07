@@ -1,57 +1,48 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
+import useEditorStore from '../../stores/useEditorStore';
 import '../../CSS/Views/AutomationPanel.css';
 import '../../CSS/Controllers/Checkbox.css';
 
-const STORAGE_KEY = 'paraglide-automation-auto';
-
-function AutomationPanel({ isOpen, onClose, actions, icons, anchorRef }) {
+function AutomationPanel({ isOpen, onClose, actions, anchorRef }) {
   const { t } = useTranslation();
   const [visible, setVisible] = useState(false);
   const [animating, setAnimating] = useState(false);
   const [panelPos, setPanelPos] = useState(null);
 
-  // ─── 자동 실행 설정 (localStorage 영속) ───
-  const [autoSettings, setAutoSettings] = useState(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-      if (saved && typeof saved === 'object') return { metadata: false, numbering: false, spread: false, dpi: false, ...saved };
-    } catch (_) { /* ignore */ }
-    return { metadata: false, numbering: false, spread: false, dpi: false };
-  });
-
-  // ─── 실행 중 상태 ───
-  const [running, setRunning] = useState({ metadata: false, numbering: false, spread: false, dpi: false });
+  // ─── Zustand 스토어에서 상태 구독 ───
+  const autoSettings = useEditorStore((s) => s.autoSettings);
+  const running = useEditorStore((s) => s.automationRunning);
+  const setAutomationRunning = useEditorStore((s) => s.setAutomationRunning);
 
   // ref로 최신값 노출 (콜백에서 참조)
   const autoSettingsRef = useRef(autoSettings);
   useEffect(() => {
     autoSettingsRef.current = autoSettings;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(autoSettings));
     if (actions?.onAutoSettingsChange) actions.onAutoSettingsChange(autoSettings);
   }, [autoSettings, actions]);
 
   const toggleAuto = useCallback((key) => {
-    setAutoSettings(prev => ({ ...prev, [key]: !prev[key] }));
+    useEditorStore.getState().toggleAutoSetting(key);
   }, []);
 
   const handleRun = useCallback(async (key) => {
     if (!actions?.[key] || running[key]) return;
-    setRunning(prev => ({ ...prev, [key]: true }));
+    setAutomationRunning((prev) => ({ ...prev, [key]: true }));
     try { await actions[key](); } catch (e) { console.error(`Automation [${key}] 실패:`, e); }
-    setRunning(prev => ({ ...prev, [key]: false }));
-  }, [actions, running]);
+    setAutomationRunning((prev) => ({ ...prev, [key]: false }));
+  }, [actions, running, setAutomationRunning]);
 
   const handleRunAll = useCallback(async () => {
     const keys = ['metadata', 'numbering', 'spread', 'dpi'];
     for (const key of keys) {
       if (!actions?.[key]) continue;
-      setRunning(prev => ({ ...prev, [key]: true }));
+      setAutomationRunning((prev) => ({ ...prev, [key]: true }));
       try { await actions[key](); } catch (e) { console.error(`Automation [${key}] 실패:`, e); }
-      setRunning(prev => ({ ...prev, [key]: false }));
+      setAutomationRunning((prev) => ({ ...prev, [key]: false }));
     }
-  }, [actions]);
+  }, [actions, setAutomationRunning]);
 
   // ─── 등장/퇴장 트랜지션 ───
   useEffect(() => {
@@ -171,7 +162,7 @@ function AutomationPanel({ isOpen, onClose, actions, icons, anchorRef }) {
 // 외부에서 autoSettings를 읽기 위한 헬퍼
 AutomationPanel.loadAutoSettings = function () {
   try {
-    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    const saved = JSON.parse(localStorage.getItem('paraglide-automation-auto'));
     if (saved && typeof saved === 'object') return { metadata: false, numbering: false, spread: false, dpi: false, ...saved };
   } catch (_) { /* ignore */ }
   return { metadata: false, numbering: false, spread: false, dpi: false };

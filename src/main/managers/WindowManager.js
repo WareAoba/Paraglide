@@ -7,17 +7,51 @@ const { state } = require('../state');
 const ThemeManager = require('./ThemeManager');
 const DialogManager = require('./DialogManager');
 
+// ─── 전체화면 감지 API (네이티브 FFI) ───
+let _checkFullscreen = null;
+try {
+  const koffi = require('koffi');
+  if (process.platform === 'win32') {
+    const shell32 = koffi.load('shell32.dll');
+    const SHQueryUserNotificationState = shell32.func('int __stdcall SHQueryUserNotificationState(_Out_ int *)');
+    _checkFullscreen = () => {
+      const out = [0];
+      SHQueryUserNotificationState(out);
+      // QUNS_BUSY=2, QUNS_RUNNING_D3D_FULL_SCREEN=3, QUNS_PRESENTATION_MODE=4
+      return out[0] >= 2 && out[0] <= 4;
+    };
+  } else if (process.platform === 'darwin') {
+    const cg = koffi.load('/System/Library/Frameworks/CoreGraphics.framework/CoreGraphics');
+    const CGMainDisplayID = cg.func('uint32_t CGMainDisplayID()');
+    const CGDisplayIsCaptured = cg.func('bool CGDisplayIsCaptured(uint32_t)');
+    const mainDisplay = CGMainDisplayID();
+    _checkFullscreen = () => CGDisplayIsCaptured(mainDisplay);
+  }
+} catch (err) {
+  console.warn('[WindowManager] 전체화면 감지 API 초기화 실패 — 비활성화:', err.message);
+}
+
 const WindowManager = {
+  // ─── 전체화면 감지 상태 ───
+  _fsTimer: null,
+  _fsIsFullscreen: false,
+  _fsOverlayHiddenByFullscreen: false,
+  _getThemeBackgroundColor() {
+    const mode = ThemeManager.getEffectiveMode();
+    return mode === 'dark' ? '#181818' : '#F2F3F7';
+  },
+
   createMainWindow() {
     state.mainWindow = new BrowserWindow({
       width: 600,
       height: 660,
-      minWidth: 400,
+      minWidth: 600,
       minHeight: 660,
       show: false,
       frame: false,
       title: 'Paraglide',
       icon: FILE_PATHS.icon,
+      backgroundColor: this._getThemeBackgroundColor(),
       webPreferences: {
         nodeIntegration: true,
         contextIsolation: false,
@@ -60,7 +94,14 @@ const WindowManager = {
           // 에디터 모드: 미저장 시 경고 한 번만 표시
           state.mainWindow.webContents.send('editor-is-saved-check');
           const isEditorSaved = await new Promise(resolve => {
-            ipcMain.once('editor-is-saved-result', (_, isSaved) => resolve(isSaved));
+            const timeout = setTimeout(() => {
+              ipcMain.removeAllListeners('editor-is-saved-result');
+              resolve(true); // 타임아웃 시 저장된 것으로 간주하여 종료 허용
+            }, 3000);
+            ipcMain.once('editor-is-saved-result', (_, isSaved) => {
+              clearTimeout(timeout);
+              resolve(isSaved);
+            });
           });
 
           if (!isEditorSaved) {
@@ -187,23 +228,103 @@ const WindowManager = {
       e.preventDefault();
       state.overlayWindow.hide();
     });
+
+    // 오버레이 렌더러 크래시 복구
+    state.overlayWindow.webContents.on('render-process-gone', (_, details) => {
+      console.error('[WindowManager] 오버레이 렌더러 프로세스 종료:', details.reason);
+      this._recreateOverlay();
+    });
+    state.overlayWindow.on('unresponsive', () => {
+      console.warn('[WindowManager] 오버레이 창 응답 없음 — 재생성');
+      this._recreateOverlay();
+    });
+  },
+
+  _recreateOverlay() {
+    try {
+      if (state.overlayWindow && !state.overlayWindow.isDestroyed()) {
+        state.overlayWindow.destroy();
+      }
+      state.overlayWindow = null;
+      this.createOverlayWindow();
+
+      const shouldShow = (state._globalState.programStatus === ProgramStatus.PROCESS ||
+                          state._globalState.programStatus === ProgramStatus.PAUSE) &&
+                        state._globalState.isOverlayVisible &&
+                        !this._fsIsFullscreen;
+      if (shouldShow) {
+        state.overlayWindow.once('ready-to-show', () => {
+          state.overlayWindow.showInactive();
+          this.updateWindowContent(state.overlayWindow, 'content-update');
+        });
+      }
+      console.log('[WindowManager] 오버레이 재생성 완료');
+    } catch (err) {
+      console.error('[WindowManager] 오버레이 재생성 실패:', err);
+    }
+  },
+
+  // ─── 전체화면 감지 (네이티브 FFI — Windows/macOS) ───
+  startFullscreenDetection() {
+    if (this._fsTimer || !_checkFullscreen) return;
+
+    this._fsTimer = setInterval(() => {
+      try {
+        const isFullscreen = _checkFullscreen();
+        if (isFullscreen !== this._fsIsFullscreen) {
+          this._fsIsFullscreen = isFullscreen;
+          this._onFullscreenChanged(isFullscreen);
+        }
+      } catch (err) {
+        console.error('[WindowManager] 전체화면 감지 오류:', err.message);
+        this.stopFullscreenDetection();
+      }
+    }, 1000);
+
+    console.log('[WindowManager] 전체화면 감지 시작');
+  },
+
+  stopFullscreenDetection() {
+    if (this._fsTimer) {
+      clearInterval(this._fsTimer);
+      this._fsTimer = null;
+    }
+    this._fsIsFullscreen = false;
+    this._fsOverlayHiddenByFullscreen = false;
+  },
+
+  _onFullscreenChanged(isFullscreen) {
+    if (!state.overlayWindow || state.overlayWindow.isDestroyed()) return;
+
+    if (isFullscreen) {
+      if (state.overlayWindow.isVisible()) {
+        state.overlayWindow.hide();
+        this._fsOverlayHiddenByFullscreen = true;
+        console.log('[WindowManager] 전체화면 감지 — 오버레이 숨김');
+      }
+    } else {
+      if (this._fsOverlayHiddenByFullscreen) {
+        this._fsOverlayHiddenByFullscreen = false;
+        const shouldShow = (state._globalState.programStatus === ProgramStatus.PROCESS ||
+                            state._globalState.programStatus === ProgramStatus.PAUSE) &&
+                          state._globalState.isOverlayVisible;
+        if (shouldShow) {
+          state.overlayWindow.showInactive();
+          this.updateWindowContent(state.overlayWindow, 'content-update');
+          console.log('[WindowManager] 전체화면 해제 — 오버레이 복원');
+        }
+      }
+    }
   },
 
   async saveOverlayBounds() {
     if (!state.overlayWindow) return;
     const bounds = state.overlayWindow.getBounds();
     
-    // overlay.bounds로 저장
-    const config = {
-      overlay: {
-        bounds: bounds
-      }
-    };
-    
     state.setOverlayBounds(bounds);
     // Lazy require to avoid circular dependency
     const FileManager = require('./FileManager');
-    await FileManager.saveConfig(config);
+    await FileManager.saveConfig();
   },
 
   expandWindowForImage(targetWidth) {
@@ -274,7 +395,7 @@ const WindowManager = {
         currentMetadata: textState.paragraphsMetadata[currentParagraph],
         currentNumber: { ...pageInfo, display },
         isPaused: state.globalState.isPaused,
-        pluginConnected: state._photoshopModeActive,
+        pluginModeActive: state._photoshopModeActive,
         pluginServer: state.config.pluginServer,
         theme: {
           mode: ThemeManager.getEffectiveMode(),

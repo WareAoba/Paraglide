@@ -32,9 +32,9 @@
 
 .listview-item {
   position: relative;
-  height: 36px; /* 아이템 높이 고정 */
+  height: 36px;
   padding: 0.5rem;
-  margin: 0.25rem auto; /* 아이템 간격 */
+  margin: 0.25rem auto;
   cursor: pointer;
   white-space: nowrap;
   overflow: hidden;
@@ -46,9 +46,9 @@
   color: var(--text-color);
   opacity: 0.75;
   user-select: none;
-  transform: translateX(0); /* 초기 위치 */
-  transition: padding-left 0.2s cubic-bezier(0.4, 0.0, 0.2, 1),
-              opacity 0.2s ease; /* transform 대신 padding 전환 */
+  transform: translateX(0);
+  transition: padding-left var(--duration-moderate) var(--ease-out-expo),
+              opacity var(--duration-normal) var(--ease-smooth);
   border-radius: 4px;
 }
 
@@ -65,7 +65,7 @@
   height: 36px;
   background-color: var(--primary-color);
   border-radius: 4px;
-  transition: transform 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
+  transition: transform var(--duration-moderate) var(--ease-out-expo);
   transform: translateY(calc(var(--current-element-top) + 16px));
   z-index: 1;
   pointer-events: none;
@@ -81,7 +81,7 @@
   color: var(--primary-color);
   text-align: center;
   line-height: 36px;
-  transition: transform 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
+  transition: transform var(--duration-moderate) var(--ease-out-expo);
   transform: translateY(var(--current-element-top, 0));
   z-index: 2;
   pointer-events: none;
@@ -124,14 +124,21 @@
   8px 8px 10px var(--container-shadow-up),
   -8px -8px 10px var(--container-shadow-down),
   inset 0 0 0 transparent, inset 0 0 0 transparent;
-  transition: all 0.3s ease;
+  transition: box-shadow var(--duration-normal) var(--ease-smooth),
+              transform var(--duration-normal) var(--ease-out-back);
 }
 
 .complete-work-button:hover {
+  transform: translateY(-1px);
   box-shadow:
   0 0 0 transparent, 0 0 0 transparent,
   inset 4px 4px 8px rgba(0, 0, 0, 0.2),
   inset -4px -4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.complete-work-button:active {
+  transform: translateY(0) scale(0.98);
+  transition: transform var(--duration-instant) var(--ease-snappy);
 }
 
 /* 주석 알림 서클 */
@@ -168,13 +175,16 @@
   color: var(--text-color);
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.18s ease, transform 0.18s ease;
+  transition: opacity var(--duration-normal) var(--ease-out-expo),
+              transform var(--duration-normal) var(--ease-out-back);
   cursor: pointer;
+  transform: translateY(4px) scale(0.97);
 }
 
 .listview-comment-popup.visible {
   opacity: 1;
   pointer-events: auto;
+  transform: translateY(0) scale(1);
 }
 
 .listview-comment-popup::after {

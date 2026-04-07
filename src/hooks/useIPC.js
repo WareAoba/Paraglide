@@ -1,6 +1,7 @@
 // src/hooks/useIPC.js — IPC 이벤트 구독 및 Zustand 자동 동기화 훅
 import { useEffect, useRef } from 'react';
 import useAppStore from '../stores/useAppStore';
+import { DEFAULT_VIEW_MODE } from '../constants';
 
 const { ipcRenderer } = window.require('electron');
 
@@ -17,6 +18,7 @@ export default function useIPC(themeCalc, searchRef) {
   useEffect(() => {
     if (initialized.current) return;
     initialized.current = true;
+    let cancelled = false;
 
     const store = useAppStore;
 
@@ -44,16 +46,20 @@ export default function useIPC(themeCalc, searchRef) {
         ]);
       }
 
+      // StrictMode cleanup 후 실행되는 비동기 결과 무시
+      if (cancelled) return;
+
       // 기본 상태 설정 (부분 실패해도 가능한 만큼 적용)
       store.setState({
         ...(initialState && {
           programStatus: initialState.programStatus,
           isOverlayVisible: initialState.isOverlayVisible,
         }),
-        viewMode: savedSettings?.viewMode || 'overview',
+        viewMode: savedSettings?.viewMode || DEFAULT_VIEW_MODE,
         ...(initialTheme && { theme: initialTheme }),
         pluginServer: savedSettings?.pluginServer ?? false,
-        pluginConnected: (savedSettings?.pluginServer && savedSettings?.pluginConnected) ?? false
+        pluginConnected: (savedSettings?.pluginServer && savedSettings?.pluginConnected) ?? false,
+        pluginModeActive: savedSettings?.pluginModeActive ?? false
       });
 
       // 테마 계산 및 로고 로드
@@ -75,6 +81,9 @@ export default function useIPC(themeCalc, searchRef) {
           slotOrder: Array.isArray(slotOrder) ? slotOrder : null
         });
       } catch { /* ignore */ }
+
+      // 렌더러 준비 완료 알림 — 파일 연결로 실행된 경우 이 시점에 파일이 열림
+      ipcRenderer.invoke('renderer-ready').catch(() => {});
     };
 
     const loadLogo = async () => {
@@ -111,11 +120,16 @@ export default function useIPC(themeCalc, searchRef) {
       }
     };
 
-    const handleLoadFile = () => {
-      // trigger-load-file → 파일 로드 핸들러
-      const { handleLoadFile } = store.getState();
-      if (typeof handleLoadFile === 'function') {
-        handleLoadFile();
+    const handleLoadFile = async () => {
+      // trigger-load-file → Ctrl+O 파일 열기
+      const { programStatus, isEditorSaved } = store.getState();
+      if (programStatus === 'edit' && !isEditorSaved) {
+        const saveChoice = await ipcRenderer.invoke('show-dialog', 'UNSAVED_CHANGES');
+        if (saveChoice === 1) return;
+      }
+      const result = await ipcRenderer.invoke('open-file', { source: 'dialog' });
+      if (result?.success) {
+        store.setState({ isSidebarVisible: false });
       }
     };
 
@@ -185,6 +199,7 @@ export default function useIPC(themeCalc, searchRef) {
 
     // 클린업
     return () => {
+      cancelled = true;
       ipcRenderer.removeListener('state-update', handleStateUpdate);
       ipcRenderer.removeListener('theme-update', handleThemeUpdate);
       ipcRenderer.removeListener('view-mode-update', handleViewModeUpdate);
@@ -200,6 +215,7 @@ export default function useIPC(themeCalc, searchRef) {
       ipcRenderer.removeListener('style-actions-updated', handleStyleActionsUpdated);
       ipcRenderer.removeListener('slot-order-updated', handleSlotOrderUpdated);
       ipcRenderer.removeListener('para-image-missing', handleParaImageMissing);
+      // StrictMode 재마운트 시 재초기화 허용을 위해 플래그 리셋
       initialized.current = false;
     };
   }, [themeCalc, searchRef]);

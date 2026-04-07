@@ -14,10 +14,12 @@
   border-radius: 0 16px 16px 0;
   background-color: var(--bg-color);
   border-right: none;
-  border-radius: 0 16px 16px 0;  /* 우측 상/하단만 둥글게 */
+  border-radius: 0 16px 16px 0;
   transform: translateX(-100%);
-  will-change: transform;
-  transition: all 0.3s ease;
+  will-change: transform, opacity;
+  transition: transform var(--duration-exit) var(--ease-snappy),
+              opacity var(--duration-exit) var(--ease-snappy),
+              box-shadow var(--duration-moderate) var(--ease-smooth);
   box-shadow:
   0 0 0 transparent, 0 0 0 transparent;
   z-index: 1000;
@@ -56,8 +58,12 @@
 .sidebar.visible {
   box-shadow:
   0 0 0 transparent,
-  40px 0 80px rgba(0, 0, 0, 0.1);
+  24px 0 48px rgba(0, 0, 0, 0.08),
+  8px 0 16px rgba(0, 0, 0, 0.04);
   opacity: 1;
+  transition: transform var(--duration-enter) var(--ease-out-expo),
+              opacity var(--duration-moderate) var(--ease-out-expo),
+              box-shadow var(--duration-slow) var(--ease-smooth);
 }
 
 /* 오버레이 */
@@ -68,19 +74,32 @@
   right: 0;
   bottom: 0;
   background-color: rgba(0, 0, 0, 0);
+  backdrop-filter: blur(0px);
+  -webkit-backdrop-filter: blur(0px);
   z-index: 999;
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
-  transition: all 0.3s ease;  /* App.css의 트랜지션 변수 재사용 */
+  transition: background-color var(--duration-exit) var(--ease-snappy),
+              backdrop-filter var(--duration-exit) var(--ease-snappy),
+              -webkit-backdrop-filter var(--duration-exit) var(--ease-snappy),
+              opacity var(--duration-exit) var(--ease-snappy),
+              visibility 0s linear var(--duration-exit);
 }
 
 /* 사이드바가 열릴 때 오버레이 표시 */
 .sidebar-overlay.visible {
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
   opacity: 1;
   visibility: visible;
-  pointer-events: auto;  /* 클릭 이벤트 활성화 */
+  pointer-events: auto;
+  transition: background-color var(--duration-moderate) var(--ease-out-expo),
+              backdrop-filter var(--duration-moderate) var(--ease-out-expo),
+              -webkit-backdrop-filter var(--duration-moderate) var(--ease-out-expo),
+              opacity var(--duration-moderate) var(--ease-out-expo),
+              visibility 0s linear 0s;
 }
 
 /* 사이드바 표시 상태 */
@@ -123,7 +142,7 @@
 }
 
 .sidebar-close-button {
-  position: relative;  /* absolute 제거 */
+  position: relative;
   background: none;
   border: none;
   padding: 0;
@@ -133,14 +152,16 @@
   align-items: center;
   justify-content: center;
   border-radius: 15%;
-  transition: all 0.3s ease;
+  transition: transform var(--duration-normal) var(--ease-out-back),
+              box-shadow var(--duration-normal) var(--ease-smooth),
+              background var(--duration-normal) var(--ease-smooth);
   width: var(--btn-size);
   height: var(--btn-size);
   margin: 0;
 }
 
 .sidebar-close-button:hover {
-  scale: 1.1;
+  transform: scale(1.1);
   background: var(--bg-gradient);
   box-shadow:
   2px 2px 6px var(--container-shadow-up),

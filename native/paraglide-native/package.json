@@ -1,0 +1,13 @@
+{
+  "name": "paraglide-native",
+  "version": "1.0.0",
+  "description": "Native clipboard monitoring and key injection for Paraglide",
+  "main": "./build/Release/paraglide_native.node",
+  "private": true,
+  "dependencies": {
+    "node-addon-api": "^8.3.0"
+  },
+  "scripts": {
+    "install": "node-gyp rebuild"
+  }
+}

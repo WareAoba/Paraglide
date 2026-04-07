@@ -1,15 +1,10 @@
 // src/stores/useAppStore.js — 앱 핵심 상태 (Zustand)
 import { create } from 'zustand';
-
-// ProgramStatus: src/main/constants.js와 동일한 값 유지
-// (메인=CJS, 렌더러=ESM 경계로 인해 런타임 공유 불가)
-const ProgramStatus = {
-  READY: 'Ready',
-  PROCESS: 'Process',
-  PAUSE: 'Pause',
-  LOADING: 'Loading',
-  EDIT: 'Edit'
-};
+import {
+  ProgramStatus,
+  DEFAULT_ACCENT_COLOR,
+  DEFAULT_VIEW_MODE,
+} from '../constants';
 
 const useAppStore = create((set, get) => ({
   // ─── 프로그램 상태 ───
@@ -46,15 +41,31 @@ const useAppStore = create((set, get) => ({
 
   // ─── 알림 상태 ───
   toastMessage: null,
+  toastVisible: false,
+
+  // ─── 윈도우 상태 ───
+  isMaximized: false,
+
+  // ─── 최근 파일 목록 ───
+  recentFiles: [],
 
   // ─── 테마 상태 ───
   theme: {
     mode: null,
-    accentColor: '#007bff',
+    accentColor: DEFAULT_ACCENT_COLOR,
   },
 
-  // ─── 상수 ───
-  ProgramStatus,
+  // ─── 오버레이 전용 상태 (별도 윈도우에서 사용) ───
+  overlayContent: {
+    previous: [],
+    current: null,
+    next: [],
+    currentNumber: null,
+    currentParagraph: null,
+    currentMetadata: null,
+    _animDirection: '',
+    _animKey: 0,
+  },
 
   // ─── Main Process → Renderer 상태 동기화 ───
   syncFromMain: (updatedState) => set((prev) => {
@@ -170,6 +181,41 @@ const useAppStore = create((set, get) => ({
   setSlotOrder: (order) => set({ slotOrder: order }),
   setPendingImagePaths: (paths) => set({ pendingImagePaths: paths }),
   setToastMessage: (msg) => set({ toastMessage: msg }),
+  setToastVisible: (visible) => set({ toastVisible: visible }),
+  setIsMaximized: (maximized) => set({ isMaximized: maximized }),
+  setRecentFiles: (files) => set({ recentFiles: files }),
+
+  // ─── 오버레이 콘텐츠 동기화 (paragraphs-updated IPC용) ───
+  syncOverlayContent: (data) => set((prev) => {
+    const oc = prev.overlayContent;
+    const paragraphChanged =
+      oc.currentParagraph !== null &&
+      data.currentParagraph !== undefined &&
+      data.currentParagraph !== null &&
+      oc.currentParagraph !== data.currentParagraph;
+
+    return {
+      // 전역 상태 동기화
+      isPaused: data.isPaused ?? prev.isPaused,
+      pluginServer: data.pluginServer ?? prev.pluginServer,
+      pluginModeActive: data.pluginModeActive ?? prev.pluginModeActive,
+      theme: (data.theme && typeof data.theme === 'object' && data.theme.mode)
+        ? data.theme : prev.theme,
+      // 오버레이 전용 콘텐츠
+      overlayContent: {
+        previous: data.previous ?? oc.previous,
+        current: data.current ?? oc.current,
+        next: data.next ?? oc.next,
+        currentNumber: data.currentNumber ?? oc.currentNumber,
+        currentParagraph: data.currentParagraph ?? oc.currentParagraph,
+        currentMetadata: data.currentMetadata ?? oc.currentMetadata,
+        _animDirection: paragraphChanged
+          ? (data.currentParagraph > oc.currentParagraph ? 'text-slide-up' : 'text-slide-down')
+          : oc._animDirection,
+        _animKey: paragraphChanged ? oc._animKey + 1 : oc._animKey,
+      }
+    };
+  }),
 
   // 복합 상태 업데이트
   updateAfterFileLoad: (newState) => set((prev) => ({
@@ -180,6 +226,7 @@ const useAppStore = create((set, get) => ({
 
   resetToReady: () => set({
     paragraphs: [],
+    paragraphsMetadata: [],
     currentParagraph: 0,
     currentNumber: null,
     currentFilePath: null,

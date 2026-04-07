@@ -11,7 +11,7 @@ export default defineConfig({
     },
     coverage: {
       provider: 'v8',
-      include: ['src/store/utils/**', 'src/main/**'],
+      include: ['src/utils/**', 'src/main/**'],
     },
   },
 });

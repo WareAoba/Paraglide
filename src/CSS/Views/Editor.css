@@ -163,7 +163,9 @@
   border-radius: 3px;
   background: color-mix(in srgb, var(--text-color) 18%, transparent);
   cursor: pointer;
-  transition: background 0.25s ease, width 0.15s ease, right 0.15s ease;
+  transition: background var(--duration-normal) var(--ease-smooth),
+              width var(--duration-fast) var(--ease-out-back),
+              right var(--duration-fast) var(--ease-out-back);
 }
 .editor-scrollbar-thumb:hover {
   background: var(--primary-color);
@@ -210,7 +212,9 @@
   border-radius: 8px;
   width: 30px;
   height: 30px;
-  transition: all 0.2s ease;
+  transition: background var(--duration-normal) var(--ease-smooth),
+              box-shadow var(--duration-normal) var(--ease-smooth),
+              transform var(--duration-normal) var(--ease-out-back);
 }
 
 .editor-toolbar-icon img {
@@ -218,7 +222,8 @@
   height: 16px;
   filter: var(--icon-filter);
   opacity: 0.7;
-  transition: opacity 0.15s ease;
+  transition: opacity var(--duration-fast) var(--ease-smooth),
+              filter var(--duration-fast) var(--ease-smooth);
 }
 
 .editor-toolbar-icon:hover {
@@ -234,7 +239,8 @@
 }
 
 .editor-toolbar-icon:active {
-  transform: scale(0.92);
+  transform: scale(0.88);
+  transition: transform var(--duration-instant) var(--ease-snappy);
   box-shadow:
     inset 3px 3px 6px var(--container-shadow-up),
     inset -3px -3px 6px var(--container-shadow-down);
@@ -289,15 +295,22 @@
   overflow: hidden;
   /* 열기/닫기 트랜지션 */
   opacity: 0;
-  transform: translateX(8px) scale(0.96);
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  transform: translateX(8px) scale(0.92);
+  filter: blur(4px);
+  transition: opacity var(--duration-exit) var(--ease-snappy),
+              transform var(--duration-exit) var(--ease-snappy),
+              filter var(--duration-exit) var(--ease-snappy);
   pointer-events: none;
 }
 
 .text-macro-popup.visible {
   opacity: 1;
   transform: translateX(0) scale(1);
+  filter: blur(0px);
   pointer-events: auto;
+  transition: opacity var(--duration-normal) var(--ease-out-expo),
+              transform var(--duration-moderate) var(--ease-out-back),
+              filter var(--duration-normal) var(--ease-out-expo);
 }
 
 .text-macro-header {
@@ -655,6 +668,12 @@
   opacity: 0.4;
   padding: 1px 0;
   cursor: default;
+}
+
+/* 스타일 비활성 (액션 미지정, .para 파일에서 읽은 경우 등) */
+.para-indicator-style.inactive {
+  color: var(--text-color);
+  opacity: 0.2;
 }
 
 /* ═══════════════ 텍스트 스타일 팝업 ═══════════════ */
@@ -1066,7 +1085,8 @@
 /* ─── 메타데이터 패널 ─── */
 .meta-panel {
   flex-shrink: 0;
-  width: 200px;
+  width: 0;
+  opacity: 0;
   display: flex;
   flex-direction: column;
   border-radius: 8px;
@@ -1075,11 +1095,40 @@
     4px 4px 8px var(--container-shadow-up),
     -4px -4px 8px var(--container-shadow-down);
   overflow: hidden;
+  transition: width 0.25s ease, opacity 0.25s ease;
+  pointer-events: none;
+}
+
+.meta-panel.visible {
+  width: 200px;
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .meta-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   padding: 0.5rem 0.65rem;
   border-bottom: 1px solid var(--border-color);
+}
+
+.meta-panel-close-btn {
+  background: none;
+  border: none;
+  padding: 0 2px;
+  cursor: pointer;
+  font-size: 0.6rem;
+  color: var(--text-color);
+  opacity: 0.35;
+  border-radius: 3px;
+  line-height: 1;
+  transition: opacity 0.15s, background 0.15s;
+}
+
+.meta-panel-close-btn:hover {
+  opacity: 0.9;
+  background: var(--bg-color);
 }
 
 .meta-panel-title {
@@ -1131,4 +1180,286 @@
 
 .meta-panel-input:focus {
   border-color: var(--primary-color);
+}
+
+.meta-panel-tree {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.meta-panel-tree-item {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.35rem;
+  border-radius: 4px;
+  font-size: 0.68rem;
+  color: var(--text-color);
+  opacity: 0.85;
+  overflow: hidden;
+  cursor: default;
+}
+
+.meta-panel-tree-item:hover {
+  background: var(--bg-color);
+  opacity: 1;
+}
+
+.meta-panel-tree-icon {
+  flex-shrink: 0;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+}
+
+.meta-panel-tree-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.meta-panel-empty {
+  font-size: 0.65rem;
+  color: var(--text-color);
+  opacity: 0.3;
+  font-style: italic;
+}
+
+.meta-panel-tree-item {
+  position: relative;
+}
+
+.meta-panel-tree-actions {
+  display: none;
+  margin-left: auto;
+  flex-shrink: 0;
+  gap: 2px;
+}
+
+.meta-panel-tree-item:hover .meta-panel-tree-actions {
+  display: flex;
+}
+
+.meta-panel-action-btn {
+  background: none;
+  border: none;
+  padding: 0 3px;
+  cursor: pointer;
+  font-size: 0.62rem;
+  color: var(--text-color);
+  opacity: 0.45;
+  border-radius: 3px;
+  line-height: 1;
+  transition: opacity 0.15s, background 0.15s;
+}
+
+.meta-panel-action-btn:hover {
+  opacity: 1;
+  background: var(--bg-color);
+}
+
+.meta-panel-action-delete:hover {
+  color: #e55;
+}
+
+.meta-panel-inline-input {
+  flex: 1;
+  min-width: 0;
+  background: var(--bg-color);
+  border: 1px solid var(--primary-color);
+  border-radius: 4px;
+  padding: 0.15rem 0.3rem;
+  font-size: 0.68rem;
+  color: var(--text-color);
+  outline: none;
+  font-family: inherit;
+}
+
+.meta-panel-add-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin-top: 0.25rem;
+  padding: 0.25rem 0;
+  background: none;
+  border: 1px dashed var(--border-color);
+  border-radius: 5px;
+  font-size: 0.62rem;
+  color: var(--text-color);
+  opacity: 0.4;
+  cursor: pointer;
+  transition: opacity 0.15s, border-color 0.15s;
+}
+
+.meta-panel-add-btn:hover {
+  opacity: 0.8;
+  border-color: var(--primary-color);
+}
+
+/* ═══════════════ 암호화 패널 팝업 ═══════════════ */
+
+.editor-toolbar-icon-text {
+  font-size: 14px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-color);
+  opacity: 0.7;
+  transition: opacity var(--duration-fast) var(--ease-smooth),
+              color var(--duration-fast) var(--ease-smooth);
+}
+
+.editor-toolbar-icon:hover .editor-toolbar-icon-text {
+  color: var(--primary-color);
+  opacity: 1;
+}
+
+.editor-toolbar-icon.active .editor-toolbar-icon-text {
+  color: var(--primary-color);
+  opacity: 1;
+}
+
+.encryption-panel-popup {
+  position: fixed;
+  z-index: 9999;
+  width: 240px;
+  background: var(--container-bg);
+  border: none;
+  border-radius: 10px;
+  box-shadow:
+    6px 6px 12px var(--container-shadow-up),
+    -6px -6px 12px var(--container-shadow-down);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateX(8px) scale(0.92);
+  filter: blur(4px);
+  transition: opacity var(--duration-exit) var(--ease-snappy),
+              transform var(--duration-exit) var(--ease-snappy),
+              filter var(--duration-exit) var(--ease-snappy);
+  pointer-events: none;
+}
+
+.encryption-panel-popup.visible {
+  opacity: 1;
+  transform: translateX(0) scale(1);
+  filter: blur(0px);
+  pointer-events: auto;
+  transition: opacity var(--duration-normal) var(--ease-out-expo),
+              transform var(--duration-moderate) var(--ease-out-back),
+              filter var(--duration-normal) var(--ease-out-expo);
+}
+
+.encryption-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.75rem;
+  border-bottom: none;
+  box-shadow: inset 0 -2px 4px var(--container-shadow-up);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-color);
+  opacity: 0.7;
+  user-select: none;
+}
+
+.encryption-panel-body {
+  padding: 0.6rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.encryption-panel-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.encryption-panel-label {
+  font-size: 0.8rem;
+  color: var(--text-color);
+  opacity: 0.85;
+}
+
+.encryption-panel-password-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.encryption-panel-input-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.encryption-panel-input {
+  flex: 1;
+  padding: 6px 8px;
+  font-size: 0.8rem;
+  font-family: inherit;
+  border: none;
+  border-radius: 6px;
+  background: var(--container-bg);
+  color: var(--text-color);
+  outline: none;
+  box-shadow:
+    inset 2px 2px 4px var(--container-shadow-up),
+    inset -2px -2px 4px var(--container-shadow-down);
+  transition: box-shadow var(--duration-normal) var(--ease-smooth);
+}
+
+.encryption-panel-input:focus {
+  box-shadow:
+    inset 2px 2px 4px var(--container-shadow-up),
+    inset -2px -2px 4px var(--container-shadow-down),
+    0 0 0 1.5px var(--primary-color);
+}
+
+.encryption-panel-input.invalid {
+  box-shadow:
+    inset 2px 2px 4px var(--container-shadow-up),
+    inset -2px -2px 4px var(--container-shadow-down),
+    0 0 0 1.5px #e74c3c;
+}
+
+.encryption-panel-toggle-pw {
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: var(--text-color);
+  opacity: 0.5;
+  padding: 4px;
+  border-radius: 4px;
+  transition: opacity var(--duration-fast) var(--ease-smooth);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.encryption-panel-toggle-pw .encryption-pw-icon {
+  width: 14px;
+  height: 14px;
+  filter: var(--icon-filter);
+}
+
+.encryption-panel-toggle-pw:hover {
+  opacity: 0.9;
+}
+
+.encryption-panel-hint {
+  font-size: 0.65rem;
+  color: #e74c3c;
+  opacity: 0.8;
 }

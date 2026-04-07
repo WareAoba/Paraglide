@@ -3,32 +3,47 @@ import React, { useEffect, useCallback } from 'react';
 import { CSSTransition } from 'react-transition-group';
 import Panel from './sidebar/Panel';
 import Search from './sidebar/Search';
+import useAppStore from '../stores/useAppStore';
+import useIconStore from '../stores/useIconStore';
+import { ProgramStatus } from '../constants';
 import '../CSS/Sidebar.css';
 import '../CSS/Controllers/ReactContexify.css';
 const { ipcRenderer } = window.require('electron');
 const path = window.require('path');
 
 function Sidebar({
-  isVisible,
-  onClose,
-  currentFilePath,
-  theme,
-  status,
-  icons,
-  titlePath,
-  currentFile,
-  onToggleSearch,
-  onShowDebugConsole,
-  paragraphs,
-  metadata,
-  isSearchVisible,
+  onFileSelect,
   onSelect,
-  wasInitiallySidebarOpen,
-  ProgramStatus,
-  isEditorSaved
+  onShowDebugConsole,
 }) {
-  const [files, setFiles] = React.useState([]);
+  // ─── Zustand 스토어에서 상태 구독 ───
+  const isVisible = useAppStore((s) => s.isSidebarVisible);
+  const isSearchVisible = useAppStore((s) => s.isSearchVisible);
+  const wasInitiallySidebarOpen = useAppStore((s) => s.wasInitiallySidebarOpen);
+  const theme = useAppStore((s) => s.theme);
+  const programStatus = useAppStore((s) => s.programStatus);
+  const currentFilePath = useAppStore((s) => s.currentFilePath);
+  const titlePath = useAppStore((s) => s.titlePath);
+  const paragraphs = useAppStore((s) => s.paragraphs);
+  const paragraphsMetadata = useAppStore((s) => s.paragraphsMetadata);
+  const currentParagraph = useAppStore((s) => s.currentParagraph);
+  const isEditorSaved = useAppStore((s) => s.isEditorSaved);
+  const recentFiles = useAppStore((s) => s.recentFiles);
+  const setRecentFiles = useAppStore((s) => s.setRecentFiles);
+  const closeSidebar = useAppStore((s) => s.closeSidebar);
+  const toggleSearch = useAppStore((s) => s.toggleSearch);
+  const icons = useIconStore((s) => s.icons);
+
   const [shouldRender, setShouldRender] = React.useState(false);
+
+  const currentFile = (programStatus === ProgramStatus.PROCESS || programStatus === ProgramStatus.PAUSE) ? {
+    name: path.basename(currentFilePath || ''),
+    path: currentFilePath,
+    currentPage: paragraphsMetadata[currentParagraph]?.pageNumber || 1,
+    totalPages: Math.max(...paragraphsMetadata
+      .filter(meta => meta?.pageNumber != null)
+      .map(meta => meta.pageNumber)) || 1
+  } : null;
 
   React.useEffect(() => {
     if (isVisible) {
@@ -61,41 +76,38 @@ function Sidebar({
           filePath: filePath,
           currentPageNumber: data.lastPosition?.pageNumber || null,
           currentParagraph: data.lastPosition?.currentParagraph,
+          encrypted: !!data.encrypted,
+          hasSavedPassword: !!data.savedPassword,
           timestamp: data.timestamp,
         }))
         .sort((a, b) => b.timestamp - a.timestamp);
 
-      setFiles(processedFiles);
+      setRecentFiles(processedFiles);
     } catch (error) {
       console.error('파일 기록 로드 실패:', error);
-      setFiles([]);
+      setRecentFiles([]);
     }
   };
 
   const handleSearchSelect = useCallback((result) => {
     if (typeof result === 'number') {
       onSelect(result);
-      onToggleSearch(false);
-      onClose();
+      toggleSearch(false);
+      closeSidebar();
     }
-  }, [onSelect, onToggleSearch, onClose]);
+  }, [onSelect, toggleSearch, closeSidebar]);
 
   const handleClose = () => {
-    // 검색이 열려있을 때
     if (isSearchVisible) {
-      // 사이드바를 통해 검색을 열었다면 검색만 닫기
       if (wasInitiallySidebarOpen) {
-        onToggleSearch(false);
+        toggleSearch(false);
         return;
       }
-      // 직접 검색을 열었다면 모두 닫기
-      onToggleSearch(false);
-      onClose();
+      toggleSearch(false);
+      closeSidebar();
       return;
     }
-    
-    // 검색이 닫혀있을 때는 사이드바 닫기
-    onClose();
+    closeSidebar();
   };
 
   useEffect(() => {
@@ -121,7 +133,7 @@ function Sidebar({
         <div className="sidebar-header">
           <button className="sidebar-close-button" onClick={handleClose}>
             <img 
-              src={isSearchVisible && wasInitiallySidebarOpen ? icons?.backIcon : icons?.sidebarUnfold}
+              src={isSearchVisible && wasInitiallySidebarOpen ? icons?.back : icons?.sidebarUnfold}
               alt="닫기" 
               className="sidebar-icon-button"
               style={isSearchVisible && wasInitiallySidebarOpen ? { transform: 'scale(0.9)' } : undefined}
@@ -148,17 +160,9 @@ function Sidebar({
               >
                 <Panel
                   currentFile={currentFile}
-                  currentFilePath={currentFilePath}
-                  status={status}
-                  icons={icons}
-                  onToggleSearch={onToggleSearch}
                   onShowDebugConsole={onShowDebugConsole}
-                  onClose={onClose}
-                  files={files}
-                  theme={theme}
+                  onClose={closeSidebar}
                   loadFileHistory={loadFileHistory}
-                  ProgramStatus={ProgramStatus}
-                  isEditorSaved={isEditorSaved}
                 />
               </CSSTransition>
             </>
@@ -173,17 +177,7 @@ function Sidebar({
             <div className="search-wrapper">
               <div className="search-wrapper-wrapper">
                 <Search
-                  paragraphs={paragraphs}
                   onSelect={(index) => handleSearchSelect(index)}
-                  metadata={metadata}
-                  isVisible={isSearchVisible}
-                  onClose={() => {
-                    onToggleSearch(false);
-                    onClose();
-                  }}
-                  icons={icons}
-                  theme={theme}
-                  isSidebarVisible={isVisible}
                 />
               </div>
             </div>
@@ -191,7 +185,7 @@ function Sidebar({
         </div>
       </div>
 
-      <div className={`sidebar-overlay ${isVisible ? 'visible' : ''}`} onClick={onClose} />
+      <div className={`sidebar-overlay ${isVisible ? 'visible' : ''}`} onClick={closeSidebar} />
     </>
   );
 }

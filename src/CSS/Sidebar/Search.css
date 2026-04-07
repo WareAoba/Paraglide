@@ -34,15 +34,19 @@
 .search-box {
   width: min(90%, 360px);
   background-color: var(--background-color);
-  transform: translateY(-20px);
+  transform: translateY(-12px) scale(0.98);
   opacity: 0;
-  transition: all 0.3s ease;
-  box-sizing: border-box;  /* 패딩을 너비에 포함 */
+  filter: blur(2px);
+  transition: transform var(--duration-moderate) var(--ease-out-expo),
+              opacity var(--duration-normal) var(--ease-out-expo),
+              filter var(--duration-normal) var(--ease-out-expo);
+  box-sizing: border-box;
 }
 
 .search-overlay.active .search-box {
-  transform: translateY(0);
+  transform: translateY(0) scale(1);
   opacity: 1;
+  filter: blur(0px);
 }
 
 .search-box input {
@@ -101,9 +105,9 @@
   color: var(--text-color);
   width: 100%;
   border: 1px solid transparent;
-  box-sizing: border-box; /* 테두리를 너비/높이 계산에 포함 */
+  box-sizing: border-box;
   padding: 0.7rem;
-  padding-left: 32px; /* 아이콘 + 여유 공간 */
+  padding-left: 32px;
   padding-right: 32px;
   border-radius: 2rem;
   background: var(--bg-color);
@@ -111,11 +115,13 @@
     20px 20px 40px var(--container-shadow-up),
     -20px -20px 40px var(--container-shadow-down),
     inset 0 0 0 transparent, inset 0 0 0 transparent;
-   transition: all 0.3s ease;
+   transition: box-shadow var(--duration-moderate) var(--ease-smooth),
+               border-color var(--duration-normal) var(--ease-smooth),
+               background var(--duration-normal) var(--ease-smooth);
 }
 
 .search-input-container input:focus {
-  background: var(--active-bg-color); /* 활성화 배경색 */
+  background: var(--active-bg-color);
   border: 1px solid var(--primary-color);  
   box-shadow:
     0 0 0 transparent, 0 0 0 transparent,
@@ -159,9 +165,11 @@
   cursor: pointer;
   box-sizing: border-box;
   border: 1px solid transparent;
-  transition: all 0.2s ease-out;
+  transition: box-shadow var(--duration-normal) var(--ease-smooth),
+              background var(--duration-fast) var(--ease-smooth),
+              transform var(--duration-normal) var(--ease-out-quart);
   margin: 4px;
-  height: 80px; /* 고정 높이 */
+  height: 80px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -169,18 +177,21 @@
     5px 5px 10px var(--container-shadow-up),
     -5px -5px 10px var(--container-shadow-down),
     inset 0 0 0 transparent, inset 0 0 0 transparent;
-  position: relative; /* 위치를 상대적으로 설정 */
-  top: 20px; /* 아래에서 시작 */
-  animation: slideUp 0.5s ease-out forwards; /* 애니메이션 설정 */
+  position: relative;
+  opacity: 0;
+  transform: translateY(16px) scale(0.97);
+  animation: searchSlideUp var(--duration-slow) var(--ease-out-expo) forwards;
 }
 
 /* 애니메이션 키프레임 */
-@keyframes slideUp {
+@keyframes searchSlideUp {
   from {
-    top: 20px; /* 아래에서 시작 */
+    opacity: 0;
+    transform: translateY(16px) scale(0.97);
   }
   to {
-    top: 0; /* 원래 위치로 이동 */
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }
 
@@ -202,25 +213,25 @@
 }
 
 .search-result-item.removing {
-  animation: none; /* 기존 애니메이션 제거 */
-  transform: translateX(20px); /* 오른쪽으로 이동 */
+  animation: none;
+  transform: translateX(16px) scale(0.97);
   opacity: 0;
-  margin-bottom: 0; /* 공간 제거 */
-  height: 0; /* 높이를 0으로 */
+  margin-bottom: 0;
+  height: 0;
   padding-top: 0;
   padding-bottom: 0;
-  transition: transform 0.3s ease,
-              opacity 0.3s ease,
-              margin-bottom 0.3s ease,
-              height 0.3s ease,
-              padding 0.3s ease;
+  transition: transform var(--duration-normal) var(--ease-smooth),
+              opacity var(--duration-normal) var(--ease-smooth),
+              margin-bottom var(--duration-normal) var(--ease-smooth),
+              height var(--duration-normal) var(--ease-smooth),
+              padding var(--duration-normal) var(--ease-smooth);
 }
 
-.search-result-item:nth-child(1) { animation-delay: 0.05s; }
-.search-result-item:nth-child(2) { animation-delay: 0.1s; }
-.search-result-item:nth-child(3) { animation-delay: 0.15s; }
-.search-result-item:nth-child(4) { animation-delay: 0.2s; }
-.search-result-item:nth-child(5) { animation-delay: 0.25s; }
+.search-result-item:nth-child(1) { animation-delay: 0ms; }
+.search-result-item:nth-child(2) { animation-delay: 50ms; }
+.search-result-item:nth-child(3) { animation-delay: 100ms; }
+.search-result-item:nth-child(4) { animation-delay: 150ms; }
+.search-result-item:nth-child(5) { animation-delay: 200ms; }
 
 /* 애니메이션 키프레임 */
 @keyframes slideIn {

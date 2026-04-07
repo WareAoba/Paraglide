@@ -3,9 +3,9 @@ const { BrowserWindow, dialog, ipcMain } = require('electron');
 const path = require('path');
 const fs = require('fs').promises;
 const crypto = require('crypto');
-const { TextProcessUtils } = require('../../store/utils/TextProcessUtils');
-const { ParaFileFormat } = require('../../store/utils/ParaFileFormat');
-const { ConfigManager } = require('../../store/utils/ConfigManager');
+const { TextProcessUtils } = require('../../utils/TextProcessUtils');
+const { ParaFileFormat } = require('../../utils/ParaFileFormat');
+const { ConfigManager } = require('../../utils/ConfigManager');
 const { ProgramStatus, DEFAULT_PROCESS_MODE, FILE_PATHS, TEMP_DIR, TEMP_FILE } = require('../constants');
 const { state, updateState } = require('../state');
 const DialogManager = require('./DialogManager');
@@ -20,47 +20,29 @@ function withConfigLock(fn) {
   return next;
 }
 
+// 안전한 파일 쓰기: .tmp에 먼저 쓰고 rename (truncation 방지)
+async function atomicWriteJSON(filePath, data) {
+  const tmpPath = filePath + '.tmp';
+  await fs.writeFile(tmpPath, JSON.stringify(data, null, 2));
+  await fs.rename(tmpPath, filePath);
+}
+
 const FileManager = {
   // 진행 중인 config 쓰기가 완료될 때까지 대기
   flushConfigWrites() {
     return _configLock;
   },
 
-  async saveConfig(config) {
-    return withConfigLock(() => this._saveConfigImpl(config));
+  async saveConfig() {
+    return withConfigLock(() => this._saveConfigImpl());
   },
 
-  async _saveConfigImpl(config) {
+  async _saveConfigImpl() {
     try {
-      const currentState = state.config;
-      let newConfig = { ...currentState };
-  
-      // 테마 설정 처리
-      if (config.theme) {
-        newConfig.theme = {
-          mode: config.theme.mode ?? currentState.theme.mode,
-          accentColor: config.theme.accentColor ?? currentState.theme.accentColor
-        };
-      }
-  
-      // 오버레이 설정 처리
-      if (config.windowOpacity !== undefined) {
-        newConfig.overlay.windowOpacity = config.windowOpacity;
-      }
-      if (config.contentOpacity !== undefined) {
-        newConfig.overlay.contentOpacity = config.contentOpacity;
-      }
-      if (config.overlayFixed !== undefined) {
-        newConfig.overlay.overlayFixed = config.overlayFixed;
-      }
-      if (config.loadLastOverlayBounds !== undefined) {
-        newConfig.overlay.loadLastOverlayBounds = config.loadLastOverlayBounds;
-      }
-      if (config.overlayBounds) {
-        newConfig.overlay.bounds = config.overlayBounds;
-      }
+      // state에서 깊은 복사로 저장 대상 생성 (참조 공유 방지)
+      const newConfig = JSON.parse(JSON.stringify(state.config));
 
-      // 기존 파일에서 styleActions, slotOrder 보존
+      // 기존 파일에서 styleActions, slotOrder, textMacros, textStyles 보존
       try {
         const data = await fs.readFile(FILE_PATHS.config, 'utf8');
         const existing = JSON.parse(data);
@@ -70,13 +52,16 @@ const FileManager = {
         if (Array.isArray(existing.slotOrder)) {
           newConfig.slotOrder = existing.slotOrder;
         }
+        if (Array.isArray(existing.textMacros)) {
+          newConfig.textMacros = existing.textMacros;
+        }
+        if (Array.isArray(existing.textStyles)) {
+          newConfig.textStyles = existing.textStyles;
+        }
       } catch (_) { /* 파일 없음 또는 파싱 실패 — 무시 */ }
-  
-      // AppState 업데이트
-      state.loadConfig(newConfig);
-      
+
       // 파일 저장
-      await fs.writeFile(FILE_PATHS.config, JSON.stringify(newConfig, null, 2));
+      await atomicWriteJSON(FILE_PATHS.config, newConfig);
     } catch (error) {
       console.error('[Main] 설정 저장 실패:', error);
     }
@@ -90,7 +75,7 @@ const FileManager = {
       } catch {
         console.log('[Main] 새 설정 파일 생성');
         const defaultConfig = state.config;
-        await this.saveConfig(defaultConfig);
+        await this.saveConfig();
         return defaultConfig;
       }
   
@@ -101,7 +86,7 @@ const FileManager = {
       if (!data.trim()) {
         console.log('[Main] 잘못된 설정 파일, 기본값으로 초기화');
         const defaultConfig = state.config;
-        await this.saveConfig(defaultConfig);
+        await this.saveConfig();
         return defaultConfig;
       }
   
@@ -110,17 +95,18 @@ const FileManager = {
         
         // 4. 구조 검증
         if (!ConfigManager.validateConfigStructure(parsedConfig)) {
-          console.log('[Main] 올바르지 않은 설정 구조, 기본값으로 초기화]');
+          console.log('[Main] 올바르지 않은 설정 구조, 기본값으로 초기화');
           const defaultConfig = state.config;
-          await this.saveConfig(defaultConfig);
+          await this.saveConfig();
           return defaultConfig;
         }
-  
-        return parsedConfig;
+
+        // 5. 기본값 병합 (누락 필드 보완)
+        return ConfigManager.mergeWithDefaults(parsedConfig, state.config);
       } catch (parseError) {
         console.error('[Main] 설정 파일 파싱 실패:', parseError);
         const defaultConfig = state.config;
-        await this.saveConfig(defaultConfig);
+        await this.saveConfig();
         return defaultConfig;
       }
     } catch (error) {
@@ -204,6 +190,33 @@ const FileManager = {
     }
   },
 
+  async lockFile(filePath) {
+    try {
+      const logData = await this.loadLog();
+      if (logData[filePath] && logData[filePath].savedPassword) {
+        delete logData[filePath].savedPassword;
+        await this.saveLog(logData);
+
+        // _cachedDecrypt도 해당 파일이면 초기화
+        if (state._cachedDecrypt && state._cachedDecrypt.filePath === filePath) {
+          state._cachedDecrypt = null;
+        }
+
+        const updatedHistory = await this.getFileHistory();
+        BrowserWindow.getAllWindows().forEach(window => {
+          if (!window.isDestroyed()) {
+            window.webContents.send('history-update', updatedHistory);
+          }
+        });
+        return { success: true };
+      }
+      return { success: false };
+    } catch (error) {
+      console.error('[Main] 파일 잠금 실패:', error);
+      return { success: false };
+    }
+  },
+
   getFileHash(content) {
     const normalizedContent = content.replace(/\s+/g, ' ').trim();
     return crypto.createHash('sha256').update(normalizedContent).digest('hex');
@@ -240,6 +253,8 @@ const FileManager = {
             endPos: currentMeta?.endPos
           }
         },
+        encrypted: !!(state._cachedDecrypt && state._cachedDecrypt.filePath === textState.currentFilePath),
+        savedPassword: (state._cachedDecrypt && state._cachedDecrypt.filePath === textState.currentFilePath && state._cachedDecrypt.rememberPassword) ? state._cachedDecrypt.password : undefined,
         timestamp: Date.now()
       };
   
@@ -402,16 +417,48 @@ if (content) {
       if (isParaFile) {
         // 암호화 확인
         if (ParaFileFormat.isEncrypted(fileContent)) {
-          const password = await DialogManager.show(DialogManager.DIALOGS.PARA_DECRYPT, state.mainWindow);
+          // 캐시된 비밀번호가 같은 파일에 대해 있으면 먼저 시도
+          let password = null;
+          let rememberPassword = false;
+          const cached = state._cachedDecrypt;
+          if (cached && cached.filePath === filePath && cached.password) {
+            const tryResult = ParaFileFormat.decrypt(fileContent, cached.password);
+            if (tryResult.success) {
+              password = cached.password;
+              rememberPassword = !!cached.rememberPassword;
+              fileContent = tryResult.content;
+            }
+          }
+          // 캐시 없거나 실패 → 로그의 저장된 비밀번호로 시도
           if (!password) {
-            return { success: false, reason: 'decrypt-canceled' };
+            const log = await this.loadLog();
+            const logEntry = log[filePath];
+            if (logEntry?.savedPassword) {
+              const tryResult = ParaFileFormat.decrypt(fileContent, logEntry.savedPassword);
+              if (tryResult.success) {
+                password = logEntry.savedPassword;
+                rememberPassword = true;
+                fileContent = tryResult.content;
+              }
+            }
           }
-          const decryptResult = ParaFileFormat.decrypt(fileContent, password);
-          if (!decryptResult.success) {
-            await DialogManager.show(DialogManager.DIALOGS.PARA_DECRYPT_FAILED, state.mainWindow);
-            return { success: false, reason: 'decrypt-failed' };
+          if (!password) {
+            const result = await this._requestDecryptPassword(state.mainWindow);
+            if (!result) {
+              return { success: false, reason: 'decrypt-canceled' };
+            }
+            password = result.password;
+            rememberPassword = result.rememberPassword;
+            const decryptResult = ParaFileFormat.decrypt(fileContent, password);
+            if (!decryptResult.success) {
+              await DialogManager.show(DialogManager.DIALOGS.PARA_DECRYPT_FAILED, state.mainWindow);
+              return { success: false, reason: 'decrypt-failed' };
+            }
+            fileContent = decryptResult.content;
           }
-          fileContent = decryptResult.content;
+          state._cachedDecrypt = { filePath, password, rememberPassword };
+        } else {
+          state._cachedDecrypt = null;
         }
 
         // .para 포맷 파싱 → 평문 + 메타데이터 분리
@@ -433,24 +480,8 @@ if (content) {
         paraMetadata = ParaFileFormat.createDefaultMetadata();
       }
 
-      // 메타데이터를 상태에 저장
+      // 메타데이터를 상태에 저장 (이미지 검증은 에디터에서 자체 처리)
       state._paraMetadata = paraMetadata;
-
-      // ─── 이미지 파일 존재 확인 ───
-      if (paraMetadata.integral.image) {
-        const imageDir = path.dirname(filePath);
-        const imagePath = path.resolve(imageDir, paraMetadata.integral.image);
-        try {
-          await fs.access(imagePath);
-        } catch {
-          // 이미지를 찾을 수 없으면 무시하고 렌더러에 알림
-          console.warn('[Main] .para 이미지 파일을 찾을 수 없음:', imagePath);
-          paraMetadata.integral.image = null;
-          if (state.mainWindow && !state.mainWindow.isDestroyed()) {
-            state.mainWindow.webContents.send('para-image-missing');
-          }
-        }
-      }
   
       // 1. 설정의 processMode 먼저 확인
       const config = state.config;
@@ -459,12 +490,9 @@ if (content) {
       // 2. 파일 상태 확인 (이전 로그)
       const fileStatus = await this.checkExistingFile(filePath);
       
-      // 3. 로그에 저장된 모드가 있다면 우선 적용
+      // 3. 로그에 저장된 모드가 있다면 이 파일에만 우선 적용 (전역 설정은 변경하지 않음)
       if (fileStatus.processMode) {
         processMode = fileStatus.processMode;
-
-        state.updateConfigProcessMode(processMode);
-        await this.saveConfig({ processMode: processMode });
       }
       
       // 4. 모드가 없을 때만 자동 감지
@@ -498,25 +526,10 @@ if (content) {
   
       // 상태 업데이트
       try {
-        // 1. 먼저 content 업데이트
-        state.updateContent({
-          paragraphs: result.paragraphsToDisplay,
-          paragraphsMetadata: result.paragraphsMetadata,
-          currentNumber: result.paragraphsMetadata[restoredPosition]?.pageInfo,
-          processMode: processMode,
-          currentFilePath: filePath,
-          programStatus: ProgramStatus.PROCESS
-        });
-      
-        // 2. 위치 업데이트
-        state.updateCurrentParagraph(restoredPosition);
-      
-        // 3. 상태 확인을 위한 지연 추가
-        await new Promise(resolve => setTimeout(resolve, 0));
-
-        // 4. 전역 업데이트
+        // 단일 updateState 호출로 통합 (transition validation 보장)
         await updateState({
           paragraphs: result.paragraphsToDisplay,
+          paragraphsMetadata: result.paragraphsMetadata,
           currentFilePath: filePath,
           currentParagraph: restoredPosition,
           programStatus: ProgramStatus.PROCESS,
@@ -543,6 +556,9 @@ if (content) {
         if (currentContent) {
           ContentManager.copyAndLogDebouncer(currentContent);
         }
+
+        // 암호화 정보를 포함하여 로그에 즉시 기록
+        await this.saveCurrentPositionToLog();
       
         return { success: true };
       } catch (error) {
@@ -601,10 +617,7 @@ if (content) {
         processMode: DEFAULT_PROCESS_MODE
       };
   
-      // 상태 업데이트
-      state.updateContent(initialState);
-  
-      // 전역 상태 업데이트
+      // 상태 업데이트 (단일 updateState로 통합, transition validation 보장)
       await updateState({
         ...initialState,
         timestamp: Date.now()
@@ -681,7 +694,6 @@ if (content) {
         
         // 평문에서 기존 메타데이터 라인 제거 후 직렬화
         const cleanContent = ParaFileFormat.stripMetadata(content);
-        saveContent = ParaFileFormat.serialize(cleanContent, meta);
 
         // 암호화 요청이 있는 경우
         if (password) {
@@ -690,13 +702,25 @@ if (content) {
             ParaFileFormat.serialize(cleanContent, meta),
             password
           );
+        } else {
+          // 암호 해제 저장: encrypted 플래그 리셋
+          meta.integral.encrypted = false;
+          saveContent = ParaFileFormat.serialize(cleanContent, meta);
         }
 
         // 메타데이터 상태 갱신
         state._paraMetadata = meta;
+
+        // 비밀번호 캐시 동기화 (모드 전환 시 재사용)
+        if (password) {
+          state._cachedDecrypt = { filePath, password };
+        } else {
+          state._cachedDecrypt = null;
+        }
       } else {
         // .txt 포맷: 메타데이터 완전 제거, 순수 평문만 저장
         saveContent = ParaFileFormat.stripMetadata(content);
+        state._cachedDecrypt = null;
       }
   
       // 파일 저장
@@ -785,19 +809,11 @@ async restoreBackup() {
         newMode
       );
   
-      // 1. 상태 먼저 업데이트
-      state.updateContent({
-        paragraphs: result.paragraphsToDisplay,
-        paragraphsMetadata: result.paragraphsMetadata,
-        processMode: newMode,
-        currentFilePath: filePath
-      });
-      state.updateCurrentParagraph(newPosition);
+      // 단일 updateState 호출로 통합
       state.updateConfigProcessMode(newMode);
-  
-      // 2. 전역 상태 업데이트
       await updateState({
         paragraphs: result.paragraphsToDisplay,
+        paragraphsMetadata: result.paragraphsMetadata,
         currentFilePath: filePath,
         currentParagraph: newPosition,
         programStatus: ProgramStatus.PROCESS,
@@ -805,15 +821,14 @@ async restoreBackup() {
         timestamp: Date.now()
       });
   
-      // 3. 설정과 로그 저장 (상태 업데이트 후)
-      await FileManager.saveConfig({ processMode: newMode });
+      // 설정과 로그 저장 (상태 업데이트 후)
+      await FileManager.saveConfig();
       await FileManager.saveCurrentPositionToLog();
-  
-      // 4. UI 업데이트
-      // Lazy require to avoid circular dependency
-      const WindowManager = require('./WindowManager');
-      WindowManager.updateWindowContent(state.mainWindow, 'state-update');
+
+      // updateState가 이미 mainWindow에 state-update를 전송하므로 중복 호출 제거
+      // 오버레이만 별도 업데이트 (content-update 이벤트)
       if (state.overlayWindow && !state.overlayWindow.isDestroyed()) {
+        const WindowManager = require('./WindowManager');
         WindowManager.updateWindowContent(state.overlayWindow, 'paragraphs-updated');
       }
 
@@ -840,6 +855,10 @@ async restoreBackup() {
   },
 
   async saveTextMacros(macros) {
+    return withConfigLock(() => this._saveTextMacrosImpl(macros));
+  },
+
+  async _saveTextMacrosImpl(macros) {
     try {
       const configPath = FILE_PATHS.config;
       let config = {};
@@ -848,7 +867,7 @@ async restoreBackup() {
         config = JSON.parse(data);
       } catch (_) { /* 새 config */ }
       config.textMacros = Array.isArray(macros) ? macros.slice(0, 10) : [];
-      await fs.writeFile(configPath, JSON.stringify(config, null, 2));
+      await atomicWriteJSON(configPath, config);
     } catch (error) {
       console.error('[Main] 텍스트 매크로 저장 실패:', error);
     }
@@ -868,6 +887,10 @@ async restoreBackup() {
   },
 
   async saveTextStyles(styles) {
+    return withConfigLock(() => this._saveTextStylesImpl(styles));
+  },
+
+  async _saveTextStylesImpl(styles) {
     try {
       const configPath = FILE_PATHS.config;
       let config = {};
@@ -876,7 +899,7 @@ async restoreBackup() {
         config = JSON.parse(data);
       } catch (_) { /* 새 config */ }
       config.textStyles = Array.isArray(styles) ? styles.slice(0, 10) : [];
-      await fs.writeFile(configPath, JSON.stringify(config, null, 2));
+      await atomicWriteJSON(configPath, config);
     } catch (error) {
       console.error('[Main] 텍스트 스타일 저장 실패:', error);
     }
@@ -908,7 +931,7 @@ async restoreBackup() {
         config = JSON.parse(data);
       } catch (_) { /* 새 config */ }
       config.styleActions = (mapping && typeof mapping === 'object') ? mapping : {};
-      await fs.writeFile(configPath, JSON.stringify(config, null, 2));
+      await atomicWriteJSON(configPath, config);
     } catch (error) {
       console.error('[Main] 스타일 액션 저장 실패:', error);
     }
@@ -940,10 +963,36 @@ async restoreBackup() {
         config = JSON.parse(data);
       } catch (_) { /* 새 config */ }
       config.slotOrder = Array.isArray(order) ? order : null;
-      await fs.writeFile(configPath, JSON.stringify(config, null, 2));
+      await atomicWriteJSON(configPath, config);
     } catch (error) {
       console.error('[Main] 슬롯 순서 저장 실패:', error);
     }
+  },
+
+  /**
+   * 렌더러의 커스텀 모달을 통해 복호화 비밀번호를 요청한다.
+   * 렌더러가 응답하지 않으면 기존 DialogManager 폴백 사용.
+   */
+  _requestDecryptPassword(mainWindow) {
+    const { ipcMain } = require('electron');
+    return new Promise((resolve) => {
+      const requestId = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+
+      const handler = (_event, data) => {
+        if (data.requestId !== requestId) return;
+        ipcMain.removeListener('para-decrypt-modal-response', handler);
+        resolve(data.password ? { password: data.password, rememberPassword: !!data.rememberPassword } : null);
+      };
+      ipcMain.on('para-decrypt-modal-response', handler);
+
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('para-decrypt-modal-request', { requestId });
+      } else {
+        // 폴백: 기존 다이얼로그
+        ipcMain.removeListener('para-decrypt-modal-response', handler);
+        DialogManager.show(DialogManager.DIALOGS.PARA_DECRYPT, mainWindow).then(pw => resolve(pw ? { password: pw, rememberPassword: false } : null));
+      }
+    });
   },
 };
 

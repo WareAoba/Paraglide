@@ -1,20 +1,23 @@
 // src/components/TitleBar.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
+import useAppStore from '../stores/useAppStore';
 import '../CSS/TitleBar.css';
 
 const { ipcRenderer } = window.require('electron');
 
-function TitleBar({ logoPath, titlePath }) {
-  const [isMaximized, setIsMaximized] = useState(false);
+function TitleBar() {
+  const logoPath = useAppStore((s) => s.logoPath);
+  const titlePath = useAppStore((s) => s.titlePath);
+  const isMaximized = useAppStore((s) => s.isMaximized);
+  const setIsMaximized = useAppStore((s) => s.setIsMaximized);
 
   useEffect(() => {
-    // 초기 상태 확인
     ipcRenderer.invoke('window-is-maximized').then(setIsMaximized);
 
     const handleMaximized = (_, maximized) => setIsMaximized(maximized);
     ipcRenderer.on('window-maximized', handleMaximized);
     return () => ipcRenderer.removeListener('window-maximized', handleMaximized);
-  }, []);
+  }, [setIsMaximized]);
 
   const handleMinimize = () => ipcRenderer.send('window-minimize');
   const handleMaximize = () => ipcRenderer.send('window-maximize');

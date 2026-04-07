@@ -12,17 +12,23 @@
   overflow: hidden;
   user-select: none;
   opacity: 0;
-  transform: translateY(8px) scale(0.96);
+  transform: translateY(8px) scale(0.92);
+  filter: blur(4px);
   transform-origin: bottom right;
-  transition: opacity 0.18s cubic-bezier(0.4, 0, 0.2, 1),
-              transform 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: opacity var(--duration-exit) var(--ease-snappy),
+              transform var(--duration-exit) var(--ease-snappy),
+              filter var(--duration-exit) var(--ease-snappy);
   pointer-events: none;
 }
 
 .automation-panel.is-open {
   opacity: 1;
   transform: translateY(0) scale(1);
+  filter: blur(0px);
   pointer-events: auto;
+  transition: opacity var(--duration-normal) var(--ease-out-expo),
+              transform var(--duration-moderate) var(--ease-out-back),
+              filter var(--duration-normal) var(--ease-out-expo);
 }
 
 /* ─── 헤더 ─── */
@@ -154,9 +160,9 @@
 }
 
 @keyframes automation-spin {
-  0% { opacity: 1; }
-  50% { opacity: 0.4; }
-  100% { opacity: 1; }
+  0% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.92); }
+  100% { opacity: 1; transform: scale(1); }
 }
 
 /* ─── 하단 ─── */

@@ -3,6 +3,20 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script>
+      // 오버레이 창은 투명해야 하므로 배경색 적용 안 함
+      if (!location.hash.includes('overlay')) {
+        var bgColor = '#181818';
+        try {
+          var fs = require('fs');
+          var path = require('path');
+          var os = require('os');
+          var cfg = JSON.parse(fs.readFileSync(path.join(os.homedir(), '.ParaglideConfigure.json'), 'utf-8'));
+          if (cfg.theme && cfg.theme.mode === 'light') bgColor = '#F2F3F7';
+        } catch(e) {}
+        document.documentElement.style.backgroundColor = bgColor;
+      }
+    </script>
     <meta
       http-equiv="Content-Security-Policy"
       content="default-src 'self' https:; 

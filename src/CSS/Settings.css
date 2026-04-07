@@ -6,47 +6,64 @@
   left: 0;
   width: 100vw;
   height: 100vh;
-  background-color: rgba(0, 0, 0, 0);  /* 초기 투명도 0 */
-  display: flex;  /* none 대신 flex 사용 */
+  background-color: rgba(0, 0, 0, 0);
+  backdrop-filter: blur(0px) saturate(100%);
+  -webkit-backdrop-filter: blur(0px) saturate(100%);
+  display: flex;
   z-index: 1000;
-  padding: 0;  /* 패딩 제거 */
-  opacity: 0;  /* 초기 투명도 0 */
-  visibility: hidden;  /* display 대신 visibility 사용 */
-  transition: background-color 0.3s ease,  /* 배경 페이드 */
-              opacity 0.3s ease,           /* 전체 페이드 */
-              visibility 0.3s ease;        /* visibility 전환 */
+  padding: 0;
+  opacity: 0;
+  visibility: hidden;
+  transition: background-color var(--duration-moderate) var(--ease-smooth),
+              backdrop-filter var(--duration-moderate) var(--ease-smooth),
+              -webkit-backdrop-filter var(--duration-moderate) var(--ease-smooth),
+              opacity var(--duration-normal) var(--ease-smooth),
+              visibility 0s linear var(--duration-moderate);
 }
 
 .settings-modal.visible {
-  background-color: rgba(0, 0, 0, 0.5);  /* 최종 배경 투명도 */
+  background-color: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(8px) saturate(120%);
+  -webkit-backdrop-filter: blur(8px) saturate(120%);
   opacity: 1;
   visibility: visible;
+  transition: background-color var(--duration-moderate) var(--ease-smooth),
+              backdrop-filter var(--duration-moderate) var(--ease-smooth),
+              -webkit-backdrop-filter var(--duration-moderate) var(--ease-smooth),
+              opacity var(--duration-normal) var(--ease-smooth),
+              visibility 0s linear 0s;
 }
 
 /* settings-content 클래스에 transition 추가 */
 .settings-content {
-  position: fixed;  /* absolute에서 fixed로 변경 */
+  position: fixed;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -60%);  /* 시작 위치를 약간 위로 */
-  width: min(90%, 360px);     /* 480px에서 축소 */
-  height: min(90%, 480px);    /* 600px에서 축소 */
+  transform: translate(-50%, -50%) scale(0.92) translateY(20px);
+  width: min(90%, 360px);
+  height: min(90%, 480px);
   background-color: var(--bg-color);
-  border-radius: 12px;
+  border-radius: 16px;
   display: flex;
   flex-direction: column;
   box-shadow:
-  12px 24px 48px rgba(0, 0, 0, 0.1),
-  12px 24px 48px rgba(0, 0, 0, 0.2);
+    0 25px 50px -12px rgba(0, 0, 0, 0.25),
+    0 12px 24px -8px rgba(0, 0, 0, 0.15);
   padding: 32px;
   opacity: 0;
-  transition: transform 0.3s ease,
-              opacity 0.3s ease;
+  filter: blur(4px);
+  transition: transform var(--duration-exit) var(--ease-snappy),
+              opacity var(--duration-exit) var(--ease-snappy),
+              filter var(--duration-exit) var(--ease-snappy);
 }
 
 .settings-modal.visible .settings-content {
-  transform: translate(-50%, -50%);  /* 최종 위치 */
+  transform: translate(-50%, -50%) scale(1) translateY(0);
   opacity: 1;
+  filter: blur(0px);
+  transition: transform var(--duration-enter) var(--ease-out-back),
+              opacity var(--duration-moderate) var(--ease-out-expo),
+              filter var(--duration-moderate) var(--ease-out-expo);
 }
 
 .settings-scroll-area {
@@ -82,6 +99,18 @@
   font-weight: 500;
 }
 
+.settings-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.settings-toggle-label {
+  color: var(--text-third);
+  font-size: 0.95em;
+}
+
 .settings-group label {
   display: flex;
   align-items: center;
@@ -109,11 +138,11 @@
   position: absolute;
   left: 3px;
   top: 3px;
-  width: calc(50% - 4px); /* 약간 더 작게 */
-  height: calc(100% - 7px); /* 약간 더 작게 */
+  width: calc(50% - 4px);
+  height: calc(100% - 7px);
   background-color: var(--primary-color);
   border-radius: 4px;
-  transition: transform 0.4s ease;
+  transition: transform var(--duration-moderate) var(--ease-spring);
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
@@ -173,7 +202,7 @@
   right: 0;
   bottom: 0;
   background-color: var(--border-color);
-  transition: 0.4s;
+  transition: background-color var(--duration-normal) var(--ease-smooth);
   border-radius: 34px;
 }
 
@@ -185,7 +214,8 @@
   left: 3px;
   bottom: 3px;
   background-color: var(--bg-color);
-  transition: 0.4s;
+  transition: transform var(--duration-moderate) var(--ease-spring),
+              background-color var(--duration-normal) var(--ease-smooth);
   border-radius: 50%;
 }
 
@@ -315,7 +345,13 @@ input:focus + .slider {
   box-shadow: 4px 4px 8px var(--container-shadow-up),
               -4px -4px 8px var(--container-shadow-down),
               inset 0 0 0 transparent, inset 0 0 0 transparent;
-  transition: all 0.2s ease;
+  transition: box-shadow var(--duration-normal) var(--ease-out-quart),
+              transform var(--duration-fast) var(--ease-out-quart),
+              background-color var(--duration-normal) var(--ease-smooth);
+}
+
+.settings-button-group button:active {
+  transform: scale(0.97);
 }
 
 .settings-button-group button.btn-primary {
@@ -369,13 +405,21 @@ input:focus + .slider {
   font-size: 0.95em;
   font-family: inherit;
   cursor: pointer;
-  transition: all 0.2s ease;
-  align-self: flex-start;  /* 버튼을 왼쪽으로 정렬 */
+  transition: background-color var(--duration-normal) var(--ease-smooth),
+              color var(--duration-normal) var(--ease-smooth),
+              transform var(--duration-fast) var(--ease-out-quart),
+              box-shadow var(--duration-normal) var(--ease-smooth);
+  align-self: flex-start;
 }
 
 .settings-group.danger-zone button:hover {
   background-color: var(--danger-color);
   color: white;
+  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+}
+
+.settings-group.danger-zone button:active {
+  transform: scale(0.97);
 }
 
 /* 언어 드롭다운 전용 스타일 */
@@ -460,4 +504,62 @@ input:focus + .slider {
 .info-item {
   color: var(--text-color);
   opacity: 0.25;
+}
+
+/* ── 반응형 탭 UI (와이드 모드) ── */
+.settings-content.settings-content--wide {
+  width: min(90%, 680px);
+  height: min(90%, 560px);
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  grid-template-rows: auto 1fr;
+}
+
+.settings-content--wide > h2 {
+  grid-column: 1 / -1;
+}
+
+.settings-tab-nav {
+  grid-column: 1;
+  grid-row: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-right: 16px;
+  border-right: 1px solid var(--border-color);
+  overflow-y: auto;
+  padding-bottom: 60px;
+}
+
+.settings-tab-item {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  border: none;
+  background: none;
+  color: var(--text-third);
+  font-size: 0.9em;
+  font-family: inherit;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background-color var(--duration-normal) var(--ease-smooth),
+              color var(--duration-normal) var(--ease-smooth);
+  white-space: nowrap;
+  text-align: left;
+}
+
+.settings-tab-item:hover {
+  background-color: var(--hover-color);
+  color: var(--text-color);
+}
+
+.settings-tab-item.active {
+  background-color: var(--primary-color);
+  color: var(--primary-text);
+}
+
+.settings-content--wide > .settings-scroll-area {
+  grid-column: 2;
+  grid-row: 2;
+  min-height: 0;
 }

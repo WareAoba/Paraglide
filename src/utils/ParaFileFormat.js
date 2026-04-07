@@ -1,4 +1,4 @@
-// src/store/utils/ParaFileFormat.js
+// src/utils/ParaFileFormat.js
 // .para 파일 포맷 처리 — 메타데이터 파싱/직렬화, 암호화/복호화
 //
 // .para 포맷 구조:

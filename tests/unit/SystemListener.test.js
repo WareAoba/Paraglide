@@ -69,6 +69,17 @@ _require.cache[statePath] = {
   }
 };
 
+// native addon mock — 테스트 환경에서 실제 .node 바이너리 로드 방지
+const path = await import('path');
+const systemListenerDir = path.dirname(_require.resolve('../../src/SystemListener.jsx'));
+const nativeNodePath = path.join(systemListenerDir, '..', 'native', 'paraglide_native.node');
+_require.cache[nativeNodePath] = {
+  id: nativeNodePath,
+  filename: nativeNodePath,
+  loaded: true,
+  exports: {} // initialize() 없음 → loadNativeAddon()이 catch하고 null 반환
+};
+
 const SystemListener = _require('../../src/SystemListener.jsx');
 
 // ─── 테스트 ───
@@ -85,14 +96,12 @@ describe('SystemListener', () => {
       webContents: { send: vi.fn() }
     };
     listener = new SystemListener(mockWindow);
-    // initialize를 호출하면 ipcMain.on('program-status-update', handler)가 등록됨
+    // initialize를 호출하면 setupKeyboardListener + setupAppShortcuts 실행
     listener._setupPasteHelper = vi.fn(); // PowerShell 생성 방지
     listener.initialize();
 
-    // program-status-update 핸들러 캡처
-    const calls = mockIpcMain.on.mock.calls;
-    const found = calls.find(c => c[0] === 'program-status-update');
-    statusUpdateHandler = found ? found[1] : null;
+    // onProgramStatusUpdate 메서드를 직접 호출하는 헬퍼
+    statusUpdateHandler = (_, status) => listener.onProgramStatusUpdate(status);
   });
 
   // ═══════════════ 초기화 ═══════════════

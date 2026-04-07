@@ -225,20 +225,26 @@
   font-family: inherit;
   font-size: 1em;
   font-weight: 500;
-  transition: all 0.3s ease;
+  transition: box-shadow var(--duration-normal) var(--ease-smooth),
+              transform var(--duration-normal) var(--ease-out-back);
   opacity: 1;
   box-shadow:
   8px 8px 10px var(--container-shadow-up),
   -8px -8px 10px var(--container-shadow-down),
   inset 0 0 0 transparent, inset 0 0 0 transparent;
-  transition: all 0.3s ease;
 }
 
 .overview-complete-work-button:hover {
+  transform: translateY(-1px);
   box-shadow:
   0 0 0 transparent, 0 0 0 transparent,
   inset 4px 4px 8px rgba(0, 0, 0, 0.2),
   inset -4px -4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.overview-complete-work-button:active {
+  transform: translateY(0) scale(0.98);
+  transition: transform var(--duration-instant) var(--ease-snappy);
 }
 
 /* 주석 알림 서클 */
@@ -275,13 +281,16 @@
   color: var(--text-color);
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.18s ease, transform 0.18s ease;
+  transition: opacity var(--duration-normal) var(--ease-out-expo),
+              transform var(--duration-normal) var(--ease-out-back);
   cursor: pointer;
+  transform: translateY(4px) scale(0.97);
 }
 
 .overview-comment-popup.visible {
   opacity: 1;
   pointer-events: auto;
+  transform: translateY(0) scale(1);
 }
 
 .overview-comment-popup::after {

@@ -37,7 +37,7 @@
     0 0 0 transparent, 0 0 0 transparent,
     inset 2px 2px 3px var(--container-shadow-up),
     inset -2px -2px 3px var(--container-shadow-down);
-    transition: all 0.2s ease;
+    transition: all var(--duration-normal) var(--ease-out-quart);
   }
   
   .checkbox-wrapper .checkbox span:first-child svg {
@@ -51,7 +51,7 @@
     stroke-linejoin: round;
     stroke-dasharray: 16px;
     stroke-dashoffset: 16px;
-    transition: all 0.3s ease;
+    transition: stroke-dashoffset 0.35s var(--ease-out-expo);
     transition-delay: 0.1s;
     transform: translate3d(0, 0, 0);
   }
@@ -101,7 +101,8 @@
   }
   
   @keyframes checkbox-wave {
-    50% {
-      transform: scale(0.9);
-    }
+    0% { transform: scale(1); }
+    30% { transform: scale(0.88); }
+    60% { transform: scale(1.06); }
+    100% { transform: scale(1); }
   }

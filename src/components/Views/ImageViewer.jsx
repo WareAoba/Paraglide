@@ -1,6 +1,9 @@
-import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
+import React, { useRef, useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { readPsd } from 'ag-psd';
 import AutomationPanel from './AutomationPanel';
+import useEditorStore from '../../stores/useEditorStore';
+import useIconStore from '../../stores/useIconStore';
 import '../../CSS/Views/ImageViewer.css';
 
 const path = window.require('path');
@@ -91,17 +94,36 @@ function applyLevelAdjustment(dataUrl, blackPoint) {
   });
 }
 
-function ImageViewer({ images, currentPage, onPageChange, onRemoveCurrentImage, cursorSync, onCursorSyncToggle, blackPointInfo, levelAdjustment, icons, automationActions, spreadPairs, style }) {
+function ImageViewer({ onPageChange, onRemoveCurrentImage, onCursorSyncToggle, levelAdjustment, automationActions, style }) {
+  const { t } = useTranslation();
   const containerRef = useRef(null);
   const imgRef = useRef(null);
   const automationBtnRef = useRef(null);
-  const [zoom, setZoom] = useState(null);             // null = 비율 유지 최대 채움 (fit)
+
+  // ─── Zustand 스토어에서 상태 구독 ───
+  const icons = useIconStore((s) => s.icons);
+  const images = useEditorStore((s) => s.viewerImages);
+  const currentPage = useEditorStore((s) => s.viewerPage);
+  const cursorSync = useEditorStore((s) => s.cursorSync);
+  const blackPointInfo = useEditorStore((s) => s.blackPointInfo);
+  const spreadPairs = useEditorStore((s) => s.spreadPairs);
+
+  const zoom = useEditorStore((s) => s.zoom);
+  const setZoom = useEditorStore((s) => s.setZoom);
+  const pageInput = useEditorStore((s) => s.pageInput);
+  const setPageInput = useEditorStore((s) => s.setPageInput);
+  const isPageInputVisible = useEditorStore((s) => s.isPageInputVisible);
+  const setIsPageInputVisible = useEditorStore((s) => s.setIsPageInputVisible);
+  const automationOpen = useEditorStore((s) => s.automationOpen);
+  const setAutomationOpen = useEditorStore((s) => s.setAutomationOpen);
+  const spreadDataUrl = useEditorStore((s) => s.spreadDataUrl);
+  const setSpreadDataUrl = useEditorStore((s) => s.setSpreadDataUrl);
+  const psdBackgroundOnly = useEditorStore((s) => s.psdBackgroundOnly);
+  const setPsdBackgroundOnly = useEditorStore((s) => s.setPsdBackgroundOnly);
+  const imageDataUrl = useEditorStore((s) => s.imageDataUrl);
+  const setImageDataUrl = useEditorStore((s) => s.setImageDataUrl);
+
   const [dragState, setDragState] = useState(null);   // { startX, startY, scrollLeft, scrollTop }
-  const [pageInput, setPageInput] = useState('');
-  const [isPageInputVisible, setIsPageInputVisible] = useState(false);
-  const [automationOpen, setAutomationOpen] = useState(false);
-  const [spreadDataUrl, setSpreadDataUrl] = useState(null);
-  const [psdBackgroundOnly, setPsdBackgroundOnly] = useState(false);
 
   // ─── 합페 맵 ───
   const spreadMap = useMemo(() => {
@@ -151,8 +173,7 @@ function ImageViewer({ images, currentPage, onPageChange, onRemoveCurrentImage, 
   // ─── 현재 이미지가 PSD인지 여부 ───
   const isPsdFile = currentImage && path.extname(currentImage.filePath).toLowerCase() === '.psd';
 
-  // ─── 이미지 data URL 캐시 ───
-  const [imageDataUrl, setImageDataUrl] = useState(null);
+  // ─── 이미지 data URL 로드 ───
 
   useEffect(() => {
     if (!currentImage) { setImageDataUrl(null); return; }
@@ -308,7 +329,7 @@ function ImageViewer({ images, currentPage, onPageChange, onRemoveCurrentImage, 
 
   // ─── 휠 동작: Ctrl=줌(마우스 기준), Shift=좌우 스크롤, 기본=상하 스크롤 ───
   const handleWheel = useCallback((e) => {
-    if (e.ctrlKey) {
+    if (e.ctrlKey || e.metaKey) {
       e.preventDefault();
       e.stopPropagation();
       const container = containerRef.current;
@@ -320,17 +341,15 @@ function ImageViewer({ images, currentPage, onPageChange, onRemoveCurrentImage, 
       const contentX = container.scrollLeft + mouseX;
       const contentY = container.scrollTop + mouseY;
 
-      setZoom(prev => {
-        const base = prev ?? getFitZoom();
-        const delta = e.deltaY > 0 ? -10 : 10;
-        const newZoom = Math.max(20, Math.min(500, base + delta));
-        const scale = newZoom / base;
+      const base = useEditorStore.getState().zoom ?? getFitZoom();
+      const delta = e.deltaY > 0 ? -10 : 10;
+      const newZoom = Math.max(20, Math.min(500, base + delta));
+      const scale = newZoom / base;
 
-        container.scrollLeft = contentX * scale - mouseX;
-        container.scrollTop = contentY * scale - mouseY;
+      container.scrollLeft = contentX * scale - mouseX;
+      container.scrollTop = contentY * scale - mouseY;
 
-        return newZoom;
-      });
+      setZoom(newZoom);
     } else if (e.shiftKey) {
       e.preventDefault();
       const container = containerRef.current;
@@ -342,19 +361,22 @@ function ImageViewer({ images, currentPage, onPageChange, onRemoveCurrentImage, 
   }, [getFitZoom]);
 
   const handleZoomIn = useCallback(() => {
-    setZoom(prev => Math.min(500, (prev ?? getFitZoom()) + 10));
+    const cur = useEditorStore.getState().zoom;
+    setZoom(Math.min(500, (cur ?? getFitZoom()) + 10));
   }, [getFitZoom]);
 
   const handleZoomOut = useCallback(() => {
-    setZoom(prev => Math.max(20, (prev ?? getFitZoom()) - 10));
+    const cur = useEditorStore.getState().zoom;
+    setZoom(Math.max(20, (cur ?? getFitZoom()) - 10));
   }, [getFitZoom]);
 
   // ─── 블랙포인트 색상값 클립보드 복사 ───
   const handleCopyBlackPoint = useCallback(() => {
     if (!blackPointInfo?.blackPoint?.hex) return;
     const { clipboard } = window.require('electron');
-    clipboard.writeText(blackPointInfo.blackPoint.hex);
-  }, [blackPointInfo]);
+    const hex = levelAdjustment?.enabled ? '#000000' : blackPointInfo.blackPoint.hex;
+    clipboard.writeText(hex);
+  }, [blackPointInfo, levelAdjustment]);
 
   // ─── 드래그로 스크롤 (줌 상태에서) / 휠 클릭으로 fit ───
   const handleMouseDown = useCallback((e) => {
@@ -422,7 +444,7 @@ function ImageViewer({ images, currentPage, onPageChange, onRemoveCurrentImage, 
     return (
       <div className="image-viewer image-viewer--empty" style={style}>
         <div className="image-viewer__placeholder">
-          <span>이미지 없음</span>
+          <span>{t('imageViewer.empty')}</span>
         </div>
       </div>
     );
@@ -441,7 +463,7 @@ function ImageViewer({ images, currentPage, onPageChange, onRemoveCurrentImage, 
               className="image-viewer__nav-btn"
               onClick={goPrev}
               disabled={!hasPrev}
-              title="이전 페이지"
+              title={t('imageViewer.prevPage')}
             >
               ◀
             </button>
@@ -460,7 +482,7 @@ function ImageViewer({ images, currentPage, onPageChange, onRemoveCurrentImage, 
               <span
                 className="image-viewer__page-info"
                 onClick={() => setIsPageInputVisible(true)}
-                title="클릭하여 페이지 번호 입력"
+                title={t('imageViewer.pageInputHint')}
               >
                 {currentImage ? (isSpreadView ? `${currentImage.page}-${spreadPartnerPage}` : currentImage.page) : '-'} / {sortedImages[sortedImages.length - 1].page}
                 <span className="image-viewer__page-sub">
@@ -472,7 +494,7 @@ function ImageViewer({ images, currentPage, onPageChange, onRemoveCurrentImage, 
               className="image-viewer__nav-btn"
               onClick={goNext}
               disabled={!hasNext}
-              title="다음 페이지"
+              title={t('imageViewer.nextPage')}
             >
               ▶
             </button>
@@ -484,7 +506,7 @@ function ImageViewer({ images, currentPage, onPageChange, onRemoveCurrentImage, 
           <button
             className={`image-viewer__nav-btn image-viewer__sync-btn${cursorSync ? ' is-active' : ''}`}
             onClick={onCursorSyncToggle}
-            title={cursorSync ? '커서 동기화 켜짐' : '커서 동기화 꺼짐'}
+            title={t(cursorSync ? 'imageViewer.cursorSyncOn' : 'imageViewer.cursorSyncOff')}
           >
             {icons?.locate
               ? <img src={icons.locate} alt="Sync" className="image-viewer__sync-icon" />
@@ -503,8 +525,8 @@ function ImageViewer({ images, currentPage, onPageChange, onRemoveCurrentImage, 
         {isPsdFile && (
           <button
             className={`image-viewer__nav-btn image-viewer__psd-bg-btn${psdBackgroundOnly ? ' is-active' : ''}`}
-            onClick={() => setPsdBackgroundOnly(prev => !prev)}
-            title={psdBackgroundOnly ? '모든 레이어 표시' : '배경 레이어만 표시'}
+            onClick={() => setPsdBackgroundOnly(!psdBackgroundOnly)}
+            title={t(psdBackgroundOnly ? 'imageViewer.showAllLayers' : 'imageViewer.showBgOnly')}
           >
             BG
           </button>
@@ -512,7 +534,7 @@ function ImageViewer({ images, currentPage, onPageChange, onRemoveCurrentImage, 
 
         {/* 줌 컨트롤 */}
         <div className="image-viewer__zoom-controls">
-          <button className="image-viewer__zoom-btn" onClick={handleZoomOut} title="축소">
+          <button className="image-viewer__zoom-btn" onClick={handleZoomOut} title={t('imageViewer.zoomOut')}>
             {icons?.zoomOut
               ? <img src={icons.zoomOut} alt="−" className="image-viewer__zoom-icon" />
               : '−'}
@@ -520,11 +542,11 @@ function ImageViewer({ images, currentPage, onPageChange, onRemoveCurrentImage, 
           <span
             className="image-viewer__zoom-info"
             onClick={() => setZoom(null)}
-            title="맞춤 크기로 초기화"
+            title={t('imageViewer.resetZoom')}
           >
             {isFitMode ? 'Fit' : `${displayZoom}%`}
           </span>
-          <button className="image-viewer__zoom-btn" onClick={handleZoomIn} title="확대">
+          <button className="image-viewer__zoom-btn" onClick={handleZoomIn} title={t('imageViewer.zoomIn')}>
             {icons?.zoomIn
               ? <img src={icons.zoomIn} alt="+" className="image-viewer__zoom-icon" />
               : '+'}
@@ -538,7 +560,7 @@ function ImageViewer({ images, currentPage, onPageChange, onRemoveCurrentImage, 
           <button
             className="image-viewer__remove-btn"
             onClick={onRemoveCurrentImage}
-            title="현재 이미지 제거"
+            title={t('imageViewer.removeImage')}
           >
             {icons?.delete
               ? <img src={icons.delete} alt="Remove" className="image-viewer__remove-icon" />
@@ -587,7 +609,7 @@ function ImageViewer({ images, currentPage, onPageChange, onRemoveCurrentImage, 
         {currentPageBPInfo ? (
           <>
             <span className={`image-viewer__color-badge ${currentPageBPInfo.isGrayscale ? 'is-grayscale' : 'is-color'}`}>
-              {currentPageBPInfo.isGrayscale ? '흑백' : '컬러'}
+              {t(currentPageBPInfo.isGrayscale ? 'imageViewer.grayscale' : 'imageViewer.color')}
             </span>
             <div className="image-viewer__black-point">
               <span
@@ -598,16 +620,19 @@ function ImageViewer({ images, currentPage, onPageChange, onRemoveCurrentImage, 
               <button
                 className="image-viewer__bp-copy"
                 onClick={handleCopyBlackPoint}
-                title="색상값 복사"
+                title={t('imageViewer.copyColor')}
               >
-                📋
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                </svg>
               </button>
             </div>
           </>
         ) : blackPointInfo ? (
           <>
             <span className={`image-viewer__color-badge ${blackPointInfo.isGrayscale ? 'is-grayscale' : 'is-color'}`}>
-              {blackPointInfo.isGrayscale ? '흑백' : '컬러'}
+              {t(blackPointInfo.isGrayscale ? 'imageViewer.grayscale' : 'imageViewer.color')}
             </span>
             <div className="image-viewer__black-point">
               <span
@@ -618,9 +643,12 @@ function ImageViewer({ images, currentPage, onPageChange, onRemoveCurrentImage, 
               <button
                 className="image-viewer__bp-copy"
                 onClick={handleCopyBlackPoint}
-                title="색상값 복사"
+                title={t('imageViewer.copyColor')}
               >
-                📋
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                </svg>
               </button>
             </div>
           </>
@@ -630,7 +658,7 @@ function ImageViewer({ images, currentPage, onPageChange, onRemoveCurrentImage, 
         <button
           ref={automationBtnRef}
           className={`image-viewer__automation-btn${automationOpen ? ' is-active' : ''}`}
-          onClick={() => setAutomationOpen(prev => !prev)}
+          onClick={() => setAutomationOpen(!automationOpen)}
           title="Automation"
         >
           {icons?.automation
@@ -644,7 +672,6 @@ function ImageViewer({ images, currentPage, onPageChange, onRemoveCurrentImage, 
         isOpen={automationOpen}
         onClose={() => setAutomationOpen(false)}
         actions={automationActions}
-        icons={icons}
         anchorRef={automationBtnRef}
       />
     </div>

@@ -1,5 +1,5 @@
 // src/components/MainComponent.jsx
-import React, { useCallback, useRef, useEffect, useState } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { CSSTransition, TransitionGroup } from 'react-transition-group';
 import { useTranslation } from 'react-i18next';
 import '../CSS/MainComponent.css';
@@ -7,14 +7,17 @@ import '../CSS/Views/ComponentTransition.css';
 import Sidebar from './Sidebar';
 import Settings from './Settings';
 import Welcome from './Views/Welcome';
-import TextEditor from './Views/TextEditor';
+import TextEditor from './Views/editor';
+import EncryptionModal from './Views/EncryptionModal';
 import Overview from './Views/Overview';
 import ListView from './Views/ListView';
 import DragDropOverlay from './Views/DragDropOverlay';
 import TitleBar from './TitleBar';
 
-import useAppStore, { ProgramStatus } from '../stores/useAppStore';
-import useIcons from '../hooks/useIcons';
+import useAppStore from '../stores/useAppStore';
+import useEditorStore from '../stores/useEditorStore';
+import useIconStore from '../stores/useIconStore';
+import { ProgramStatus } from '../constants';
 import useTheme from '../hooks/useTheme';
 import useDragDrop from '../hooks/useDragDrop';
 import useIPC from '../hooks/useIPC';
@@ -59,12 +62,13 @@ function MainComponent() {
   const setEditorSaved = useAppStore((s) => s.setEditorSaved);
   const setOverlayVisible = useAppStore((s) => s.setOverlayVisible);
   const resetToReady = useAppStore((s) => s.resetToReady);
-  const setPluginConnected = useAppStore((s) => s.setPluginConnected);
+  const resetEditor = useEditorStore((s) => s.resetEditor);
 
   // ─── 토스트 알림 ───
   const toastMessage = useAppStore((s) => s.toastMessage);
   const setToastMessage = useAppStore((s) => s.setToastMessage);
-  const [toastVisible, setToastVisible] = useState(false);
+  const toastVisible = useAppStore((s) => s.toastVisible);
+  const setToastVisible = useAppStore((s) => s.setToastVisible);
 
   useEffect(() => {
     if (toastMessage) {
@@ -75,13 +79,44 @@ function MainComponent() {
       }, 3000);
       return () => clearTimeout(timer);
     }
-  }, [toastMessage, setToastMessage]);
+  }, [toastMessage, setToastMessage, setToastVisible]);
 
-  // ─── 커스텀 훅 ───
-  const icons = useIcons();
+  // ─── 아이콘 스토어 ───
+  const icons = useIconStore((s) => s.icons);
+  const loadIcons = useIconStore((s) => s.loadIcons);
+  useEffect(() => { loadIcons(); }, [loadIcons]);
   const { themeCalc } = useTheme();
   const { handleDragOver, handleDragEnter, handleDragLeave, handleDrop } = useDragDrop();
   useIPC(themeCalc, searchRef);
+
+  // ─── 복호화 모달 상태 ───
+  const [decryptModalOpen, setDecryptModalOpen] = useState(false);
+  const [decryptError, setDecryptError] = useState('');
+  const decryptResolveRef = useRef(null);
+
+  useEffect(() => {
+    const handler = (_event, { requestId }) => {
+      setDecryptError('');
+      setDecryptModalOpen(true);
+      decryptResolveRef.current = (password, rememberPassword) => {
+        ipcRenderer.send('para-decrypt-modal-response', { requestId, password, rememberPassword });
+      };
+    };
+    ipcRenderer.on('para-decrypt-modal-request', handler);
+    return () => ipcRenderer.removeListener('para-decrypt-modal-request', handler);
+  }, []);
+
+  const handleDecryptSubmit = useCallback((password, rememberPassword) => {
+    setDecryptModalOpen(false);
+    decryptResolveRef.current?.(password, rememberPassword);
+    decryptResolveRef.current = null;
+  }, []);
+
+  const handleDecryptCancel = useCallback(() => {
+    setDecryptModalOpen(false);
+    decryptResolveRef.current?.(null);
+    decryptResolveRef.current = null;
+  }, []);
 
   // ─── 미저장 경고 확인 헬퍼 ───
   const confirmIfUnsaved = useCallback(async () => {
@@ -159,13 +194,10 @@ function MainComponent() {
         programStatus: options.programStatus
       });
 
-      if (result.success) {
-        useAppStore.setState({
-          currentFilePath: options.filePath || currentFilePath,
-          programStatus: options.programStatus === 'edit' ? ProgramStatus.EDIT : ProgramStatus.PROCESS,
-          viewMode: viewMode || 'overview',
-          isSidebarVisible: false
-        });
+      if (result?.success) {
+        // main process의 updateState가 state-update를 브로드캐스트하므로
+        // 사이드바 닫기만 처리 (나머지 상태는 syncFromMain에서 동기화)
+        useAppStore.setState({ isSidebarVisible: false });
       }
     } catch (error) {
       console.error('파일 로드 실패:', error);
@@ -182,12 +214,12 @@ function MainComponent() {
     try {
       if (!await confirmIfUnsaved()) return;
 
-      // EDIT 모드면 에디터에서 바로 열기
+      // EDIT 모드면 에디터에서 파일 내용을 로드해서 열기
       if (programStatus === ProgramStatus.EDIT) {
-        useAppStore.setState({
-          currentFilePath: filePath,
-          isSidebarVisible: false
-        });
+        const readResult = await ipcRenderer.invoke('read-file-decrypted', filePath);
+        if (!readResult.success) return;
+        await ipcRenderer.invoke('process-file-content', readResult.content, filePath);
+        useAppStore.setState({ isSidebarVisible: false });
         return;
       }
 
@@ -216,6 +248,7 @@ function MainComponent() {
 
       ipcRenderer.send('update-state', resetState);
       resetToReady();
+      resetEditor();
     } catch (error) {
       console.error('작업 종료 중 오류:', error);
     }
@@ -226,10 +259,8 @@ function MainComponent() {
   };
 
   const handleTogglePluginConnection = async () => {
-    const newConnected = !pluginConnected;
-    setPluginConnected(newConnected);
     await ipcRenderer.invoke('apply-settings', {
-      pluginConnected: newConnected
+      pluginConnected: !pluginConnected
     });
   };
 
@@ -244,64 +275,14 @@ function MainComponent() {
       onDrop={handleDrop}
     >
       <Sidebar
-        isVisible={isSidebarVisible}
-        isSidebarVisible={isSidebarVisible}
-        isSearchVisible={isSearchVisible}
         onFileSelect={handleSidebarFileSelect}
-        status={programStatus}
-        ProgramStatus={ProgramStatus}
-        theme={theme}
-        onClose={closeSidebar}
-        icons={{
-          sidebarUnfold: icons.sidebarUnfold,
-          eye: icons.eye,
-          eyeOff: icons.eyeOff,
-          searchIcon: icons.search,
-          pageJumpIcon: icons.pageJump,
-          terminalIcon: icons.terminal,
-          textFileIcon: icons.textFile,
-          deleteIcon: icons.delete,
-          openIcon: icons.fileOpen,
-          editIcon: icons.edit,
-          fileWorkIcon: icons.fileWork,
-          backIcon: icons.back,
-          folderIcon: icons.folder,
-          finderIcon: icons.finder
-        }}
-        titlePath={titlePath}
-        currentFilePath={currentFilePath}
-        currentFile={(programStatus === ProgramStatus.PROCESS || programStatus === ProgramStatus.PAUSE) ? {
-          name: path.basename(currentFilePath || ''),
-          path: currentFilePath,
-          currentPage: paragraphsMetadata[currentParagraph]?.pageNumber || 1,
-          totalPages: Math.max(...paragraphsMetadata
-            .filter(meta => meta?.pageNumber != null)
-            .map(meta => meta.pageNumber)) || 1
-        } : null}
-        currentParagraph={currentParagraph}
-        paragraphs={paragraphs}
-        metadata={paragraphsMetadata}
         onSelect={handleParagraphSelect}
-        onToggleOverlay={handleToggleOverlay}
-        onToggleSearch={toggleSearch}
         onShowDebugConsole={handleShowDebugConsole}
-        isOverlayVisible={isOverlayVisible}
-        wasInitiallySidebarOpen={wasInitiallySidebarOpen}
-        isEditorSaved={isEditorSaved}
-        setState={(updater) => {
-          if (typeof updater === 'function') {
-            const current = useAppStore.getState();
-            const updates = updater(current);
-            useAppStore.setState(updates);
-          } else {
-            useAppStore.setState(updater);
-          }
-        }}
       />
 
-      <DragDropOverlay isVisible={isDragging} isWorkMode={programStatus === ProgramStatus.PROCESS || programStatus === ProgramStatus.PAUSE} />
+      <DragDropOverlay />
 
-      <TitleBar logoPath={logoPath} titlePath={titlePath} />
+      <TitleBar />
 
       <div className="button-group-controls">
         <button className="btn-icon" onClick={toggleSidebar}>
@@ -364,11 +345,6 @@ function MainComponent() {
                       <Welcome
                         onLoadFile={handleLoadFile}
                         onNewFile={handleNewFile}
-                        logoPath={logoPath}
-                        titlePath={titlePath}
-                        theme={theme}
-                        fileOpenIcon={icons.fileOpen}
-                        newFileIcon={icons.newFile}
                       />
                     </div>
                   </CSSTransition>
@@ -384,29 +360,7 @@ function MainComponent() {
                     unmountOnExit
                   >
                     <div className="view-wrapper">
-                      <TextEditor
-                        theme={theme}
-                        currentFilePath={currentFilePath}
-                        onSavedStateChange={setEditorSaved}
-                        icons={{
-                          save: icons.save,
-                          zoomIn: icons.zoomIn,
-                          zoomOut: icons.zoomOut,
-                          textAdd: icons.textAdd,
-                          fileOpen: icons.fileOpen,
-                          folder: icons.folder,
-                          delete: icons.delete,
-                          locate: icons.locate,
-                          imageAdd: icons.imageAdd,
-                          fontStyle: icons.fontStyle,
-                          database: icons.database,
-                          textFile: icons.textFile,
-                          automation: icons.automation,
-                          paragraphLeft: icons.paragraphLeft,
-                          paragraphCenter: icons.paragraphCenter,
-                          paragraphRight: icons.paragraphRight,
-                        }}
-                      />
+                      <TextEditor />
                     </div>
                   </CSSTransition>
                 );
@@ -432,14 +386,7 @@ function MainComponent() {
                               unmountOnExit
                             >
                               <Overview
-                                paragraphs={paragraphs}
-                                currentParagraph={currentParagraph}
-                                currentNumber={currentNumber}
                                 onParagraphClick={handleParagraphClick}
-                                theme={theme}
-                                hoveredSection={hoveredSection}
-                                onHoverChange={setHoveredSection}
-                                paragraphsMetadata={paragraphsMetadata}
                                 onCompleteWork={handleCompleteWork}
                               />
                             </CSSTransition>
@@ -451,12 +398,9 @@ function MainComponent() {
                               mountOnEnter
                               unmountOnExit>
                               <ListView
-                                paragraphs={paragraphs}
-                                metadata={paragraphsMetadata}
-                                currentParagraph={currentParagraph}
                                 onParagraphSelect={handleParagraphSelect}
                                 onCompleteWork={handleCompleteWork}
-                                theme={theme} />
+                              />
                             </CSSTransition>
                           )}
                         </TransitionGroup>
@@ -507,16 +451,7 @@ function MainComponent() {
       </div>
 
       <Settings
-        isVisible={isSettingsVisible}
         onClose={() => setSettingsVisible(false)}
-        theme={theme}
-        programStatus={programStatus}
-        currentViewMode={viewMode}
-        icons={{
-          themeAuto: icons.themeAuto,
-          themeLight: icons.themeLight,
-          themeDark: icons.themeDark,
-        }}
       />
 
       {toastMessage && (
@@ -524,6 +459,13 @@ function MainComponent() {
           {toastMessage}
         </div>
       )}
+
+      <EncryptionModal
+        isOpen={decryptModalOpen}
+        onSubmit={handleDecryptSubmit}
+        onCancel={handleDecryptCancel}
+        errorMessage={decryptError}
+      />
     </div>
   );
 }

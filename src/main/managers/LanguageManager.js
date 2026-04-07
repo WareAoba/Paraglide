@@ -72,7 +72,7 @@ async changeLanguage(lang) {
 
     // Lazy require to avoid circular dependency
     const FileManager = require('./FileManager');
-    await FileManager.saveConfig({ language: lang });
+    await FileManager.saveConfig();
 
     BrowserWindow.getAllWindows().forEach(window => {
       if (!window.isDestroyed()) {

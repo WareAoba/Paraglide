@@ -1,155 +1,53 @@
 // OverlayComponent.js
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import useIcons from "../hooks/useIcons";
+import useIconStore from "../stores/useIconStore";
+import useOverlayIPC from "../hooks/useOverlayIPC";
+import useAppStore from "../stores/useAppStore";
 import "../CSS/OverlayComponent.css";
 const { ipcRenderer } = window.require("electron");
 
 function OverlayComponent() {
   const { t } = useTranslation();
-  const icons = useIcons();
+  const icons = useIconStore((s) => s.icons);
+  const loadIcons = useIconStore((s) => s.loadIcons);
+  useEffect(() => { loadIcons(); }, [loadIcons]);
   const [pausePhase, setPausePhase] = useState('active'); // 'active' | 'paused' | 'resuming'
   const prevPausedRef = useRef(false);
   const draggedRef = useRef(false);
-  const [state, setState] = useState({
-    previous: [],
-    current: null,
-    next: [],
-    currentNumber: null,
-    currentParagraph: null,
-    currentMetadata: null,
-    theme: {
-      mode: 'light',
-      accentColor: '#007bff'
-    },
-    isPaused: false,
-    pluginConnected: false,
-    pluginServer: false,
-    _animDirection: '',
-    _animKey: 0,
-  });
   const containerRef = useRef(null);
 
-  useEffect(() => {
-    // 단락 업데이트 핸들러 — animation 방향도 setState 안에서 계산
-    const handleUpdate = (event, data) => {
-      if (!data) return;
-      
-      setState(prevState => {
-        const paragraphChanged =
-          prevState.currentParagraph !== null &&
-          data.currentParagraph !== undefined &&
-          data.currentParagraph !== null &&
-          prevState.currentParagraph !== data.currentParagraph;
+  // ─── IPC→Zustand 동기화 (오버레이 전용) ───
+  useOverlayIPC();
 
-        return {
-          ...prevState,
-          ...data,
-          theme: data.theme ?? prevState.theme,
-          _animDirection: paragraphChanged
-            ? (data.currentParagraph > prevState.currentParagraph ? 'text-slide-up' : 'text-slide-down')
-            : prevState._animDirection,
-          _animKey: paragraphChanged
-            ? prevState._animKey + 1
-            : prevState._animKey,
-        };
-      });
-    };
-
-    // 테마 업데이트 핸들러
-    const handleThemeUpdate = (_, theme) => {
-      if (!theme) return;
-      
-      setState(prevState => ({
-        ...prevState,
-        theme: {
-          mode: theme.mode,
-          accentColor: theme.accentColor
-        }
-      }));
-    };
-
-    ipcRenderer.on("paragraphs-updated", handleUpdate);
-    ipcRenderer.on("theme-update", handleThemeUpdate);
-
-    // 포토샵 모드 변경 리스너
-    const handlePhotoshopMode = (_, active) => {
-      setState(prev => ({ ...prev, pluginConnected: active }));
-    };
-    ipcRenderer.on("photoshop-mode-changed", handlePhotoshopMode);
-
-    // 플러그인 설정 변경 리스너 (pluginServer 토글 반영)
-    const handlePluginSettings = (_, { pluginServer, pluginConnected }) => {
-      setState(prev => ({
-        ...prev,
-        ...(pluginServer !== undefined && { pluginServer }),
-        ...(pluginConnected !== undefined && { pluginConnected })
-      }));
-    };
-    ipcRenderer.on("plugin-settings-changed", handlePluginSettings);
-
-    // 초기 상태 로드
-    ipcRenderer.invoke("get-state").then(initialState => {
-      if (initialState) {
-        handleUpdate(null, initialState);
-      }
-    });
-
-    return () => {
-      ipcRenderer.removeListener("paragraphs-updated", handleUpdate);
-      ipcRenderer.removeListener("theme-update", handleThemeUpdate);
-      ipcRenderer.removeListener("photoshop-mode-changed", handlePhotoshopMode);
-      ipcRenderer.removeListener("plugin-settings-changed", handlePluginSettings);
-    };
-  }, []);
-
-  useEffect(() => {
-    // 배경 투명도 업데이트 리스너
-    const handleContentOpacityUpdate = (_, opacity) => {
-      document.documentElement.style.setProperty("--bg-opacity", opacity);
-    };
-
-    ipcRenderer.on("update-content-opacity", handleContentOpacityUpdate);
-
-    return () => {
-      ipcRenderer.removeListener(
-        "update-content-opacity",
-        handleContentOpacityUpdate,
-      );
-    };
-  }, []);
-
-  useEffect(() => {
-    // 디버깅을 위한 로그 추가
-    const handleThemeVariablesUpdate = (_, variables) => {
-      
-      const root = document.documentElement;
-      if (variables && typeof variables === 'object') {
-        Object.entries(variables).forEach(([key, value]) => {
-          root.style.setProperty(key, value);
-        });
-        setState(prev => ({
-          ...prev,
-          theme: {
-            ...prev.theme,
-            accentColor: variables['--primary-color'] || prev.theme.accentColor
-          }
-        }));
-      }
-    };
-
-    ipcRenderer.on("update-theme-variables", handleThemeVariablesUpdate);
-  
-    return () => {
-      ipcRenderer.removeListener("update-theme-variables", handleThemeVariablesUpdate);
-    };
-  }, []);
+  // ─── Zustand 스토어에서 상태 구독 ───
+  const theme = useAppStore((s) => s.theme);
+  const isPaused = useAppStore((s) => s.isPaused);
+  const pluginConnected = useAppStore((s) => s.pluginConnected);
+  const pluginModeActive = useAppStore((s) => s.pluginModeActive);
+  const pluginServer = useAppStore((s) => s.pluginServer);
+  const oc = useAppStore((s) => s.overlayContent);
 
   // 수동 윈도우 드래그 (transparent frameless window에서 -webkit-app-region 불안정 대응)
   const onClickActionRef = useRef(null);
   const handleDragStart = useCallback((e, onClickAction) => {
     if (e.button !== 0) return;
     e.preventDefault();
+
+    // 창 가장자리 클릭이면 네이티브 리사이즈에 맡김
+    const edgeThreshold = 8;
+    const rect = containerRef.current?.getBoundingClientRect();
+    if (rect) {
+      const nearEdge =
+        e.clientX - rect.left < edgeThreshold ||
+        rect.right - e.clientX < edgeThreshold ||
+        e.clientY - rect.top < edgeThreshold ||
+        rect.bottom - e.clientY < edgeThreshold;
+      if (nearEdge) return;
+    }
+
+    // sendSync: OS가 다음 WM_NCHITTEST를 처리하기 전에 resizable을 끔
+    ipcRenderer.sendSync('overlay-set-resizable', false);
 
     draggedRef.current = false;
     onClickActionRef.current = onClickAction || null;
@@ -177,11 +75,17 @@ function OverlayComponent() {
       document.removeEventListener('mousemove', onMove);
       document.removeEventListener('mouseup', onUp);
 
+      if (dragStarted) {
+        ipcRenderer.send('overlay-drag-end');
+      }
+
       if (!dragStarted && onClickActionRef.current) {
         onClickActionRef.current();
       }
 
       onClickActionRef.current = null;
+      // 리사이즈 복원
+      ipcRenderer.sendSync('overlay-set-resizable', true);
     };
 
     document.addEventListener('mousemove', onMove);
@@ -191,7 +95,6 @@ function OverlayComponent() {
   // isPaused 변화 감지 → pausePhase 전환
   useEffect(() => {
     const wasPaused = prevPausedRef.current;
-    const isPaused = state.isPaused;
     prevPausedRef.current = isPaused;
 
     if (isPaused && !wasPaused) {
@@ -199,7 +102,7 @@ function OverlayComponent() {
     } else if (!isPaused && wasPaused) {
       setPausePhase('resuming');
     }
-  }, [state.isPaused]);
+  }, [isPaused]);
 
   const handleResumeAnimEnd = useCallback(() => {
     if (pausePhase === 'resuming') {
@@ -219,21 +122,21 @@ function OverlayComponent() {
       <div
         ref={containerRef}
         className="overlay-window"
-        data-theme={state.theme.mode}
+        data-theme={theme.mode}
         onMouseDown={handleDragStart}
       >
         <div className="overlay-header">
           <span className="overlay-page-number">
-            {state.currentNumber?.display ? (
-              state.currentNumber.display.isRange ?
-                state.currentNumber.display.text :
-                t('common.pageInfo.pageNumber', { page: state.currentNumber.display.text })
+            {oc.currentNumber?.display ? (
+              oc.currentNumber.display.isRange ?
+                oc.currentNumber.display.text :
+                t('common.pageInfo.pageNumber', { page: oc.currentNumber.display.text })
             ) : t('overlay.paragraphs.empty')}
           </span>
           <div className="overlay-header-icons">
-            {state.pluginServer && (
+            {pluginServer && (
               <svg
-                className={`overlay-header-ps-icon ${state.pluginConnected ? 'active' : ''}`}
+                className={`overlay-header-ps-icon ${pluginConnected ? (pluginModeActive ? 'connected' : 'active') : ''}`}
                 viewBox="0 0 34 32"
                 xmlns="http://www.w3.org/2000/svg"
                 onMouseDown={(e) => e.stopPropagation()}
@@ -245,9 +148,9 @@ function OverlayComponent() {
               </svg>
             )}
             <img
-              src={state.isPaused ? icons.play : icons.pause}
-              alt={state.isPaused ? 'play' : 'pause'}
-              className={`overlay-header-pause-btn ${state.isPaused ? 'paused' : ''}`}
+              src={isPaused ? icons.play : icons.pause}
+              alt={isPaused ? 'play' : 'pause'}
+              className={`overlay-header-pause-btn ${isPaused ? 'paused' : ''}`}
               onMouseDown={(e) => e.stopPropagation()}
               onClick={() => ipcRenderer.send('toggle-pause')}
             />
@@ -255,9 +158,9 @@ function OverlayComponent() {
         </div>
         <div className="paragraphs-container">
           <div className="paragraphs-highlight-frame" />
-          <div className={`paragraphs-view ${state._animDirection}`} key={state._animKey}>
+          <div className={`paragraphs-view ${oc._animDirection}`} key={oc._animKey}>
           <div className="paragraphs-section paragraphs-previous">
-            {state.previous.slice(0, 5).map((para, idx) => (
+            {oc.previous.slice(0, 5).map((para, idx) => (
               <div
                 key={`prev-${idx}`}
                 className="overlay-paragraph overlay-paragraph-previous"
@@ -275,15 +178,15 @@ function OverlayComponent() {
 
           <div
             className="overlay-paragraph overlay-paragraph-current"
-            onClick={() => handleParagraphClick(state.currentParagraph)}
+            onClick={() => handleParagraphClick(oc.currentParagraph)}
           >
             <span className="overlay-paragraph-text">
-              {state.current?.replace(/\n/g, " ") || " "}
+              {oc.current?.replace(/\n/g, " ") || " "}
             </span>
             <span className="paragraph-number">
-              {state.currentParagraph + 1}
+              {oc.currentParagraph + 1}
             </span>
-            {state.currentMetadata?.comments && (
+            {oc.currentMetadata?.comments && (
               <svg className="overlay-comment-icon" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
                 <path d="M448 256c0-106-86-192-192-192S64 150 64 256s86 192 192 192 192-86 192-192z" fill="none" stroke="currentColor" strokeMiterlimit="10" strokeWidth="32"/>
                 <path d="M250.26 166.05L256 288l5.73-121.95a5.74 5.74 0 00-5.79-6h0a5.74 5.74 0 00-5.68 6z" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="32"/>
@@ -293,7 +196,7 @@ function OverlayComponent() {
           </div>
 
           <div className="paragraphs-section paragraphs-next">
-            {state.next.slice(0, 5).map((para, idx) => (
+            {oc.next.slice(0, 5).map((para, idx) => (
               <div
                 key={`next-${idx}`}
                 className="overlay-paragraph overlay-paragraph-next"
@@ -303,7 +206,7 @@ function OverlayComponent() {
                   {para.text?.replace(/\n/g, " ") || " "}
                 </span>
                 <span className="paragraph-number">
-                  {state.currentParagraph + idx + 2}
+                  {oc.currentParagraph + idx + 2}
                 </span>
               </div>
             ))}

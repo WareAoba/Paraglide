@@ -20,7 +20,7 @@
   gap: 6px;
   padding-left: var(--spacing-sm);
   height: 100%;
-  -webkit-app-region: no-drag;
+  -webkit-app-region: drag;
   flex-shrink: 0;
 }
 
@@ -62,7 +62,7 @@
   width: 28px;
   height: 28px;
   border: none;
-  background: var(--bg-gradient);
+  background: transparent;
   color: var(--text-color);
   cursor: pointer;
   display: flex;
@@ -72,10 +72,12 @@
   padding: 0;
   outline: none;
   opacity: 0.7;
-  transition: all 0.2s ease;
-  box-shadow:
-    2px 2px 5px var(--container-shadow-up),
-    -2px -2px 5px var(--container-shadow-down);
+  transition: opacity var(--duration-fast) var(--ease-smooth),
+              transform var(--duration-normal) var(--ease-out-back),
+              background var(--duration-normal) var(--ease-smooth),
+              box-shadow var(--duration-normal) var(--ease-smooth),
+              color var(--duration-fast) var(--ease-smooth);
+  box-shadow: none;
 }
 
 .titlebar-btn svg {
@@ -85,14 +87,17 @@
 
 .titlebar-btn:hover {
   opacity: 1;
-  scale: 1.08;
+  transform: scale(1.12);
+  background: var(--bg-gradient);
   box-shadow:
     3px 3px 6px var(--container-shadow-up),
     -3px -3px 6px var(--container-shadow-down);
 }
 
 .titlebar-btn:active {
-  scale: 0.95;
+  transform: scale(0.92);
+  transition: transform var(--duration-instant) var(--ease-snappy),
+              box-shadow var(--duration-instant) var(--ease-snappy);
   box-shadow:
     inset 2px 2px 4px var(--container-shadow-up),
     inset -2px -2px 4px var(--container-shadow-down);

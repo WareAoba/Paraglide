@@ -1,7 +1,7 @@
 // ApplicationManager.js — 앱 라이프사이클
 const { ProgramStatus } = require('../constants');
 const { state } = require('../state');
-const { ConfigManager } = require('../../store/utils/ConfigManager');
+const { ConfigManager } = require('../../utils/ConfigManager');
 const StatusManager = require('./StatusManager');
 const FileManager = require('./FileManager');
 const LanguageManager = require('./LanguageManager');
@@ -35,6 +35,8 @@ const setupLogCapture = () => {
   // 4. 초기화 확인 로그
   console.log('[Main] 로그 캡처 시스템 초기화');
 };
+
+let _exiting = false;
 
 const ApplicationManager = {
   async initialize() {
@@ -73,15 +75,18 @@ const ApplicationManager = {
   },
 
   async exit() {
+    if (_exiting) return;
+    _exiting = true;
     try {
       // 진행 중인 config 쓰기 완료 대기
       const FileManager = require('./FileManager');
       await FileManager.flushConfigWrites();
 
       // 종료 전 설정 저장
-      await FileManager.saveConfig(state.config);
+      await FileManager.saveConfig();
 
       PluginBridge.stop();
+      WindowManager.stopFullscreenDetection();
 
       if (state.systemListener) {
         state.systemListener.destroy();

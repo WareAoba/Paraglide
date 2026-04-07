@@ -2,21 +2,21 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
+import useAppStore from '../../stores/useAppStore';
 import '../../CSS/Views/Overview.css';
 
-function Overview({
-  paragraphs,
-  currentNumber,
-  currentParagraph,
-  onParagraphClick,
-  theme,
-  hoveredSection,
-  onHoverChange,
-  paragraphsMetadata,
-  onCompleteWork
-}) {
+function Overview({ onParagraphClick, onCompleteWork }) {
   
   const { t } = useTranslation();
+
+  // ─── Zustand 스토어에서 상태 구독 ───
+  const paragraphs = useAppStore((s) => s.paragraphs);
+  const currentNumber = useAppStore((s) => s.currentNumber);
+  const currentParagraph = useAppStore((s) => s.currentParagraph);
+  const theme = useAppStore((s) => s.theme);
+  const hoveredSection = useAppStore((s) => s.hoveredSection);
+  const setHoveredSection = useAppStore((s) => s.setHoveredSection);
+  const paragraphsMetadata = useAppStore((s) => s.paragraphsMetadata);
   const [commentPopup, setCommentPopup] = useState(false);
   const [popupPos, setPopupPos] = useState(null);
   const commentCircleRef = useRef(null);
@@ -109,8 +109,8 @@ function Overview({
         <div 
           className={`paragraph-prev ${!isFirstParagraph ? '' : 'paragraph-empty'} ${hoveredSection === 'prev' ? 'hovered' : ''}`}
           onClick={!isFirstParagraph ? () => onParagraphClick('prev') : undefined}
-          onMouseEnter={!isFirstParagraph ? () => onHoverChange('prev') : undefined}
-          onMouseLeave={!isFirstParagraph ? () => onHoverChange(null) : undefined}
+          onMouseEnter={!isFirstParagraph ? () => setHoveredSection('prev') : undefined}
+          onMouseLeave={!isFirstParagraph ? () => setHoveredSection(null) : undefined}
           data-theme={theme.mode}
         >
           <div className="overview-paragraph-wrapper">
@@ -174,8 +174,8 @@ function Overview({
           <div 
             className={`paragraph-next ${hoveredSection === 'next' ? 'hovered' : ''}`}
             onClick={() => onParagraphClick('next')}
-            onMouseEnter={() => onHoverChange('next')}
-            onMouseLeave={() => onHoverChange(null)}
+            onMouseEnter={() => setHoveredSection('next')}
+            onMouseLeave={() => setHoveredSection(null)}
             data-theme={theme.mode}
           >
             <div className="overview-paragraph-wrapper">

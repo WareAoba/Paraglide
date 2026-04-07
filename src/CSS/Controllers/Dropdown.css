@@ -25,7 +25,9 @@
                 -5px -5px 10px var(--container-shadow-down),
                 inset 0 0 0 transparent,
                 inset 0 0 0 transparent;
-    transition: all 0.2s ease;
+    transition: box-shadow var(--duration-normal) var(--ease-smooth),
+                opacity var(--duration-fast) var(--ease-smooth),
+                transform var(--duration-normal) var(--ease-out-back);
 }
 
 /* 호버링 상태 (2단계) */
@@ -57,15 +59,21 @@
                 -3px -0px 5px var(--container-shadow-down);
     opacity: 0;
     visibility: hidden;
-    transform: translateY(-10px);
-    transition: all 0.2s ease;
+    transform: translateY(-8px) scale(0.96);
+    transform-origin: top right;
+    transition: opacity var(--duration-exit) var(--ease-snappy),
+                transform var(--duration-exit) var(--ease-snappy),
+                visibility 0s linear var(--duration-exit);
     z-index: 1003;
   }
   
   .dropdown-menu.show {
     opacity: 1;
     visibility: visible;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
+    transition: opacity var(--duration-normal) var(--ease-out-expo),
+                transform var(--duration-moderate) var(--ease-out-back),
+                visibility 0s linear 0s;
   }
   
   .dropdown-item {
@@ -76,11 +84,13 @@
     font-size: 0.95em;
     border-radius: 6px;
     cursor: pointer;
-    transition: background 0.2s ease;
+    transition: background var(--duration-fast) var(--ease-smooth),
+                padding-left var(--duration-normal) var(--ease-out-quart);
   }
   
   .dropdown-item:hover {
     background: var(--hover-bg);
+    padding-left: 16px;
   }
   
   .dropdown-item.active {

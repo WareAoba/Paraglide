@@ -199,7 +199,12 @@
             "contextMenu": {
                 "showInFinder": "Finder에서 열기",
                 "showInExplorer": "파일 탐색기에서 열기",
-                "deleteHistory": "기록 삭제"
+                "deleteHistory": "기록 삭제",
+                "lockFile": "파일 잠금"
+            },
+            "encryption": {
+                "saved": "비밀번호 저장됨",
+                "locked": "암호화된 파일"
             }
         },
         "search": {
@@ -235,6 +240,14 @@
     },
     "settings": {
         "title": "설정",
+        "tabs": {
+            "general": "일반",
+            "appearance": "외관",
+            "overlay": "오버레이",
+            "textProcessing": "텍스트 처리",
+            "editor": "에디터",
+            "plugin": "플러그인"
+        },
         "processMode": {
             "title": "텍스트 처리 방식",
             "paragraph": "단락 단위로",
@@ -274,10 +287,7 @@
             "title": "포토샵 모드",
             "enable": "포토샵 API를 통해 자동으로 붙여넣기 활성화",
             "port": "포트",
-            "connected": "연결된 플러그인",
-            "installing": "플러그인 설치 중...",
-            "installed": "플러그인이 설치되었습니다. 포토샵을 재시작해주세요.",
-            "installFailed": "플러그인 자동 설치에 실패했습니다."
+            "connected": "연결된 플러그인"
         },
         "dataManagement": {
             "title": "데이터 관리",
@@ -310,7 +320,8 @@
             "imageViewer": "이미지 뷰어",
             "closeViewer": "뷰어 닫기",
             "textStyle": "텍스트 스타일",
-            "metadata": "메타데이터"
+            "metadata": "메타데이터",
+            "encryption": "암호화"
         },
         "macro": {
             "empty": "(비어있음)",
@@ -350,9 +361,43 @@
         },
         "metadata": {
             "title": "메타데이터",
+            "close": "닫기",
             "image": "열 이미지",
-            "imagePlaceholder": "image1.jpg,image2.jpg"
+            "imagePlaceholder": "image1.jpg,image2.jpg",
+            "edit": "수정",
+            "delete": "삭제",
+            "noImage": "이미지 없음",
+            "newImageName": "이미지 이름",
+            "add": "추가"
+        },
+        "encryption": {
+            "title": "암호화",
+            "enable": "암호화 사용",
+            "passwordPlaceholder": "4~32자 비밀번호",
+            "passwordHint": "비밀번호는 4~32자여야 합니다",
+            "showPassword": "비밀번호 표시",
+            "hidePassword": "비밀번호 숨기기",
+            "decryptTitle": "암호화된 파일",
+            "decryptDesc": "이 파일은 암호화되어 있습니다. 비밀번호를 입력하세요.",
+            "rememberPassword": "비밀번호 저장"
         }
+    },
+    "imageViewer": {
+        "empty": "이미지 없음",
+        "prevPage": "이전 페이지",
+        "nextPage": "다음 페이지",
+        "pageInputHint": "클릭하여 페이지 번호 입력",
+        "cursorSyncOn": "커서 동기화 켜짐",
+        "cursorSyncOff": "커서 동기화 꺼짐",
+        "showAllLayers": "모든 레이어 표시",
+        "showBgOnly": "배경 레이어만 표시",
+        "zoomOut": "축소",
+        "zoomIn": "확대",
+        "resetZoom": "맞춤 크기로 초기화",
+        "removeImage": "현재 이미지 제거",
+        "grayscale": "흑백",
+        "color": "컬러",
+        "copyColor": "색상값 복사"
     },
     "console": {
         "header": {

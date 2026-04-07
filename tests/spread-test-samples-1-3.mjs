@@ -10,7 +10,7 @@ import path from 'path';
 import { createRequire } from 'module';
 
 const require = createRequire(import.meta.url);
-const { SpreadDetector } = require('../src/store/utils/SpreadDetector');
+const { SpreadDetector } = require('../src/utils/SpreadDetector');
 
 const H = SpreadDetector.ANALYSIS_HEIGHT;
 
